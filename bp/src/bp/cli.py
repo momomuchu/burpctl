@@ -1,41 +1,26 @@
 """bp — Burp Suite REST CLI entry point. See docs/CLI.md.
 
-Global options resolve to a small state object on the typer context; each command runs against
-a BurpClient and renders via the output layer. Exit codes follow CLI.md (3=conn, 4=pro).
+Global options resolve to a State object on the typer context; each command runs against a
+BurpClient and renders via the output layer. Command groups live in ``bp.commands.*`` and are
+registered onto ``app`` below. Exit codes follow CLI.md (3=conn, 4=pro).
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from typing import Any
 
 import typer
 
-from bp.client import DEFAULT_BASE_URL, BurpClient, BurpError
-from bp.output import render
-from bp.pos import PosError
+from bp.client import DEFAULT_BASE_URL, BurpClient
+from bp.cliutil import EXIT_USAGE, State, run
 from bp.runner import run_fuzz
-
-EXIT_GENERIC = 1
-EXIT_USAGE = 2
-EXIT_CONNECTION = 3
-EXIT_PRO = 4
-
-_EXIT_BY_CODE: dict[str, int] = {"CONNECTION_REFUSED": EXIT_CONNECTION, "PRO_REQUIRED": EXIT_PRO}
 
 app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
     help="bp — drive Burp Suite via its REST extension on :8089",
 )
-
-
-@dataclass
-class State:
-    url: str
-    fmt: str
-    fields: list[str] | None
 
 
 @app.callback()
@@ -48,30 +33,16 @@ def main(
     ctx.obj = State(url=url, fmt=fmt, fields=fields.split(",") if fields else None)
 
 
-def _run(ctx: typer.Context, fn: Callable[[BurpClient], Any]) -> None:
-    state: State = ctx.obj
-    try:
-        with BurpClient(state.url) as client:
-            data = fn(client)
-    except BurpError as e:
-        typer.echo(f"error: {e}", err=True)
-        raise typer.Exit(_EXIT_BY_CODE.get(e.code, EXIT_GENERIC)) from None
-    except (PosError, ValueError) as e:
-        typer.echo(f"error: {e}", err=True)
-        raise typer.Exit(EXIT_USAGE) from None
-    typer.echo(render(data, state.fmt, fields=state.fields))
-
-
 @app.command()
 def health(ctx: typer.Context) -> None:
     """Liveness + version of the extension."""
-    _run(ctx, lambda c: c.health().model_dump())
+    run(ctx, lambda c: c.health().model_dump())
 
 
 @app.command()
 def version(ctx: typer.Context) -> None:
     """Extension version."""
-    _run(ctx, lambda c: c.version().model_dump())
+    run(ctx, lambda c: c.version().model_dump())
 
 
 @app.command()
@@ -85,7 +56,7 @@ def proxy(
     params: dict[str, Any] = {
         k: v for k, v in (("host", host), ("limit", limit), ("offset", offset)) if v is not None
     }
-    _run(ctx, lambda c: c.get("/proxy/history", **params).get("entries", []))
+    run(ctx, lambda c: c.get("/proxy/history", **params).get("entries", []))
 
 
 @app.command()
@@ -112,4 +83,21 @@ def fuzz(
         rows = [asdict(r) for r in results]
         return [r for r in rows if r["anomalous"]] if anomalous_only else rows
 
-    _run(ctx, _do)
+    run(ctx, _do)
+
+
+def _register_command_groups() -> None:
+    """Register every bp.commands.* module that exposes register(app)."""
+    from importlib import import_module
+    from pkgutil import iter_modules
+
+    import bp.commands
+
+    for mod in iter_modules(bp.commands.__path__):
+        module = import_module(f"bp.commands.{mod.name}")
+        register = getattr(module, "register", None)
+        if callable(register):
+            register(app)
+
+
+_register_command_groups()
