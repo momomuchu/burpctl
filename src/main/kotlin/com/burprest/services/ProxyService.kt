@@ -48,13 +48,21 @@ class ProxyService(private val api: MontoyaApi) {
         )
     }
 
+    // Tracks API-driven intercept state (Montoya does not expose the live status).
+    @Volatile
+    private var intercepting = false
+
     fun enableIntercept() {
         api.proxy().enableIntercept()
+        intercepting = true
     }
 
     fun disableIntercept() {
         api.proxy().disableIntercept()
+        intercepting = false
     }
+
+    fun isIntercepting(): Boolean = intercepting
 
     private fun ProxyHttpRequestResponse.toProxyEntry(id: Int): ProxyEntry {
         val req = this.finalRequest()

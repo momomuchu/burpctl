@@ -42,7 +42,7 @@ private val OPENAPI_SPEC = """
   "openapi": "3.0.3",
   "info": {
     "title": "Burp REST Extension API",
-    "version": "0.2.0",
+    "version": "0.1.0",
     "description": "REST API exposing Burp Suite Montoya API via HTTP on port 8089"
   },
   "servers": [{"url": "http://127.0.0.1:8089"}],

@@ -27,8 +27,8 @@ fun Route.proxyRoutes(service: ProxyService) {
         }
 
         get("/intercept") {
-            // Montoya API doesn't expose intercept status, return last known state
-            call.respond(ApiResponse.ok(InterceptStatusResponse(enabled = false)))
+            // Montoya doesn't expose live status; report the last API-driven state.
+            call.respond(ApiResponse.ok(InterceptStatusResponse(enabled = service.isIntercepting())))
         }
 
         post("/intercept/enable") {
