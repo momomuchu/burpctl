@@ -48,9 +48,9 @@ header:NAME   cookie:NAME   body:FIELD   query:NAME   path:INDEX   offset:START-
 | `bp send <id> [--set-header 'N: V']… [--body @f\|STR] [--method M] [--path P]` | `POST /repeater/send` | repeater |
 | `bp send --batch @file` | `POST /repeater/send/batch` | repeater |
 | `bp tab <id>` | `POST /repeater/tab/create` | repeater |
-| `bp fuzz <id> --pos SEL… [--payloads N=F]… [--type T] [--throttle-ms N] [--async]` | `POST /intruder/attack/create`+`/start` | intruder |
+| `bp fuzz <id> --pos SEL… [--payloads N=F]… [--type T] [--throttle-ms N] [--anomalous-only]` | client-side fire via `POST /repeater/send` (v1: synchrone) | intruder |
 | `bp fuzz <id> --param NAME --payloads @f` | `POST /intruder/quick-fuzz` (raccourci 1-param) | intruder |
-| `bp fuzz status\|results\|pause\|resume\|stop <attackId>` | `/intruder/attack/{id}/*` | intruder |
+| `bp fuzz status\|results\|pause\|resume\|stop <attackId>` _(v1.1 — lifecycle async, non livré en v1)_ | `/intruder/attack/{id}/*` | intruder |
 | `bp collab new [--count N]` | `POST /collaborator/generate[/batch]` | collaborator (Pro) |
 | `bp collab poll [id]` | `GET /collaborator/poll[/{id}]` | collaborator (Pro) |
 | `bp scan crawl\|audit\|all <url>` | `POST /scanner/{crawl,audit,crawl-and-audit}` | scanner (Pro) |
@@ -62,7 +62,7 @@ header:NAME   cookie:NAME   body:FIELD   query:NAME   path:INDEX   offset:START-
 | `bp config get\|set project\|user` · `bp ext` | `GET/PUT /config/*` · `GET /extensions` | config |
 | `bp session set\|get\|clear` · `bp session send` · `bp session cookies` | `/session/*` | session |
 | `bp diff A B` · `bp endpoints <data>` | `POST /utils/{diff,extract-endpoints}` | utils |
-| `bp history [filters]` · `bp history <id>` · `bp history sitemap` · `bp history replay <id>` · `bp history clear --confirm` | `/history/*` (conditionnel DB) | history |
+| `bp history list [filters]` · `bp history get <id>` · `bp history sitemap` · `bp history replay <id>` · `bp history clear --confirm` | `/history/*` (conditionnel DB) | history |
 | `bp log [filters]` · `bp tag <opId> <name>` | Run Ledger (C4, DB locale `~/.bp/`) | — observabilité |
 
 ## Décisions de nommage (résolvent l'audit)  `[HIGH][BLOCKS:high]`

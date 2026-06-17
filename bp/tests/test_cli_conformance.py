@@ -56,6 +56,7 @@ CLI_COMMANDS: list[list[str]] = [
     ["diff"],
     ["endpoints"],
     ["history"],
+    ["history", "list"],
     ["history", "get"],
     ["history", "sitemap"],
     ["history", "replay"],

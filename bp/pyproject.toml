@@ -1,6 +1,6 @@
 [project]
 name = "bp"
-version = "0.1.0"
+version = "1.0.0"
 description = "bp — Burp Suite REST CLI client (drives the burp-rest-extension on :8089)"
 requires-python = ">=3.11"
 dependencies = [
