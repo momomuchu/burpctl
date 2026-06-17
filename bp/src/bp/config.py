@@ -29,8 +29,11 @@ from pathlib import Path
 # Defaults
 # ---------------------------------------------------------------------------
 
+# Single source of truth for the REST base URL (re-exported by bp.client).
+DEFAULT_BASE_URL = "http://127.0.0.1:8089"
+
 _DEFAULTS: dict[str, str] = {
-    "burp_rest_url": "http://127.0.0.1:8089",
+    "burp_rest_url": DEFAULT_BASE_URL,
     "enforce_scope": "warn",
     "envelope": "off",
     "redact": "on",
@@ -81,7 +84,7 @@ def _parse_config_file(path: Path) -> dict[str, str]:
 
 @dataclass
 class BpConfig:
-    burp_rest_url: str = "http://127.0.0.1:8089"
+    burp_rest_url: str = DEFAULT_BASE_URL
     enforce_scope: str = "warn"      # warn | block | off
     envelope: bool = False
     redact: bool = True

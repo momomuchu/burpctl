@@ -59,3 +59,33 @@ def run(ctx: typer.Context, fn: Callable[[BurpClient], Any]) -> None:
     if conf.redact:
         out = redact(out)
     typer.echo(out)
+
+
+def parse_header(raw: str, flag: str = "--set-header") -> tuple[str, str]:
+    """Parse a ``'Name: Value'`` header string into ``(name, value)``.
+
+    Shared by the repeater/session/check commands so the parsing, error text, and exit
+    code stay consistent. Raises ``ValueError`` (mapped to EXIT_USAGE by callers) on input
+    with no colon.
+    """
+    if ":" not in raw:
+        raise ValueError(f"{flag} must be 'Name: Value', got {raw!r}")
+    name, _, value = raw.partition(":")
+    return name.strip(), value.strip()
+
+
+def parse_headers(raws: list[str], flag: str = "--set-header") -> dict[str, str]:
+    """Parse repeatable ``'Name: Value'`` strings into a dict; clean usage error on malformed.
+
+    Emits the error on stderr and raises ``typer.Exit(EXIT_USAGE)`` so every command surfaces
+    the same exit 2 for a bad header (previously one copy used a hardcoded literal ``2``).
+    """
+    headers: dict[str, str] = {}
+    for raw in raws:
+        try:
+            name, value = parse_header(raw, flag)
+        except ValueError as exc:
+            typer.echo(f"error: {exc}", err=True)
+            raise typer.Exit(EXIT_USAGE) from None
+        headers[name] = value
+    return headers

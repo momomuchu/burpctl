@@ -16,11 +16,10 @@ from urllib.parse import urlsplit
 
 import httpx
 
+from bp.config import DEFAULT_BASE_URL as DEFAULT_BASE_URL  # re-exported (single source in config)
 from bp.config import redact as _redact_text
 from bp.ledger import Ledger, OpRecord
 from bp.models import ApiResponse, HealthData, VersionData
-
-DEFAULT_BASE_URL = "http://127.0.0.1:8089"
 
 
 class BurpError(Exception):

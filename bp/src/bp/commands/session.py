@@ -28,7 +28,7 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, run
+from bp.cliutil import EXIT_USAGE, parse_headers, run
 
 # ---------------------------------------------------------------------------
 # Sub-application
@@ -160,17 +160,8 @@ def session_send(
     Example:
       bp session send https://example.com/api/admin --method POST --body '{}'
     """
-    # Parse extra headers early (may raise ValueError → EXIT_USAGE)
-    extra_headers: dict[str, str] = {}
-    for raw in set_header:
-        if ":" not in raw:
-            typer.echo(
-                f"error: --set-header must be 'Name: Value', got {raw!r}",
-                err=True,
-            )
-            raise typer.Exit(EXIT_USAGE) from None
-        hname, _, hvalue = raw.partition(":")
-        extra_headers[hname.strip()] = hvalue.strip()
+    # Parse extra headers early (shared helper → consistent exit 2)
+    extra_headers = parse_headers(set_header)
 
     def _do(c: Any) -> Any:
         payload: dict[str, Any] = {"method": method, "url": url}

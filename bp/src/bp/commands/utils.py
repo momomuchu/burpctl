@@ -59,7 +59,7 @@ def diff(
     response length, and header deltas are compared, not a line-by-line body diff.
 
     Example:
-      bp utils diff https://api.example.com/v1/resource https://api.example.com/v2/resource
+      bp diff https://api.example.com/v1/resource https://api.example.com/v2/resource
     """
     typer.echo(
         "note: /utils/diff body comparison is set-based (not unified diff);"
@@ -104,7 +104,7 @@ def endpoints(
     unreachable or contained no recognisable endpoint patterns.
 
     Example:
-      bp utils endpoints https://app.example.com
+      bp endpoints https://app.example.com
     """
     typer.echo(
         "note: /utils/extract-endpoints fetches up to 10 JS bundles (hard cap);"

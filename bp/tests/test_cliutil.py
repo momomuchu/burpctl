@@ -4,9 +4,12 @@ These exercise the parts of the chokepoint that need no running Burp: option val
 must fail fast with a clean usage error (exit 2) instead of leaking a Python traceback.
 """
 
+import pytest
+import typer
 from typer.testing import CliRunner
 
 from bp.cli import app
+from bp.cliutil import parse_header, parse_headers
 
 runner = CliRunner()
 
@@ -20,3 +23,28 @@ def test_invalid_format_is_usage_error_not_traceback() -> None:
     """
     result = runner.invoke(app, ["--format", "bogus", "health"])
     assert result.exit_code == 2
+
+
+def test_parse_header_splits_name_value() -> None:
+    assert parse_header("X-Role: admin") == ("X-Role", "admin")
+
+
+def test_parse_header_strips_surrounding_whitespace() -> None:
+    assert parse_header("  A :  b ") == ("A", "b")
+
+
+def test_parse_header_missing_colon_raises_with_flag_name() -> None:
+    """The shared helper names the offending flag (--set-header vs --header) in the error."""
+    with pytest.raises(ValueError, match="--header"):
+        parse_header("nocolon", "--header")
+
+
+def test_parse_headers_builds_dict() -> None:
+    assert parse_headers(["A: 1", "B: 2"]) == {"A": "1", "B": "2"}
+
+
+def test_parse_headers_bad_input_is_usage_exit() -> None:
+    """All three call sites now share exit 2 (one previously used a hardcoded literal)."""
+    with pytest.raises(typer.Exit) as ei:
+        parse_headers(["nocolon"])
+    assert ei.value.exit_code == 2

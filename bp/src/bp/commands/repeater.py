@@ -18,7 +18,7 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, run
+from bp.cliutil import EXIT_USAGE, parse_headers, run
 
 # ---------------------------------------------------------------------------
 # Sub-application
@@ -30,16 +30,6 @@ sub = typer.Typer(no_args_is_help=True, help="Repeater — send / tab commands."
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _parse_header(raw: str) -> tuple[str, str]:
-    """Parse 'Name: Value' into (name, value). Raises ValueError on bad input."""
-    if ":" not in raw:
-        raise ValueError(
-            f"--set-header must be 'Name: Value', got {raw!r}"
-        )
-    name, _, value = raw.partition(":")
-    return name.strip(), value.strip()
 
 
 def _resolve_body(body: str | None) -> str | None:
@@ -103,15 +93,8 @@ def send_cmd(
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(EXIT_USAGE) from None
 
-    # Parse headers early for the same reason
-    headers: dict[str, str] = {}
-    for raw in set_header:
-        try:
-            name, value = _parse_header(raw)
-        except ValueError as exc:
-            typer.echo(f"error: {exc}", err=True)
-            raise typer.Exit(EXIT_USAGE) from None
-        headers[name] = value
+    # Parse headers early for the same reason (shared helper → consistent exit 2)
+    headers = parse_headers(set_header)
 
     def _do(client: Any) -> Any:
         # Build RequestModifications — only include non-None fields

@@ -14,7 +14,7 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import run
+from bp.cliutil import parse_headers, run
 
 # ---------------------------------------------------------------------------
 # Sub-typer
@@ -94,15 +94,8 @@ def check_idor(
     Sends IdorRequest { endpoint, param, ownValues, targetValues, method, body?,
     extraHeaders? } to POST /scan/idor.
     """
-    extra_headers: dict[str, str] | None = None
-    if header:
-        extra_headers = {}
-        for h in header:
-            name, sep, value = h.partition(":")
-            if not sep:
-                typer.echo(f"error: --header must be 'Name: Value', got {h!r}", err=True)
-                raise typer.Exit(2)
-            extra_headers[name.strip()] = value.strip()
+    # Shared helper → consistent 'Name: Value' parsing and exit 2 (was a hardcoded literal here).
+    extra_headers: dict[str, str] | None = parse_headers(header, "--header") or None
 
     req_body: dict[str, Any] = {
         "endpoint": url,

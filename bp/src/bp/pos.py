@@ -90,25 +90,36 @@ def _resolve_cookie(raw: bytes, arg: str, selector: str) -> Position:
     raise PosError("POS_NOT_FOUND", "no Cookie header")
 
 
+def _scan_kv(buf: bytes, key: bytes, start: int) -> tuple[int, int] | None:
+    """Scan ``&``-separated ``key=value`` pairs in ``buf`` from offset ``start``.
+
+    Returns the ``(value_start, value_end)`` byte span of the matching value relative to
+    ``buf``, or None if ``key`` is absent. Shared by the query-string and form-body resolvers.
+    """
+    pos = start
+    while pos <= len(buf):
+        amp = buf.find(b"&", pos)
+        seg_end = amp if amp != -1 else len(buf)
+        seg = buf[pos:seg_end]
+        eq = seg.find(b"=")
+        if eq != -1 and seg[:eq] == key:
+            return pos + eq + 1, seg_end
+        if amp == -1:
+            break
+        pos = amp + 1
+    return None
+
+
 def _resolve_query(raw: bytes, arg: str, selector: str) -> Position:
     t_start, t_end = request_target_span(raw)
     target = raw[t_start:t_end]
     q = target.find(b"?")
     if q == -1:
         raise PosError("POS_NOT_FOUND", "no query string")
-    key = arg.encode()
-    pos = q + 1
-    while pos <= len(target):
-        amp = target.find(b"&", pos)
-        seg_end = amp if amp != -1 else len(target)
-        seg = target[pos:seg_end]
-        eq = seg.find(b"=")
-        if eq != -1 and seg[:eq] == key:
-            return Position(t_start + pos + eq + 1, t_start + seg_end, selector)
-        if amp == -1:
-            break
-        pos = amp + 1
-    raise PosError("POS_NOT_FOUND", f"query param {arg!r} not found")
+    span = _scan_kv(target, arg.encode(), q + 1)
+    if span is None:
+        raise PosError("POS_NOT_FOUND", f"query param {arg!r} not found")
+    return Position(t_start + span[0], t_start + span[1], selector)
 
 
 def _resolve_path(raw: bytes, arg: str, selector: str) -> Position:
@@ -167,19 +178,10 @@ def _resolve_json(body: bytes, b0: int, field: str, selector: str) -> Position:
 
 
 def _resolve_form(body: bytes, b0: int, field: str, selector: str) -> Position:
-    key = field.encode()
-    pos = 0
-    while pos <= len(body):
-        amp = body.find(b"&", pos)
-        seg_end = amp if amp != -1 else len(body)
-        seg = body[pos:seg_end]
-        eq = seg.find(b"=")
-        if eq != -1 and seg[:eq] == key:
-            return Position(b0 + pos + eq + 1, b0 + seg_end, selector)
-        if amp == -1:
-            break
-        pos = amp + 1
-    raise PosError("POS_NOT_FOUND", f"form field {field!r} not found")
+    span = _scan_kv(body, field.encode(), 0)
+    if span is None:
+        raise PosError("POS_NOT_FOUND", f"form field {field!r} not found")
+    return Position(b0 + span[0], b0 + span[1], selector)
 
 
 _RESOLVERS: dict[str, Resolver] = {
