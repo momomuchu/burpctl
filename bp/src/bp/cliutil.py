@@ -46,6 +46,7 @@ def run(ctx: typer.Context, fn: Callable[[BurpClient], Any]) -> None:
             state.url, ledger=ledger, redact=conf.redact, command=ctx.command_path
         ) as client:
             data = fn(client)
+        out = render(data, state.fmt, fields=state.fields)
     except BurpError as e:
         typer.echo(f"error: {e}", err=True)
         raise typer.Exit(_EXIT_BY_CODE.get(e.code, EXIT_GENERIC)) from None
@@ -55,7 +56,6 @@ def run(ctx: typer.Context, fn: Callable[[BurpClient], Any]) -> None:
     finally:
         if ledger is not None:
             ledger.close()
-    out = render(data, state.fmt, fields=state.fields)
     if conf.redact:
         out = redact(out)
     typer.echo(out)

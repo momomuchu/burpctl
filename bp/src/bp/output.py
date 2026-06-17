@@ -30,7 +30,11 @@ def render(data: Any, fmt: str = "table", *, fields: list[str] | None = None) ->
 def _select(record: dict[str, Any], fields: list[str] | None) -> dict[str, Any]:
     if fields is None:
         return record
-    return {k: record.get(k) for k in fields}
+    unknown = [f for f in fields if f not in record]
+    if unknown:
+        valid = ", ".join(record) or "(none)"
+        raise ValueError(f"unknown field(s): {', '.join(unknown)}; valid: {valid}")
+    return {k: record[k] for k in fields}
 
 
 def _render_json(data: Any, fields: list[str] | None) -> str:

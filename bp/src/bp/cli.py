@@ -14,6 +14,7 @@ import typer
 
 from bp.client import DEFAULT_BASE_URL, BurpClient
 from bp.cliutil import EXIT_USAGE, State, run
+from bp.output import FORMATS
 from bp.runner import run_fuzz
 
 app = typer.Typer(
@@ -30,6 +31,8 @@ def main(
     fmt: str = typer.Option("table", "--format", help="json|table|raw|quiet"),
     fields: str | None = typer.Option(None, "--fields", help="comma-separated fields"),
 ) -> None:
+    if fmt not in FORMATS:
+        raise typer.BadParameter(f"must be one of {', '.join(FORMATS)}", param_hint="--format")
     ctx.obj = State(url=url, fmt=fmt, fields=fields.split(",") if fields else None)
 
 

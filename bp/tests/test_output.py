@@ -1,5 +1,7 @@
 """Tests for the output rendering layer (docs/OUTPUT.md)."""
 
+import pytest
+
 from bp.output import render
 
 
@@ -34,3 +36,13 @@ def test_quiet_list_one_per_line() -> None:
 
 def test_fields_selects_and_orders() -> None:
     assert render({"a": 1, "b": 2, "c": 3}, "json", fields=["c", "a"]) == '{"c":3,"a":1}'
+
+
+def test_unknown_field_raises_usage_error() -> None:
+    """OUTPUT.md §2.1: an unknown --fields name is a usage error, not a silent ``None`` value."""
+    with pytest.raises(ValueError):
+        render({"a": 1, "b": 2}, "json", fields=["nope"])
+
+
+def test_known_field_subset_ok() -> None:
+    assert render({"a": 1, "b": 2}, "json", fields=["a"]) == '{"a":1}'
