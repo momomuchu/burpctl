@@ -25,3 +25,5 @@ logs/
 .omc/
 bp/.omc/
 .playwright-mcp/
+.claude/
+AGENTS.md

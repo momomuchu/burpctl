@@ -1,279 +1,71 @@
-# burp-rest-extension
+# burp-wrapper
 
-Burp Suite extension that exposes the entire Montoya API via REST HTTP. Load the JAR into Burp and get a full REST API on `http://127.0.0.1:8089`.
+Drive **Burp Suite** from the command line. Two components in this repo:
 
-Built for AI agents (Claude Code, Gemini CLI, etc.) and automation scripts.
+1. **[`bp`](bp/)** — a fast, fully-typed **CLI client** (Python, **v1.0.0**) — *the recommended interface.*
+   One command instead of hand-crafted JSON: capture, **flexible client-side fuzzing** (any
+   injection position, all attack types), scans, decoder, and a **Run Ledger** that records every
+   op. Built for bug-bounty hunters and AI agents.
+2. **burp-rest-extension** — a **Kotlin** Burp extension exposing the Montoya API as a REST API on
+   `http://127.0.0.1:8089`. The backend `bp` talks to (you can also `curl` it directly).
+
+```
+ you / AI agent ──►  bp (CLI)  ──REST :8089──►  burp-rest-extension  ──Montoya──►  Burp Suite Pro
+```
+
+## Quickstart
+
+### 1. Load the extension (backend)
 
 ```bash
-# Health check
-curl http://127.0.0.1:8089/health
-
-# Get proxy history
-curl http://127.0.0.1:8089/proxy/history?limit=10
-
-# Send a request via Repeater
-curl -X POST http://127.0.0.1:8089/repeater/send \
-  -H "Content-Type: application/json" \
-  -d '{"request":{"method":"GET","url":"https://target.com/api"}}'
-
-# Quick fuzz a parameter
-curl -X POST http://127.0.0.1:8089/intruder/quick-fuzz \
-  -H "Content-Type: application/json" \
-  -d '{"requestId":0,"param":"id","payloads":["1","2","'\''OR 1=1--"]}'
-
-# Generate Collaborator payload
-curl -X POST http://127.0.0.1:8089/collaborator/generate
-
-# Start a scan
-curl -X POST http://127.0.0.1:8089/scanner/crawl-and-audit \
-  -H "Content-Type: application/json" \
-  -d '{"url":"https://target.com"}'
+./gradlew shadowJar                 # → build/libs/burp-rest-extension.jar  (needs JDK 17)
 ```
+In Burp: **Extensions → Add → Extension Type: Java → Select the JAR.** REST auto-starts on `:8089`
+(watch the extension Output tab for `Server started on http://127.0.0.1:8089`).
+
+### 2. Use `bp`
+
+```bash
+cd bp && uv tool install .          # or: pipx install .   (Python 3.11+)
+
+bp health                                       # extension liveness
+bp proxy --host target.example --limit 20       # captured history → request ids
+
+# fuzz: mark ANY byte range, multi-position, matrix attacks (client-side)
+bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=ssrf.txt \
+           --pos 'cookie:role'            --payloads role=privesc.txt \
+           --type cluster-bomb --anomalous-only
+
+bp collab new                                   # OOB payload (blind SSRF/RCE) — Pro
+bp scan all https://target.example              # crawl + audit — Pro
+bp encode 'a:b' --enc base64                    # offline decoder
+bp log --tag recon                              # query the Run Ledger
+```
+
+Full CLI guide: **[`bp/README.md`](bp/README.md)**.
+
+## What's where
+
+| Path | What |
+|---|---|
+| [`bp/`](bp/) | The `bp` CLI client (Python, v1.0.0) — [README](bp/README.md) · [CHANGELOG](bp/CHANGELOG.md) |
+| `src/main/kotlin/com/burprest/` | The Burp REST extension (Kotlin / Ktor / Montoya) |
+| [`docs/`](docs/) | Source-grounded spec: [SPEC](docs/SPEC.md) (69 endpoints / 13 groups), [CLI](docs/CLI.md) grammar, [OUTPUT](docs/OUTPUT.md), [ALGORITHMS](docs/ALGORITHMS.md), 8 [ADRs](docs/adr/) |
+
+> The REST surface is **13 route groups / 69 endpoints**, source-verified in `docs/SPEC.md`.
+> All endpoints return `{success, data, error}`. The historical `spec.md` design (Python wrapper,
+> port 9876) is **superseded** — see `docs/SPEC.md` and ADR-0001.
 
 ## Requirements
 
-- Burp Suite Pro
-- Java 17+
+- **Burp Suite Pro** (Community works for non-Pro features; `bp` degrades gracefully).
+- **JDK 17+** to build the extension · **Python 3.11+** for `bp`.
 
-## Install
-
-```bash
-# Build from source
-./gradlew shadowJar
-
-# Output: build/libs/burp-rest-extension.jar
-```
-
-In Burp: **Extensions → Add → Extension Type: Java → Select JAR**
-
-The API starts automatically on `http://127.0.0.1:8089`.
-
-## Architecture
-
-```
-┌────────────────────────────────────────────────────────┐
-│                    AI AGENT / SCRIPT                    │
-│           (Claude Code / Gemini CLI / curl / etc.)      │
-└────────────────────────┬───────────────────────────────┘
-                         │
-                         │  REST HTTP (JSON)
-                         v
-┌────────────────────────────────────────────────────────┐
-│              BURP REST EXTENSION                        │
-│                                                         │
-│  Ktor Embedded Server on :8089                          │
-│                                                         │
-│  /proxy/*        /repeater/*      /intruder/*           │
-│  /scanner/*      /collaborator/*  /target/*             │
-│  /decoder/*      /sequencer/*     /comparer/*           │
-│  /logger/*       /config/*        /extensions           │
-│  /search         /health          /docs                 │
-│                                                         │
-│  Request logging → Burp output console                  │
-│  Error handling  → JSON error responses                 │
-│  CORS enabled    → local access from any origin         │
-└────────────────────────┬───────────────────────────────┘
-                         │
-                         │  Montoya API (direct)
-                         v
-┌────────────────────────────────────────────────────────┐
-│                  BURP SUITE PRO                         │
-│                                                         │
-│  Proxy · Repeater · Intruder · Scanner                  │
-│  Collaborator · Target · Decoder · Sequencer            │
-│  Comparer · Logger · Config · Extensions                │
-└────────────────────────────────────────────────────────┘
-```
-
-## Endpoints
-
-### Core (P0)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/version` | Extension version |
-| GET | `/docs` | OpenAPI spec |
-
-### Proxy
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/proxy/history` | List captured requests (`?limit=N&offset=N&host=X`) |
-| GET | `/proxy/history/{id}` | Detail of a specific request |
-| GET | `/proxy/websocket/history` | WebSocket history |
-| POST | `/proxy/intercept/enable` | Enable interception |
-| POST | `/proxy/intercept/disable` | Disable interception |
-| POST | `/proxy/intercept/forward` | Forward intercepted request |
-| POST | `/proxy/intercept/drop` | Drop intercepted request |
-
-### Repeater
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/repeater/send` | Send a request |
-| POST | `/repeater/send/batch` | Send multiple requests |
-| POST | `/repeater/tab/create` | Create Repeater tab |
-
-### Intruder
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/intruder/attack/create` | Configure an attack |
-| POST | `/intruder/attack/{id}/start` | Start attack |
-| GET | `/intruder/attack/{id}/status` | Attack status |
-| GET | `/intruder/attack/{id}/results` | Attack results |
-| POST | `/intruder/attack/{id}/pause` | Pause |
-| POST | `/intruder/attack/{id}/resume` | Resume |
-| POST | `/intruder/attack/{id}/stop` | Stop |
-| POST | `/intruder/quick-fuzz` | Quick fuzz a parameter |
-
-### Scanner
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/scanner/crawl` | Start crawl |
-| POST | `/scanner/audit` | Start audit |
-| POST | `/scanner/crawl-and-audit` | Start crawl + audit |
-| GET | `/scanner/{id}/status` | Scan status |
-| GET | `/scanner/{id}/issues` | Found issues |
-| POST | `/scanner/{id}/pause` | Pause scan |
-| POST | `/scanner/{id}/resume` | Resume scan |
-| POST | `/scanner/{id}/stop` | Stop scan |
-| GET | `/scanner/issue-definitions` | Issue type definitions |
-
-### Collaborator
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/collaborator/generate` | Generate payload |
-| POST | `/collaborator/generate/batch` | Generate multiple payloads |
-| GET | `/collaborator/poll` | Poll all interactions |
-| GET | `/collaborator/poll/{id}` | Poll specific payload |
-
-### Target
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/target/sitemap` | Get sitemap (`?url=prefix`) |
-| GET | `/target/scope` | Get current scope |
-| POST | `/target/scope` | Set scope |
-| POST | `/target/scope/add` | Add URL to scope |
-| POST | `/target/scope/remove` | Remove from scope |
-| GET | `/target/scope/check` | Check if URL in scope (`?url=X`) |
-
-### Decoder
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/decoder/encode` | Encode (base64, url, hex, html) |
-| POST | `/decoder/decode` | Decode |
-| POST | `/decoder/hash` | Hash (md5, sha1, sha256, sha512) |
-| POST | `/decoder/smart-decode` | Auto-detect and decode layers |
-
-### Config & Extensions
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/config/project` | Project config |
-| PUT | `/config/project` | Update project config |
-| GET | `/config/user` | User config |
-| PUT | `/config/user` | Update user config |
-| GET | `/extensions` | List extensions |
-
-## Response Format
-
-All endpoints return:
-
-```json
-{
-  "success": true,
-  "data": { ... },
-  "error": null
-}
-```
-
-On error:
-
-```json
-{
-  "success": false,
-  "data": null,
-  "error": {
-    "code": "INVALID_REQUEST",
-    "message": "Missing required field: url"
-  }
-}
-```
-
-## Stack
-
-- **Kotlin** + Montoya API
-- **Ktor** embedded HTTP server (Netty)
-- **kotlinx.serialization** for JSON
-- **Gradle** with Shadow plugin for fat JAR
-- **MockK** for testing
-
-## Project Structure
-
-```
-src/main/kotlin/com/burprest/
-    BurpRestExtension.kt        # Extension entry point
-    server/
-        RestServer.kt            # Ktor server setup + middleware
-    routes/
-        HealthRoutes.kt          # /health, /version, /docs
-        ProxyRoutes.kt           # /proxy/*
-        RepeaterRoutes.kt        # /repeater/*
-        CollaboratorRoutes.kt    # /collaborator/*
-        IntruderRoutes.kt        # /intruder/*
-        ScannerRoutes.kt         # /scanner/*
-        TargetRoutes.kt          # /target/*
-        DecoderRoutes.kt         # /decoder/*
-        ConfigRoutes.kt          # /config/*, /extensions
-    services/
-        ProxyService.kt          # Montoya Proxy API wrapper
-        RepeaterService.kt       # HTTP request sending
-        CollaboratorService.kt   # Collaborator client management
-        IntruderService.kt       # Attack management + quick fuzz
-        ScannerService.kt        # Scan management
-        TargetService.kt         # Sitemap + scope
-        DecoderService.kt        # Encode/decode/hash (no Burp needed)
-        ConfigService.kt         # Config + extensions info
-    models/
-        ApiResponse.kt           # Standard response wrapper
-        ProxyModels.kt           # Proxy DTOs
-        RepeaterModels.kt        # Repeater DTOs
-        CollaboratorModels.kt    # Collaborator DTOs
-        IntruderModels.kt        # Intruder DTOs
-        ScannerModels.kt         # Scanner DTOs
-        TargetModels.kt          # Target DTOs
-        DecoderModels.kt         # Decoder DTOs
-        SequencerModels.kt       # Sequencer DTOs
-        OtherModels.kt           # Logger, Search, Config, Health DTOs
-
-src/test/kotlin/com/burprest/
-    services/
-        DecoderServiceTest.kt    # 14 tests
-        ProxyServiceTest.kt      # 7 tests
-    routes/
-        HealthRoutesTest.kt      # 3 tests
-        DecoderRoutesTest.kt     # 4 tests
-```
-
-## Development
+## Build & test
 
 ```bash
-# Compile
-./gradlew compileKotlin
-
-# Run tests
-./gradlew test
-
-# Build fat JAR
-./gradlew shadowJar
-
-# Output: build/libs/burp-rest-extension.jar (15MB)
+./gradlew shadowJar          # extension fat JAR
+cd bp && uv run pytest -q && uv run mypy && uv run ruff check   # bp: 112 tests, typed, lint
 ```
 
 ## License

@@ -1,1 +1,0 @@
-[     647ms] [WARNING] Error with Feature-Policy header: Some features are specified in both Feature-Policy and Permissions-Policy header: camera, microphone, geolocation, payment. Values defined in Permissions-Policy header will be used. @ :0

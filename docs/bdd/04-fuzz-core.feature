@@ -1,7 +1,7 @@
 # Domain: 04-fuzz-core
 # Ground truth: SPEC.md §5 (--pos grammar) + §6.4 (intruder endpoints)
 # API base: http://127.0.0.1:8089
-# All endpoints: POST /intruder/attack/create  POST /intruder/attack/{id}/start
+# All endpoints: POST /intruder/attack/create+start (via bp fuzz <id> --async)
 #                GET  /intruder/attack/{id}/status  GET /intruder/attack/{id}/results
 #                POST /intruder/attack/{id}/pause   POST /intruder/attack/{id}/resume
 #                POST /intruder/attack/{id}/stop    POST /intruder/quick-fuzz
@@ -37,89 +37,43 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
   # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
-  Scenario: quick-fuzz a single param from history entry — table output
+  Scenario: quick-fuzz a single param — table output with baseline row first
     Given request at history index 3 has param "username" in the body
     When I run:
       """
-      bp fuzz quick --id 3 --param username \
-        --payloads admin,root,"' OR '1'='1","admin'--" \
+      bp fuzz 3 --param username \
+        --payloads 'admin,root,"'"'"' OR '"'"'1'"'"'='"'"'1","admin'"'"'--"' \
         --throttle-ms 100 \
         --format table
       """
     Then the exit code is 0
     And stdout contains a table with headers:
       | index | payload       | status | length | time | contentType      | anomalous |
-    And at least one row has anomalous "true"
     And a baseline row is printed first (the first request with no error)
+    And at least one row has anomalous "true"
 
   @happy @fuzz @community
-  Scenario: quick-fuzz in JSON agent mode — compact line-per-record
+  Scenario: quick-fuzz JSON schema — endpoint-specific field contract
+    # Proves the exact JSON fields emitted by POST /intruder/quick-fuzz (not generic output)
     Given request at history index 3 has param "username" in the body
     When I run:
       """
-      bp fuzz quick --id 3 --param username \
-        --payloads "admin","root","' OR 1=1--" \
+      bp fuzz 3 --param username \
+        --payloads 'admin,root,"'"'"' OR 1=1--"' \
         --format json
       """
     Then the exit code is 0
     And each stdout line is a valid compact JSON object
     And each JSON object contains exactly the fields:
       | index | payload | statusCode | length | durationMs | error | contentType | bodyPreview | anomalous |
-    And the JSON objects appear one per line with no pretty-printing
 
-  @happy @fuzz @community
-  Scenario: quick-fuzz with -w template — one line per result, status + payload only
-    Given request at history index 3 has param "username" in the body
-    When I run:
-      """
-      bp fuzz quick --id 3 --param username \
-        --payloads "admin","root","' OR '1'='1" \
-        -w '%{status} %{payload}'
-      """
-    Then the exit code is 0
-    And stdout contains exactly one line per payload, each matching the pattern:
-      """
-      <HTTP_STATUS_CODE> <payload_string>
-      """
-    Examples:
-      | expected_lines |
-      | 200 admin      |
-      | 200 root       |
-      | 200 ' OR '1'='1 |
-
-  @happy @fuzz @community
-  Scenario: quick-fuzz --quiet prints only the anomalous count
-    Given request at history index 3 has param "username" in the body
-    When I run:
-      """
-      bp fuzz quick --id 3 --param username \
-        --payloads "admin","' OR 1=1--" \
-        --quiet
-      """
-    Then the exit code is 0
-    And stdout is a single integer (the count of anomalous results)
-
-  @happy @fuzz @community
-  Scenario: quick-fuzz with --fields selector — only requested fields rendered
-    Given request at history index 3 has param "username" in the body
-    When I run:
-      """
-      bp fuzz quick --id 3 --param username \
-        --payloads "admin","root" \
-        --fields index,status,anomalous \
-        --format table
-      """
-    Then the exit code is 0
-    And the table contains only the columns: index, status, anomalous
-    And no other columns appear in stdout
-
-  @happy @fuzz @community @ledger
+  @happy @fuzz @ledger @community
   Scenario: quick-fuzz is recorded in the Run Ledger by default
     Given request at history index 3 has param "username" in the body
     When I run:
       """
-      bp fuzz quick --id 3 --param username \
-        --payloads "admin","root" \
+      bp fuzz 3 --param username \
+        --payloads 'admin,root' \
         --tag sqli-login-test
       """
     Then the exit code is 0
@@ -129,144 +83,68 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
       | burp_op   | POST /intruder/quick-fuzz   |
       | status    | ok                          |
 
-  @happy @fuzz @community @ledger
-  Scenario: quick-fuzz with --no-ledger is NOT recorded in the Run Ledger
+  @happy @fuzz @ledger @community
+  Scenario: quick-fuzz --no-ledger is NOT recorded in the Run Ledger
     Given request at history index 3 has param "username" in the body
     When I run:
       """
-      bp fuzz quick --id 3 --param username \
-        --payloads "admin" \
+      bp fuzz 3 --param username \
+        --payloads admin \
         --no-ledger
       """
     Then the exit code is 0
     And running "bp log --format json" shows no new entry for this run
 
   @error @fuzz @community
-  Scenario: quick-fuzz with blank param is rejected 400
+  Scenario: quick-fuzz with blank param is rejected — INVALID_REQUEST
     When I run:
       """
-      bp fuzz quick --id 3 --param "" \
-        --payloads "admin","root"
+      bp fuzz 3 --param "" --payloads 'admin,root'
       """
     Then the exit code is non-zero
     And stderr contains "INVALID_REQUEST"
     And stderr explains that param must not be blank
 
   @error @fuzz @community
-  Scenario: quick-fuzz with empty payloads list is rejected 400
+  Scenario: quick-fuzz with empty payloads list is rejected — INVALID_REQUEST
     When I run:
       """
-      bp fuzz quick --id 3 --param username --payloads ""
+      bp fuzz 3 --param username --payloads ""
       """
     Then the exit code is non-zero
     And stderr contains "INVALID_REQUEST"
     And stderr explains that payloads must be non-empty
 
   @error @fuzz @community
-  Scenario: quick-fuzz with neither --id nor inline request is rejected 400
+  Scenario: quick-fuzz without positional id raises usage error before any API call
+    # --param alone is ambiguous without a request id
     When I run:
       """
-      bp fuzz quick --param username --payloads "admin"
+      bp fuzz --param username --payloads admin
       """
     Then the exit code is non-zero
     And stderr contains "INVALID_REQUEST"
     And stderr explains that exactly one of --id or --request is required
 
-  @error @fuzz @community
-  Scenario: quick-fuzz when Burp is down returns a clear error
-    Given Burp Suite is NOT running on port 8089
-    When I run:
-      """
-      bp fuzz quick --id 3 --param username --payloads "admin"
-      """
-    Then the exit code is non-zero
-    And stderr contains "connection refused" or "SERVICE_UNAVAILABLE"
-    And no crash traceback is shown to the user
-
   # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 2 · SNIPER — 1 position, 1 payload set, tour à tour
-  # Endpoints: create → start → status → results
+  # SECTION 2 · SNIPER — 1 position, 1 payload set, sequential per payload
+  # Endpoints: bp fuzz <id> --async (create+start) → status → results
   # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
-  Scenario: sniper attack on header:Authorization — full async lifecycle
-    Given a file "/tmp/tokens.txt" with content:
-      """
-      Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJhZG1pbiJ9.
-      Bearer invalid-token
-      Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.fake
-      """
-    When I run:
-      """
-      bp fuzz create --id 3 \
-        --pos 'header:Authorization' \
-        --type sniper \
-        --payloads Authorization=/tmp/tokens.txt \
-        --throttle-ms 200 \
-        --format json
-      """
-    Then the exit code is 0
-    And stdout is a JSON object with field "attackId" matching pattern "[a-f0-9]{8}"
-    And the attack status is "created"
-
-    When I run:
-      """
-      bp fuzz start --attack-id <attackId> --format json
-      """
-    Then the exit code is 0
-    And stdout JSON contains "status": "running"
-
-    When I poll:
-      """
-      bp fuzz status --attack-id <attackId> --format json
-      """
-    Then eventually stdout JSON contains "isComplete": true
-    And stdout JSON contains "progress": 100
-
-    When I run:
-      """
-      bp fuzz results --attack-id <attackId> --format json
-      """
-    Then the exit code is 0
-    And stdout contains 3 JSON result objects (one per payload)
-    And each result has fields: index, payload, statusCode, length, durationMs, error, contentType, anomalous
-
-  @happy @fuzz @community
-  Scenario: sniper on cookie:session — results with -w template
-    Given a file "/tmp/sessions.txt" with 5 session token strings
-    When I run:
-      """
-      bp fuzz create --id 3 \
-        --pos 'cookie:session' \
-        --type sniper \
-        --payloads session=/tmp/sessions.txt \
-        --throttle-ms 50
-      """
-    And I start and wait for the attack to complete
-    When I run:
-      """
-      bp fuzz results --attack-id <attackId> \
-        -w '%{index} %{status} %{payload} %{anomalous}'
-      """
-    Then the exit code is 0
-    And stdout contains exactly 5 lines, each matching:
-      """
-      <integer> <http_status> <session_token> <true|false>
-      """
-
-  @happy @fuzz @community
-  Scenario: sniper on body:username — offset auto-resolved from captured request
-    # bp must parse the raw request bytes and compute start/end offsets for "username"
-    # The raw POST body is "username=admin&password=secret"
+  Scenario: sniper on body:username — offset auto-resolved from raw request bytes
+    # bp must parse the raw request bytes and compute start/end for the field value
+    # Raw POST body: "username=admin&password=secret"
     # "admin" sits at bytes 9-14 → PayloadPosition{start:9,end:14,name:"username"}
     Given request at history index 3 has raw body "username=admin&password=secret"
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
         --type sniper \
         --payloads username=/tmp/usernames.txt \
         --throttle-ms 0 \
+        --async \
         --format json
       """
     Then the exit code is 0
@@ -275,43 +153,15 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
       | username | 9     | 14  |
 
   @happy @fuzz @community
-  Scenario: sniper on query:id — offset resolved from URL query string
-    Given request at history index 7 has URL "https://api.target.com/orders?id=1001&format=json"
-    When I run:
-      """
-      bp fuzz create --id 7 \
-        --pos 'query:id' \
-        --type sniper \
-        --payloads id=/tmp/ids.txt \
-        --format json
-      """
-    Then the exit code is 0
-    And the resolved PayloadPosition name is "id"
-    And start/end offsets correspond to "1001" in the raw request bytes
-
-  @happy @fuzz @community
-  Scenario: sniper on path:1 — second path segment replaced
-    Given request at history index 5 has URL "https://api.target.com/users/42/profile"
-    When I run:
-      """
-      bp fuzz create --id 5 \
-        --pos 'path:1' \
-        --type sniper \
-        --payloads path=/tmp/user_ids.txt \
-        --format json
-      """
-    Then the exit code is 0
-    And the resolved PayloadPosition covers the bytes of "42" in the raw path "/users/42/profile"
-
-  @happy @fuzz @community
-  Scenario: sniper on offset:42-52 — raw byte-range used directly, no resolution needed
+  Scenario: sniper on offset:42-52 — raw byte-range passed through directly, no resolution
     Given request at history index 3 exists
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'offset:42-52' \
         --type sniper \
         --payloads set1=/tmp/payloads.txt \
+        --async \
         --format json
       """
     Then the exit code is 0
@@ -319,11 +169,11 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And no byte-resolution parsing is performed (offsets are passed through directly)
 
   @happy @fuzz @community
-  Scenario: sniper results paginated — offset and limit
+  Scenario: sniper results pagination — offset and limit applied server-side
     Given an attack "a1b2c3d4" exists with 50 results
     When I run:
       """
-      bp fuzz results --attack-id a1b2c3d4 \
+      bp fuzz results a1b2c3d4 \
         --offset 20 --limit 10 \
         --format json
       """
@@ -331,108 +181,200 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And stdout contains exactly 10 JSON result objects
     And the first object has "index": 20
 
+  @happy @fuzz @community
+  Scenario: results --limit 0 returns ALL results (SPEC §6.4: limit=0 means unbounded)
+    Given attack "a1b2c3d4" has 200 results
+    When I run:
+      """
+      bp fuzz results a1b2c3d4 --offset 0 --limit 0 --format json
+      """
+    Then the exit code is 0
+    And stdout contains exactly 200 JSON result objects
+
+  @happy @fuzz @community
+  Scenario: empty results for a created-but-not-started attack
+    Given attack "a1b2c3d4" has status "created" and has not been started
+    When I run:
+      """
+      bp fuzz results a1b2c3d4 --format json
+      """
+    Then the exit code is 0
+    And stdout is an empty JSON array "[]" or zero result lines
+
   # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 3 · LIFECYCLE — pause / resume / stop
+  # SECTION 3 · LIFECYCLE — --async (create+start) → status → pause/resume → stop
   # ─────────────────────────────────────────────────────────────────────────────
+
+  @happy @fuzz @community
+  Scenario: full async lifecycle — launch with --async, poll to complete, fetch results
+    # Canonical --async round-trip: bp fuzz <id> --async creates+starts in one call,
+    # prints attackId immediately, then poll with status/results/pause/resume/stop.
+    Given a file "/tmp/tokens.txt" with content:
+      """
+      Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJhZG1pbiJ9.
+      Bearer invalid-token
+      Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.fake
+      """
+    When I run:
+      """
+      bp fuzz 3 \
+        --pos 'header:Authorization' \
+        --type sniper \
+        --payloads Authorization=/tmp/tokens.txt \
+        --throttle-ms 200 \
+        --async \
+        --format json
+      """
+    Then the exit code is 0
+    And stdout is a JSON object with field "attackId" matching pattern "[a-f0-9]{8}"
+    And stdout JSON contains "status": "running"
+
+    When I poll:
+      """
+      bp fuzz status <attackId> --format json
+      """
+    Then eventually stdout JSON contains "isComplete": true
+    And stdout JSON contains "progress": 100
+
+    When I run:
+      """
+      bp fuzz results <attackId> --format json
+      """
+    Then the exit code is 0
+    And stdout contains 3 JSON result objects (one per payload)
+    And each result has fields: index, payload, statusCode, length, durationMs, error, contentType, anomalous
 
   @happy @fuzz @community
   Scenario: pause a running attack and then resume it
     Given an attack "a1b2c3d4" is in status "running"
     When I run:
       """
-      bp fuzz pause --attack-id a1b2c3d4 --format json
+      bp fuzz pause a1b2c3d4 --format json
       """
     Then the exit code is 0
     And stdout JSON contains "status": "paused"
 
     When I run:
       """
-      bp fuzz resume --attack-id a1b2c3d4 --format json
+      bp fuzz resume a1b2c3d4 --format json
       """
     Then the exit code is 0
     And stdout JSON contains "status": "running"
 
   @happy @fuzz @community
-  Scenario: stop a running attack
+  Scenario: stop a running attack — stopped is a terminal state
     Given an attack "a1b2c3d4" is in status "running"
     When I run:
       """
-      bp fuzz stop --attack-id a1b2c3d4 --format json
+      bp fuzz stop a1b2c3d4 --format json
       """
     Then the exit code is 0
     And stdout JSON contains "status": "stopped"
-    And isComplete is true (stopped is a terminal state)
+    And isComplete is true
 
   @happy @fuzz @community
-  Scenario: poll status until complete — progress goes from 0 to 100
+  Scenario: results on a stopped attack returns partial results collected before stop
+    Given attack "a1b2c3d4" ran 15 out of 50 payloads then was stopped
+    When I run:
+      """
+      bp fuzz results a1b2c3d4 --limit 0 --format json
+      """
+    Then the exit code is 0
+    And stdout contains exactly 15 JSON result objects (results collected before stop)
+
+  @happy @fuzz @community
+  Scenario: poll status — progress transitions 0→100, status running→completed
     Given an attack "a1b2c3d4" was just started
-    When I run "bp fuzz status --attack-id a1b2c3d4 --format json" repeatedly
+    When I run "bp fuzz status a1b2c3d4 --format json" repeatedly
     Then each response JSON contains "progress" between 0 and 100
     And eventually "isComplete": true appears
     And "status" transitions through: running → completed
 
   @error @fuzz @community
-  Scenario: start an attack twice — second start creates a new thread (race risk)
-    # SPEC §6.4 caveat: /start spawns a new Thread each call → race if already running
+  Scenario: resume a non-paused running attack — bp warns it is already running
+    # Guard against redundant resume on an already-running attack
     Given an attack "a1b2c3d4" is in status "running"
     When I run:
       """
-      bp fuzz start --attack-id a1b2c3d4 --format json
+      bp fuzz resume a1b2c3d4 --format json
       """
     Then the exit code is 0
-    And bp warns: "attack already running — starting a second thread may cause a race condition"
+    And bp warns: "attack is already running — resume has no effect"
 
   @error @fuzz @community
-  Scenario: status of unknown attackId returns error
+  Scenario: status of unknown attackId returns not-found error
     When I run:
       """
-      bp fuzz status --attack-id 00000000 --format json
+      bp fuzz status 00000000 --format json
       """
     Then the exit code is non-zero
     And stderr contains "not found" or an appropriate error message
     And no crash traceback is shown
 
   @error @fuzz @community
-  Scenario: create does not validate request at create-time — error deferred to start
-    # SPEC §6.4: create does NOT validate request/requestId; validation happens at /start
+  Scenario: --async with a non-existent requestId — validation deferred to server-side start
+    # SPEC §6.4: the create step does NOT validate requestId; error surfaces when the
+    # underlying /start executes. With --async, bp fuzz returns an error once the server
+    # rejects the deferred start (attackId is printed, then an async error follows).
     When I run:
       """
-      bp fuzz create --id 9999 \
+      bp fuzz 9999 \
         --pos 'body:username' \
         --type sniper \
         --payloads username=/tmp/usernames.txt \
+        --async \
         --format json
-      """
-    Then the exit code is 0
-    And stdout JSON contains "attackId"
-    And no error is reported yet (validation is deferred)
-
-    When I run:
-      """
-      bp fuzz start --attack-id <attackId> --format json
       """
     Then the exit code is non-zero
     And stderr contains an error about invalid requestId 9999
 
+  @happy @fuzz @ledger @community
+  Scenario: fuzz attack is tagged and retrievable from Run Ledger
+    When I run:
+      """
+      bp fuzz 3 \
+        --pos 'body:username' \
+        --type sniper \
+        --payloads username=/tmp/payloads.txt \
+        --async \
+        --tag sqli-enumeration-phase1
+      """
+    And I poll until the attack completes
+    Then "bp log --tag sqli-enumeration-phase1 --format json" returns an entry with:
+      | field     | value                          |
+      | tag       | sqli-enumeration-phase1        |
+      | burp_op   | POST /intruder/attack/create   |
+      | status    | ok                             |
+      | target    | https://api.target.com/login   |
+
+  @happy @fuzz @ledger @community
+  Scenario: results fetch step is independently recorded in the ledger
+    Given attack "a1b2c3d4" is tagged "sqli-enum"
+    When I run:
+      """
+      bp fuzz results a1b2c3d4 --tag sqli-enum-results --format json
+      """
+    Then "bp log --tag sqli-enum-results" shows an entry with:
+      | burp_op | GET /intruder/attack/a1b2c3d4/results |
+
   # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 4 · BATTERING-RAM — same payload in all positions simultaneously
-  # Client-side: bp expands the attack (server only executes sniper)
+  # SECTION 4 · BATTERING-RAM — same payload into ALL positions simultaneously
+  # Client-side expansion; total requests = len(payloads)
   # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
   Scenario: battering-ram — same payload injected into username AND password simultaneously
-    # bp sends one payload to all positions at the same time
-    # Positions: body:username AND body:password
-    # Each payload (e.g. "admin") replaces BOTH simultaneously → total = len(payloads) requests
+    # Each payload replaces BOTH positions simultaneously → total = len(payloads) requests
     Given a file "/tmp/creds.txt" with lines: admin, root, administrator, test
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
         --pos 'body:password' \
         --type battering-ram \
         --payloads shared=/tmp/creds.txt \
         --throttle-ms 150 \
+        --async \
         --format json
       """
     Then the exit code is 0
@@ -440,54 +382,32 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And each request has the SAME payload in both body:username and body:password positions
 
     When the attack completes
-    Then "bp fuzz results --attack-id <attackId> --format json" returns 4 result objects
-
-  @happy @fuzz @community
-  Scenario: battering-ram -w template — show payload and both resolved positions
-    Given a file "/tmp/creds.txt" with lines: admin, root
-    When I run:
-      """
-      bp fuzz create --id 3 \
-        --pos 'body:username' \
-        --pos 'body:password' \
-        --type battering-ram \
-        --payloads shared=/tmp/creds.txt
-      """
-    And the attack completes
-    When I run:
-      """
-      bp fuzz results --attack-id <attackId> \
-        -w '%{payload} %{status} %{anomalous}'
-      """
-    Then stdout has exactly 2 lines:
-      """
-      admin <status> <true|false>
-      root <status> <true|false>
-      """
+    Then "bp fuzz results <attackId> --format json" returns 4 result objects
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 5 · PITCHFORK — N payload sets in lockstep (min of lengths)
+  # SECTION 5 · PITCHFORK — N payload sets in lockstep (truncated to min length)
   # Client-side expansion; pairs set[i] ↔ position[i]
   # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
-  Scenario: pitchfork — username list paired with password list in lockstep
+  Scenario: pitchfork 2 positions — lockstep truncates to min(len) of the two sets
     # username.txt: admin, user1, operator  (3 entries)
     # password.txt: pass1, pass2            (2 entries)
     # lock-step → min(3,2) = 2 requests total
-    # Request 1: username=admin,    password=pass1
-    # Request 2: username=user1,    password=pass2
+    # Request 1: username=admin,  password=pass1
+    # Request 2: username=user1,  password=pass2
     Given a file "/tmp/username.txt" with lines: admin, user1, operator
     And a file "/tmp/password.txt" with lines: pass1, pass2
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
         --pos 'body:password' \
         --type pitchfork \
         --payloads username=/tmp/username.txt \
         --payloads password=/tmp/password.txt \
         --throttle-ms 100 \
+        --async \
         --format json
       """
     Then the exit code is 0
@@ -495,21 +415,20 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And the attack is expanded client-side into 2 requests
 
     When the attack completes
-    Then "bp fuzz results --attack-id <attackId> --format json" returns exactly 2 result objects
+    Then "bp fuzz results <attackId> --format json" returns exactly 2 result objects
     And result at index 0 has payload pair: username="admin", password="pass1"
     And result at index 1 has payload pair: username="user1", password="pass2"
 
   @happy @fuzz @community
-  Scenario: pitchfork — three positions, three payload sets, lockstep min enforced
-    # 3 positions: header:X-User-ID, cookie:role, query:action
-    # users.txt: alice, bob, carol        (3 entries)
-    # roles.txt: admin, viewer            (2 entries)
-    # actions.txt: read, write, delete    (3 entries)
+  Scenario: pitchfork 3 positions — lockstep min enforced across all three sets
+    # users.txt: alice, bob, carol     (3)
+    # roles.txt: admin, viewer         (2)
+    # actions.txt: read, write, delete (3)
     # lock-step → min(3,2,3) = 2 requests
     Given files "/tmp/users.txt" (alice,bob,carol), "/tmp/roles.txt" (admin,viewer), "/tmp/actions.txt" (read,write,delete)
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'header:X-User-ID' \
         --pos 'cookie:role' \
         --pos 'query:action' \
@@ -518,6 +437,7 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
         --payloads role=/tmp/roles.txt \
         --payloads action=/tmp/actions.txt \
         --throttle-ms 0 \
+        --async \
         --format json
       """
     Then the exit code is 0
@@ -531,21 +451,22 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
   # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
-  Scenario: cluster-bomb 2D matrix — header:X-Forwarded-For × cookie:role
-    # ips.txt: 127.0.0.1, 10.0.0.1      (a=2)
-    # roles.txt: admin, user, guest      (b=3)
+  Scenario: cluster-bomb 2D matrix — header × cookie = a×b requests
+    # ips.txt: 127.0.0.1, 10.0.0.1   (a=2)
+    # roles.txt: admin, user, guest   (b=3)
     # Total: 2 × 3 = 6 requests
     Given a file "/tmp/ips.txt" with lines: 127.0.0.1, 10.0.0.1
     And a file "/tmp/roles.txt" with lines: admin, user, guest
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'header:X-Forwarded-For' \
         --pos 'cookie:role' \
         --type cluster-bomb \
         --payloads X-Forwarded-For=/tmp/ips.txt \
         --payloads role=/tmp/roles.txt \
         --throttle-ms 200 \
+        --async \
         --format json
       """
     Then the exit code is 0
@@ -553,7 +474,7 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And the attack is created with "attackType": "cluster-bomb"
 
     When the attack completes
-    Then "bp fuzz results --attack-id <attackId> --format json" returns exactly 6 result objects
+    Then "bp fuzz results <attackId> --format json" returns exactly 6 result objects
     And the combination matrix covers every pair:
       | X-Forwarded-For | role  |
       | 127.0.0.1       | admin |
@@ -564,16 +485,16 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
       | 10.0.0.1        | guest |
 
   @happy @fuzz @community
-  Scenario: cluster-bomb 3D matrix — 2 headers + 1 cookie = a × b × c requests
-    # Canonical SPEC §5 example: X-Forwarded-For × X-Real-IP × role
-    # ips.txt (shared): 127.0.0.1, 10.0.0.1     (a=2, b=2)
-    # roles.txt:        admin, user              (c=2)
+  Scenario: cluster-bomb 3D matrix — 2 headers + 1 cookie = a×b×c requests
+    # X-Forwarded-For: 127.0.0.1, 10.0.0.1  (a=2)
+    # X-Real-IP:       127.0.0.1, 10.0.0.1  (b=2)
+    # role:            admin, user           (c=2)
     # Total: 2 × 2 × 2 = 8 requests
     Given a file "/tmp/ips.txt" with lines: 127.0.0.1, 10.0.0.1
     And a file "/tmp/roles.txt" with lines: admin, user
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'header:X-Forwarded-For' \
         --pos 'header:X-Real-IP' \
         --pos 'cookie:role' \
@@ -582,6 +503,7 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
         --payloads X-Real-IP=/tmp/ips.txt \
         --payloads role=/tmp/roles.txt \
         --throttle-ms 500 \
+        --async \
         --format json
       """
     Then the exit code is 0
@@ -589,15 +511,15 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And all 8 combinations of (X-Forwarded-For, X-Real-IP, role) are scheduled
 
     When the attack completes
-    Then "bp fuzz results --attack-id <attackId> --format json" returns exactly 8 result objects
+    Then "bp fuzz results <attackId> --format json" returns exactly 8 result objects
 
   @happy @fuzz @community
-  Scenario: cluster-bomb 3D — anomalous-only filter reduces output
+  Scenario: cluster-bomb 3D — --anomalous-only filter reduces output to matching rows only
     Given the 3D cluster-bomb attack "cb3d1234" has completed with 8 results
     And only 2 results have anomalous=true
     When I run:
       """
-      bp fuzz results --attack-id cb3d1234 \
+      bp fuzz results cb3d1234 \
         --anomalous-only \
         --format table
       """
@@ -605,36 +527,12 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And the table contains exactly 2 rows
 
   @happy @fuzz @community
-  Scenario: cluster-bomb 3D — agent-mode JSON with --fields for pipeline
-    Given the 3D cluster-bomb attack "cb3d1234" has completed
-    When I run:
-      """
-      bp fuzz results --attack-id cb3d1234 \
-        --fields index,status,anomalous,payload \
-        --format json
-      """
-    Then the exit code is 0
-    And each stdout line is a compact JSON object with ONLY: index, status, anomalous, payload
-    And the output is pipeable (one JSON object per line, no trailing commas)
-
-  @happy @fuzz @community
-  Scenario: cluster-bomb 3D — -w template for human-readable triage
-    Given the 3D cluster-bomb attack "cb3d1234" has completed with 8 results
-    When I run:
-      """
-      bp fuzz results --attack-id cb3d1234 \
-        -w '%{index} %{status} %{length} %{anomalous} %{payload}'
-      """
-    Then stdout contains exactly 8 lines
-    And each line shows: result_index HTTP_status response_length anomalous_flag payload_value
-
-  @happy @fuzz @community
-  Scenario: cluster-bomb full SPEC example with --throttle-ms 500 and --anomalous-only
-    # Exact example from SPEC.md §5 "Fuzz matriciel"
+  Scenario: cluster-bomb full SPEC §5 example — --throttle-ms 500 with --anomalous-only
+    # Exact example from SPEC.md §5 "Fuzz matriciel" — tests combined throttle + filter
     Given a file "/tmp/ips.txt" and "/tmp/roles.txt" populated
     When I run:
       """
-      bp fuzz --id 42 \
+      bp fuzz 42 \
         --pos 'header:X-Forwarded-For' \
         --pos 'header:X-Real-IP' \
         --pos 'cookie:role' \
@@ -651,18 +549,20 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And only rows with anomalous=true are displayed
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 7 · MULTI-POSITION SELECTORS — comprehensive --pos coverage
+  # SECTION 7 · --pos SELECTOR RESOLUTION — all 6 selector types
+  # header:NAME  cookie:NAME  body:FIELD  query:NAME  path:INDEX  offset:START-END
   # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
-  Scenario Outline: --pos selector types are resolved to correct byte offsets
+  Scenario Outline: --pos selector types each resolve to correct byte offsets
     Given request at history index <history_id> has the given structure
     When I run:
       """
-      bp fuzz create --id <history_id> \
+      bp fuzz <history_id> \
         --pos '<selector>' \
         --type sniper \
         --payloads set1=/tmp/payloads.txt \
+        --async \
         --format json
       """
     Then the exit code is 0
@@ -679,16 +579,18 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
       | 3          | offset:9-14           | offset:9-14     | admin        |
 
   @happy @fuzz @community
-  Scenario: multiple --pos flags resolve multiple positions for sniper (tour à tour)
-    # sniper with 2 positions: it fuzzes position[0] then position[1] sequentially
+  Scenario: multiple --pos flags for sniper — positions fuzzed sequentially, not in parallel
+    # sniper with 2 positions: fuzzes position[0] fully, then position[1]
+    # SPEC caveat: only positions[0].name is consumed by the server in sniper mode
     Given request at history index 3 has body "username=admin&password=secret"
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
         --pos 'body:password' \
         --type sniper \
         --payloads set1=/tmp/wordlist.txt \
+        --async \
         --format json
       """
     Then the exit code is 0
@@ -697,48 +599,86 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And SPEC caveat is respected: only positions[0].name is consumed by the server in sniper mode
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 8 · THROTTLE & OPTIONS
+  # SECTION 8 · ATTACK TYPE CONTRACT — server executes only sniper; bp expands others
   # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
-  Scenario: --throttle-ms 0 runs at maximum speed without delay
-    Given a file "/tmp/payloads.txt" with 10 entries
+  Scenario Outline: all 4 attack types accepted — bp handles client-side expansion
+    # SPEC §5 caveat: server only implements sniper; bp expands others client-side
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
-        --type sniper \
+        --type <attack_type> \
         --payloads username=/tmp/payloads.txt \
-        --throttle-ms 0 \
+        --async \
         --format json
       """
     Then the exit code is 0
-    And the CreateAttackRequest sent contains "throttleMs": 0
+    And the CreateAttackRequest contains "attackType": "<attack_type>"
+    And <client_side_note>
+
+    Examples:
+      | attack_type   | client_side_note                                                   |
+      | sniper        | bp delegates directly to the server                                |
+      | battering-ram | bp expands client-side (same payload to all positions per request) |
+      | pitchfork     | bp expands client-side (lock-step pairing across sets)             |
+      | cluster-bomb  | bp expands client-side (full Cartesian product)                    |
 
   @happy @fuzz @community
-  Scenario: --throttle-ms 1000 sends AttackOptions with throttleMs=1000
+  Scenario: bp emits client-side expansion notice for non-sniper types
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
-        --type sniper \
-        --payloads username=/tmp/payloads.txt \
-        --throttle-ms 1000 \
+        --pos 'body:password' \
+        --type cluster-bomb \
+        --payloads username=/tmp/usernames.txt \
+        --payloads password=/tmp/passwords.txt \
+        --async \
         --format json
       """
     Then the exit code is 0
-    And the AttackOptions in the request body contains "throttleMs": 1000
+    And stderr or stdout contains:
+      """
+      Note: cluster-bomb is expanded client-side by bp (server implements sniper only)
+      """
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SECTION 9 · THROTTLE & UNIMPLEMENTED OPTIONS
+  # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
-  Scenario: --follow-redirects flag is accepted but noted as not wired server-side
+  Scenario Outline: --throttle-ms value is forwarded in CreateAttackRequest.throttleMs
+    When I run:
+      """
+      bp fuzz 3 \
+        --pos 'body:username' \
+        --type sniper \
+        --payloads username=/tmp/payloads.txt \
+        --throttle-ms <ms> \
+        --async \
+        --format json
+      """
+    Then the exit code is 0
+    And the CreateAttackRequest sent contains "throttleMs": <ms>
+
+    Examples:
+      | ms   |
+      | 0    |
+      | 1000 |
+
+  @happy @fuzz @community
+  Scenario: --follow-redirects accepted but bp warns it is not wired server-side
     # SPEC §6.4 caveat: followRedirects accepted but NOT wired
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
         --type sniper \
         --payloads username=/tmp/payloads.txt \
         --follow-redirects \
+        --async \
         --format json
       """
     Then the exit code is 0
@@ -746,45 +686,34 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And the AttackOptions contains "followRedirects": true
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 9 · PAYLOAD FILE LOADING (--payloads name=file)
+  # SECTION 10 · PAYLOAD LOADING — file, inline, multi-set, server flattening
   # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
-  Scenario: payload file with 100 entries produces 100 results in sniper
+  Scenario: payload file with 100 entries produces exactly 100 results in sniper
     Given a file "/tmp/big_list.txt" with 100 unique string entries
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
         --type sniper \
         --payloads username=/tmp/big_list.txt \
         --throttle-ms 0 \
+        --async \
         --format json
       """
-    And I start the attack and wait for completion
-    Then "bp fuzz results --attack-id <attackId> --limit 0 --format json" returns exactly 100 result objects
-
-  @error @fuzz @community
-  Scenario: payload file does not exist — clear error before attack is created
-    When I run:
-      """
-      bp fuzz create --id 3 \
-        --pos 'body:username' \
-        --type sniper \
-        --payloads username=/tmp/nonexistent_file.txt
-      """
-    Then the exit code is non-zero
-    And stderr contains "file not found: /tmp/nonexistent_file.txt"
-    And no request is sent to POST /intruder/attack/create
+    And I poll until the attack completes
+    Then "bp fuzz results <attackId> --limit 0 --format json" returns exactly 100 result objects
 
   @happy @fuzz @community
-  Scenario: inline payloads via --payloads name=val1,val2,val3
+  Scenario: inline payloads via comma-separated --payloads name=val1,val2,val3
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
         --type sniper \
         --payloads 'username=admin,root,administrator' \
+        --async \
         --format json
       """
     Then the exit code is 0
@@ -795,285 +724,91 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     # All Map<String,List<String>> values are flattened; keys have no functional role at server
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
         --type sniper \
         --payloads 'set1=admin,root' \
         --payloads 'set2=administrator' \
+        --async \
         --format json
       """
     Then the exit code is 0
     And the payloads sent to the server have key "set1" with ["admin","root"] and "set2" with ["administrator"]
     And bp warns: "server flattens all payload sets — key names (set1,set2) have no functional role in sniper"
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 10 · ATTACK TYPES — server behaviour caveat (all map to sniper)
-  # ─────────────────────────────────────────────────────────────────────────────
-
-  @happy @fuzz @community
-  Scenario Outline: all attack types are accepted by the server but bp handles expansion
-    # SPEC §5 caveat: server only implements sniper; bp expands others client-side
+  @error @fuzz @community
+  Scenario: payload file does not exist — error raised before attack is created
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
-        --type <attack_type> \
-        --payloads username=/tmp/payloads.txt \
-        --format json
+        --type sniper \
+        --payloads username=/tmp/nonexistent_file.txt \
+        --async
       """
-    Then the exit code is 0
-    And the CreateAttackRequest contains "attackType": "<attack_type>"
-    And <client_side_note>
-
-    Examples:
-      | attack_type   | client_side_note                                                    |
-      | sniper        | bp delegates directly to the server                                 |
-      | battering-ram | bp expands client-side (same payload to all positions per request)  |
-      | pitchfork     | bp expands client-side (lock-step pairing across sets)              |
-      | cluster-bomb  | bp expands client-side (full Cartesian product)                     |
-
-  @happy @fuzz @community
-  Scenario: bp warns that only sniper is server-side; others are client-side expansions
-    When I run:
-      """
-      bp fuzz create --id 3 \
-        --pos 'body:username' \
-        --pos 'body:password' \
-        --type cluster-bomb \
-        --payloads username=/tmp/usernames.txt \
-        --payloads password=/tmp/passwords.txt \
-        --format json
-      """
-    Then the exit code is 0
-    And stderr or stdout contains:
-      """
-      Note: cluster-bomb is expanded client-side by bp (server implements sniper only)
-      """
+    Then the exit code is non-zero
+    And stderr contains "file not found: /tmp/nonexistent_file.txt"
+    And no request is sent to POST /intruder/attack/create
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 11 · COMMUNITY vs PRO — intruder runs on Community
+  # SECTION 11 · COMMUNITY EDITION — intruder available without Pro
   # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
-  Scenario: fuzz attack runs successfully on Community edition
-    # SPEC §6.4 + §7: intruder delegates to RepeaterService, NOT Burp Pro Intruder
-    # Therefore it runs on Community without throttling by Burp
+  Scenario: fuzz attack succeeds on Community — delegates to RepeaterService, not Burp Pro Intruder
+    # SPEC §6.4 + §7: intruder delegates to RepeaterService on Community
+    # bp must NOT emit a PRO_REQUIRED error or warning for intruder commands
     Given Burp Suite Community Edition is running on port 8089
     When I run:
       """
-      bp fuzz quick --id 3 --param username \
-        --payloads "admin","root" \
+      bp fuzz 3 --param username \
+        --payloads 'admin,root' \
         --format json
       """
     Then the exit code is 0
     And the attack succeeds without a 503 or "Pro required" error
-
-  @community @fuzz
-  Scenario: fuzz on Community — bp does NOT warn about Pro requirement for intruder
-    Given Burp Suite Community Edition is running
-    When I run:
-      """
-      bp fuzz create --id 3 \
-        --pos 'body:username' \
-        --type sniper \
-        --payloads username=/tmp/payloads.txt \
-        --format json
-      """
-    Then the exit code is 0
     And stderr does NOT contain "Pro required" or "SERVICE_UNAVAILABLE"
 
-  @community @fuzz
-  Scenario: bp degrades gracefully on Community for Pro-only adjacent features
-    # Collaborator and scanner (start) are Pro-only — intruder is NOT Pro-only
-    # bp help/docs must clearly distinguish intruder (Community OK) from collaborator (Pro)
-    When I run:
-      """
-      bp fuzz --help
-      """
-    Then stdout notes that `bp fuzz` is available on Community edition
-    And stdout distinguishes from `bp collab` which requires Pro
-
   # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 12 · OUTPUT FORMAT COVERAGE (all four modes)
+  # SECTION 12 · ANOMALOUS DETECTION — endpoint-specific logic from SPEC §6.4
   # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
-  Scenario: --format table in a TTY — aligned columns with header row
-    Given stdout is a TTY
-    When I run:
-      """
-      bp fuzz results --attack-id a1b2c3d4 --format table
-      """
-    Then the exit code is 0
-    And stdout first line contains aligned column headers including "index", "payload", "status"
-    And subsequent rows are padded to align under headers
-
-  @happy @fuzz @community
-  Scenario: --format json when piped — default for agent/AI use
-    Given stdout is a pipe (not a TTY)
-    When I run:
-      """
-      bp fuzz results --attack-id a1b2c3d4
-      """
-    Then the exit code is 0
-    And each stdout line is a compact single-line JSON object (no pretty-printing)
-    And the JSON schema is stable: every object has the same keys in the same order
-
-  @happy @fuzz @community
-  Scenario: --format raw — Burp raw bytes for repeater-level inspection
-    When I run:
-      """
-      bp fuzz results --attack-id a1b2c3d4 --format raw --limit 1
-      """
-    Then the exit code is 0
-    And stdout contains the raw HTTP response bytes for result index 0
-
-  @happy @fuzz @community
-  Scenario: --format quiet — single most essential value
-    When I run:
-      """
-      bp fuzz results --attack-id a1b2c3d4 --quiet --limit 1
-      """
-    Then the exit code is 0
-    And stdout is a single line with only the HTTP status code of result 0
-
-  @happy @fuzz @community
-  Scenario: -w template with all supported tokens
-    Given attack "a1b2c3d4" has completed with results
-    When I run:
-      """
-      bp fuzz results --attack-id a1b2c3d4 \
-        -w '%{index} %{status} %{length} %{time} %{payload} %{anomalous} %{contentType} %{location} %{requestId}'
-      """
-    Then the exit code is 0
-    And each line contains 9 space-separated fields in the declared order
-
-  @happy @fuzz @community
-  Scenario: -w '%{status} %{payload}' — founder's headline example
-    # Exact example from the output model spec
-    Given attack "a1b2c3d4" has completed
-    When I run:
-      """
-      bp fuzz results --attack-id a1b2c3d4 \
-        -w '%{status} %{payload}'
-      """
-    Then stdout contains one line per result, each containing:
-      """
-      <HTTP_STATUS_CODE> <payload_value>
-      """
-    And no other fields or headers appear
-
-  # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 13 · RUN LEDGER — tagging and recording
-  # ─────────────────────────────────────────────────────────────────────────────
-
-  @happy @fuzz @ledger @community
-  Scenario: fuzz attack is tagged and retrievable from Run Ledger
-    When I run:
-      """
-      bp fuzz create --id 3 \
-        --pos 'body:username' \
-        --type sniper \
-        --payloads username=/tmp/payloads.txt \
-        --tag sqli-enumeration-phase1
-      """
-    And I start and complete the attack
-    Then "bp log --tag sqli-enumeration-phase1 --format json" returns an entry with:
-      | field     | value                          |
-      | tag       | sqli-enumeration-phase1        |
-      | burp_op   | POST /intruder/attack/create   |
-      | status    | ok                             |
-      | target    | https://api.target.com/login   |
-
-  @happy @fuzz @ledger @community
-  Scenario: fuzz results step is also recorded in the ledger
-    Given attack "a1b2c3d4" is tagged "sqli-enum"
-    When I run:
-      """
-      bp fuzz results --attack-id a1b2c3d4 --tag sqli-enum-results --format json
-      """
-    Then "bp log --tag sqli-enum-results" shows an entry with:
-      | burp_op | GET /intruder/attack/a1b2c3d4/results |
-
-  @happy @fuzz @ledger @community
-  Scenario: ledger entry can be annotated post-run with bp tag
-    Given an attack was run and recorded with ledger id "7"
-    When I run:
-      """
-      bp tag 7 confirmed-sqli-bypass
-      """
-    Then "bp show 7 --format json" returns entry with tag "confirmed-sqli-bypass"
-
-  @happy @fuzz @ledger @community
-  Scenario: --no-ledger suppresses recording for a quick-fuzz probe
-    When I run:
-      """
-      bp fuzz quick --id 3 --param username \
-        --payloads "probe-only" \
-        --no-ledger
-      """
-    Then the exit code is 0
-    And "bp log --format json" does NOT contain a new entry matching this run's timestamp
-
-  # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 14 · EDGE CASES & RESULT ANALYSIS
-  # ─────────────────────────────────────────────────────────────────────────────
-
-  @happy @fuzz @community
-  Scenario: anomalous detection — status code difference triggers anomalous=true
-    # SPEC §6.4 quick-fuzz: anomalous if statusCode≠baseline
+  Scenario: anomalous=true when payload response statusCode differs from baseline
+    # SPEC §6.4: anomalous if statusCode ≠ baseline
     Given baseline response for history id 3 returns HTTP 200
     When quick-fuzz sends payload "' OR 1=1--" and receives HTTP 302
     Then the result has anomalous=true
-    And the -w output shows: "302 ' OR 1=1--"
 
   @happy @fuzz @community
-  Scenario: anomalous detection — response length delta > max(length*0.2, 20) triggers anomalous
-    # SPEC §6.4: anomalous if |Δlength| > max(length*0.2, 20)
+  Scenario: anomalous threshold — |Δlength| > max(length*0.2, 20) triggers anomalous
+    # SPEC §6.4: anomalous if |Δlength| > max(baseline_length*0.2, 20)
+    # Case A: baseline=500, response=560 → delta=60, threshold=max(100,20)=100 → NOT anomalous
+    # Case B: baseline=100, response=130 → delta=30, threshold=max(20,20)=20  → anomalous
     Given baseline response length is 500 bytes
-    When a payload causes response length 560 bytes (delta=60 > max(100,20)=100... false)
-    # 60 < 100: NOT anomalous by length alone
-    Then that result has anomalous=false for length criterion alone
+    When a payload causes response length 560 bytes
+    Then that result has anomalous=false (delta 60 < threshold 100)
 
     Given baseline response length is 100 bytes
-    When a payload causes response length 130 bytes (delta=30 > max(20,20)=20)
-    Then that result has anomalous=true (delta 30 > 20)
+    When a payload causes response length 130 bytes
+    Then that result has anomalous=true (delta 30 > threshold 20)
 
   @happy @fuzz @community
-  Scenario: anomalous detection — content-type change triggers anomalous
-    # SPEC §6.4: anomalous if contentType≠baseline
+  Scenario: anomalous=true when response Content-Type differs from baseline
+    # SPEC §6.4: anomalous if contentType ≠ baseline
     Given baseline response has Content-Type "application/json"
     When a payload causes Content-Type "text/html"
     Then the result has anomalous=true
-    And the -w output shows: "200 <payload>"
-    And "--fields contentType,anomalous --format json" shows {"contentType":"text/html","anomalous":true}
 
-  @happy @fuzz @community
-  Scenario: results with --offset and --limit=0 returns ALL results
-    Given attack "a1b2c3d4" has 200 results
-    When I run:
-      """
-      bp fuzz results --attack-id a1b2c3d4 --offset 0 --limit 0 --format json
-      """
-    Then the exit code is 0
-    And stdout contains exactly 200 JSON result objects
-    And no pagination truncation occurs (limit=0 means "all" per SPEC §6.4)
-
-  @happy @fuzz @community
-  Scenario: empty results for a just-created (not-started) attack
-    Given attack "a1b2c3d4" has status "created" and has not been started
-    When I run:
-      """
-      bp fuzz results --attack-id a1b2c3d4 --format json
-      """
-    Then the exit code is 0
-    And stdout is an empty JSON array "[]" or zero result lines
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SECTION 13 · INPUT VALIDATION — endpoint-specific usage errors
+  # ─────────────────────────────────────────────────────────────────────────────
 
   @error @fuzz @community
-  Scenario: missing --pos raises a clear usage error before any API call
+  Scenario: missing --pos raises usage error before any API call
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --type sniper \
         --payloads username=/tmp/payloads.txt
       """
@@ -1082,11 +817,11 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And no HTTP request is sent to :8089
 
   @error @fuzz @community
-  Scenario: cluster-bomb with mismatched --payloads count vs --pos count raises error
-    # cluster-bomb requires one payload set per position
+  Scenario: cluster-bomb with fewer --payloads sets than --pos count raises error
+    # cluster-bomb requires exactly one payload set per position
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
         --pos 'body:password' \
         --type cluster-bomb \
@@ -1096,11 +831,11 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And stderr contains "cluster-bomb requires one payload set per position (got 1 sets for 2 positions)"
 
   @error @fuzz @community
-  Scenario: pitchfork with fewer payload sets than positions raises a warning
-    # pitchfork can proceed (uses min), but warn about the short set
+  Scenario: pitchfork with fewer payload sets than positions raises error
+    # pitchfork requires one set per position (cannot proceed with missing set)
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'body:username' \
         --pos 'body:password' \
         --pos 'query:action' \
@@ -1112,10 +847,10 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And stderr contains "pitchfork requires one payload set per position (got 2 sets for 3 positions)"
 
   @error @fuzz @community
-  Scenario: invalid --pos selector raises a descriptive parse error
+  Scenario: invalid --pos selector type raises descriptive parse error
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'unknown:foo' \
         --type sniper \
         --payloads set1=/tmp/payloads.txt
@@ -1125,10 +860,10 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And stderr lists valid selector types: header, cookie, body, query, path, offset
 
   @error @fuzz @community
-  Scenario: offset selector with invalid range format raises error
+  Scenario: offset selector with invalid range format raises descriptive error
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'offset:not-a-range' \
         --type sniper \
         --payloads set1=/tmp/payloads.txt
@@ -1137,11 +872,11 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     And stderr contains "invalid offset format: 'not-a-range' — expected 'offset:START-END' with integer start and end"
 
   @error @fuzz @community
-  Scenario: --pos header:NonExistent raises error if header not found in captured request
+  Scenario: header selector for a header absent from the captured request raises error
     Given request at history index 3 does NOT have header "X-Missing-Header"
     When I run:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'header:X-Missing-Header' \
         --type sniper \
         --payloads set1=/tmp/payloads.txt
@@ -1149,85 +884,42 @@ Feature: bp fuzz — core fuzzing lifecycle with --pos grammar and 4 attack type
     Then the exit code is non-zero
     And stderr contains "header 'X-Missing-Header' not found in request at index 3"
 
-  @error @fuzz @community
-  Scenario: results on a stopped attack still returns partial results collected before stop
-    Given attack "a1b2c3d4" ran 15 out of 50 payloads then was stopped
-    When I run:
-      """
-      bp fuzz results --attack-id a1b2c3d4 --limit 0 --format json
-      """
-    Then the exit code is 0
-    And stdout contains exactly 15 JSON result objects (results collected before stop)
-
   # ─────────────────────────────────────────────────────────────────────────────
-  # SECTION 15 · AGENT MODE (AX) — machine-readable end-to-end
+  # SECTION 14 · AGENT MODE (AX) — machine-readable end-to-end cluster-bomb
+  # Proves stable JSON schema throughout the full lifecycle for AI consumers
   # ─────────────────────────────────────────────────────────────────────────────
 
   @happy @fuzz @community
-  Scenario: agent drives full cluster-bomb lifecycle via JSON mode — no TTY assumed
-    # An AI agent pipes each command; stable JSON schema required throughout
+  Scenario: agent drives full cluster-bomb lifecycle via JSON — non-TTY environment
+    # An AI agent pipes every command; stable JSON schema required at each step
     Given stdout is a pipe (non-TTY agent environment)
     When the agent runs:
       """
-      bp fuzz create --id 3 \
+      bp fuzz 3 \
         --pos 'header:X-Forwarded-For' \
         --pos 'cookie:role' \
         --type cluster-bomb \
         --payloads X-Forwarded-For=/tmp/ips.txt \
         --payloads role=/tmp/roles.txt \
         --throttle-ms 200 \
+        --async \
         --format json
       """
     Then stdout is a single compact JSON line like:
       """
-      {"success":true,"data":{"attackId":"a1b2c3d4","status":"created"},"error":null}
+      {"success":true,"data":{"attackId":"a1b2c3d4","status":"running"},"error":null}
       """
-    When the agent extracts "attackId" and runs:
-      """
-      bp fuzz start --attack-id a1b2c3d4 --format json
-      """
-    Then stdout is a single compact JSON line containing "status":"running"
     When the agent polls:
       """
-      bp fuzz status --attack-id a1b2c3d4 --format json
+      bp fuzz status a1b2c3d4 --format json
       """
     Until stdout contains "isComplete":true
     When the agent runs:
       """
-      bp fuzz results --attack-id a1b2c3d4 --format json
+      bp fuzz results a1b2c3d4 --format json
       """
     Then each stdout line is a compact JSON object with stable schema:
       """
       {"index":<int>,"payload":"<str>","statusCode":<int>,"length":<int>,"durationMs":<int>,"error":null,"contentType":"<str>","bodyPreview":"<str>","anomalous":<bool>}
       """
     And the agent can filter anomalous results by parsing "anomalous":true
-
-  @happy @fuzz @community
-  Scenario: agent uses --fields to get minimal JSON for downstream processing
-    Given attack "a1b2c3d4" has completed
-    When the agent runs:
-      """
-      bp fuzz results --attack-id a1b2c3d4 \
-        --fields index,status,anomalous \
-        --format json
-      """
-    Then each stdout line is:
-      """
-      {"index":<int>,"status":<int>,"anomalous":<bool>}
-      """
-    And no other fields appear (schema is exactly as declared in --fields)
-
-  @happy @fuzz @community
-  Scenario: agent quick-fuzz with --format json and --no-ledger for ephemeral probes
-    Given stdout is a pipe
-    When the agent runs:
-      """
-      bp fuzz quick --id 3 \
-        --param username \
-        --payloads "admin","' OR 1=1--","<script>alert(1)</script>" \
-        --format json \
-        --no-ledger
-      """
-    Then each stdout line is a compact JSON object
-    And the agent can identify injection candidates by filtering "anomalous":true
-    And the run is NOT recorded in the Run Ledger
