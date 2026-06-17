@@ -1,32 +1,32 @@
-# `bp` — Persistance (Run Ledger) & Configuration (spec)
+# `bp` — Persistence (Run Ledger) & Configuration (spec)
 
-> **DRAFT — spec, pas code.** Réf : `ADR-0005` (Ledger ON par défaut, SQLite `~/.bp/`),
-> `ADR-0007` (sécurité configurable, non bloquante), `OUTPUT.md` (`bp log`), gaps research
-> (resp_sha256 / jamais de body brut, redaction I7).
+> **DRAFT — spec, not code.** Ref: `ADR-0005` (Ledger ON by default, SQLite `~/.bp/`),
+> `ADR-0007` (configurable security guards, non-blocking), `OUTPUT.md` (`bp log`), gaps research
+> (resp_sha256 / never raw bodies, redaction I7).
 
-## 1 · Run Ledger — schéma SQLite (`~/.bp/ledger.db`)
+## 1 · Run Ledger — SQLite schema (`~/.bp/ledger.db`)
 
-ON par défaut (`--no-ledger` pour opt-out par op). **On stocke des empreintes + refs, PAS les
-bodies bruts** par défaut (concept bb-mini : pas de fuite, ledger léger).
+ON by default (`--no-ledger` to opt out per operation). **We store fingerprints + refs, NOT raw
+bodies** by default (bb-mini concept: no leakage, lightweight ledger).
 
 ```sql
 CREATE TABLE ops (
-  id          TEXT PRIMARY KEY,   -- court trié temporellement (ex. ULID)
+  id          TEXT PRIMARY KEY,   -- short, temporally sortable (e.g. ULID)
   ts          TEXT NOT NULL,      -- ISO-8601 UTC
-  command     TEXT,               -- ligne bp (redactée si redact=on)
-  burp_op     TEXT,               -- ex. "POST /intruder/attack/create"
-  target      TEXT,               -- host/url visé
-  program     TEXT,               -- nullable (workspace futur, ADR-0007)
+  command     TEXT,               -- bp command line (redacted if redact=on)
+  burp_op     TEXT,               -- e.g. "POST /intruder/attack/create"
+  target      TEXT,               -- targeted host/url
+  program     TEXT,               -- nullable (future workspace, ADR-0007)
   tag         TEXT,               -- nullable (--tag)
   status      TEXT NOT NULL,      -- ok | error | refused
   exit_code   INTEGER,
-  req_sha256  TEXT,               -- empreinte requête envoyée
-  resp_sha256 TEXT,               -- empreinte réponse
+  req_sha256  TEXT,               -- fingerprint of sent request
+  resp_sha256 TEXT,               -- fingerprint of response
   resp_status INTEGER,
   resp_len    INTEGER,
   duration_ms INTEGER,
   error_code  TEXT,               -- nullable (CONNECTION_REFUSED, PRO_REQUIRED, …)
-  req_ref     TEXT,               -- nullable: id history Burp ou chemin blob si bodies stockés
+  req_ref     TEXT,               -- nullable: Burp history id or blob path if bodies are stored
   resp_ref    TEXT
 );
 CREATE INDEX idx_ops_ts     ON ops(ts);
@@ -34,50 +34,50 @@ CREATE INDEX idx_ops_target ON ops(target);
 CREATE INDEX idx_ops_tag    ON ops(tag);
 ```
 
-- **Bodies** : non stockés par défaut. `--ledger-bodies` (opt-in) → écrit dans `~/.bp/blobs/<sha256>`, **après redaction** si `redact=on`.
-- `bp log [--since T --until T --target H --tag X --status S --limit N]` → SELECT sur `ops`.
-- `bp tag <opId> <name>` → UPDATE tag. (Surface query = `OUTPUT.md`.)
-- **Intégrité** (concept bb-certify, futur) : `bp certify` pourrait produire un manifeste SHA-256 — hors driver, noté roadmap.
+- **Bodies**: not stored by default. `--ledger-bodies` (opt-in) → writes to `~/.bp/blobs/<sha256>`, **after redaction** if `redact=on`.
+- `bp log [--since T --until T --target H --tag X --status S --limit N]` → SELECT on `ops`.
+- `bp tag <opId> <name>` → UPDATE tag. (Query surface = `OUTPUT.md`.)
+- **Integrity** (bb-certify concept, future): `bp certify` could produce a SHA-256 manifest — out of driver scope, noted on roadmap.
 
-## 2 · Configuration — fichier + env + flags
+## 2 · Configuration — file + env + flags
 
-**Précédence (le plus fort gagne) :** flag CLI > variable d'env > `~/.bp/config` > défaut intégré.
+**Precedence (strongest wins):** CLI flag > env variable > `~/.bp/config` > built-in default.
 
-**`~/.bp/config`** — format `KEY=value` (sourceable en sh, simple) :
+**`~/.bp/config`** — `KEY=value` format (sh-sourceable, simple):
 ```
 burp_rest_url   = http://127.0.0.1:8089
-enforce_scope   = warn        # warn | block | off   (défaut warn — JAMAIS imposé, ADR-0007)
-envelope        = off         # on | off  (enveloppe anti-injection des réponses surfacées, I6)
-redact          = on          # on | off  (masque JWT/cookies/Authorization/clés dans log+sortie, I7)
+enforce_scope   = warn        # warn | block | off   (default warn — NEVER enforced, ADR-0007)
+envelope        = off         # on | off  (anti-injection envelope around surfaced response bodies, I6)
+redact          = on          # on | off  (masks JWT/cookies/Authorization/keys in log+output, I7)
 ledger          = on          # on | off
 throttle_ms     = 0
-anomaly_pct     = 5           # seuil anomalie longueur (cf. ALGORITHMS A2)
-agent_mode      = auto        # auto | on | off (NDJSON pour agent IA, cf. OUTPUT.md)
+anomaly_pct     = 5           # length anomaly threshold (see ALGORITHMS A2)
+agent_mode      = auto        # auto | on | off (NDJSON for AI agent, see OUTPUT.md)
 ```
 
-**Variables d'env** (préfixe `BP_`, + `BURP_REST_URL` historique) :
-`BURP_REST_URL`, `BP_ENFORCE_SCOPE`, `BP_ENVELOPE`, `BP_REDACT`, `BP_NO_LEDGER`, `BP_THROTTLE_MS`, `BP_AGENT` (cf. OUTPUT.md).
+**Env variables** (prefix `BP_`, plus legacy `BURP_REST_URL`):
+`BURP_REST_URL`, `BP_ENFORCE_SCOPE`, `BP_ENVELOPE`, `BP_REDACT`, `BP_NO_LEDGER`, `BP_THROTTLE_MS`, `BP_AGENT` (see OUTPUT.md).
 
-**Flags équivalents** (par commande) : `--url`, `--enforce-scope`, `--envelope`, `--redact`, `--no-ledger`, `--throttle-ms`. Chaque flag override env+config pour cette invocation.
+**Equivalent flags** (per command): `--url`, `--enforce-scope`, `--envelope`, `--redact`, `--no-ledger`, `--throttle-ms`. Each flag overrides env+config for that invocation.
 
-**Sémantique des gardes (non bloquantes par défaut — ADR-0007) :**
-- `enforce_scope=warn` (défaut) : tire quand même, **avertit** si le target est hors-scope.
-- `enforce_scope=block` : refuse (exit 4) si hors-scope. **Opt-in**, jamais imposé.
-- `enforce_scope=off` : aucune vérif.
-- `envelope=on` : enveloppe `<BP_TARGET_DATA>…</BP_TARGET_DATA>` autour des bodies cible surfacés (anti-injection de l'agent). Défaut off (configurable).
-- `redact=on` (défaut) : masque les secrets connus avant log/affichage — protège **tes propres** secrets, downside faible.
+**Guard semantics (non-blocking by default — ADR-0007):**
+- `enforce_scope=warn` (default): fires anyway, **warns** if the target is out of scope.
+- `enforce_scope=block`: refuses (exit 4) if out of scope. **Opt-in**, never enforced by default.
+- `enforce_scope=off`: no scope check.
+- `envelope=on`: wraps `<BP_TARGET_DATA>…</BP_TARGET_DATA>` around surfaced target bodies (agent anti-injection). Default off (configurable).
+- `redact=on` (default): masks known secrets before logging/display — protects **your own** secrets, low downside.
 
-## 3 · Cas de test RED (TDD)
+## 3 · RED test cases (TDD)
 
-- Précédence : flag > env > config > défaut (4 niveaux, un test chacun).
-- `enforce_scope=warn` + target hors-scope → tire **et** émet le warning (n'échoue pas).
-- `enforce_scope=block` + hors-scope → exit 4, ne tire pas.
-- `redact=on` → un `Authorization: Bearer X` n'apparaît ni dans `ops.command` ni dans la sortie.
-- Ledger : une op `ok` insère 1 ligne avec `resp_sha256` non nul et **aucun body brut** stocké (sans `--ledger-bodies`).
-- `--no-ledger` → 0 ligne insérée.
+- Precedence: flag > env > config > default (4 levels, one test each).
+- `enforce_scope=warn` + out-of-scope target → fires **and** emits the warning (does not fail).
+- `enforce_scope=block` + out of scope → exit 4, does not fire.
+- `redact=on` → an `Authorization: Bearer X` does not appear in `ops.command` or in the output.
+- Ledger: an `ok` op inserts 1 row with a non-null `resp_sha256` and **no raw body** stored (without `--ledger-bodies`).
+- `--no-ledger` → 0 rows inserted.
 
-## Statut
+## Status
 
-`[HIGH][BLOCKS:high]` — complète la surface *driver* (persistance + config). Avec
-`A1/A2` (ALGORITHMS) + ce doc, le **driver est spec-complet**. Restent 2 décisions **toi** :
-langage d'implémentation + validation `SPEC §14`. **Zéro code avant GO.**
+`[HIGH][BLOCKS:high]` — completes the *driver* surface (persistence + config). Together with
+`A1/A2` (ALGORITHMS) and this doc, the **driver is spec-complete**. Two decisions remain **yours**:
+implementation language + `SPEC §14` validation. **Zero code before GO.**

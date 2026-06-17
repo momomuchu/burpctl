@@ -1,60 +1,60 @@
-# Recherche — Concepts métier bug bounty vs spec `bp`
+# Research — Bug bounty business concepts vs `bp` spec
 
-> **DRAFT — contexte de spec, pas d'exécution.** Synthèse manuelle (l'API a planté les lanes
-> de synthèse auto ; les 3 lanes de recherche réussies — hunt-lifecycle, scope, bb-mini — sont
-> la source). Sourcé (HackerOne/Bugcrowd/Intigriti/PortSwigger/VRT + repo bug-bounty-mini).
+> **DRAFT — spec context, not execution.** Manual synthesis (the API crashed the auto-synthesis
+> lanes; the 3 successful research lanes — hunt-lifecycle, scope, bb-mini — are the source).
+> Sourced from HackerOne/Bugcrowd/Intigriti/PortSwigger/VRT + repo bug-bounty-mini.
 
-## Constat
+## Finding
 
-`bp` colle fidèlement aux **69 endpoints** mais **modélise l'API, pas le métier**. Un workflow
-bug bounty réel s'appuie sur des **concepts** que la spec ne porte pas. **35 gaps** :
+`bp` maps faithfully to the **69 endpoints** but **models the API, not the business domain**. A
+real bug bounty workflow relies on **concepts** that the spec does not carry. **35 gaps**:
 **5 CRITICAL · 14 HIGH · 10 MEDIUM · 6 LOW**.
 
-## Les couches de concepts manquantes
+## Missing concept layers
 
-| Couche | Concepts | Dans bp ? |
+| Layer | Concepts | In bp? |
 |---|---|---|
-| **Programme** | program (plateforme, payout, safe-harbor, ROE), état | ❌ aucun contexte programme |
-| **Scope-ROE** | scope typé, wildcard `*.x`, OOS first-class, import plateforme, **garde pré-tir** | ⚠️ liste Burp brute seulement |
-| **Inventaire** | asset/host, endpoint, param — avec **état testé/pas-testé** persistant | ❌ trafic-driven, sans état |
-| **Finding** | promotion signal→candidat→confirmé→reporté, notes, confidence | ❌ juste `anomalous:Boolean` |
-| **Evidence/Report** | PoC, repro, curl, diff, package par-finding ; `bp report`, état soumission | ❌ par-op, pas par-finding |
-| **Classification** | CWE / VRT / OWASP / CVSS, sévérité | ❌ aucun modèle |
-| **Session/Auth** | **multi-contexte** (user A vs B) pour IDOR/privesc/auth-bypass | ❌ singleton |
-| **OOB/OAST** | corrélation payload↔interaction collaborator | ⚠️ poll sans corrélation |
-| **Floor bb-mini** | I6 enveloppe anti-injection, I7 redaction secrets, sole-egress, cert SHA-256 | ❌ aucun |
+| **Program** | program (platform, payout, safe-harbor, ROE), state | ❌ no program context |
+| **Scope-ROE** | typed scope, wildcard `*.x`, OOS first-class, platform import, **pre-fire guard** | ⚠️ raw Burp list only |
+| **Inventory** | asset/host, endpoint, param — with persistent **tested/untested state** | ❌ traffic-driven, stateless |
+| **Finding** | promotion signal→candidate→confirmed→reported, notes, confidence | ❌ just `anomalous:Boolean` |
+| **Evidence/Report** | PoC, repro, curl, diff, per-finding package; `bp report`, submission state | ❌ per-op, not per-finding |
+| **Classification** | CWE / VRT / OWASP / CVSS, severity | ❌ no model |
+| **Session/Auth** | **multi-context** (user A vs B) for IDOR/privesc/auth-bypass | ❌ singleton |
+| **OOB/OAST** | payload↔collaborator interaction correlation | ⚠️ poll without correlation |
+| **Floor bb-mini** | I6 anti-injection envelope, I7 secret redaction, sole-egress, cert SHA-256 | ❌ none |
 
-## Les 5 CRITICAL
+## The 5 CRITICALs
 
-1. **Scope = garde pré-tir absent** — rien ne dit que `bp fuzz/send/scan/check` vérifie le scope **avant** de tirer (anti-OOS, lié I6/G006).
-2. **Wildcard suffix-match** — sémantique `*.example.com` non spécifiée (le piège que bb-fetch a dû corriger).
-3. **Scope ≠ programme** — modélisé comme liste Burp, pas comme ROE liée à un programme.
-4. **Candidate Finding** — aucune entité « finding » ni cycle de vie.
-5. **Session/Auth singleton** — pas de multi-contexte pour le test d'access-control.
+1. **Scope = missing pre-fire guard** — nothing specifies that `bp fuzz/send/scan/check` checks scope **before** firing (anti-OOS, related to I6/G006).
+2. **Wildcard suffix-match** — `*.example.com` semantics unspecified (the trap that bb-fetch had to fix).
+3. **Scope ≠ program** — modeled as a Burp list, not as ROE tied to a program.
+4. **Candidate Finding** — no "finding" entity or lifecycle.
+5. **Session/Auth singleton** — no multi-context for access-control testing.
 
-## Gaps mappés par tier de produit
+## Gaps mapped by product tier
 
-> Chaque gap = quel **tier** l'absorbe. La décision = jusqu'où va `bp`.
+> Each gap = which **tier** absorbs it. The decision = how far `bp` goes.
 
-**T2 · Floor sécurité (les SAFETY/scope) :**
-- `[C]` Scope garde pré-tir · `[C]` Wildcard suffix-match · `[C]` Scope-ROE programme-lié
-- `[H]` I6 enveloppe anti-injection · `[H]` I7 redaction secrets · `[H]` requests log resp_sha256 (jamais body brut)
-- `[H]` Scope typé + métadonnées par-asset · `[H]` Import scope Intigriti/HackerOne · `[H]` In-mem vs UI divergence
-- `[C]` Session/Auth multi-contexte · `[M]` sole-egress · `[M]` CIDR · `[M]` path-scope · `[M]` preflight/authz gate
+**T2 · Security floor (SAFETY/scope items):**
+- `[C]` Scope pre-fire guard · `[C]` Wildcard suffix-match · `[C]` Scope-ROE program-linked
+- `[H]` I6 anti-injection envelope · `[H]` I7 secret redaction · `[H]` requests log resp_sha256 (never raw body)
+- `[H]` Typed scope + per-asset metadata · `[H]` Intigriti/HackerOne scope import · `[H]` In-mem vs UI divergence
+- `[C]` Session/Auth multi-context · `[M]` sole-egress · `[M]` CIDR · `[M]` path-scope · `[M]` preflight/authz gate
 
-**T3 · Workspace de hunt (la WORKFLOW value, en plus de T2) :**
-- `[C]` Candidate Finding + cycle · `[H]` Evidence/PoC par-finding · `[H]` Report/submission + état
-- `[H]` Asset inventory · `[H]` Endpoint inventory (état testé) · `[H]` OOB corrélation
-- `[M]` Param discovery · `[M]` Vuln-class CWE/VRT · `[M]` Impact/CVSS · `[M]` certification · `[M]` maturity · `[M]` observabilité query
-- `[L]` dedup · `[L]` report-lifecycle · `[L]` audit-log · `[L]` asset-types non-web
+**T3 · Hunt workspace (WORKFLOW value, on top of T2):**
+- `[C]` Candidate Finding + lifecycle · `[H]` Evidence/PoC per-finding · `[H]` Report/submission + state
+- `[H]` Asset inventory · `[H]` Endpoint inventory (tested state) · `[H]` OOB correlation
+- `[M]` Param discovery · `[M]` Vuln-class CWE/VRT · `[M]` Impact/CVSS · `[M]` certification · `[M]` maturity · `[M]` observability query
+- `[L]` dedup · `[L]` report-lifecycle · `[L]` audit-log · `[L]` non-web asset types
 
-## Le fork (décision founder)
+## The fork (founder decision)
 
-- **T1 · Driver pur** — spec actuelle ; les concepts vivent ailleurs (bug-bounty-mini). Risque : pas safe/utile seul.
-- **T2 · Driver + floor sécurité** — le minimum *responsable* : scope-garde, wildcards, I6/I7, multi-session. Workspace = roadmap.
-- **T3 · Workspace complet** — tout : program/inventaire/finding/evidence/report. La vision, mais ×3-4 la surface.
+- **T1 · Pure driver** — current spec; concepts live elsewhere (bug-bounty-mini). Risk: not safe/useful on its own.
+- **T2 · Driver + security floor** — the *responsible* minimum: scope-guard, wildcards, I6/I7, multi-session. Workspace = roadmap.
+- **T3 · Full workspace** — everything: program/inventory/finding/evidence/report. The vision, but ×3-4 the surface area.
 
-## Incomplet (à cause de l'outage API)
+## Incomplete (due to API outage)
 
-- Lane **burp-workflow** (stratégie de fuzz par classe de bug, match-replace, chaînage) — non capturée. Re-tentable quand l'API est stable.
-- **Critique de complétude** — non passée. Catégorie possiblement non couverte : recon/asset-discovery (volontairement hors Burp), program-rules/rate-limit.
+- **burp-workflow** lane (fuzz strategy by bug class, match-replace, chaining) — not captured. Retryable when the API is stable.
+- **Completeness critique** — not run. Possibly uncovered categories: recon/asset-discovery (intentionally outside Burp), program-rules/rate-limit.

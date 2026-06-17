@@ -1,44 +1,44 @@
-# `bp` — Canonical CLI Grammar (contrat)
+# `bp` — Canonical CLI Grammar (contract)
 
-> **DRAFT — proposed, à valider.** Source de vérité unique de la surface de commande.
-> Tout scénario BDD doit s'y conformer. Résout les divergences détectées à l'audit
-> (`--id` vs `--request-id`, `bp fuzz` vs `bp intruder`, `--url` vs positionnel).
-> Voir aussi : `SPEC.md` (API), `OUTPUT.md` (formats de sortie).
+> **DRAFT — proposed, to be validated.** Single source of truth for the command surface.
+> All BDD scenarios must conform to it. Resolves divergences detected during the audit
+> (`--id` vs `--request-id`, `bp fuzz` vs `bp intruder`, `--url` vs positional).
+> See also: `SPEC.md` (API), `OUTPUT.md` (output formats).
 
-## Principe
+## Principle
 
-`bp <command> [subject] [flags]` — **POSIX sh**, ultra-court.
-- **Sujet = argument positionnel** (id, url, data) — rapide à taper.
-- **Modificateurs = flags**.
-- Une seule orthographe par concept. Pas de synonyme.
+`bp <command> [subject] [flags]` — **POSIX sh**, ultra-short.
+- **Subject = positional argument** (id, url, data) — fast to type.
+- **Modifiers = flags**.
+- One spelling per concept. No synonyms.
 
-## Flags globaux (sur TOUTE commande)  `[CRITICAL][BLOCKS:critical]`
+## Global flags (on ALL commands)  `[CRITICAL][BLOCKS:critical]`
 
-| Flag | Rôle | Défaut |
+| Flag | Role | Default |
 |---|---|---|
-| `--url U` | base REST Burp | `$BURP_REST_URL` ou `http://127.0.0.1:8089` |
-| `--format json\|table\|raw\|quiet` | rendu | `table` si TTY, sinon `json` |
-| `--fields a,b,c` | sélection/ordre des colonnes | toutes |
-| `-w, --write-out 'TPL'` | template curl-style (`%{status} %{payload}`…) | — |
-| `--tag NAME` | tague l'op dans le Run Ledger | — |
-| `--no-ledger` | ne pas enregistrer l'op | (enregistre) |
-| `-h, --help` | aide | — |
+| `--url U` | Burp REST base URL | `$BURP_REST_URL` or `http://127.0.0.1:8089` |
+| `--format json\|table\|raw\|quiet` | rendering | `table` if TTY, otherwise `json` |
+| `--fields a,b,c` | column selection/order | all |
+| `-w, --write-out 'TPL'` | curl-style template (`%{status} %{payload}`…) | — |
+| `--tag NAME` | tags the operation in the Run Ledger | — |
+| `--no-ledger` | do not record the operation | (records by default) |
+| `-h, --help` | help | — |
 
-## Grammaire `--pos` (fuzzing)  `[CRITICAL][BLOCKS:high]`
+## `--pos` grammar (fuzzing)  `[CRITICAL][BLOCKS:high]`
 
-Sélecteurs (le CLI résout en byte-offset depuis la requête de base) :
+Selectors (the CLI resolves to byte-offset from the base request):
 
 ```
 header:NAME   cookie:NAME   body:FIELD   query:NAME   path:INDEX   offset:START-END
 ```
 
 `--type` = `sniper` | `battering-ram` | `pitchfork` | `cluster-bomb`
-(`cluster-bomb` = produit cartésien = matrice N-D ; `pitchfork` = lockstep).
-`--payloads NAME=FILE` lie une liste à la position nommée `NAME` (≥1 par position pour pitchfork/cluster-bomb).
+(`cluster-bomb` = Cartesian product = N-D matrix; `pitchfork` = lockstep).
+`--payloads NAME=FILE` binds a list to the named position `NAME` (≥1 per position for pitchfork/cluster-bomb).
 
-## Command map (1 verbe → endpoints réels)
+## Command map (1 verb → actual endpoints)
 
-| Commande | Endpoint(s) REST | Groupe |
+| Command | REST endpoint(s) | Group |
 |---|---|---|
 | `bp health` · `bp version` | `GET /health` · `/version` | health |
 | `bp proxy [--host H --limit N --offset N]` | `GET /proxy/history` | proxy |
@@ -48,9 +48,9 @@ header:NAME   cookie:NAME   body:FIELD   query:NAME   path:INDEX   offset:START-
 | `bp send <id> [--set-header 'N: V']… [--body @f\|STR] [--method M] [--path P]` | `POST /repeater/send` | repeater |
 | `bp send --batch @file` | `POST /repeater/send/batch` | repeater |
 | `bp tab <id>` | `POST /repeater/tab/create` | repeater |
-| `bp fuzz <id> --pos SEL… [--payloads N=F]… [--type T] [--throttle-ms N] [--anomalous-only]` | client-side fire via `POST /repeater/send` (v1: synchrone) | intruder |
-| `bp fuzz <id> --param NAME --payloads @f` | `POST /intruder/quick-fuzz` (raccourci 1-param) | intruder |
-| `bp fuzz status\|results\|pause\|resume\|stop <attackId>` _(v1.1 — lifecycle async, non livré en v1)_ | `/intruder/attack/{id}/*` | intruder |
+| `bp fuzz <id> --pos SEL… [--payloads N=F]… [--type T] [--throttle-ms N] [--anomalous-only]` | client-side fire via `POST /repeater/send` (v1: synchronous) | intruder |
+| `bp fuzz <id> --param NAME --payloads @f` | `POST /intruder/quick-fuzz` (1-param shortcut) | intruder |
+| `bp fuzz status\|results\|pause\|resume\|stop <attackId>` _(v1.1 — async lifecycle, not shipped in v1)_ | `/intruder/attack/{id}/*` | intruder |
 | `bp collab new [--count N]` | `POST /collaborator/generate[/batch]` | collaborator (Pro) |
 | `bp collab poll [id]` | `GET /collaborator/poll[/{id}]` | collaborator (Pro) |
 | `bp scan crawl\|audit\|all <url>` | `POST /scanner/{crawl,audit,crawl-and-audit}` | scanner (Pro) |
@@ -62,20 +62,20 @@ header:NAME   cookie:NAME   body:FIELD   query:NAME   path:INDEX   offset:START-
 | `bp config get\|set project\|user` · `bp ext` | `GET/PUT /config/*` · `GET /extensions` | config |
 | `bp session set\|get\|clear` · `bp session send` · `bp session cookies` | `/session/*` | session |
 | `bp diff A B` · `bp endpoints <data>` | `POST /utils/{diff,extract-endpoints}` | utils |
-| `bp history list [filters]` · `bp history get <id>` · `bp history sitemap` · `bp history replay <id>` · `bp history clear --confirm` | `/history/*` (conditionnel DB) | history |
-| `bp log [filters]` · `bp tag <opId> <name>` | Run Ledger (C4, DB locale `~/.bp/`) | — observabilité |
+| `bp history list [filters]` · `bp history get <id>` · `bp history sitemap` · `bp history replay <id>` · `bp history clear --confirm` | `/history/*` (conditional DB) | history |
+| `bp log [filters]` · `bp tag <opId> <name>` | Run Ledger (C4, local DB `~/.bp/`) | — observability |
 
-## Décisions de nommage (résolvent l'audit)  `[HIGH][BLOCKS:high]`
+## Naming decisions (resolve the audit)  `[HIGH][BLOCKS:high]`
 
-1. **`--id` partout** pour un requestId (jamais `--request-id`).
-2. **`bp fuzz`** = le verbe Intruder unique (jamais `bp intruder`). Lifecycle en sous-commandes `bp fuzz status|results|…`.
-3. **Sujet positionnel** : `bp scope add <url>`, `bp fuzz <id>`, `bp check idor <url>` (jamais `--url` pour le sujet principal). `--url` est réservé au flag global (base REST).
-4. **3 « history » distincts, 3 noms** : `bp proxy` (capture live) · `bp history` (DB serveur /history) · `bp log` (Run Ledger C4, notre observabilité).
-5. **Sortie** : un seul modèle global (§ Flags globaux + `OUTPUT.md`), jamais re-spécifié par endpoint.
+1. **`--id` everywhere** for a requestId (never `--request-id`).
+2. **`bp fuzz`** = the single Intruder verb (never `bp intruder`). Lifecycle as subcommands `bp fuzz status|results|…`.
+3. **Positional subject**: `bp scope add <url>`, `bp fuzz <id>`, `bp check idor <url>` (never `--url` for the primary subject). `--url` is reserved for the global flag (REST base URL).
+4. **3 distinct "history" concepts, 3 names**: `bp proxy` (live capture) · `bp history` (server DB /history) · `bp log` (Run Ledger C4, our observability).
+5. **Output**: a single global model (§ Global flags + `OUTPUT.md`), never re-specified per endpoint.
 
-## Convention de sortie & erreurs (factorisée — anti-Goodhart)  `[HIGH][BLOCKS:high]`
+## Output convention & errors (factored — anti-Goodhart)  `[HIGH][BLOCKS:high]`
 
-- Le **rendu** (json/table/raw/quiet/`-w`/`--fields`) est un **contrat transversal** prouvé **une fois** (`bdd/00-output.feature`), pas par endpoint.
-- Les **erreurs transversales** (Burp injoignable → `CONNECTION_REFUSED`, `--id` invalide, envelope `ApiResponse` dépaquetée, `PRO_REQUIRED` en Community) sont prouvées **une fois** (`bdd/00-common.feature`).
-- Chaque feature d'endpoint ne teste que sa **logique distincte** + son **contrat propre** (pré/post/erreur spécifiques).
-- Codes de sortie : `0` ok · `1` erreur générique · `2` mauvais usage · `3` `CONNECTION_REFUSED` · `4` `PRO_REQUIRED`. Erreurs sur stderr ; stdout reste parsable.
+- **Rendering** (json/table/raw/quiet/`-w`/`--fields`) is a **cross-cutting contract** proved **once** (`bdd/00-output.feature`), not per endpoint.
+- **Cross-cutting errors** (Burp unreachable → `CONNECTION_REFUSED`, invalid `--id`, unpacked `ApiResponse` envelope, `PRO_REQUIRED` on Community) are proved **once** (`bdd/00-common.feature`).
+- Each endpoint feature tests only its **distinct logic** + its **own contract** (specific pre/post/error conditions).
+- Exit codes: `0` ok · `1` generic error · `2` bad usage · `3` `CONNECTION_REFUSED` · `4` `PRO_REQUIRED`. Errors on stderr; stdout remains parsable.
