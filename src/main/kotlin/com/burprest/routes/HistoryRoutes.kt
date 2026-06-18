@@ -13,6 +13,12 @@ fun Route.historyRoutes(historyDao: HistoryDao, sitemapDao: SitemapDao, repeater
     route("/history") {
         get {
             val params = call.request.queryParameters
+            val page = params["page"]?.toIntOrNull() ?: 0
+            val pageSize = params["pageSize"]?.toIntOrNull() ?: 50
+            // Validate before the values reach the SQL LIMIT/OFFSET — a negative page produced a
+            // negative OFFSET and H2 leaked a raw SQLException (with schema internals) to the client.
+            if (page < 0) throw IllegalArgumentException("page must be >= 0")
+            if (pageSize !in 1..1000) throw IllegalArgumentException("pageSize must be between 1 and 1000")
             val filter = HistoryFilter(
                 host = params["host"],
                 method = params["method"],
@@ -21,8 +27,8 @@ fun Route.historyRoutes(historyDao: HistoryDao, sitemapDao: SitemapDao, repeater
                 search = params["search"],
                 since = params["since"],
                 until = params["until"],
-                page = params["page"]?.toIntOrNull() ?: 0,
-                pageSize = params["pageSize"]?.toIntOrNull() ?: 50,
+                page = page,
+                pageSize = pageSize,
             )
             val entries = historyDao.search(filter)
             val total = historyDao.count(filter)
