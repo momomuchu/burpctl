@@ -235,6 +235,30 @@ def test_ledger_records_one_row_when_enabled(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Ledger: exit_code populated after the command resolves (F16)
+# ---------------------------------------------------------------------------
+
+
+def test_set_exit_code_updates_row(tmp_ledger: Ledger) -> None:
+    op_id = tmp_ledger.record(OpRecord(status="ok"))
+    assert tmp_ledger.set_exit_code(op_id, 3) is True
+    assert tmp_ledger.query()[0].exit_code == 3
+
+
+def test_set_exit_code_unknown_id_returns_false(tmp_ledger: Ledger) -> None:
+    assert tmp_ledger.set_exit_code("nonexistent", 1) is False
+
+
+def test_client_tracks_op_ids_per_call(tmp_path: Path) -> None:
+    """F16: the client exposes the ids it recorded so run() can backfill the exit code."""
+    with Ledger(db_path=tmp_path / "ledger.db") as ledger:
+        with _mock_health_client(ledger) as client:
+            client.get("/health")
+            client.get("/health")
+        assert len(client.op_ids) == 2
+
+
+# ---------------------------------------------------------------------------
 # Config: precedence flag > env > file > default
 # ---------------------------------------------------------------------------
 

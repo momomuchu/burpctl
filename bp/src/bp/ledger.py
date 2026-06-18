@@ -318,3 +318,19 @@ class Ledger:
         )
         self._conn.commit()
         return cursor.rowcount > 0
+
+    # ------------------------------------------------------------------
+    # set_exit_code
+    # ------------------------------------------------------------------
+
+    def set_exit_code(self, op_id: str, code: int) -> bool:
+        """Back-fill ops.exit_code WHERE id = op_id, once the command's final code is known.
+
+        record() runs at HTTP time, before the CLI has resolved its exit code; cliutil.run()
+        calls this afterwards so the audit row reflects the actual outcome. Returns True if found.
+        """
+        cursor = self._conn.execute(
+            "UPDATE ops SET exit_code = ? WHERE id = ?", (code, op_id)
+        )
+        self._conn.commit()
+        return cursor.rowcount > 0

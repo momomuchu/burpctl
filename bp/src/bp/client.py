@@ -51,6 +51,12 @@ class BurpClient:
         self._ledger = ledger
         self._redact = redact
         self._command = command
+        self._op_ids: list[str] = []
+
+    @property
+    def op_ids(self) -> list[str]:
+        """Ledger ids recorded during this client's lifetime (for exit-code back-fill)."""
+        return self._op_ids
 
     def close(self) -> None:
         self._client.close()
@@ -82,7 +88,7 @@ class BurpClient:
         if cmd is not None and self._redact:
             cmd = _redact_text(cmd)
         req_body = _json.dumps(req_json).encode() if req_json is not None else None
-        self._ledger.record(
+        op_id = self._ledger.record(
             OpRecord(
                 status=status,
                 command=cmd,
@@ -96,6 +102,7 @@ class BurpClient:
                 error_code=error_code,
             )
         )
+        self._op_ids.append(op_id)
 
     def _request(
         self, method: str, path: str, *, params: dict[str, Any] | None = None, json: Any = None

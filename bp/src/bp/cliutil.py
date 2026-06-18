@@ -46,20 +46,26 @@ def run(ctx: typer.Context, fn: Callable[[BurpClient], Any]) -> None:
     state: State = ctx.obj
     conf = _config.load(burp_rest_url=state.url, ledger=False if state.no_ledger else None)
     ledger = Ledger() if conf.ledger else None
+    client = BurpClient(state.url, ledger=ledger, redact=conf.redact, command=ctx.command_path)
+    exit_code = 0
     try:
-        with BurpClient(
-            state.url, ledger=ledger, redact=conf.redact, command=ctx.command_path
-        ) as client:
-            data = fn(client)
-        out = render(data, state.fmt, fields=state.fields)
-    except BurpError as e:
-        typer.echo(f"error: {e}", err=True)
-        raise typer.Exit(_EXIT_BY_CODE.get(e.code, EXIT_GENERIC)) from None
-    except (PosError, ValueError) as e:
-        typer.echo(f"error: {e}", err=True)
-        raise typer.Exit(EXIT_USAGE) from None
+        try:
+            with client:
+                data = fn(client)
+            out = render(data, state.fmt, fields=state.fields)
+        except BurpError as e:
+            typer.echo(f"error: {e}", err=True)
+            exit_code = _EXIT_BY_CODE.get(e.code, EXIT_GENERIC)
+            raise typer.Exit(exit_code) from None
+        except (PosError, ValueError) as e:
+            typer.echo(f"error: {e}", err=True)
+            exit_code = EXIT_USAGE
+            raise typer.Exit(exit_code) from None
     finally:
+        # Back-fill the actual exit code onto every op recorded during this command (F16).
         if ledger is not None:
+            for op_id in client.op_ids:
+                ledger.set_exit_code(op_id, exit_code)
             ledger.close()
     if conf.redact:
         out = redact(out)
