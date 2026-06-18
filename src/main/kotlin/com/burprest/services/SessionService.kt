@@ -16,8 +16,10 @@ class SessionService(
     private val sessionDao: SessionDao? = null,
 ) {
 
-    private var sessionCookies = mutableMapOf<String, String>()
-    private var sessionHeaders = mutableMapOf<String, String>()
+    // Concurrent maps: Netty dispatches requests on many threads; a plain HashMap could corrupt
+    // internally under concurrent set/read. clear()+putAll() is not atomic but no longer corrupts.
+    private val sessionCookies = ConcurrentHashMap<String, String>()
+    private val sessionHeaders = ConcurrentHashMap<String, String>()
     private var sessionName = "default"
 
     // Cookie jar: domain -> (name -> value)

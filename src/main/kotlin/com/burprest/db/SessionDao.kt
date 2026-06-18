@@ -20,6 +20,7 @@ class SessionDao(private val db: DatabaseManager) {
         upsert("headers", json.encodeToString(headers))
     }
 
+    @Synchronized
     fun load(): PersistedSession? {
         val name = get("name") ?: return null
         val cookies: Map<String, String> = get("cookies")?.let {
@@ -33,22 +34,22 @@ class SessionDao(private val db: DatabaseManager) {
 
     @Synchronized
     fun clear() {
-        db.connection.createStatement().execute("DELETE FROM session_store")
+        db.connection.createStatement().use { it.execute("DELETE FROM session_store") }
     }
 
     private fun upsert(key: String, value: String) {
-        val stmt = db.connection.prepareStatement(
+        db.connection.prepareStatement(
             """MERGE INTO session_store ("key", "value") KEY ("key") VALUES (?, ?)"""
-        )
-        stmt.setString(1, key)
-        stmt.setString(2, value)
-        stmt.executeUpdate()
+        ).use { stmt ->
+            stmt.setString(1, key)
+            stmt.setString(2, value)
+            stmt.executeUpdate()
+        }
     }
 
-    private fun get(key: String): String? {
-        val stmt = db.connection.prepareStatement("""SELECT "value" FROM session_store WHERE "key" = ?""")
-        stmt.setString(1, key)
-        val rs = stmt.executeQuery()
-        return if (rs.next()) rs.getString("value") else null
-    }
+    private fun get(key: String): String? =
+        db.connection.prepareStatement("""SELECT "value" FROM session_store WHERE "key" = ?""").use { stmt ->
+            stmt.setString(1, key)
+            stmt.executeQuery().use { rs -> if (rs.next()) rs.getString("value") else null }
+        }
 }

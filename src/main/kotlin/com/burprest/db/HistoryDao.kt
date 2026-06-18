@@ -54,75 +54,75 @@ class HistoryDao(private val db: DatabaseManager) {
         val host = try { URI(url).host ?: "unknown" } catch (_: Exception) { "unknown" }
         val ts = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
 
-        val stmt = db.connection.prepareStatement(
+        return db.connection.prepareStatement(
             """INSERT INTO request_history
                (source, method, url, host, req_headers, req_body, status_code, res_headers, res_body, duration_ms, timestamp)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             java.sql.Statement.RETURN_GENERATED_KEYS,
-        )
-        stmt.setString(1, source)
-        stmt.setString(2, method)
-        stmt.setString(3, url)
-        stmt.setString(4, host)
-        stmt.setString(5, json.encodeToString(reqHeaders))
-        stmt.setString(6, reqBody?.take(maxBodySize))
-        if (statusCode != null) stmt.setInt(7, statusCode) else stmt.setNull(7, java.sql.Types.INTEGER)
-        stmt.setString(8, resHeaders?.let { json.encodeToString(it) })
-        stmt.setString(9, resBody?.take(maxBodySize))
-        stmt.setLong(10, durationMs)
-        stmt.setString(11, ts)
-        stmt.executeUpdate()
-
-        val keys = stmt.generatedKeys
-        return if (keys.next()) keys.getLong(1) else 0
+        ).use { stmt ->
+            stmt.setString(1, source)
+            stmt.setString(2, method)
+            stmt.setString(3, url)
+            stmt.setString(4, host)
+            stmt.setString(5, json.encodeToString(reqHeaders))
+            stmt.setString(6, reqBody?.take(maxBodySize))
+            if (statusCode != null) stmt.setInt(7, statusCode) else stmt.setNull(7, java.sql.Types.INTEGER)
+            stmt.setString(8, resHeaders?.let { json.encodeToString(it) })
+            stmt.setString(9, resBody?.take(maxBodySize))
+            stmt.setLong(10, durationMs)
+            stmt.setString(11, ts)
+            stmt.executeUpdate()
+            stmt.generatedKeys.use { keys -> if (keys.next()) keys.getLong(1) else 0 }
+        }
     }
 
+    @Synchronized
     fun search(filter: HistoryFilter): List<HistoryEntry> {
         val (where, params) = buildWhere(filter)
         val sql = "SELECT * FROM request_history $where ORDER BY id DESC LIMIT ? OFFSET ?"
-        val stmt = db.connection.prepareStatement(sql)
-        var idx = 1
-        for (p in params) {
-            when (p) {
-                is String -> stmt.setString(idx++, p)
-                is Int -> stmt.setInt(idx++, p)
+        return db.connection.prepareStatement(sql).use { stmt ->
+            var idx = 1
+            for (p in params) {
+                when (p) {
+                    is String -> stmt.setString(idx++, p)
+                    is Int -> stmt.setInt(idx++, p)
+                }
+            }
+            stmt.setInt(idx++, filter.pageSize)
+            stmt.setInt(idx, filter.page * filter.pageSize)
+            stmt.executeQuery().use { rs ->
+                val results = mutableListOf<HistoryEntry>()
+                while (rs.next()) results.add(rowToEntry(rs))
+                results
             }
         }
-        stmt.setInt(idx++, filter.pageSize)
-        stmt.setInt(idx, filter.page * filter.pageSize)
+    }
 
-        val rs = stmt.executeQuery()
-        val results = mutableListOf<HistoryEntry>()
-        while (rs.next()) {
-            results.add(rowToEntry(rs))
+    @Synchronized
+    fun getById(id: Long): HistoryEntry? =
+        db.connection.prepareStatement("SELECT * FROM request_history WHERE id = ?").use { stmt ->
+            stmt.setLong(1, id)
+            stmt.executeQuery().use { rs -> if (rs.next()) rowToEntry(rs) else null }
         }
-        return results
-    }
 
-    fun getById(id: Long): HistoryEntry? {
-        val stmt = db.connection.prepareStatement("SELECT * FROM request_history WHERE id = ?")
-        stmt.setLong(1, id)
-        val rs = stmt.executeQuery()
-        return if (rs.next()) rowToEntry(rs) else null
-    }
-
+    @Synchronized
     fun count(filter: HistoryFilter): Long {
         val (where, params) = buildWhere(filter)
-        val stmt = db.connection.prepareStatement("SELECT COUNT(*) FROM request_history $where")
-        var idx = 1
-        for (p in params) {
-            when (p) {
-                is String -> stmt.setString(idx++, p)
-                is Int -> stmt.setInt(idx++, p)
+        return db.connection.prepareStatement("SELECT COUNT(*) FROM request_history $where").use { stmt ->
+            var idx = 1
+            for (p in params) {
+                when (p) {
+                    is String -> stmt.setString(idx++, p)
+                    is Int -> stmt.setInt(idx++, p)
+                }
             }
+            stmt.executeQuery().use { rs -> if (rs.next()) rs.getLong(1) else 0 }
         }
-        val rs = stmt.executeQuery()
-        return if (rs.next()) rs.getLong(1) else 0
     }
 
     @Synchronized
     fun clear() {
-        db.connection.createStatement().execute("DELETE FROM request_history")
+        db.connection.createStatement().use { it.execute("DELETE FROM request_history") }
     }
 
     private fun buildWhere(filter: HistoryFilter): Pair<String, List<Any>> {

@@ -19,50 +19,50 @@ class DatabaseManager(dbPath: String) : Closeable {
     }
 
     private fun createTables() {
-        connection.createStatement().execute(
-            """
-            CREATE TABLE IF NOT EXISTS request_history (
-                id          IDENTITY PRIMARY KEY,
-                source      VARCHAR NOT NULL,
-                method      VARCHAR NOT NULL,
-                url         VARCHAR NOT NULL,
-                host        VARCHAR NOT NULL,
-                req_headers CLOB NOT NULL,
-                req_body    CLOB,
-                status_code INTEGER,
-                res_headers CLOB,
-                res_body    CLOB,
-                duration_ms BIGINT,
-                timestamp   VARCHAR NOT NULL
+        connection.createStatement().use { stmt ->
+            stmt.execute(
+                """
+                CREATE TABLE IF NOT EXISTS request_history (
+                    id          IDENTITY PRIMARY KEY,
+                    source      VARCHAR NOT NULL,
+                    method      VARCHAR NOT NULL,
+                    url         VARCHAR NOT NULL,
+                    host        VARCHAR NOT NULL,
+                    req_headers CLOB NOT NULL,
+                    req_body    CLOB,
+                    status_code INTEGER,
+                    res_headers CLOB,
+                    res_body    CLOB,
+                    duration_ms BIGINT,
+                    timestamp   VARCHAR NOT NULL
+                )
+                """.trimIndent()
             )
-            """.trimIndent()
-        )
-        connection.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_history_host ON request_history(host)")
-        connection.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_history_status ON request_history(status_code)")
-        connection.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_history_method ON request_history(method)")
-        connection.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_history_ts ON request_history(timestamp)")
-
-        connection.createStatement().execute(
-            """
-            CREATE TABLE IF NOT EXISTS sitemap (
-                host        VARCHAR NOT NULL,
-                path        VARCHAR NOT NULL,
-                method      VARCHAR NOT NULL,
-                last_seen   VARCHAR NOT NULL,
-                hit_count   INTEGER NOT NULL DEFAULT 1,
-                PRIMARY KEY (host, path, method)
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_history_host ON request_history(host)")
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_history_status ON request_history(status_code)")
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_history_method ON request_history(method)")
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_history_ts ON request_history(timestamp)")
+            stmt.execute(
+                """
+                CREATE TABLE IF NOT EXISTS sitemap (
+                    host        VARCHAR NOT NULL,
+                    path        VARCHAR NOT NULL,
+                    method      VARCHAR NOT NULL,
+                    last_seen   VARCHAR NOT NULL,
+                    hit_count   INTEGER NOT NULL DEFAULT 1,
+                    PRIMARY KEY (host, path, method)
+                )
+                """.trimIndent()
             )
-            """.trimIndent()
-        )
-
-        connection.createStatement().execute(
-            """
-            CREATE TABLE IF NOT EXISTS session_store (
-                "key"   VARCHAR PRIMARY KEY,
-                "value" CLOB NOT NULL
+            stmt.execute(
+                """
+                CREATE TABLE IF NOT EXISTS session_store (
+                    "key"   VARCHAR PRIMARY KEY,
+                    "value" CLOB NOT NULL
+                )
+                """.trimIndent()
             )
-            """.trimIndent()
-        )
+        }
     }
 
     override fun close() {
