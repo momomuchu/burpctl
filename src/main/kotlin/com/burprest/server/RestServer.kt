@@ -90,41 +90,7 @@ class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
             allowHeader("X-API-Key")
         }
 
-        install(StatusPages) {
-            exception<io.ktor.server.plugins.BadRequestException> { call, cause ->
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    ApiResponse.error<Unit>("INVALID_REQUEST", cause.message ?: "Bad request"),
-                )
-            }
-            exception<kotlinx.serialization.SerializationException> { call, cause ->
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    ApiResponse.error<Unit>("INVALID_REQUEST", "Invalid request body: ${cause.message}"),
-                )
-            }
-            exception<IllegalArgumentException> { call, cause ->
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    ApiResponse.error<Unit>("INVALID_REQUEST", cause.message ?: "Bad request"),
-                )
-            }
-            exception<IllegalStateException> { call, cause ->
-                api.logging().logToError("[burp-rest] State error: ${cause.message}")
-                call.respond(
-                    HttpStatusCode.ServiceUnavailable,
-                    ApiResponse.error<Unit>("SERVICE_UNAVAILABLE", cause.message ?: "Service unavailable"),
-                )
-            }
-            exception<Throwable> { call, cause ->
-                val stackTrace = cause.stackTraceToString().take(500)
-                api.logging().logToError("[burp-rest] Error: ${cause::class.simpleName}: ${cause.message}\n$stackTrace")
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    ApiResponse.error<Unit>("INTERNAL_ERROR", "${cause::class.simpleName}: ${cause.message}"),
-                )
-            }
-        }
+        installErrorHandling { api.logging().logToError(it) }
     }
 
     private fun Application.configureRouting() {
@@ -156,6 +122,51 @@ class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
             if (historyDao != null && sitemapDao != null) {
                 historyRoutes(historyDao, sitemapDao, repeaterService)
             }
+        }
+    }
+}
+
+/**
+ * Install the ktor StatusPages error handling. Extracted from [RestServer] so it can be unit-tested
+ * with a throwing route. Author-controlled errors (IllegalArgumentException from route validation,
+ * Pro-gating IllegalStateException, request-body SerializationException) keep their clean message;
+ * the catch-all maps any *unexpected* error to a generic client message and sends the full detail
+ * only to [logError]. It never leaks the exception class, message, or stack trace to the HTTP client
+ * (which previously exposed H2/JDBC SQL and JVM internals such as NoSuchAlgorithmException).
+ */
+fun Application.installErrorHandling(logError: (String) -> Unit) {
+    install(StatusPages) {
+        exception<io.ktor.server.plugins.BadRequestException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ApiResponse.error<Unit>("INVALID_REQUEST", cause.message ?: "Bad request"),
+            )
+        }
+        exception<kotlinx.serialization.SerializationException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ApiResponse.error<Unit>("INVALID_REQUEST", "Invalid request body: ${cause.message}"),
+            )
+        }
+        exception<IllegalArgumentException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ApiResponse.error<Unit>("INVALID_REQUEST", cause.message ?: "Bad request"),
+            )
+        }
+        exception<IllegalStateException> { call, cause ->
+            logError("[burp-rest] State error: ${cause.message}")
+            call.respond(
+                HttpStatusCode.ServiceUnavailable,
+                ApiResponse.error<Unit>("SERVICE_UNAVAILABLE", cause.message ?: "Service unavailable"),
+            )
+        }
+        exception<Throwable> { call, cause ->
+            logError("[burp-rest] Error: ${cause::class.simpleName}: ${cause.message}\n${cause.stackTraceToString().take(2000)}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                ApiResponse.error<Unit>("INTERNAL_ERROR", "internal server error (see Burp extension Errors log)"),
+            )
         }
     }
 }
