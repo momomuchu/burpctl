@@ -36,13 +36,22 @@ class DecoderService {
                 .replace("&gt;", ">")
                 .replace("&quot;", "\"")
                 .replace("&#x27;", "'")
+            // "plain" = auto-detect found no encoding: return the input unchanged rather than
+            // leaking the internal sentinel as "Unsupported encoding: plain".
+            "plain" -> request.data
             else -> throw IllegalArgumentException("Unsupported encoding: $encoding")
         }
         return DecodeResponse(result = result, encoding = encoding)
     }
 
     fun hash(request: HashRequest): HashResponse {
-        val digest = MessageDigest.getInstance(normalizeAlgorithm(request.algorithm))
+        val digest = try {
+            MessageDigest.getInstance(normalizeAlgorithm(request.algorithm))
+        } catch (_: java.security.NoSuchAlgorithmException) {
+            // Map the JVM exception to a clean client error instead of leaking it via the
+            // catch-all handler (md5/sha1/sha256/sha-384/sha-512 are the supported algorithms).
+            throw IllegalArgumentException("Unsupported hash algorithm: ${request.algorithm}")
+        }
         val hash = digest.digest(request.data.toByteArray())
         return HashResponse(
             result = hash.joinToString("") { "%02x".format(it) },

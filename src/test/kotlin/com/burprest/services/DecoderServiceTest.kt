@@ -5,6 +5,7 @@ import com.burprest.models.EncodeRequest
 import com.burprest.models.HashRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DecoderServiceTest {
@@ -96,5 +97,21 @@ class DecoderServiceTest {
         val encoded = service.encode(EncodeRequest(data = original, encoding = "url"))
         val decoded = service.decode(DecodeRequest(data = encoded.result, encoding = "url"))
         assertEquals(original, decoded.result)
+    }
+
+    @Test
+    fun `decode auto-detect of unclassifiable input returns it unchanged as plain`() {
+        // Was: threw IllegalArgumentException("Unsupported encoding: plain") — a leaked sentinel.
+        val result = service.decode(DecodeRequest(data = "not%%%valid", encoding = null))
+        assertEquals("not%%%valid", result.result)
+        assertEquals("plain", result.encoding)
+    }
+
+    @Test
+    fun `hash with unknown algorithm throws IllegalArgumentException not NoSuchAlgorithmException`() {
+        // Must surface as a clean client error, not a leaked java.security.NoSuchAlgorithmException.
+        assertFailsWith<IllegalArgumentException> {
+            service.hash(HashRequest(data = "hello", algorithm = "totally-bogus"))
+        }
     }
 }
