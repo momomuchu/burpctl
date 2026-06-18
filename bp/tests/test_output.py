@@ -46,3 +46,24 @@ def test_unknown_field_raises_usage_error() -> None:
 
 def test_known_field_subset_ok() -> None:
     assert render({"a": 1, "b": 2}, "json", fields=["a"]) == '{"a":1}'
+
+
+def test_table_renders_none_as_blank_not_literal_none() -> None:
+    """F6/OUTPUT.md: a null field is a blank cell, never the Python literal ``None``."""
+    out = render({"burpVersion": None, "status": "ok"}, "table")
+    line = next(ln for ln in out.splitlines() if ln.startswith("burpVersion"))
+    assert "None" not in line
+
+
+def test_table_renders_nested_dict_as_json_not_python_repr() -> None:
+    """F6: nested dict/list values render as compact JSON, not Python repr with single quotes."""
+    out = render({"config": {"type": "project"}}, "table")
+    assert '{"type":"project"}' in out
+    assert "'type'" not in out  # no Python repr leak
+
+
+def test_table_list_renders_none_and_dict_cleanly() -> None:
+    """F6: the list/aligned table path gets the same clean-cell treatment as the dict path."""
+    out = render([{"id": 1, "meta": {"k": "v"}}, {"id": 2, "meta": None}], "table")
+    assert "'k'" not in out and "None" not in out
+    assert '{"k":"v"}' in out

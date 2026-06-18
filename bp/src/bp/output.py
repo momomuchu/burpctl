@@ -46,20 +46,32 @@ def _render_json(data: Any, fields: list[str] | None) -> str:
     return _json.dumps(data, separators=(",", ":"))
 
 
+def _cell(value: Any) -> str:
+    """Render one table cell: null -> blank, nested dict/list -> compact JSON, else str.
+
+    Avoids leaking Python ``repr`` (``None``, ``{'k': 'v'}``) into the human table view.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list)):
+        return _json.dumps(value, separators=(",", ":"))
+    return str(value)
+
+
 def _render_table(data: Any, fields: list[str] | None) -> str:
     if isinstance(data, list):
         rows = [r for r in data if isinstance(r, dict)]
         if not rows:
             return ""
         cols = fields or list(rows[0].keys())
-        widths = {c: max(len(c), *(len(str(r.get(c, ""))) for r in rows)) for c in cols}
+        widths = {c: max(len(c), *(len(_cell(r.get(c))) for r in rows)) for c in cols}
         header = "  ".join(c.ljust(widths[c]) for c in cols)
-        body = "\n".join("  ".join(str(r.get(c, "")).ljust(widths[c]) for c in cols) for r in rows)
+        body = "\n".join("  ".join(_cell(r.get(c)).ljust(widths[c]) for c in cols) for r in rows)
         return f"{header}\n{body}"
     if isinstance(data, dict):
         record = _select(data, fields)
         width = max((len(k) for k in record), default=0)
-        return "\n".join(f"{k.ljust(width)}  {v}" for k, v in record.items())
+        return "\n".join(f"{k.ljust(width)}  {_cell(v)}" for k, v in record.items())
     return str(data)
 
 
