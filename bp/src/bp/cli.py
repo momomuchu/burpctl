@@ -7,6 +7,7 @@ registered onto ``app`` below. Exit codes follow CLI.md (3=conn, 4=pro).
 
 from __future__ import annotations
 
+import sys
 from dataclasses import asdict
 from typing import Any
 
@@ -104,3 +105,61 @@ def _register_command_groups() -> None:
 
 
 _register_command_groups()
+
+
+_GLOBAL_VALUE_OPTS = ("--url", "--format", "--fields")
+
+
+def _find_subcommand(argv: list[str]) -> int | None:
+    """Index of the subcommand token, skipping leading global options and their values."""
+    i = 0
+    while i < len(argv):
+        tok = argv[i]
+        if not tok.startswith("-"):
+            return i
+        name = tok.partition("=")[0]
+        if name in _GLOBAL_VALUE_OPTS and "=" not in tok:
+            i += 2  # skip the option AND its value
+        else:
+            i += 1  # a flag, or --opt=value
+    return None
+
+
+def _hoist_global_opts(argv: list[str]) -> list[str]:
+    """Move global value-taking options (and their values) ahead of the subcommand.
+
+    Makes ``bp <cmd> --format json`` behave like ``bp --format json <cmd>`` (ADR-0009).
+    Only the three known options in ``_GLOBAL_VALUE_OPTS`` are moved, and only when they
+    appear after the subcommand; everything else is left untouched for Typer to parse or
+    reject exactly as before.
+    """
+    sub_idx = _find_subcommand(argv)
+    if sub_idx is None:
+        return argv
+    head = argv[:sub_idx]
+    tail = argv[sub_idx:]
+    hoisted: list[str] = []
+    rest: list[str] = [tail[0]]  # the subcommand token stays put
+    i = 1
+    while i < len(tail):
+        tok = tail[i]
+        name = tok.partition("=")[0]
+        if name in _GLOBAL_VALUE_OPTS:
+            if "=" in tok:  # --opt=value
+                hoisted.append(tok)
+                i += 1
+            elif i + 1 < len(tail):  # --opt value
+                hoisted.extend((tok, tail[i + 1]))
+                i += 2
+            else:  # dangling --opt with no value: leave for Typer to error on
+                rest.append(tok)
+                i += 1
+        else:
+            rest.append(tok)
+            i += 1
+    return head + hoisted + rest
+
+
+def cli_main() -> None:
+    """Console entrypoint (bp). Applies ADR-0009 option hoisting, then dispatches."""
+    app(args=_hoist_global_opts(sys.argv[1:]), prog_name="bp")

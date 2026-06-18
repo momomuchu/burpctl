@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-bp = "bp.cli:app"
+bp = "bp.cli:cli_main"
 
 [dependency-groups]
 dev = [
