@@ -13,6 +13,7 @@ from typing import Any
 
 import typer
 
+from bp import __version__
 from bp.client import DEFAULT_BASE_URL, BurpClient
 from bp.cliutil import EXIT_USAGE, State, run
 from bp.output import FORMATS
@@ -25,12 +26,21 @@ app = typer.Typer(
 )
 
 
+def _version_cb(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
 @app.callback()
 def main(
     ctx: typer.Context,
     url: str = typer.Option(DEFAULT_BASE_URL, "--url", envvar="BURP_REST_URL", help="REST base URL"),
     fmt: str = typer.Option("table", "--format", help="json|table|raw|quiet"),
     fields: str | None = typer.Option(None, "--fields", help="comma-separated fields"),
+    version: bool = typer.Option(
+        False, "--version", help="Show bp version and exit.", is_eager=True, callback=_version_cb
+    ),
 ) -> None:
     if fmt not in FORMATS:
         raise typer.BadParameter(f"must be one of {', '.join(FORMATS)}", param_hint="--format")
