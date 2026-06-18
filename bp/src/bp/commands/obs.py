@@ -102,10 +102,10 @@ def tag_cmd(
 ) -> None:
     """Set a tag on a ledger row: bp tag <opId> <name>.
 
-    Exits 1 if the opId is not found in the ledger.
+    Exits 1 if the ledger is disabled or the opId is not found (the tag was not applied).
     """
     if not _require_ledger():
-        return
+        raise typer.Exit(1)
 
     with Ledger() as ledger:
         found = ledger.tag(op_id, name)
