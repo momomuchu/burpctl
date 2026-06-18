@@ -38,13 +38,18 @@ def main(
     url: str = typer.Option(DEFAULT_BASE_URL, "--url", envvar="BURP_REST_URL", help="REST base URL"),
     fmt: str = typer.Option("table", "--format", help="json|table|raw|quiet"),
     fields: str | None = typer.Option(None, "--fields", help="comma-separated fields"),
+    no_ledger: bool = typer.Option(
+        False, "--no-ledger", help="Skip the Run Ledger for this invocation (ADR-0005)."
+    ),
     version: bool = typer.Option(
         False, "--version", help="Show bp version and exit.", is_eager=True, callback=_version_cb
     ),
 ) -> None:
     if fmt not in FORMATS:
         raise typer.BadParameter(f"must be one of {', '.join(FORMATS)}", param_hint="--format")
-    ctx.obj = State(url=url, fmt=fmt, fields=fields.split(",") if fields else None)
+    ctx.obj = State(
+        url=url, fmt=fmt, fields=fields.split(",") if fields else None, no_ledger=no_ledger
+    )
 
 
 @app.command()
@@ -118,6 +123,7 @@ _register_command_groups()
 
 
 _GLOBAL_VALUE_OPTS = ("--url", "--format", "--fields")
+_GLOBAL_FLAG_OPTS = ("--no-ledger",)
 
 
 def _find_subcommand(argv: list[str]) -> int | None:
@@ -164,6 +170,9 @@ def _hoist_global_opts(argv: list[str]) -> list[str]:
             else:  # dangling --opt with no value: leave for Typer to error on
                 rest.append(tok)
                 i += 1
+        elif name in _GLOBAL_FLAG_OPTS:  # value-less global flag (e.g. --no-ledger)
+            hoisted.append(tok)
+            i += 1
         else:
             rest.append(tok)
             i += 1

@@ -53,6 +53,10 @@ def test_hoist_does_not_touch_non_global_options() -> None:
     assert _hoist_global_opts(["fuzz", "5", "--pos", "header:X"]) == ["fuzz", "5", "--pos", "header:X"]
 
 
+def test_hoist_no_ledger_flag_after_subcommand() -> None:
+    assert _hoist_global_opts(["health", "--no-ledger"]) == ["--no-ledger", "health"]
+
+
 # --- Burp-gated end-to-end: the real binary must accept the option after the subcommand ---
 
 def _burp_up() -> bool:
@@ -72,3 +76,16 @@ def test_format_after_subcommand_exits_zero_live() -> None:
     r = subprocess.run([sys.executable, "-c", _ENTRY], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     assert r.stdout.strip().startswith("{")
+
+
+def test_no_ledger_flag_is_accepted_globally() -> None:
+    """ADR-0005 H7: --no-ledger must be a real global flag. Pointed at a dead port it should
+    reach the connection layer (exit 3) — proving it parsed — not bounce as 'No such option'
+    (exit 2). No live Burp needed."""
+    entry = (
+        "import os; os.environ['BURP_REST_URL']='http://127.0.0.1:9999'; "
+        "import sys; sys.argv=['bp','--no-ledger','health']; "
+        "from bp.cli import cli_main; cli_main()"
+    )
+    r = subprocess.run([sys.executable, "-c", entry], capture_output=True, text=True)
+    assert r.returncode == 3, f"expected exit 3 (conn refused), got {r.returncode}: {r.stderr}"
