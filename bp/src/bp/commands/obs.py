@@ -15,6 +15,7 @@ require a running Burp instance. They are registered as FLAT top-level commands
 
 from __future__ import annotations
 
+import sqlite3
 from typing import Any
 
 import typer
@@ -82,7 +83,12 @@ def log_cmd(
     filters = QueryFilters(
         since=since, until=until, target=target, tag=tag, status=status, limit=limit
     )
-    with Ledger() as ledger:
+    try:
+        ledger_ctx = Ledger()
+    except (OSError, sqlite3.Error) as exc:
+        typer.echo(f"error: ledger unavailable: {exc}", err=True)
+        raise typer.Exit(1)
+    with ledger_ctx as ledger:
         rows = ledger.query(filters)
 
     fmt, fields = _resolve_fmt_fields(ctx)
@@ -112,7 +118,12 @@ def tag_cmd(
     if not _require_ledger():
         raise typer.Exit(1)
 
-    with Ledger() as ledger:
+    try:
+        ledger_ctx = Ledger()
+    except (OSError, sqlite3.Error) as exc:
+        typer.echo(f"error: ledger unavailable: {exc}", err=True)
+        raise typer.Exit(1)
+    with ledger_ctx as ledger:
         found = ledger.tag(op_id, name)
 
     if not found:

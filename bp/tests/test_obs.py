@@ -6,6 +6,11 @@ import subprocess
 import sys
 import tempfile
 import os
+from unittest.mock import patch
+
+from typer.testing import CliRunner
+
+from bp.cli import app
 
 
 def test_tag_exits_nonzero_when_ledger_disabled() -> None:
@@ -61,3 +66,89 @@ def test_log_empty_ledger_zero_stdout_bytes() -> None:
     assert r.stdout == b"", (
         f"expected zero stdout bytes for empty ledger, got {r.stdout!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# [06] RED — Ledger() construction failure → clean error, exit 1, no traceback
+# ---------------------------------------------------------------------------
+
+def test_log_ledger_oserror_clean_stderr_no_traceback() -> None:
+    """`bp log` exits 1 with a clean 'error: ledger unavailable' message when Ledger()
+    raises OSError on construction. No traceback, no 'sqlite3'/'pathlib' class names.
+    """
+    runner = CliRunner()
+    with patch("bp.commands.obs.Ledger", side_effect=OSError("read-only filesystem")):
+        result = runner.invoke(app, ["log"])
+    assert result.exit_code == 1, (
+        f"expected exit 1 on OSError, got {result.exit_code}; output={result.output!r}"
+    )
+    combined = result.output + result.stderr
+    assert "error: ledger unavailable" in combined, (
+        f"expected 'error: ledger unavailable' in output/stderr, got {combined!r}"
+    )
+    assert "Traceback" not in combined, f"traceback leaked: {combined!r}"
+    assert "sqlite3" not in combined, f"'sqlite3' class name leaked: {combined!r}"
+    assert "pathlib" not in combined, f"'pathlib' class name leaked: {combined!r}"
+    assert "OSError" not in combined, f"'OSError' class name leaked: {combined!r}"
+
+
+def test_log_ledger_sqlite_error_clean_stderr_no_traceback() -> None:
+    """`bp log` exits 1 with a clean message when Ledger() raises sqlite3.OperationalError."""
+    import sqlite3
+
+    runner = CliRunner()
+    with patch(
+        "bp.commands.obs.Ledger",
+        side_effect=sqlite3.OperationalError("unable to open database"),
+    ):
+        result = runner.invoke(app, ["log"])
+    assert result.exit_code == 1, (
+        f"expected exit 1 on sqlite3.OperationalError, got {result.exit_code}"
+    )
+    combined = result.output + result.stderr
+    assert "error: ledger unavailable" in combined, (
+        f"expected 'error: ledger unavailable' in output/stderr, got {combined!r}"
+    )
+    assert "Traceback" not in combined, f"traceback leaked: {combined!r}"
+    assert "sqlite3" not in combined, f"'sqlite3' class name leaked: {combined!r}"
+
+
+def test_tag_ledger_oserror_clean_stderr_no_traceback() -> None:
+    """`bp tag` exits 1 with a clean 'error: ledger unavailable' message when Ledger()
+    raises OSError on construction. No traceback, no internal class names.
+    """
+    runner = CliRunner()
+    with patch("bp.commands.obs.Ledger", side_effect=OSError("permission denied")):
+        result = runner.invoke(app, ["tag", "op123", "mytag"])
+    assert result.exit_code == 1, (
+        f"expected exit 1 on OSError, got {result.exit_code}"
+    )
+    combined = result.output + result.stderr
+    assert "error: ledger unavailable" in combined, (
+        f"expected 'error: ledger unavailable' in output/stderr, got {combined!r}"
+    )
+    assert "Traceback" not in combined, f"traceback leaked: {combined!r}"
+    assert "sqlite3" not in combined, f"'sqlite3' class name leaked: {combined!r}"
+    assert "pathlib" not in combined, f"'pathlib' class name leaked: {combined!r}"
+    assert "OSError" not in combined, f"'OSError' class name leaked: {combined!r}"
+
+
+def test_tag_ledger_sqlite_error_clean_stderr_no_traceback() -> None:
+    """`bp tag` exits 1 with a clean message when Ledger() raises sqlite3.OperationalError."""
+    import sqlite3
+
+    runner = CliRunner()
+    with patch(
+        "bp.commands.obs.Ledger",
+        side_effect=sqlite3.OperationalError("unable to open database"),
+    ):
+        result = runner.invoke(app, ["tag", "op123", "mytag"])
+    assert result.exit_code == 1, (
+        f"expected exit 1 on sqlite3.OperationalError, got {result.exit_code}"
+    )
+    combined = result.output + result.stderr
+    assert "error: ledger unavailable" in combined, (
+        f"expected 'error: ledger unavailable' in output/stderr, got {combined!r}"
+    )
+    assert "Traceback" not in combined, f"traceback leaked: {combined!r}"
+    assert "sqlite3" not in combined, f"'sqlite3' class name leaked: {combined!r}"
