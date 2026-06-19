@@ -34,6 +34,10 @@ _EXIT_BY_CODE: dict[str, int] = {
     # [15] Community Burp returns SERVICE_UNAVAILABLE for Pro-only scanner surfaces
     # (crawl/audit/all).  Documented contract: exit 4 (EXIT_PRO).
     "SERVICE_UNAVAILABLE": EXIT_PRO,
+    # INVALID_REQUEST covers both malformed bodies and bad user-supplied resource IDs
+    # (e.g. "Scan not found: X", "History entry N not found") — all are user-input errors
+    # that belong in the usage-error bucket (exit 2), not the generic-error bucket (exit 1).
+    "INVALID_REQUEST": EXIT_USAGE,
 }
 
 

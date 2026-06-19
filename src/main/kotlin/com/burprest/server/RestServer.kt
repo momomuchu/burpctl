@@ -139,24 +139,33 @@ class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
 
 /**
  * Install the ktor StatusPages error handling. Extracted from [RestServer] so it can be unit-tested
- * with a throwing route. Author-controlled errors (IllegalArgumentException from route validation,
- * Pro-gating IllegalStateException, request-body SerializationException) keep their clean message;
- * the catch-all maps any *unexpected* error to a generic client message and sends the full detail
- * only to [logError]. It never leaks the exception class, message, or stack trace to the HTTP client
- * (which previously exposed H2/JDBC SQL and JVM internals such as NoSuchAlgorithmException).
+ * with a throwing route. Author-controlled errors (IllegalArgumentException from route validation
+ * and Pro-gating IllegalStateException) keep their own message because we wrote that text.
+ * BadRequestException and SerializationException are sanitised: ktor / kotlinx.serialization
+ * populate their messages with fully-qualified Kotlin class names ("Failed to convert request body
+ * to class com.burprest.models.XxxRequest") so we log the raw detail to [logError] and send only a
+ * generic message to the client. The catch-all maps any *unexpected* error the same way.
+ * No stack trace or internal class name ever reaches the HTTP client.
  */
 fun Application.installErrorHandling(logError: (String) -> Unit) {
     install(StatusPages) {
         exception<io.ktor.server.plugins.BadRequestException> { call, cause ->
+            // Ktor's BadRequestException.message often contains the fully-qualified Kotlin class name
+            // ("Failed to convert request body to class com.burprest.models.XxxRequest").
+            // Sanitise it: log the raw detail to Burp's error output but send only a generic,
+            // resource-name-free message to the client.
+            logError("[burp-rest] Bad request: ${cause.message}")
             call.respond(
                 HttpStatusCode.BadRequest,
-                ApiResponse.error<Unit>("INVALID_REQUEST", cause.message ?: "Bad request"),
+                ApiResponse.error<Unit>("INVALID_REQUEST", "invalid request body (see Burp extension Errors log)"),
             )
         }
         exception<kotlinx.serialization.SerializationException> { call, cause ->
+            // kotlinx.serialization messages can also reference internal class names — log and sanitise.
+            logError("[burp-rest] Serialization error: ${cause.message}")
             call.respond(
                 HttpStatusCode.BadRequest,
-                ApiResponse.error<Unit>("INVALID_REQUEST", "Invalid request body: ${cause.message}"),
+                ApiResponse.error<Unit>("INVALID_REQUEST", "invalid request body (see Burp extension Errors log)"),
             )
         }
         exception<IllegalArgumentException> { call, cause ->

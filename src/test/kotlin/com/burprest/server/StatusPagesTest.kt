@@ -34,6 +34,28 @@ class StatusPagesTest {
     }
 
     @Test
+    fun `BadRequestException does not leak ktor class-name message to the client`() = testApplication {
+        application {
+            install(ContentNegotiation) { json() }
+            installErrorHandling { }
+            routing {
+                get("/bad-req") {
+                    throw io.ktor.server.plugins.BadRequestException(
+                        "Failed to convert request body to class com.burprest.models.ScanRequest"
+                    )
+                }
+            }
+        }
+        client.get("/bad-req").apply {
+            assertEquals(HttpStatusCode.BadRequest, status)
+            val text = bodyAsText()
+            assertFalse(text.contains("com.burprest"), "leaked internal class name: $text")
+            assertFalse(text.contains("ScanRequest"), "leaked internal class name: $text")
+            assertTrue(text.contains("INVALID_REQUEST"))
+        }
+    }
+
+    @Test
     fun `route validation IllegalArgumentException keeps its clean message`() = testApplication {
         application {
             install(ContentNegotiation) { json() }
