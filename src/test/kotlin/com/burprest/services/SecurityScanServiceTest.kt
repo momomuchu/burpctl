@@ -559,6 +559,126 @@ class SecurityScanServiceTest {
     }
 
     // ---------------------------------------------------------------------------
+    // [01] IDOR — null/empty baseline body with non-empty target body is structurally DIFFERENT
+    // ---------------------------------------------------------------------------
+
+    /**
+     * RED->GREEN [01]: SessionService returns body=null for an empty HTTP response body.
+     * Baseline: own value, body=null (empty), status=200.
+     * Target:   value "tgt", body="ok" (non-empty), status=200.
+     *
+     * Old logic: baselineBodyPreview=null, targetBodyPreview="ok" -> falls into ELSE branch
+     * (length-delta only). lengthThreshold=max((0*0.05).toInt(),10)=10.
+     * abs(2-0)=2 < 10 -> sameAsBaseline=true -> vulnerable=false. (FALSE NEGATIVE)
+     *
+     * New logic: exactly one of {baselineBodyPreview, targetBodyPreview} is null/empty and
+     * the other is non-empty -> structurally DIFFERENT records -> sameAsBaseline=false ->
+     * baselineSucceeded=true + status 200 + length>0 -> vulnerable=true.
+     */
+    @Test
+    fun `idor - null baseline body with non-empty target body is NOT sameAsBaseline and IS vulnerable`() {
+        every { sessionService.send(match { it.url.contains("own") }) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = null,   // SessionService returns null when HTTP response body is empty
+            durationMs = 0,
+        )
+        every { sessionService.send(match { it.url.contains("tgt") }) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = "ok",   // short affirmative body — the real IDOR payload
+            durationMs = 0,
+        )
+
+        val resp = svc.idor(
+            IdorRequest(
+                endpoint = "http://t/resource?id={id}",
+                param = "id",
+                ownValues = listOf("own"),
+                targetValues = listOf("tgt"),
+            )
+        )
+
+        val result = resp.results.first()
+        assertFalse(
+            result.sameAsBaseline,
+            "Null baseline body vs non-empty target body must be structurally DIFFERENT -> sameAsBaseline=false"
+        )
+        assertTrue(
+            result.vulnerable,
+            "Non-empty target body when baseline is empty (null) -> IDOR must be flagged vulnerable"
+        )
+        assertEquals(1, resp.vulnerableCount)
+    }
+
+    /**
+     * RED->GREEN [01] counter-case: baseline body=null AND target body=null
+     * -> both empty -> sameAsBaseline=true -> NOT vulnerable.
+     * No content to compare; treating two empty responses as "the same" avoids false positives.
+     */
+    @Test
+    fun `idor - null baseline body with null target body is sameAsBaseline and NOT vulnerable`() {
+        every { sessionService.send(any()) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = null,   // both baseline and target return null body
+            durationMs = 0,
+        )
+
+        val resp = svc.idor(
+            IdorRequest(
+                endpoint = "http://t/resource?id={id}",
+                param = "id",
+                ownValues = listOf("own"),
+                targetValues = listOf("tgt"),
+            )
+        )
+
+        val result = resp.results.first()
+        assertTrue(
+            result.sameAsBaseline,
+            "Both baseline and target body null (both empty) -> sameAsBaseline=true (no content to differentiate)"
+        )
+        assertFalse(result.vulnerable, "Both empty responses -> not vulnerable")
+        assertEquals(0, resp.vulnerableCount)
+    }
+
+    /**
+     * RED->GREEN [01] regression lock: non-null baseline body with non-null target body
+     * (different content) must still be flagged vulnerable — the asymmetric-null guard
+     * must not break the existing content-primary path.
+     */
+    @Test
+    fun `idor - non-null different bodies still flagged vulnerable after null guard`() {
+        every { sessionService.send(match { it.url.contains("own") }) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = "alice-record",
+            durationMs = 0,
+        )
+        every { sessionService.send(match { it.url.contains("tgt") }) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = "bob-record",
+            durationMs = 0,
+        )
+
+        val resp = svc.idor(
+            IdorRequest(
+                endpoint = "http://t/resource?id={id}",
+                param = "id",
+                ownValues = listOf("own"),
+                targetValues = listOf("tgt"),
+            )
+        )
+
+        val result = resp.results.first()
+        assertFalse(result.sameAsBaseline, "Different non-null bodies must not be sameAsBaseline")
+        assertTrue(result.vulnerable, "Different non-null bodies -> IDOR -> vulnerable=true")
+        assertEquals(1, resp.vulnerableCount)
+    }
+
+    // ---------------------------------------------------------------------------
     // [08] and [11] — model fields wired (note, ignoredOwnValues)
     // ---------------------------------------------------------------------------
 

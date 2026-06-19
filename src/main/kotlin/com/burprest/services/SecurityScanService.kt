@@ -115,8 +115,23 @@ class SecurityScanService(
             //    fields beyond byte 200) must NOT be treated as the same record. Reuse the same
             //    5% / coerceAtLeast(10) threshold to decide "materially different".
             //  - When previews are unavailable → length-delta check only (original heuristic).
+            //
+            // [01] Asymmetric-null guard (false-negative fix):
+            //  SessionService.send returns body=null for an empty HTTP response body, making
+            //  baselineBodyPreview null. When exactly one of {baselineBodyPreview, targetBodyPreview}
+            //  is null/empty and the other is non-empty, the two records are structurally DIFFERENT
+            //  (one has content, one does not). Force sameAsBaseline=false so a real IDOR returning
+            //  a short affirmative/secret body is not silently missed.
+            //  Exception: BOTH null/empty → both bodies are absent → treat as "same" (no content to
+            //  differentiate; returning false here would produce false positives on public endpoints
+            //  that legitimately return 200 with no body for all resource IDs).
+            val baselineEmpty = baselineBodyPreview.isNullOrEmpty()
+            val targetEmpty = targetBodyPreview.isNullOrEmpty()
             val lengthThreshold = (baseline.length * 0.05).toInt().coerceAtLeast(10)
-            val sameAsBaseline = if (baselineBodyPreview != null && targetBodyPreview != null) {
+            val sameAsBaseline = if (baselineEmpty != targetEmpty) {
+                // Exactly one side has content → structurally different records
+                false
+            } else if (baselineBodyPreview != null && targetBodyPreview != null) {
                 // Primary signal: content equality of first 200 chars
                 if (baselineBodyPreview != targetBodyPreview) {
                     false  // Different previews → different record
@@ -125,7 +140,7 @@ class SecurityScanService(
                     kotlin.math.abs(length - baseline.length) < lengthThreshold
                 }
             } else {
-                // Secondary fallback: length delta (original heuristic, kept when content unavailable)
+                // Secondary fallback: both previews null/empty → length-delta check only
                 resp.statusCode == baseline.status &&
                     kotlin.math.abs(length - baseline.length) < lengthThreshold
             }
