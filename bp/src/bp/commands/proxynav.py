@@ -17,7 +17,7 @@ from typing import Annotated, Any
 
 import typer
 
-from bp.cliutil import run
+from bp.cliutil import EXIT_USAGE, run
 from bp.models import ProxyEntry
 
 
@@ -126,7 +126,7 @@ def intercept(
             f"error: intercept action must be one of {_INTERCEPT_ACTIONS!r}, got {action!r}",
             err=True,
         )
-        raise typer.Exit(2)
+        raise typer.Exit(EXIT_USAGE)
 
     if action in _STUBS:
         typer.echo(
