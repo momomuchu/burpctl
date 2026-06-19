@@ -64,10 +64,17 @@ class UtilsService(private val sessionService: SessionService) {
         if (body.trimStart().startsWith("<!") || body.contains("<script")) {
             val scriptPattern = Regex("""<script[^>]+src=["']([^"']+\.js[^"']*)["']""")
             val baseUrl = request.url.removeSuffix("/")
+            // Resolve + validate the host once, before the loop, so a malformed URL surfaces as a
+            // clean 400 (IllegalArgumentException) instead of a URISyntaxException escaping mid-loop.
+            val baseHost = try {
+                java.net.URI(baseUrl).host
+            } catch (_: Exception) {
+                throw IllegalArgumentException("Invalid URL: ${request.url}")
+            }
             val jsUrls = scriptPattern.findAll(body).map { it.groupValues[1] }.toList()
             for (jsUrl in jsUrls.take(10)) {
                 val fullUrl = if (jsUrl.startsWith("http")) jsUrl
-                    else if (jsUrl.startsWith("/")) "${baseUrl.substringBefore("://")}//${java.net.URI(baseUrl).host}$jsUrl"
+                    else if (jsUrl.startsWith("/")) "${baseUrl.substringBefore("://")}//$baseHost$jsUrl"
                     else "$baseUrl/$jsUrl"
                 try {
                     val jsResp = sessionService.send(AuthenticatedRequest(url = fullUrl))
