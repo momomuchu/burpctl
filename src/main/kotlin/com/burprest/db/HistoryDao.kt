@@ -133,7 +133,14 @@ class HistoryDao(private val db: DatabaseManager) {
         filter.method?.let { clauses.add("method = ?"); params.add(it) }
         filter.statusCode?.let { clauses.add("status_code = ?"); params.add(it) }
         filter.source?.let { clauses.add("source = ?"); params.add(it) }
-        filter.search?.let { clauses.add("(url LIKE ? OR req_body LIKE ? OR res_body LIKE ?)"); params.add("%$it%"); params.add("%$it%"); params.add("%$it%") }
+        filter.search?.let {
+            // Escape LIKE metacharacters so a literal % or _ in the search term is matched literally.
+            val esc = it.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            clauses.add(
+                "(url LIKE ? ESCAPE '\\' OR req_body LIKE ? ESCAPE '\\' OR res_body LIKE ? ESCAPE '\\')"
+            )
+            params.add("%$esc%"); params.add("%$esc%"); params.add("%$esc%")
+        }
         filter.since?.let { clauses.add("timestamp >= ?"); params.add(it) }
         filter.until?.let { clauses.add("timestamp <= ?"); params.add(it) }
 
