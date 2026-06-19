@@ -283,10 +283,16 @@ def test_has_findings_on_projected_dict() -> None:
 
 
 def test_project_no_body_preview_input_is_identity_like() -> None:
-    """When there is no bodyPreview/note/ignoredOwnValues, projection is essentially a no-op."""
+    """When there is no bodyPreview/note/ignoredOwnValues, projection preserves all input
+    fields and adds exactly one key: 'verdict' (additive per [09], OUTPUT.md §1.5)."""
     data: dict[str, Any] = {"vulnerableCount": 0, "results": [], "anomalousCount": 0}
     projected = _project_for_display(data)
-    assert projected == data
+    # All original keys must be preserved unchanged.
+    for k, v in data.items():
+        assert projected[k] == v, f"key {k!r} was mutated by projection"
+    # The only addition is the verdict key.
+    assert projected.get("verdict") == "clean"
+    assert set(projected.keys()) == set(data.keys()) | {"verdict"}
 
 
 def test_project_handles_missing_baseline_gracefully() -> None:
@@ -307,6 +313,90 @@ def test_project_handles_deeply_nested_body_preview() -> None:
     }
     projected = _project_for_display(data)
     assert not _deep_has_key(projected, "bodyPreview")
+
+
+# ---------------------------------------------------------------------------
+# [09] RED — quiet format must emit 'vulnerable' or 'clean', not Python repr
+# ---------------------------------------------------------------------------
+
+
+def test_project_adds_verdict_vulnerable_when_findings_present() -> None:
+    """[09] RED: _project_for_display must inject verdict='vulnerable' when _has_findings."""
+    data: dict[str, Any] = {"vulnerableCount": 1, "results": []}
+    projected = _project_for_display(data)
+    assert projected.get("verdict") == "vulnerable", (
+        f"expected verdict='vulnerable', got {projected.get('verdict')!r}"
+    )
+
+
+def test_project_adds_verdict_clean_when_no_findings() -> None:
+    """[09] RED: _project_for_display must inject verdict='clean' when no findings."""
+    data: dict[str, Any] = {"vulnerableCount": 0, "anomalousCount": 0, "findings": []}
+    projected = _project_for_display(data)
+    assert projected.get("verdict") == "clean", (
+        f"expected verdict='clean', got {projected.get('verdict')!r}"
+    )
+
+
+def test_project_adds_verdict_vulnerable_via_anomalous_count() -> None:
+    """[09] anomalousCount > 0 → verdict='vulnerable'."""
+    data: dict[str, Any] = {"anomalousCount": 2}
+    projected = _project_for_display(data)
+    assert projected.get("verdict") == "vulnerable"
+
+
+def test_project_adds_verdict_vulnerable_via_findings_list() -> None:
+    """[09] non-empty findings list → verdict='vulnerable' (endpoints shape)."""
+    data: dict[str, Any] = {"findings": [{"endpoint": "/admin"}], "scanned": 1}
+    projected = _project_for_display(data)
+    assert projected.get("verdict") == "vulnerable"
+
+
+def test_quiet_render_verdict_vulnerable() -> None:
+    """[09] render(projected, 'quiet') → 'vulnerable' when verdict key present."""
+    from bp.output import render
+    data = {"verdict": "vulnerable", "vulnerableCount": 1}
+    assert render(data, "quiet") == "vulnerable"
+
+
+def test_quiet_render_verdict_clean() -> None:
+    """[09] render(projected, 'quiet') → 'clean' when verdict='clean'."""
+    from bp.output import render
+    data = {"verdict": "clean", "vulnerableCount": 0}
+    assert render(data, "quiet") == "clean"
+
+
+def test_quiet_verdict_takes_priority_over_status() -> None:
+    """[09] 'verdict' key must be picked before 'status' in _ESSENTIAL ordering."""
+    from bp.output import render
+    # If verdict is present it must win over status
+    data = {"verdict": "vulnerable", "status": 200}
+    assert render(data, "quiet") == "vulnerable"
+
+
+def test_json_render_includes_verdict() -> None:
+    """[09] json/table formats still include verdict (additive, not stripped)."""
+    from bp.output import render
+    import json as _json
+    data = {"verdict": "vulnerable", "vulnerableCount": 1}
+    out = render(data, "json")
+    parsed = _json.loads(out)
+    assert parsed["verdict"] == "vulnerable"
+    assert parsed["vulnerableCount"] == 1
+
+
+def test_project_verdict_does_not_break_has_findings_contract() -> None:
+    """[09] _has_findings still works on projected dict (verdict key has no effect on it)."""
+    data: dict[str, Any] = {"vulnerableCount": 3}
+    projected = _project_for_display(data)
+    assert _has_findings(projected) is True
+
+
+def test_project_clean_verdict_with_empty_findings() -> None:
+    """[09] findings=[] (endpoints clean scan) → verdict='clean'."""
+    data: dict[str, Any] = {"findings": [], "scanned": 5, "durationMs": 80}
+    projected = _project_for_display(data)
+    assert projected.get("verdict") == "clean"
 
 
 @pytest.mark.skipif(not _burp_up, reason="needs live Burp REST on :8089")

@@ -406,3 +406,53 @@ def test_empty_list_with_fields_is_empty_in_both_json_and_table() -> None:
     json previously raised 'unknown field' while table returned '' (OUTPUT.md A1 parity)."""
     assert render([], "json", fields=["status"]) == ""
     assert render([], "table", fields=["status"]) == ""
+
+
+# ---------------------------------------------------------------------------
+# [07] — _render_json: non-empty list with no dict rows + --fields is a usage error
+# ---------------------------------------------------------------------------
+
+
+def test_json_fields_empty_list_returns_empty_string() -> None:
+    """[07] Truly empty list + --fields → '' (exit 0). Round-8 parity must not regress."""
+    assert render([], "json", fields=["x"]) == ""
+
+
+def test_json_fields_nonempty_non_dict_list_raises_value_error() -> None:
+    """[07] Non-empty list with NO dict rows + --fields → ValueError (usage error).
+
+    Before the fix, _select_list_rows([], fields) short-circuited to [] and the
+    --fields flag was silently ignored.  Per OUTPUT.md §2.1 R-FIELDS, an unknown
+    field must be a usage error; a non-dict-only list has no field schema to honor.
+    """
+    with pytest.raises(ValueError, match="--fields"):
+        render(["a", "b"], "json", fields=["x"])
+
+
+def test_json_fields_nonempty_non_dict_list_single_item_raises() -> None:
+    """[07] Single non-dict item in list + --fields → ValueError, not silent."""
+    with pytest.raises(ValueError):
+        render([42], "json", fields=["status"])
+
+
+def test_json_fields_nonempty_non_dict_list_none_items_raises() -> None:
+    """[07] List of None values + --fields → ValueError (no dict rows to honor --fields)."""
+    with pytest.raises(ValueError):
+        render([None, None], "json", fields=["status"])
+
+
+def test_json_fields_mixed_dict_and_non_dict_still_works() -> None:
+    """[07] A list with at least one dict row + --fields should NOT raise.
+
+    Only the pure-non-dict case is the bug; mixed lists with dicts
+    go through _select_list_rows normally.
+    """
+    # Has one dict row → no error; non-dict items pass through without field selection
+    out = render([{"status": 200}, "extra"], "json", fields=["status"])
+    assert '{"status":200}' in out
+
+
+def test_json_no_fields_nonempty_non_dict_list_still_works() -> None:
+    """[07] Non-dict list without --fields is untouched (no regression)."""
+    out = render(["a", "b"], "json")
+    assert out == '"a"\n"b"'

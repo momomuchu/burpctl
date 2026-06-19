@@ -12,7 +12,9 @@ from typing import Any
 FORMATS = ("json", "table", "raw", "quiet")
 
 # Keys tried, in order, when --quiet must pick the one essential value of a record.
-_ESSENTIAL = ("status", "statusCode", "id", "attackId", "payload", "result", "value")
+# "verdict" leads so that bp check * --format quiet emits 'vulnerable'/'clean' first
+# (OUTPUT.md §1.5 R-ESSENTIAL — bp scan * quiet value).
+_ESSENTIAL = ("verdict", "status", "statusCode", "id", "attackId", "payload", "result", "value")
 
 
 def render(data: Any, fmt: str = "table", *, fields: list[str] | None = None) -> str:
@@ -136,6 +138,15 @@ def _render_json(data: Any, fields: list[str] | None) -> str:
     if isinstance(data, list):
         if fields is not None:
             dicts = [r for r in data if isinstance(r, dict)]
+            # [07] Distinguish genuinely empty input (return empty, exit 0 — round-8
+            # parity) from a non-empty list that contains NO dict rows at all.
+            # In the latter case --fields cannot be honoured: raise a usage error
+            # instead of silently ignoring the flag (OUTPUT.md §2.1 R-FIELDS).
+            if data and not dicts:
+                raise ValueError(
+                    "--fields requires dict records; "
+                    "the input list contains no dict rows to select fields from"
+                )
             selected = _select_list_rows(dicts, fields)
             # interleave in original order
             it_sel = iter(selected)

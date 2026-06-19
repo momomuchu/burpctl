@@ -72,6 +72,11 @@ def _project_for_display(
     if "ignoredOwnValues" in projected and projected["ignoredOwnValues"] == []:
         del projected["ignoredOwnValues"]
 
+    # [09] Inject one-word verdict for --format quiet (OUTPUT.md §1.5 R-ESSENTIAL).
+    # "vulnerable" when any finding signal is present, "clean" otherwise.
+    # This is additive — json/table still render the full structured response.
+    projected["verdict"] = "vulnerable" if _has_findings(projected) else "clean"
+
     if return_note:
         return projected, note
     return projected
