@@ -5,6 +5,8 @@ All tests use a real SQLite DB in a tmp directory — no mocks, no Burp required
 
 from __future__ import annotations
 
+import os
+import stat
 from pathlib import Path
 
 import httpx
@@ -474,3 +476,65 @@ def test_close_on_already_closed_ledger_does_not_raise(tmp_path: Path) -> None:
     ledger = Ledger(db_path=tmp_path / "c.db")
     ledger.close()
     ledger.close()  # second close must not raise
+
+
+# ---------------------------------------------------------------------------
+# [10] RED — ~/.bp/ and ledger.db must be private to the owning user
+# ---------------------------------------------------------------------------
+
+
+def test_ledger_db_file_mode_is_0o600(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """[10] After Ledger() initialises a fresh db, the file must be mode 0o600 (no group/other bits).
+
+    A pentest tool's op log (targets, methods, timestamps, sha256 fingerprints) must
+    not be world-readable.  Requirement: stat.S_IMODE(os.stat(db).st_mode) == 0o600.
+    """
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setenv("HOME", str(fake_home))
+    db_path = fake_home / ".bp" / "ledger.db"
+
+    ledger = Ledger(db_path=db_path)
+    ledger.close()
+
+    assert db_path.exists(), "ledger.db was not created"
+    file_mode = stat.S_IMODE(os.stat(db_path).st_mode)
+    assert file_mode == 0o600, (
+        f"ledger.db must be 0o600 (owner read/write only), got {oct(file_mode)}"
+    )
+
+
+def test_ledger_dir_mode_is_0o700(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """[10] The ~/.bp/ directory must be created with mode 0o700 (no group/other access).
+
+    Listing the directory would reveal that a bp ledger exists, leaking operator metadata.
+    Requirement: stat.S_IMODE(os.stat(bp_dir).st_mode) == 0o700.
+    """
+    fake_home = tmp_path / "home2"
+    fake_home.mkdir()
+    monkeypatch.setenv("HOME", str(fake_home))
+    db_path = fake_home / ".bp" / "ledger.db"
+    bp_dir = fake_home / ".bp"
+
+    ledger = Ledger(db_path=db_path)
+    ledger.close()
+
+    assert bp_dir.exists(), "~/.bp/ directory was not created"
+    dir_mode = stat.S_IMODE(os.stat(bp_dir).st_mode)
+    assert dir_mode == 0o700, (
+        f"~/.bp/ dir must be 0o700 (owner only), got {oct(dir_mode)}"
+    )
+
+
+def test_ledger_chmod_best_effort_does_not_raise_on_existing_db(tmp_path: Path) -> None:
+    """[10] Regression: if the db file already exists (re-open), chmod must still be applied
+    and must not raise even if the file is on a normal POSIX FS."""
+    db_path = tmp_path / ".bp" / "ledger.db"
+    # First open — creates the file
+    ledger = Ledger(db_path=db_path)
+    ledger.close()
+    # Second open — file already exists; chmod must not crash
+    ledger2 = Ledger(db_path=db_path)
+    ledger2.close()
+    file_mode = stat.S_IMODE(os.stat(db_path).st_mode)
+    assert file_mode == 0o600

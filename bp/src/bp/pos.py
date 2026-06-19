@@ -81,7 +81,7 @@ def _resolve_cookie(raw: bytes, arg: str, selector: str) -> Position:
             seg_end = semi if semi != -1 else len(val)
             seg = val[pos:seg_end]
             lead = 0
-            while lead < len(seg) and seg[lead] == 0x20:
+            while lead < len(seg) and seg[lead] in (0x20, 0x09):
                 lead += 1
             eq = seg.find(b"=")
             if eq != -1 and seg[lead:eq] == key:

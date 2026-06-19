@@ -470,3 +470,39 @@ def test_form_body_missing_field_still_raises() -> None:
     with pytest.raises(PosError) as ei:
         resolve_pos(req, "body:missing")
     assert ei.value.code == "POS_NOT_FOUND"
+
+
+# --- [00] cookie resolver: TAB (0x09) after ';' is valid OWS (RFC 6265 §4.2.1) ---
+
+
+def test_cookie_tab_ows_finds_second_cookie() -> None:
+    """[00] cookie:b on 'Cookie: a=1;\\tb=2' must resolve to b'2'.
+
+    RFC 6265 §4.2.1 / RFC 7230 §3.2.3 define OWS = *(SP / HTAB).  A TAB
+    after the ';' is valid optional whitespace; the resolver must skip it just
+    like a plain space so that the key comparison hits 'b', not '\\tb'.
+    """
+    req = b"GET / HTTP/1.1\r\nHost: x\r\nCookie: a=1;\tb=2\r\n\r\n"
+    p = resolve_pos(req, "cookie:b")
+    assert req[p.start : p.end] == b"2"
+
+
+def test_cookie_tab_ows_first_cookie_still_resolves() -> None:
+    """[00] regression: the first cookie (no leading OWS) must still resolve correctly."""
+    req = b"GET / HTTP/1.1\r\nHost: x\r\nCookie: a=1;\tb=2\r\n\r\n"
+    p = resolve_pos(req, "cookie:a")
+    assert req[p.start : p.end] == b"1"
+
+
+def test_cookie_space_ows_still_resolves() -> None:
+    """[00] regression: space OWS (existing behaviour) must still work after the TAB fix."""
+    req = b"GET / HTTP/1.1\r\nHost: x\r\nCookie: a=1; b=2\r\n\r\n"
+    p = resolve_pos(req, "cookie:b")
+    assert req[p.start : p.end] == b"2"
+
+
+def test_cookie_mixed_ows_tab_and_space() -> None:
+    """[00] a TAB immediately followed by a space before the key must both be skipped."""
+    req = b"GET / HTTP/1.1\r\nHost: x\r\nCookie: a=1;\t b=2\r\n\r\n"
+    p = resolve_pos(req, "cookie:b")
+    assert req[p.start : p.end] == b"2"

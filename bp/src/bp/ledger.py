@@ -196,11 +196,24 @@ class Ledger:
 
     def __init__(self, db_path: Path | None = None) -> None:
         self._path = db_path or _default_db_path()
-        self._path.parent.mkdir(parents=True, exist_ok=True)
+        self._path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        # Tighten the directory to 0o700 in case it was created by an earlier
+        # version (or mkdir's mode was masked by umask on some platforms).
+        try:
+            os.chmod(self._path.parent, 0o700)
+        except OSError:
+            pass
         self._conn = sqlite3.connect(str(self._path))
         self._conn.row_factory = sqlite3.Row
         self._conn.executescript(_DDL)
         self._conn.commit()
+        # Restrict the db file to owner-only after sqlite3 creates it.
+        # Best-effort: only chmod when the path exists; silently ignore exotic FS.
+        try:
+            if self._path.exists():
+                os.chmod(self._path, 0o600)
+        except OSError:
+            pass
 
     def close(self) -> None:
         try:
