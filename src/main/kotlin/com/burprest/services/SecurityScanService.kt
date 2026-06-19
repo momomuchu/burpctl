@@ -184,7 +184,7 @@ class SecurityScanService(
             val status = resp.statusCode
             val length = resp.body?.length ?: 0
             val anomalous = status != baseline.status ||
-                kotlin.math.abs(length - baseline.length) > (baseline.length * 0.1).toInt().coerceAtLeast(50)
+                kotlin.math.abs(length - baseline.length) > (baseline.length * 0.1).toInt().coerceAtLeast(10)
 
             HeadersBypassResult(
                 header = header, value = value,

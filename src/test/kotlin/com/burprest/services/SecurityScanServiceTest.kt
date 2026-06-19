@@ -908,6 +908,94 @@ class SecurityScanServiceTest {
     }
 
     // ---------------------------------------------------------------------------
+    // [headersBypass-floor] anomaly threshold floor lowered from 50 to 10
+    // ---------------------------------------------------------------------------
+
+    /**
+     * RED->GREEN [headersBypass-floor]: baseline ~22-byte JSON, probe body grows by ~15 bytes
+     * (same status 200).
+     *
+     * Old floor (50): abs(37-22)=15 > max((22*0.1).toInt()=2, 50)=50 -> 15 > 50 is FALSE
+     * -> anomalous=false -> bypass silently missed.
+     *
+     * New floor (10): abs(37-22)=15 > max((22*0.1).toInt()=2, 10)=10 -> 15 > 10 is TRUE
+     * -> anomalous=true -> bypass detected.
+     */
+    @Test
+    fun `headersBypass - small-baseline probe growing 15 bytes above floor 10 is flagged anomalous`() {
+        val baselineBody = """{"ok":true}"""          // 11 chars — well under 500-byte breakpoint
+        val probeBody    = """{"ok":true,"extra":"injected-val"}"""  // 11+26=37 chars, delta=26 > floor 10
+
+        every { sessionService.send(match { it.extraHeaders == null || it.extraHeaders!!.isEmpty() }) } returns
+            AuthenticatedResponse(statusCode = 200, headers = emptyList(), body = baselineBody, durationMs = 0)
+        every { sessionService.send(match { it.extraHeaders != null && it.extraHeaders!!.isNotEmpty() }) } returns
+            AuthenticatedResponse(statusCode = 200, headers = emptyList(), body = probeBody, durationMs = 0)
+
+        val resp = svc.headersBypass(
+            HeadersBypassRequest(url = "http://t/api/data", method = "GET")
+        )
+
+        assertTrue(
+            resp.results.any { it.anomalous },
+            "Probe body grew 26 bytes on a 11-byte baseline (delta > floor 10) " +
+                "-> at least one result must be anomalous; got: ${resp.results.map { it.anomalous }}"
+        )
+        assertTrue(resp.anomalousCount > 0)
+    }
+
+    /**
+     * [headersBypass-floor] counter-case: tiny jitter of 5 bytes on a 22-byte baseline
+     * is below floor 10 and must NOT be anomalous.
+     *
+     * abs(27-22)=5 > max((22*0.1).toInt()=2, 10)=10 -> 5 > 10 is FALSE -> anomalous=false.
+     */
+    @Test
+    fun `headersBypass - tiny jitter under floor 10 is NOT anomalous`() {
+        val baselineBody = """{"id":1,"v":1}"""          // 14 chars
+        val probeBody    = """{"id":1,"v":1,"x":1}"""    // 20 chars, delta=6 < floor 10
+
+        every { sessionService.send(match { it.extraHeaders == null || it.extraHeaders!!.isEmpty() }) } returns
+            AuthenticatedResponse(statusCode = 200, headers = emptyList(), body = baselineBody, durationMs = 0)
+        every { sessionService.send(match { it.extraHeaders != null && it.extraHeaders!!.isNotEmpty() }) } returns
+            AuthenticatedResponse(statusCode = 200, headers = emptyList(), body = probeBody, durationMs = 0)
+
+        val resp = svc.headersBypass(
+            HeadersBypassRequest(url = "http://t/api/data", method = "GET")
+        )
+
+        assertTrue(
+            resp.results.none { it.anomalous },
+            "Probe body grew only 6 bytes on a 14-byte baseline (delta < floor 10) " +
+                "-> no result must be anomalous; got: ${resp.results.map { it.anomalous }}"
+        )
+        assertEquals(0, resp.anomalousCount)
+    }
+
+    /**
+     * [headersBypass-floor] regression lock: status change always flags anomalous
+     * regardless of body length change.
+     */
+    @Test
+    fun `headersBypass - status change from baseline is always anomalous`() {
+        val body = """{"ok":true}"""
+
+        every { sessionService.send(match { it.extraHeaders == null || it.extraHeaders!!.isEmpty() }) } returns
+            AuthenticatedResponse(statusCode = 200, headers = emptyList(), body = body, durationMs = 0)
+        every { sessionService.send(match { it.extraHeaders != null && it.extraHeaders!!.isNotEmpty() }) } returns
+            AuthenticatedResponse(statusCode = 403, headers = emptyList(), body = body, durationMs = 0)
+
+        val resp = svc.headersBypass(
+            HeadersBypassRequest(url = "http://t/api/admin", method = "GET")
+        )
+
+        assertTrue(
+            resp.results.any { it.anomalous },
+            "Status change 200->403 must always be anomalous regardless of body size"
+        )
+        assertTrue(resp.anomalousCount > 0)
+    }
+
+    // ---------------------------------------------------------------------------
     // [03] probeWithAuthRaw — must not propagate exceptions (sentinel on failure)
     // ---------------------------------------------------------------------------
 
