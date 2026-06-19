@@ -18,7 +18,7 @@ _ESSENTIAL = ("status", "statusCode", "id", "attackId", "payload", "result", "va
 def render(data: Any, fmt: str = "table", *, fields: list[str] | None = None) -> str:
     # [23] raw requires a single record (OUTPUT.md §1.3 R-RAW-SINGLE)
     if fmt == "raw" and isinstance(data, list):
-        raise ValueError("raw requires a single record; add --index N or use --format json")
+        raise ValueError("raw requires a single record; use --format json for multiple records")
     if fmt == "raw" and fields is not None:
         raise ValueError("--fields is not valid with --format raw")
     if fmt == "json":

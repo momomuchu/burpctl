@@ -59,6 +59,16 @@ def test_raw_list_raises_value_error() -> None:
         render([{"a": 1}], "raw")
 
 
+def test_raw_list_error_does_not_reference_index_flag() -> None:
+    """[04] The raw-on-list error must NOT reference --index (non-existent flag).
+    It must tell the user to use --format json instead."""
+    with pytest.raises(ValueError) as exc_info:
+        render([{"a": 1}], "raw")
+    msg = str(exc_info.value)
+    assert "--index" not in msg, f"message must not mention --index: {msg!r}"
+    assert "--format json" in msg, f"message must suggest --format json: {msg!r}"
+
+
 def test_raw_with_fields_raises_value_error() -> None:
     """[23] render(obj, 'raw', fields=[...]) must raise ValueError."""
     with pytest.raises(ValueError, match="--fields is not valid with --format raw"):
