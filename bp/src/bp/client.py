@@ -22,6 +22,22 @@ from bp.ledger import Ledger, OpRecord
 from bp.models import ApiResponse, HealthData, VersionData
 
 
+def _netloc_no_userinfo(url: str) -> str | None:
+    """Return ``host:port`` (or just ``host``) from *url*, stripping any ``user:password@`` userinfo.
+
+    This is used for the ledger ``target`` column so credentials embedded in
+    ``BURP_REST_URL`` (e.g. ``http://admin:s3cr3t@host:8089``) are never
+    written to ``~/.bp/ledger.db`` at rest.  Only the network address is kept.
+    """
+    parsed = urlsplit(url)
+    host = parsed.hostname or ""
+    if not host:
+        return None
+    if parsed.port is not None:
+        return f"{host}:{parsed.port}"
+    return host
+
+
 class BurpError(Exception):
     """The REST API returned an error envelope. ``code`` is the stable machine code."""
 
@@ -93,7 +109,7 @@ class BurpClient:
                 status=status,
                 command=cmd,
                 burp_op=f"{method} {path}",
-                target=urlsplit(str(self._client.base_url)).netloc or None,
+                target=_netloc_no_userinfo(str(self._client.base_url)),
                 resp_status=resp.status_code if resp is not None else None,
                 resp_len=len(resp.content) if resp is not None else None,
                 req_body=req_body,
