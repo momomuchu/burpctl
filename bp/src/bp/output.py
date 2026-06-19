@@ -106,6 +106,11 @@ def _select_list_rows(
     This replaces the old per-row _select call which raised when a field was
     absent from ANY row (over-strict, contra spec).
     """
+    # An empty result set has no rows to validate --fields against; return empty
+    # (exit 0) rather than raising "unknown field" — mirrors the _render_table
+    # `if not rows: return ""` guard so json and table agree (OUTPUT.md A1).
+    if not rows:
+        return []
     # Build union map: lowercase → canonical key (first occurrence wins)
     union_map: dict[str, str] = {}
     for row in rows:

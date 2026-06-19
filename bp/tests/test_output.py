@@ -399,3 +399,10 @@ def test_fields_union_mixed_absent_blank_json() -> None:
     assert lines[0] == '{"b":null}'
     assert lines[1] == '{"b":99}'
     assert lines[2] == '{"b":null}'
+
+
+def test_empty_list_with_fields_is_empty_in_both_json_and_table() -> None:
+    """Round-8: an empty result set + --fields must return '' (exit 0) in BOTH formats —
+    json previously raised 'unknown field' while table returned '' (OUTPUT.md A1 parity)."""
+    assert render([], "json", fields=["status"]) == ""
+    assert render([], "table", fields=["status"]) == ""
