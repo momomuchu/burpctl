@@ -13,7 +13,9 @@ fun Route.collaboratorRoutes(service: CollaboratorService) {
     route("/collaborator") {
         post("/generate") {
             try {
-                call.respond(ApiResponse.ok(service.generatePayload()))
+                // Return the same {payloads:[...]} shape as /generate/batch (a singleton list) so
+                // the client reads one stable shape regardless of --count.
+                call.respond(ApiResponse.ok(service.generateBatch(1)))
             } catch (_: Throwable) {
                 call.respond(HttpStatusCode.ServiceUnavailable, ApiResponse.error<Unit>(
                     "PRO_REQUIRED",
