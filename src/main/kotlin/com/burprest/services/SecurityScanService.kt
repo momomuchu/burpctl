@@ -108,17 +108,26 @@ class SecurityScanService(
             val length = resp.body?.length ?: 0
             val targetBodyPreview = resp.body?.take(200)
 
-            // [09] sameAsBaseline is content-primary:
-            //  - When BOTH previews are available and differ → different record → NOT same as baseline.
-            //  - When previews are equal (or unavailable) → fall back to length-delta check.
+            // [09] sameAsBaseline is content-primary with length tiebreaker:
+            //  - When BOTH previews are available and DIFFER → different record → NOT same as baseline.
+            //  - When previews are EQUAL (first 200 chars match) → fall back to length-delta check.
+            //    A target body that shares the first 200 chars but is materially longer (extra secret
+            //    fields beyond byte 200) must NOT be treated as the same record. Reuse the same
+            //    5% / coerceAtLeast(10) threshold to decide "materially different".
+            //  - When previews are unavailable → length-delta check only (original heuristic).
+            val lengthThreshold = (baseline.length * 0.05).toInt().coerceAtLeast(10)
             val sameAsBaseline = if (baselineBodyPreview != null && targetBodyPreview != null) {
                 // Primary signal: content equality of first 200 chars
-                baselineBodyPreview == targetBodyPreview
+                if (baselineBodyPreview != targetBodyPreview) {
+                    false  // Different previews → different record
+                } else {
+                    // Previews equal — tiebreaker: length must also be within threshold
+                    kotlin.math.abs(length - baseline.length) < lengthThreshold
+                }
             } else {
                 // Secondary fallback: length delta (original heuristic, kept when content unavailable)
                 resp.statusCode == baseline.status &&
-                    kotlin.math.abs(length - baseline.length) <
-                        (baseline.length * 0.05).toInt().coerceAtLeast(10)
+                    kotlin.math.abs(length - baseline.length) < lengthThreshold
             }
 
             val vulnerable = !sameAsBaseline && resp.statusCode in 200..299 && length > 0
@@ -198,8 +207,11 @@ class SecurityScanService(
             val acao = resp.headers.find { it.name.equals("Access-Control-Allow-Origin", ignoreCase = true) }?.value
             val acac = resp.headers.find { it.name.equals("Access-Control-Allow-Credentials", ignoreCase = true) }?.value
 
-            // Vulnerable if origin is reflected AND credentials allowed
-            val vulnerable = acao != null && acao != "*" && acac?.equals("true", ignoreCase = true) == true
+            // Vulnerable if origin is reflected (server echoes back the attacker-controlled origin)
+            // AND credentials are allowed. A static ACAO that never mirrors the sent origin is NOT
+            // exploitable as a CORS credential-theft vector even when ACAC is true.
+            val vulnerable = acao != null && acao != "*" && acao == origin &&
+                acac?.equals("true", ignoreCase = true) == true
 
             CorsProbeResult(origin = origin, acao = acao, acac = acac, vulnerable = vulnerable)
         }
@@ -336,7 +348,10 @@ class SecurityScanService(
      * A short login/redirect page that shares no content with the auth response will score false.
      */
     private fun contentSimilar(authBody: String, unauthBody: String): Boolean {
-        if (authBody.isEmpty() && unauthBody.isEmpty()) return true
+        // Both empty: inconclusive — no protected content is present to confirm a bypass.
+        // Returning true here would flag every public endpoint that returns an empty 200 body
+        // as a vulnerability (false positive). Return false so callers skip it.
+        if (authBody.isEmpty() && unauthBody.isEmpty()) return false
         if (authBody.isEmpty() || unauthBody.isEmpty()) return false
         val authPreview = authBody.take(200)
         val unauthPreview = unauthBody.take(200)

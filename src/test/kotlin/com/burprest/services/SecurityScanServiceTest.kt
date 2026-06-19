@@ -280,6 +280,204 @@ class SecurityScanServiceTest {
     }
 
     // ---------------------------------------------------------------------------
+    // [01] CORS — vulnerable only when server reflects the attacker-controlled origin
+    // ---------------------------------------------------------------------------
+
+    /**
+     * RED->GREEN [01]: static ACAO (https://myapp.com) + ACAC=true but NOT reflecting the
+     * sent origin -> vulnerable must be false (false-positive guard).
+     */
+    @Test
+    fun `cors - static non-reflected ACAO with credentials allowed is NOT vulnerable`() {
+        // sessionService.send returns a response where ACAO is a static value, not the probed origin
+        every { sessionService.send(any()) } answers {
+            AuthenticatedResponse(
+                statusCode = 200,
+                headers = listOf(
+                    // Static ACAO — never reflects the sent origin
+                    HttpHeader("Access-Control-Allow-Origin", "https://myapp.com"),
+                    HttpHeader("Access-Control-Allow-Credentials", "true"),
+                ),
+                body = "ok",
+                durationMs = 0,
+            )
+        }
+
+        val resp = svc.cors(CorsRequest(url = "https://myapp.com/api/data", method = "GET"))
+
+        // None of the 8 probes should be vulnerable: ACAO never mirrors the sent origin
+        assertTrue(
+            resp.results.none { it.vulnerable },
+            "Static ACAO (not reflecting origin) + ACAC=true must NOT be flagged vulnerable; got: ${resp.results.filter { it.vulnerable }}"
+        )
+        assertEquals(0, resp.vulnerableCount)
+    }
+
+    /**
+     * RED->GREEN [01]: server ECHOES back the sent origin (reflection) + ACAC=true -> vulnerable=true.
+     */
+    @Test
+    fun `cors - reflected origin with credentials allowed IS vulnerable`() {
+        every { sessionService.send(any()) } answers {
+            val req = firstArg<AuthenticatedRequest>()
+            val origin = req.extraHeaders?.get("Origin") ?: "https://evil.com"
+            AuthenticatedResponse(
+                statusCode = 200,
+                headers = listOf(
+                    // Echo the exact origin back — this is the reflection that makes it exploitable
+                    HttpHeader("Access-Control-Allow-Origin", origin),
+                    HttpHeader("Access-Control-Allow-Credentials", "true"),
+                ),
+                body = "ok",
+                durationMs = 0,
+            )
+        }
+
+        val resp = svc.cors(CorsRequest(url = "https://target.com/api/data", method = "GET"))
+
+        // All probes receive reflected ACAO + ACAC=true -> all should be vulnerable
+        assertTrue(
+            resp.results.any { it.vulnerable },
+            "Reflected ACAO + ACAC=true must be flagged vulnerable"
+        )
+        assertTrue(resp.vulnerableCount > 0)
+    }
+
+    // ---------------------------------------------------------------------------
+    // [02] contentSimilar — both empty bodies must NOT be similar (inconclusive)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * RED->GREEN [02]: contentSimilar("","") must return false.
+     * Two empty bodies are inconclusive — no protected content to confirm a bypass.
+     */
+    @Test
+    fun `authBypass - two empty bodies are NOT flagged vulnerable (contentSimilar false for both-empty)`() {
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+
+        every { spy.probeWithAuthRaw(any(), any()) } returns
+            SecurityScanService.RawProbe(200, "", 0)
+        every { spy.probeNoAuthRaw(any(), any()) } returns
+            SecurityScanService.RawProbe(200, "", 0)
+
+        val resp = spy.authBypass(
+            AuthBypassRequest(
+                endpoints = listOf("/api/public-empty"),
+                baseUrl = "http://t",
+                method = "GET",
+            )
+        )
+
+        val result = resp.results.first()
+        assertFalse(
+            result.vulnerable,
+            "Both bodies empty -> inconclusive -> contentSimilar must return false -> not vulnerable"
+        )
+        assertEquals(0, resp.vulnerableCount)
+    }
+
+    /**
+     * RED->GREEN [02] counter-case: non-empty equal bodies still yield vulnerable=true.
+     */
+    @Test
+    fun `authBypass - two equal non-empty bodies ARE flagged vulnerable`() {
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+
+        val body = "protected-content-payload"
+        every { spy.probeWithAuthRaw(any(), any()) } returns
+            SecurityScanService.RawProbe(200, body, 0)
+        every { spy.probeNoAuthRaw(any(), any()) } returns
+            SecurityScanService.RawProbe(200, body, 0)
+
+        val resp = spy.authBypass(
+            AuthBypassRequest(
+                endpoints = listOf("/api/data"),
+                baseUrl = "http://t",
+                method = "GET",
+            )
+        )
+
+        assertTrue(resp.results.first().vulnerable, "Equal non-empty bodies -> bypass confirmed -> vulnerable=true")
+        assertEquals(1, resp.vulnerableCount)
+    }
+
+    // ---------------------------------------------------------------------------
+    // [03] IDOR — equal preview but materially longer target must NOT be sameAsBaseline
+    // ---------------------------------------------------------------------------
+
+    /**
+     * RED->GREEN [03]: baseline and target share the same first 200 chars but target has
+     * 200 extra bytes (well beyond the 5% / coerceAtLeast(10) threshold).
+     * Old code: previews equal -> sameAsBaseline=true -> NOT vulnerable (FALSE NEGATIVE).
+     * New code: previews equal BUT length delta too large -> sameAsBaseline=false -> vulnerable=true.
+     */
+    @Test
+    fun `idor - equal preview but target materially longer is NOT sameAsBaseline and IS vulnerable`() {
+        val sharedPrefix = "x".repeat(200)  // exactly 200 chars — identical preview for both
+        val baselineBody = sharedPrefix + "baseline-only-data"
+        val targetBody   = sharedPrefix + "target-extra-secret-fields-" + "y".repeat(200)  // ~200+ extra bytes
+
+        every { sessionService.send(match { it.url.contains("own") }) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = baselineBody,
+            durationMs = 0,
+        )
+        every { sessionService.send(match { it.url.contains("other") }) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = targetBody,
+            durationMs = 0,
+        )
+
+        val resp = svc.idor(
+            IdorRequest(
+                endpoint = "http://t/resource?id={id}",
+                param = "id",
+                ownValues = listOf("own"),
+                targetValues = listOf("other"),
+            )
+        )
+
+        val result = resp.results.first()
+        assertFalse(
+            result.sameAsBaseline,
+            "Equal preview but target is ${targetBody.length - baselineBody.length} bytes longer than baseline — must NOT be sameAsBaseline"
+        )
+        assertTrue(result.vulnerable, "Materially longer response for another ID -> IDOR -> vulnerable=true")
+        assertEquals(1, resp.vulnerableCount)
+    }
+
+    /**
+     * RED->GREEN [03] counter-case: equal preview AND equal length -> sameAsBaseline=true, not vulnerable.
+     */
+    @Test
+    fun `idor - equal preview and equal length IS sameAsBaseline and NOT vulnerable`() {
+        val sharedBody = "x".repeat(200) + "common-suffix"
+
+        every { sessionService.send(any()) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = sharedBody,
+            durationMs = 0,
+        )
+
+        val resp = svc.idor(
+            IdorRequest(
+                endpoint = "http://t/resource?id={id}",
+                param = "id",
+                ownValues = listOf("own"),
+                targetValues = listOf("other"),
+            )
+        )
+
+        val result = resp.results.first()
+        assertTrue(result.sameAsBaseline, "Equal preview + equal length -> same record -> sameAsBaseline=true")
+        assertFalse(result.vulnerable, "Same content -> not an IDOR -> not vulnerable")
+        assertEquals(0, resp.vulnerableCount)
+    }
+
+    // ---------------------------------------------------------------------------
     // [08] and [11] — model fields wired (note, ignoredOwnValues)
     // ---------------------------------------------------------------------------
 
