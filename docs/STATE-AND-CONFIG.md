@@ -1,13 +1,12 @@
 # `bp` — Persistence (Run Ledger) & Configuration (spec)
 
-> **DRAFT — spec, not code.** Ref: `ADR-0005` (Ledger ON by default, SQLite `~/.bp/`),
-> `ADR-0007` (configurable security guards, non-blocking), `OUTPUT.md` (`bp log`), gaps research
-> (resp_sha256 / never raw bodies, redaction I7).
+> Ref: `ADR-0005` (Ledger ON by default, SQLite `~/.bp/`),
+> `ADR-0007` (configurable security guards, non-blocking), `OUTPUT.md` (`bp log`).
 
 ## 1 · Run Ledger — SQLite schema (`~/.bp/ledger.db`)
 
 ON by default (`--no-ledger` to opt out per operation). **We store fingerprints + refs, NOT raw
-bodies** by default (bb-mini concept: no leakage, lightweight ledger).
+bodies** by default — no leakage, lightweight ledger.
 
 ```sql
 CREATE TABLE ops (
@@ -16,8 +15,8 @@ CREATE TABLE ops (
   command     TEXT,               -- bp subcommand name only (e.g. "bp check idor"); URL/header/payload args NOT stored
   burp_op     TEXT,               -- e.g. "POST /intruder/attack/create"
   target      TEXT,               -- targeted host/url
-  program     TEXT,               -- nullable (future workspace, ADR-0007)
-  tag         TEXT,               -- nullable (--tag)
+  program     TEXT,               -- nullable (reserved, v1.1)
+  tag         TEXT,               -- nullable (--tag, user label)
   status      TEXT NOT NULL,      -- ok | error | refused
   exit_code   INTEGER,
   req_sha256  TEXT,               -- fingerprint of sent request
@@ -37,7 +36,6 @@ CREATE INDEX idx_ops_tag    ON ops(tag);
 - **Bodies**: not stored by default. `--ledger-bodies` (opt-in) → writes to `~/.bp/blobs/<sha256>`, **after redaction** if `redact=on`.
 - `bp log [--since T --until T --target H --tag X --status S --limit N]` → SELECT on `ops`.
 - `bp tag <opId> <name>` → UPDATE tag. (Query surface = `OUTPUT.md`.)
-- **Integrity** (bb-certify concept, future): `bp certify` could produce a SHA-256 manifest — out of driver scope, noted on roadmap.
 
 ## 2 · Configuration — file + env + flags
 
@@ -47,8 +45,8 @@ CREATE INDEX idx_ops_tag    ON ops(tag);
 ```
 burp_rest_url   = http://127.0.0.1:8089
 enforce_scope   = warn        # warn | block | off   (default warn — NEVER enforced, ADR-0007)
-envelope        = off         # on | off  (anti-injection envelope around surfaced response bodies, I6)
-redact          = on          # on | off  (masks JWT/cookies/Authorization/keys in log+output, I7)
+envelope        = off         # on | off  (anti-injection envelope around surfaced response bodies)
+redact          = on          # on | off  (masks JWT/cookies/Authorization/keys in log+output)
 ledger          = on          # on | off
 throttle_ms     = 0
 anomaly_pct     = 5           # length anomaly threshold (see ALGORITHMS A2)
@@ -86,5 +84,4 @@ agent_mode      = auto        # auto | on | off (NDJSON for AI agent, see OUTPUT
 ## Status
 
 `[HIGH][BLOCKS:high]` — completes the *driver* surface (persistence + config). Together with
-`A1/A2` (ALGORITHMS) and this doc, the **driver is spec-complete**. Two decisions remain **yours**:
-implementation language + `SPEC §14` validation. **Zero code before GO.**
+`A1/A2` (ALGORITHMS) and this doc, the **driver is spec-complete**.

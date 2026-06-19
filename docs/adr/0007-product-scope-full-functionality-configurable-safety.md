@@ -5,9 +5,8 @@
 
 ## Decision
 
-`bp` targets the **full functional surface of a bug bounty tool** — every business concept
-identified in `RESEARCH-concepts.md` (35 gaps) becomes a **feature**, not
-something "out of scope by design".
+`bp` targets the **full functional surface of a bug bounty tool** — every identified capability
+becomes a **feature**, not something "out of scope by design".
 
 **Security and scope are CONFIGURABLE**, never **mandatory blocking guards**:
 - Scope verification (anti-OOS pre-fire), the anti-injection envelope (I6), and secret
@@ -23,7 +22,7 @@ bounties, plain and simple."
 
 ## Rejected Alternatives
 
-- **T1 — Pure driver**: rejected — `bp` alone would not cover the business domain; the 35 gaps would remain.
+- **T1 — Pure driver**: rejected — `bp` alone would not cover the full functional surface intended.
 - **T2 — Mandatory security floor**: rejected — the founder does NOT want an enforced guard; security
   must be configurable, not blocking.
 
@@ -34,12 +33,9 @@ bounties, plain and simple."
    classification, in addition to the current driver.
 2. **Safety** features become **flags/config**: `--enforce-scope warn|block|off`,
    `--envelope on|off`, `--redact on|off` (plus config-file equivalents).
-3. `RESEARCH-concepts.md` = the **feature roadmap** (the 35 prioritised gaps).
-4. Next spec phase: map each gap → concrete command/config and extend
+3. Next spec phase: map each identified capability → concrete command/config and extend
    `SPEC.md` + `CLI.md`. **Still zero execution before your GO.**
 
 ## Related
 
-- `docs/RESEARCH-concepts.md` (the 35 gaps) · `ADR-0005` (Run Ledger) · `ADR-0004` (fuzz --async)
-- C3 bug-bounty-mini (I6/I7/sole-egress) remains an **optional adapter**; here its concepts are
-  adopted as **native configs** of `bp`.
+- `ADR-0005` (Run Ledger) · `ADR-0004` (fuzz --async)

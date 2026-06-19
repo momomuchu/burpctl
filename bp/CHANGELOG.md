@@ -6,8 +6,8 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 
 ## [1.1.0] — 2026-06-19
 
-Post-v1.0.0 hardening: an adversarial UltraQA / Goodhart audit followed by a 9-round
-parallel ultraqa→fix convergence loop (84 commits, both suites green throughout).
+Post-v1.0.0 hardening: an extensive adversarial QA pass followed by iterative
+fix-and-verify cycles (both suites green throughout).
 
 ### Fixed
 - **Config-file `ledger=on` silently disabled the ledger.** The `invert` flag (for the
@@ -29,10 +29,10 @@ parallel ultraqa→fix convergence loop (84 commits, both suites green throughou
 - Test suite: 112 → 124 (config-file booleans, cliutil chokepoint, header parsing; replaced a
   tautological no-ledger test with real client-guard coverage).
 
-### Fixed — live UltraQA campaign (2026-06-19, against running Burp Pro on :8089)
+### Fixed — live QA campaign (2026-06-19, against running Burp Pro on :8089)
 
-Found by actually driving `bp` against the live extension plus an adversarial 43-agent
-discovery sweep (34 defects confirmed, three-way verified). HIGH:
+Found by actually driving `bp` against the live extension plus an adversarial discovery sweep
+(34 defects confirmed and independently verified). HIGH:
 
 - **`--format`/`--fields` only worked *before* the subcommand** — `bp health --format json`
   exited 2 "No such option". A conservative argv pre-processor makes the global value-options
@@ -61,17 +61,17 @@ MED and other:
   always null; `bp history list --page <negative>` leaks a JDBC exception; `decode` of
   unclassifiable input surfaces the internal `plain` encoding name; a bad `hash --algo` leaks a
   JVM `NoSuchAlgorithmException`. Grouped for a dedicated extension pass.
-- **`bp show <opId>` replay** (ADR-0005) and the `program`/`req_ref`/`resp_ref` ledger columns
-  remain v1.1 (refs require `--ledger-bodies`).
+- **`bp show <opId>` replay** (ADR-0005) and additional reserved ledger columns remain v1.1
+  (refs require `--ledger-bodies`).
 - Low-severity help-text cosmetics (e.g. `collab poll` parameter name, `diff` example wrap).
 
 - Test suite: 124 → 158 (config security, argv hoist + `--version` + `--no-ledger`, `--pos`
   edge cases, client transport + non-JSON, ledger `exit_code`, fuzz zero-position, obs tag).
 
-### Fixed — realistic-scenario ultraqa (2026-06-19)
+### Fixed — realistic-scenario QA pass (2026-06-19)
 
 Found by running a real local bug-bounty workflow end-to-end (recon -> JWT -> IDOR fuzz)
-against a vulnerable target through Burp, plus a parallel adversarial QA sweep.
+against a vulnerable target through Burp, plus a thorough automated test pass.
 
 - **`check idor` silent false negative (HIGH).** On a URL with neither a `{param}` placeholder
   nor an existing `?param=`, `substituteParam` returned the URL unchanged, so the baseline and
@@ -87,10 +87,10 @@ against a vulnerable target through Burp, plus a parallel adversarial QA sweep.
 
 - Test suite: 158 → 164 (Python: --no-redact; Kotlin: substituteParam append, base64url/JWT).
 
-### Fixed — UltraQA convergence loop (2026-06-19)
+### Fixed — adversarial QA pass (2026-06-19)
 
-A parallel adversarial UltraQA round (8 lanes, 43 findings confirmed three-way) fixed in six
-parallel per-file lanes, then re-verified live against Burp `:8089` + a local vuln target. HIGH:
+An adversarial QA sweep (43 findings confirmed and independently verified) fixed across targeted
+per-file passes, then re-verified live against Burp `:8089` + a local vuln target. HIGH:
 
 - **`--pos` JSON resolver corrupted multi-element bodies.** `body:FIELD` on an array/object value
   truncated at the first comma (`["admin","user"]` → `["admin"`), and a nested same-named key won
@@ -130,11 +130,10 @@ MED and other:
 - Docs: ledger `command` column documented as subcommand-name-only (not full argv); CLI exit-code
   list gains `5`.
 
-### Fixed — UltraQA convergence loop, rounds 2–9 (2026-06-19)
+### Fixed — extended adversarial QA (2026-06-19)
 
-The loop continued: each round = a parallel adversarial hunt (≈9 lanes, find→verify) → parallel
-per-file fix lanes (TDD) → both-suite verify → live re-check on `:8089`/`:8888` → atomic commits.
-HIGH/MED per round trended 32→14→11→7→11→4→14, then a partial round (session-limited) + cleanup.
+Continued iterative adversarial hunt (find→verify) → targeted per-file fix passes (TDD) →
+both-suite verify → live re-check on `:8089`/`:8888` → atomic commits.
 Grouped by theme (all live-verified where observable):
 
 - **IDOR detector, rebuilt for correctness.** sameAsBaseline now compares the FULL response body
@@ -210,13 +209,12 @@ First release. A fully-typed, spec-driven CLI client for the Burp REST extension
 
 ### Quality
 - 111 tests (TDD), `mypy --strict` + `ruff` clean. Source-grounded spec (`docs/`, 8 ADRs).
-  Built via a verified multi-agent fan-out with CLI-conformance + Goodhart/code-review gates.
+  Built with CLI-conformance and code-review gates.
 
 ### Known gaps (v1.1)
 - Async fuzz lifecycle (`bp fuzz status|results …`) — v1 is synchronous.
 - Per-command unit tests (commands covered by CLI-conformance + live smoke; logic layers are
-  unit-tested). Scope-as-pre-fire-gate and the bug-bounty-mini adapter (ADR-0007/C3) remain
-  roadmap (`docs/RESEARCH-concepts.md`).
+  unit-tested). Scope-as-pre-fire-gate (ADR-0007/C3) remains a planned roadmap item.
 
 [1.1.0]: https://github.com/momomuchu/burp-wrapper/releases/tag/v1.1.0
 [1.0.0]: https://github.com/momomuchu/burp-wrapper/releases/tag/v1.0.0

@@ -22,8 +22,16 @@ Thumbs.db
 
 # Logs
 logs/
+
+# Agent / internal tooling — never commit (machine-specific, private workflow)
 .omc/
 bp/.omc/
-.playwright-mcp/
+.omx/
 .claude/
+.codex/
+.playwright-mcp/
 AGENTS.md
+USER.md
+
+# Local machine setup — machine-specific paths, never commit
+bin/

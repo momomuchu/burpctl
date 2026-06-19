@@ -43,7 +43,7 @@ The Intruder API only accepts raw byte-offsets (`PayloadPosition{start:Int, end:
 
 ## Rationale
 
-Founder decision 2026-06-16. `docs/SPEC.md §5` identifies offset resolution as "the central work
+Decision 2026-06-16. `docs/SPEC.md §5` identifies offset resolution as "the central work
 of the CLI." The REST extension's `PayloadPosition` has no semantic selector support — it only
 accepts `start`, `end`, `name` as required integers. Without this resolver layer, a user would
 need to manually count byte offsets in raw HTTP, which is error-prone and not user-facing quality.
@@ -68,7 +68,7 @@ Kotlin extension update.
 
 ## Consequences
 
-- The `--pos` parser and offset resolver are the first units to be RED-tested (see `docs/brain/NEXT.md`).
+- The `--pos` parser and offset resolver are the first units to be RED-tested.
 - `cluster-bomb` with N positions and large payload sets can produce very large request counts. `bp`
   must warn when the Cartesian product exceeds a configurable threshold (e.g. >10 000 requests).
 - The `--payloads NAME=FILE` flag binds a payload list to a named position. For `pitchfork`/`cluster-bomb`,

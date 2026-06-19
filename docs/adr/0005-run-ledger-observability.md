@@ -16,7 +16,7 @@ invocation, pass `--no-ledger`.
 | Field | Type | Notes |
 |---|---|---|
 | `id` | int (autoincrement) | local ledger key |
-| `tag` / `name` | string nullable | founder label, set via `--tag NAME` |
+| `tag` / `name` | string nullable | user label, set via `--tag NAME` |
 | `timestamp` | ISO8601 string | time of the `bp` invocation |
 | `target` | string nullable | host or URL targeted |
 | `command` | string | the full `bp` command line as typed |
@@ -37,7 +37,7 @@ bp show <opId> [--format json|table|raw|quiet] [-w TPL]  — re-render a stored 
 
 ## Rationale
 
-Founder decision 2026-06-16. `docs/SPEC.md §9` and §4 (C4 component) establish the ledger as
+Decision 2026-06-16. `docs/SPEC.md §9` and §4 (C4 component) establish the ledger as
 the primary differentiator of `bp` vs a raw `curl` script:
 
 - A security engagement may require ISO-level proof of actions taken against a target (what was
@@ -73,5 +73,4 @@ user remembered to flag.
   stderr, never propagated as a `bp` error — the operation succeeded regardless).
 - `--no-ledger` is documented prominently as the escape hatch for health polls and dry-runs that
   should not appear in audit logs.
-- C4 is the observability component (`docs/SPEC.md §4`); C3 (bug-bounty-mini adapter) is deferred
-  and orthogonal — do not couple them at implementation time.
+- C4 is the observability component (`docs/SPEC.md §4`) and is orthogonal to any future adapter work — do not couple them at implementation time.

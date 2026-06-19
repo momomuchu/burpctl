@@ -46,7 +46,7 @@ scope). No invented jargon.
 
 ## Rationale
 
-Founder decision 2026-06-16. The combination of SDD + TDD + DDD is the `W` (transverse method)
+Decision 2026-06-16. The combination of SDD + TDD + DDD is the `W` (transverse method)
 component in `docs/SPEC.md §4`.
 
 - **SDD** is required because three existing documents contradicted each other (see ADR-0001).
@@ -76,7 +76,7 @@ component in `docs/SPEC.md §4`.
 
 ## Consequences
 
-- Phase 1 implementation begins with RED tests for the `--pos` parser (see `docs/brain/NEXT.md`).
+- Implementation is test-first: RED tests for the `--pos` parser come first.
 - Every new command must have its contract test before its implementation.
 - The BDD feature files in `docs/bdd-clean/` serve as the integration acceptance gate.
 - Community-mode degradation must be tested in contract tests (mock the 503/500 response; verify

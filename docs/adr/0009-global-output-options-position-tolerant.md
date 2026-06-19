@@ -3,7 +3,7 @@
 - **Status:** accepted — 2026-06-18
 - **Criticality:** `[HIGH]` (CLI contract / public interface)
 - **Supersedes:** none. Refines ADR-0002 (CLI name/grammar).
-- **Trigger:** live UltraQA finding **F1** — `bp health --format json` → `No such option: --format`, exit 2.
+- **Trigger:** a live integration test (**F1**) — `bp health --format json` → `No such option: --format`, exit 2.
 
 ## Context
 

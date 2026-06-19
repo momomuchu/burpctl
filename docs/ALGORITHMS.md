@@ -1,7 +1,7 @@
 # `bp` — Load-bearing algorithms (spec, not code)
 
-> **DRAFT — implementation spec, language-neutral (pseudocode).** The 2 algorithms that TDD
-> will implement. Reference: `CLI.md` (`--pos` grammar), `SPEC.md §6.4` (Intruder models).
+> Implementation spec, language-neutral (pseudocode). The 2 algorithms implemented by `bp`.
+> Reference: `CLI.md` (`--pos` grammar), `SPEC.md §6.4` (Intruder models).
 > Actual REST model: `PayloadPosition{start:Int, end:Int, name:String}` (all required),
 > `CreateAttackRequest{positions:[…], payloads:Map<name,[String]>, attackType:String}`.
 
@@ -68,7 +68,7 @@ Content-Type: application/json\r\n
 | `header:Nope` | error `POS_NOT_FOUND` |
 
 > ⚠️ The `path:INDEX` convention (does it include the empty 1st segment before `/api`?) must be
-> **locked in** by a test: recommendation `path:1`=`api` (non-empty segments). To be validated.
+> **locked in** by a test: recommendation `path:1`=`api` (non-empty segments).
 
 ---
 
@@ -147,6 +147,4 @@ bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=a.txt(2) \
 ## Status
 
 `[CRITICAL][BLOCKS:critical]` A1 + A2 are the **core of the driver** — without them, no fuzzing.
-Once these 2 algorithms + test cases are validated → the driver is **implementable in TDD**.
-Conventions to be locked in by you/test: `path:INDEX` (base), anomaly threshold, repeated
-header occurrence. **Spec — zero code until GO is given.**
+Conventions locked in by tests: `path:INDEX` (base), anomaly threshold, repeated header occurrence.

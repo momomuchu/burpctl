@@ -22,17 +22,15 @@
 
 ## Rationale
 
-Founder, 2026-06-16 (verbatim): "je trouve Python 100 fois plus simple… je ne vais pas me
-casser la tête… tant que c'est typage complet, c'est tout le temps typé… autant faire du Python,
-pas du Go." + decisive factor from ADR-0007: **the founder owns validation and is proficient in
-Python** → a tool he can read, validate, and extend himself takes priority over the elegance of a
-single binary.
+Decision 2026-06-16: Python is preferred for its simplicity and the owner's proficiency in it
+(ADR-0007 decisive factor: **the project owner validates and extends the tool in Python**) → a tool
+that is readable and self-extensible takes priority over the elegance of a single binary.
 
 ## Rejected Alternatives
 
-- **Go**: rejected — founder is unfamiliar with it ("looks like C"), learning curve on the key
-  tool while he needs to validate it; the only clear advantage (single binary) is workable around
-  on the Python side.
+- **Go**: rejected — unfamiliar syntax ("looks like C"), learning curve on the key tool while
+  validation is ongoing; the only clear advantage (single binary) is workable around on the Python
+  side.
 - **POSIX sh** (mirror bb-fetch): rejected — breaks down on A2 (expansion/concurrency) and the
   workspace (DB); distribution requires `curl`/`jq`/`sqlite3` to be present.
 
@@ -42,6 +40,5 @@ single binary.
    possible later via **PyInstaller** → "standalone distributable" goal met.
 2. **Pydantic models = contract**: a mismatch with the Kotlin contract fails at validation
    → reinforces `SPEC §14 #7` (serialization) and the contract-tests (`§14 #9`).
-3. **Strict typing as a gate**: added to disciplines (`.claude/rules/disciplines.md`) — typing:strict.
-4. `[BLOCKS:critical]` — unblocks TDD. Remaining before code: live Intruder Community check
-   (`SPEC §14 #8`) + GO founder. **Zero code before GO.**
+3. **Strict typing as a gate**: `mypy --strict` is enforced in CI.
+4. `[BLOCKS:critical]` — unblocks the test-first implementation of the CLI.

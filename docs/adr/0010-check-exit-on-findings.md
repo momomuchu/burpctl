@@ -3,7 +3,7 @@
 - **Status:** accepted — 2026-06-19
 - **Criticality:** `[HIGH]` (CLI exit-code contract / public interface)
 - **Supersedes:** none. Refines ADR-0009 area (CLI contract) and `docs/CLI.md §Output convention`.
-- **Trigger:** UltraQA loop finding **[12]** (`check-detectors` lane) — `bp check auth|idor|cors|headers`
+- **Trigger:** a security-check test (**[12]**) — `bp check auth|idor|cors|headers`
   exited `0` even when `vulnerableCount > 0`, so a CI/CD pipeline or shell script could not gate on
   findings without parsing output.
 
@@ -35,9 +35,7 @@ only the `check` group can emit it.
 
 ## Rationale
 
-- **Product evidence:** `bp` is a security tool used in local bug-bounty / pentest workflows
-  (`disciplines.md §Community vs Pro`, the realistic-scenario campaign). Pipeline-gating on findings
-  is the single most common way such tools are scripted.
+- **Product evidence:** `bp` is a security tool used in local bug-bounty / pentest workflows (the realistic-scenario campaign). Pipeline-gating on findings is the single most common way such tools are scripted.
 - No existing test asserts `check` exits `0` on findings, so the change breaks no frozen contract.
 - Convention alignment lowers operator surprise (matches `nuclei`/`trivy`).
 

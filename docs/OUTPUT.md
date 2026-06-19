@@ -1,13 +1,12 @@
 # `bp` — OUTPUT Contract Specification
 
 > **DEEP output-contract spec for the `bp` CLI.**
-> Phase 0 · SDD · **DRAFT — proposed, awaiting founder validation. No implementation until GO.**
 > Companion to `docs/SPEC.md` (grammar §5, intruder results §6.4, ledger §9, Kotlin contract §8).
 > Generated 2026-06-16.
 
 ---
 
-## Founder Digest
+## Overview
 
 **What this means** — This locks down exactly what every `bp` command *prints*, so a human and an AI agent read the same tool through one stable contract: four formats, a curl-style `-w` template, selectable fields, and a deterministic JSON schema for agents.
 
@@ -20,15 +19,13 @@
 6. Every shown record is also written to the **Run Ledger** (`~/.bp/`) unless `--no-ledger`.
 7. `bp fuzz ... -w '%{status} %{payload}'` prints ONLY the HTTP code + payload, one line per request.
 
-**Terms translated** — *AX* = agent experience (machine-readable output). *Record* = one row/entry. *write-out* = a `-w` template line. *Anomalous* = a fuzz result that differs from baseline. *Ledger* = local SQLite audit log of every op.
+**Terms** — *AX* = agent experience (machine-readable output). *Record* = one row/entry. *write-out* = a `-w` template line. *Anomalous* = a fuzz result that differs from baseline. *Ledger* = local SQLite audit log of every op.
 
-**What is actually new** — The four-format model, the `-w` token grammar, the AX stable-schema rule, and the stderr/exit-code contract. The field catalog is *derived* from SPEC §6 models (not invented).
+**Key design decisions** — The four-format model, the `-w` token grammar, the AX stable-schema rule, and the stderr/exit-code contract. The field catalog is *derived* from SPEC §6 models (not invented).
 
-**What to challenge** — (1) Default-`json`-when-piped vs always-`table`. (2) The `%{anomalous}` token only being meaningful for `quick-fuzz` (server only sets it there). (3) Whether `--quiet` should exit non-zero when the single value is empty. (4) Token-efficiency cap defaults (50 rows, 256-byte body preview). (5) Whether `raw` is allowed for multi-record commands or single-record only.
+**Open decisions** — (1) Default-`json`-when-piped vs always-`table`. (2) The `%{anomalous}` token only being meaningful for `quick-fuzz` (server only sets it there). (3) Whether `--quiet` should exit non-zero when the single value is empty. (4) Token-efficiency cap defaults (50 rows, 256-byte body preview). (5) Whether `raw` is allowed for multi-record commands or single-record only.
 
 **Where to look** — §1 (four formats) and §3 (`-w` grammar) are the load-bearing sections. §4 is the agent contract.
-
-**State** — PARTIAL. This is a *spec artifact*, not running code. Evidence boundary: grounded against `docs/SPEC.md` §5/§6/§8/§9; no live `:8089` verification (no implementation yet, per Phase-0 gate). Residual risk: field names assume the Kotlin camelCase contract (§8) holds at runtime.
 
 ---
 
@@ -37,7 +34,7 @@
 This document specifies **only output** — what bytes leave `bp` on stdout/stderr, in what shape,
 under which flags. It does **not** re-specify the API (see SPEC §6) or the `--pos` grammar (SPEC §5).
 
-Each requirement is tagged with the founder criticality scale: `[IMPORTANCE][BLOCKS:level]`.
+Each requirement is tagged with a criticality scale: `[IMPORTANCE][BLOCKS:level]`.
 
 ### 0.1 · Axioms (load-bearing, apply everywhere)
 
@@ -159,8 +156,7 @@ Content-Length: 1487
   **per command family** (§1.5). `--quiet` (the flag) and `--format quiet` are equivalent.
 - Designed for shell composition: `if [ "$(bp scope check --url X --quiet)" = "in-scope" ]`.
 - Empty/absent essential value renders as an empty line. **[MEDIUM][BLOCKS:none] OPEN-Q1:** should
-  an empty essential value force exit≠0? Default: **no** (presence of the record is success); flag
-  this for founder.
+  an empty essential value force exit≠0? Default: **no** (presence of the record is success).
 
 ```
 $ bp fuzz results a1b2c3d4 --format quiet
@@ -316,7 +312,7 @@ Default fields: `status,length,time,method,host,contentType`.
 | Field | Type | Source | Notes |
 |---|---|---|---|
 | `id` ★ | int | ledger | local autoincrement |
-| `tag` | string\|null | ledger:`name`/`tag` | founder label (`--tag`) |
+| `tag` | string\|null | ledger:`name`/`tag` | user label (`--tag`) |
 | `timestamp` | string | ledger | ISO8601 |
 | `command` | string | ledger | the `bp` subcommand name (e.g. `bp check idor`), **not** the full argv — URL/header/payload args are intentionally omitted for privacy |
 | `target` | string\|null | ledger | host/url |
@@ -333,7 +329,7 @@ Default fields: `id,timestamp,tag,status,target,burpOp`.
 
 The headline AX feature: a curl-style template that prints exactly the bytes you ask for, per record.
 
-### 3.1 · The founder's headline example
+### 3.1 · Headline example
 
 ```
 $ bp fuzz --id 42 --pos 'body:q' --payloads xss.txt --type sniper -w '%{status} %{payload}'
@@ -349,7 +345,7 @@ columns. `-w` owns stdout (R-PREC).
 
 - **[CRITICAL][BLOCKS:high] R-WTOK** The template is literal text with `%{token}` substitutions.
   Tokens resolve **per record**; the template is applied once per emitted record (one line of
-  output per record, unless the template itself contains no newline — see §3.4).
+  output per record, unless the template itself contains no newline — see §3.4). See §3.1 for the headline example.
 
 | Token | Value | Source / notes |
 |---|---|---|
@@ -542,7 +538,7 @@ the default when piped (A4).
     empty and the `||` branch fires.
 - **[MEDIUM][BLOCKS:none] E-QUIET-EMPTY** (re OPEN-Q1) A successful op that yields an empty
   essential value prints an empty line, exit `0` by default. `--strict` upgrades empty-essential to
-  exit `1`. Founder to confirm default.
+  exit `1`.
 
 ---
 
@@ -563,7 +559,7 @@ the default when piped (A4).
 ### 6.2 · `--tag` and `--no-ledger`
 
 - **[MEDIUM][BLOCKS:none] L-TAG** `--tag NAME` writes `NAME` into the entry's `tag`/`name` field at
-  record time (founder label, SPEC §9). Equivalent to a later `bp tag <id> NAME`. The tag is
+  record time (user label, SPEC §9). Equivalent to a later `bp tag <id> NAME`. The tag is
   **metadata only** — it never appears in stdout records unless the user selects `--fields tag`
   (ledger family) — so `--tag` never pollutes data output.
 - **[HIGH][BLOCKS:none] L-NOLEDGER** `--no-ledger` suppresses the ledger write for that one
@@ -602,7 +598,7 @@ the default when piped (A4).
 - [CRITICAL][BLOCKS:high] A2 / E-STREAMS — data→stdout, errors→stderr, fail = empty stdout.
 - [CRITICAL][BLOCKS:high] A3 — stable agent schema, additive evolution only.
 - [CRITICAL][BLOCKS:high] F-QUIET — single essential value per family.
-- [CRITICAL][BLOCKS:high] R-WTOK — full 11-token `-w` grammar incl. the founder headline.
+- [CRITICAL][BLOCKS:high] R-WTOK — full 11-token `-w` grammar (see §3.1 for the headline example).
 - [CRITICAL][BLOCKS:high] E-EXIT / E-TARGET — shipped exit codes (0/1/2/3/4); target HTTP status ≠ exit code.
 - [CRITICAL][BLOCKS:high] AX-ACTIVATE — agent mode = non-TTY/BP_AGENT/explicit json.
 
@@ -623,7 +619,7 @@ the default when piped (A4).
 - [MEDIUM][BLOCKS:none] L-RECORD / L-GRAIN / L-TAG — one entry per invocation, format-independent.
 - [MEDIUM][BLOCKS:none] AX-NO-PRETTY — compact in agent mode; `--pretty` TTY-only.
 - [MEDIUM][BLOCKS:none] R-WUNKNOWN — unknown token fails loud.
-- [MEDIUM][BLOCKS:none] OPEN-Q1 / E-QUIET-EMPTY — empty-essential exit policy (founder decision).
+- [MEDIUM][BLOCKS:none] OPEN-Q1 / E-QUIET-EMPTY — empty-essential exit policy (open decision, see §8).
 
 ### LOW (convergence tail)
 
@@ -636,15 +632,14 @@ the default when piped (A4).
 
 | # | Decision | Default proposed | State |
 |---|---|---|---|
-| **O1** | Empty essential value under `--quiet` → exit 0 or 1? | exit 0 (record exists = success); `--strict` for 1 | to confirm |
-| **O2** | `raw` on multi-record: hard error vs concatenate w/ separators? | hard error (R-RAW-SINGLE), require `--index` | to confirm |
-| **O3** | `--fail-on-anomalous` exit 2 — default on or opt-in? | opt-in (E-TARGET keeps exit clean) | to confirm |
-| **O4** | Default row cap (50) and preview bytes (256). | 50 / 256, both flag-overridable | to confirm |
-| **O5** | `%{anomalous}` for non-quick-fuzz results: empty vs literal `false`? | empty (R-ANOM) — don't fake a signal the server didn't set | to confirm |
-| **O6** | Should `bp health` default to `--no-ledger`? | no (it's a real op); document as common opt-out | to confirm |
+| **O1** | Empty essential value under `--quiet` → exit 0 or 1? | exit 0 (record exists = success); `--strict` for 1 | open |
+| **O2** | `raw` on multi-record: hard error vs concatenate w/ separators? | hard error (R-RAW-SINGLE), require `--index` | open |
+| **O3** | `--fail-on-anomalous` exit 2 — default on or opt-in? | opt-in (E-TARGET keeps exit clean) | open |
+| **O4** | Default row cap (50) and preview bytes (256). | 50 / 256, both flag-overridable | open |
+| **O5** | `%{anomalous}` for non-quick-fuzz results: empty vs literal `false`? | empty (R-ANOM) — don't fake a signal the server didn't set | open |
+| **O6** | Should `bp health` default to `--no-ledger`? | no (it's a real op); document as common opt-out | open |
 
 ---
 
-> **Rappel : DRAFT — proposed, awaiting founder validation. No implementation until GO.**
 > Grounded against `docs/SPEC.md` §5 (grammar), §6.2/§6.4/§6.5/§6.6/§6.13 (result models),
-> §8 (Kotlin serialization contract), §9 (Run Ledger). No live `:8089` verification (Phase-0 gate).
+> §8 (Kotlin serialization contract), §9 (Run Ledger).

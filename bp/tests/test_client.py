@@ -55,7 +55,7 @@ def test_connection_refused_raises_unreachable() -> None:
     assert ei.value.code == "CONNECTION_REFUSED"
 
 
-# --- discovery UltraQA: non-ConnectError transport + non-JSON responses ---
+# --- edge cases: non-ConnectError transport + non-JSON responses ---
 
 
 def test_read_timeout_maps_to_unreachable() -> None:

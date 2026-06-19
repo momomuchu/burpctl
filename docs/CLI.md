@@ -1,6 +1,6 @@
 # `bp` — Canonical CLI Grammar (contract)
 
-> **DRAFT — proposed, to be validated.** Single source of truth for the command surface.
+> Single source of truth for the command surface.
 > All BDD scenarios must conform to it. Resolves divergences detected during the audit
 > (`--id` vs `--request-id`, `bp fuzz` vs `bp intruder`, `--url` vs positional).
 > See also: `SPEC.md` (API), `OUTPUT.md` (output formats).
@@ -77,7 +77,7 @@ header:NAME   cookie:NAME   body:FIELD   query:NAME   path:INDEX   offset:START-
 4. **3 distinct "history" concepts, 3 names**: `bp proxy` (live capture) · `bp history` (server DB /history) · `bp log` (Run Ledger C4, our observability).
 5. **Output**: a single global model (§ Global flags + `OUTPUT.md`), never re-specified per endpoint.
 
-## Output convention & errors (factored — anti-Goodhart)  `[HIGH][BLOCKS:high]`
+## Output convention & errors (factored)  `[HIGH][BLOCKS:high]`
 
 - **Rendering** (json/table/raw/quiet/`-w`/`--fields`) is a **cross-cutting contract** proved **once** (`bdd/00-output.feature`), not per endpoint.
 - **Cross-cutting errors** (Burp unreachable → `CONNECTION_REFUSED`, invalid `--id`, unpacked `ApiResponse` envelope, `PRO_REQUIRED` on Community) are proved **once** (`bdd/00-common.feature`).

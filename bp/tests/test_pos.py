@@ -57,7 +57,7 @@ def test_unsupported_selector_kind() -> None:
         resolve_pos(REQ, "bogus:thing")
 
 
-# --- discovery UltraQA: resolver correctness edge cases ---
+# --- regression coverage: resolver correctness edge cases ---
 
 
 def test_cookie_found_in_second_cookie_header() -> None:

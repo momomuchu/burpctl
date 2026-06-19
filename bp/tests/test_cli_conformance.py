@@ -1,6 +1,6 @@
 """CLI grammar conformance — every docs/CLI.md command must be reachable (exit 0 on --help).
 
-This is the objective gate the fan-out lacked: green unit tests != conformant command tree.
+This is the objective gate that green unit tests alone cannot provide: passing units != conformant command tree.
 Grouped verbs (scan/check/scope/collab/config/session/history) are sub-Typers; everything else
 is a FLAT top-level command per CLI.md §Principe ``bp <command> [subject]``.
 """

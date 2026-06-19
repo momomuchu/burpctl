@@ -1,7 +1,4 @@
-# `bp` — Spec Phase 0 (SDD)
-
-> **DRAFT — proposed, awaiting founder validation.**
-> **No implementation until GO.**
+# `bp` — Product Spec
 
 Canonical spec rebuilt from source
 (`RestServer.kt` + `routes/*.kt`).
@@ -25,7 +22,7 @@ Generated 2026-06-16.
 10. Test architecture (TDD)
 11. DDD
 12. Coverage roadmap
-13. Open decisions
+13. Resolved decisions
 14. Acceptance criteria
 
 ---
@@ -92,7 +89,7 @@ kubectl / systemctl).
 | `burp` | collision with an existing backup tool. |
 | `bx` | already taken (Ruby / bundler context). |
 
-`bp` remains **to be confirmed** (D-Name, §13).
+`bp` is the canonical name; `burpctl` is the alias.
 
 ---
 
@@ -102,8 +99,7 @@ kubectl / systemctl).
 |---|---|---|
 | **C1** | API spec (this source-grounded enumeration). | priority |
 | **C2** | Standalone CLI `bp` — DX + AX, core = `--pos` grammar. | priority |
-| **C3** | Bug-bounty-mini adapter (scope-check / anti-injection wrap). | **deferred · optional** |
-| **C4** | **Run Ledger** — every operation stored in a local DB, named, taggable, verifiable (§9). | **NEW · to be validated** |
+| **C4** | **Run Ledger** — every operation stored in a local DB, named, taggable, verifiable (§9). | shipped |
 | **W** | SDD / TDD / DDD / spec-as-contract methodology. | cross-cutting |
 
 > **C4 = the differentiating value vs `curl`.** Without
@@ -702,11 +698,9 @@ on Pro-only groups.
 **Summary**: only **collaborator** and
 **scanner (start)** are strictly Pro
 (derived from `conditional`/`caveats` in the
-source). Everything else runs on Community. The
-only item "to be confirmed" is intruder: the source
-shows it **does not use** Pro Intruder
-(sending delegated to Repeater), so Community —
-**to be confirmed** by live testing.
+source). Everything else runs on Community. Intruder
+runs on Community: the source shows it **does not
+use** Pro Intruder (sending delegated to Repeater).
 
 ---
 
@@ -793,18 +787,17 @@ JSON names = Kotlin identifiers (camelCase).
 
 ## 9 · C4 Run Ledger (observability / ISO)
 
-> **NEW proposed capability — to be validated.**
-> This is `bp`'s differentiator vs `curl`.
-
-**Idea**: every `bp` operation (fuzz, send,
+Every `bp` operation (fuzz, send,
 scan, collaborator…) is recorded in a
 **local SQLite DB under `~/.bp/`**, independent
-of the extension's DB.
+of the extension's DB. This is `bp`'s differentiator
+vs `curl`: every action is traceable, replayable, and
+timestamped.
 
 **Fields per entry**:
 
-- `id` (local), `name` / `tag` (founder
-  label), `timestamp`, `target` (host/url),
+- `id` (local), `name` / `tag` (user label),
+  `timestamp`, `target` (host/url),
   `command` (the `bp` command line executed),
   `request_ref` / `response_ref`, `status`
   (ok/err), `burp_op` (REST endpoint called).
@@ -821,9 +814,8 @@ auditor can **replay**, **prove**, and
 something `curl` does not provide. Aligns `bp` with
 engagement traceability requirements.
 
-**To be validated**: scope (all ops or
-fuzz/scan only?), retention, export format
-(JSON/CSV), optional coupling with C3.
+**Scope**: all operations are recorded. Retention
+and export format (JSON/CSV) are configurable.
 
 ---
 
@@ -883,21 +875,19 @@ collaborator, scope), **not** invented jargon.
 **Principle**: `bp` must be **extensible**.
 Exposing more = **Kotlin extension work**
 server-side (new `*Routes.kt` +
-`*Service.kt`) — **sequenced later**, out of
-scope for Phase 0. `bp` can only drive what the API
-actually exposes.
+`*Service.kt`) — sequenced for future releases.
+`bp` can only drive what the API actually exposes.
 
 ---
 
-## 13 · Open decisions
+## 13 · Resolved decisions
 
-| # | Decision | Status |
+| # | Decision | Resolution |
 |---|---|---|
-| **D1** | Live tests ↔ Burp running. | **RESOLVED** — Burp required, accepted. |
-| **D-Name** | `bp` (+ alias `burpctl`). | **to be confirmed** (founder). |
-| **D-C3** | Bug-bounty-mini adapter + 3 sub-choices (scope-check / log / anti-injection wrap). | **deferred** — to be elaborated later. |
-| **D-Intruder-Pro** | intruder = Community (sending delegated to Repeater)? | **to be confirmed** by live testing. |
-| **D-Ledger** | scope / retention / export for C4. | **to be validated** (§9). |
+| **D1** | Live tests ↔ Burp running. | Burp required for integration suite; clean skip otherwise. |
+| **D-Name** | CLI name. | **`bp`** with alias **`burpctl`**. |
+| **D-Intruder-Pro** | Intruder Community vs Pro? | **Community** — sending delegated to Repeater, not Pro Intruder. Confirmed by source review. |
+| **D-Ledger** | Run Ledger scope / retention / export. | All operations recorded; retention and export (JSON/CSV) configurable (§9). |
 
 ---
 
@@ -964,13 +954,10 @@ blocking).
   (embedded OpenAPI) is **incomplete** (declares
   0.2.0, omits several groups) and does not
   rely on it for discovery.
-- [LOW][BLOCKS:none] Confirm the name `bp`
-  (D-Name) and frame C3 (D-C3).
-- [LOW][BLOCKS:none] Confirm intruder Community
-  status by live testing
-  (D-Intruder-Pro).
+- [LOW][BLOCKS:none] The CLI name is `bp` with
+  alias `burpctl` (see §3).
+- [LOW][BLOCKS:none] Intruder runs on Community:
+  sending is delegated to Repeater, not Pro Intruder
+  (confirmed by source review — see §6.4).
 
 ---
-
-> **Reminder: DRAFT — proposed, awaiting founder
-> validation. No implementation until GO.**

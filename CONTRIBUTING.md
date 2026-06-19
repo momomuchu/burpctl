@@ -28,7 +28,7 @@ an issue first so we can agree on the approach (and which ADR it needs).
 
 ## Project disciplines (non-negotiable)
 
-The authoritative policy is [`.claude/rules/disciplines.md`](.claude/rules/disciplines.md). The short version:
+The project follows these disciplines (the spec and ADRs in `docs/` are the source of truth):
 
 - **SDD — spec wins.** `docs/SPEC.md`, `docs/CLI.md`, `docs/OUTPUT.md` are the contracts.
   - **No phantom endpoints.** `bp` may only call routes confirmed in `src/main/kotlin/com/burprest/routes/*.kt`.
