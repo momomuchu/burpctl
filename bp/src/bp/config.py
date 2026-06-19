@@ -210,9 +210,25 @@ def load(
 #   (B) JSON-embedded form: "Basic <cred>" inside a JSON string value, or a
 #       Cookie "value" field in {"name":"Cookie","value":"..."} blobs.
 _REDACT_PATTERNS: list[re.Pattern[str]] = [
-    # [A] Authorization header line: Bearer / Basic / Token / Digest
+    # [A] Authorization header line — Bearer / Basic / Token (NOT Digest).
+    # Value match uses [^"\r\n]+ so the pattern is JSON-safe: it stops at the
+    # closing double-quote when the header line is embedded inside a JSON string
+    # value (NDJSON output), leaving the line independently parseable.
+    # Bearer/Basic/Token credentials never contain bare `"` so this is lossless.
     re.compile(
-        r"(Authorization:\s*(?:Bearer|Basic|Token|Digest)\s+)(?P<secret>\S.*)",
+        r'(Authorization:\s*(?:Bearer|Basic|Token)\s+)(?P<secret>[^"\r\n]+)',
+        re.IGNORECASE,
+    ),
+    # [A-Digest] Authorization: Digest header line — plain/raw form.
+    # RFC 7235 Digest credentials contain bare `"` (quoted-string parameters
+    # like username="u", response="deadbeef") so we must NOT stop at `"`.
+    # We stop at CR/LF only, which is correct for a raw header line.
+    # Note: this pattern is NOT JSON-safe for a Digest header embedded inside a
+    # JSON string value ("raw":"Authorization: Digest ...").  That case is rare
+    # in bp output (burp serialises headers as structured {name, value} objects);
+    # the structured form is covered by [B-Digest] below.
+    re.compile(
+        r"(Authorization:\s*Digest\s+)(?P<secret>[^\r\n]+)",
         re.IGNORECASE,
     ),
     # [B] Credential scheme keyword anywhere (JSON-embedded or standalone).
@@ -222,11 +238,22 @@ _REDACT_PATTERNS: list[re.Pattern[str]] = [
         r"((?:Bearer|Basic|Token)\s+)(?P<secret>[A-Za-z0-9\-_=.+/]{4,})",
         re.IGNORECASE,
     ),
-    # [B] Digest credential value anywhere (scheme + rest of cred, may contain spaces
-    #     and embedded quotes as per RFC 7235 quoted-string values).
-    re.compile(r"(Digest\s+)(?P<secret>\S[^\r\n]*)", re.IGNORECASE),
-    # [A] Cookie / Set-Cookie header line
-    re.compile(r"((?:Set-)?Cookie:\s*)(?P<secret>\S.*)", re.IGNORECASE),
+    # [B-Digest] Digest credential value anywhere — JSON-embedded form.
+    # In JSON, inner quotes in the Digest value are escaped as \" in the raw
+    # Python string.  The alternation (?:\\"|[^"\r\n])+ tries the two-char
+    # sequence \" FIRST so that \ and " are consumed together as a unit; the
+    # fallback [^"\r\n] then handles every other non-quote character.  The
+    # combined effect: passes through \"-sequences (escaped inner quotes) and
+    # stops only at a bare " (the JSON closing delimiter), keeping the NDJSON
+    # line parseable after redaction.
+    # For the plain Authorization: Digest header-line form, [A-Digest] fires
+    # first and the Digest keyword is consumed into the replacement, so this
+    # pattern does not double-fire on already-redacted output.
+    re.compile(r'(Digest\s+)(?P<secret>(?:\\"|[^"\r\n])+)', re.IGNORECASE),
+    # [A] Cookie / Set-Cookie header line.
+    # Cookie values do not contain bare `"` so [^"\r\n]+ is both lossless for
+    # plain header lines and JSON-safe when embedded in a JSON string value.
+    re.compile(r'((?:Set-)?Cookie:\s*)(?P<secret>[^"\r\n]+)', re.IGNORECASE),
     # [B] Cookie value in JSON flat-key form: {"Cookie":"session=SECRET"}
     re.compile(r'("(?:Set-)?Cookie"\s*:\s*")(?P<secret>[^"]+)', re.IGNORECASE),
     # [B] Cookie value in {"name":"Cookie","value":"session=SECRET"} blob.

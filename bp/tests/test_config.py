@@ -5,6 +5,7 @@ TDD protocol: RED tests are committed first; GREEN follows in config.py.
 
 from __future__ import annotations
 
+import json as _json
 from pathlib import Path
 
 import pytest
@@ -187,9 +188,14 @@ class TestRedactAuthBasicTokenDigest:
         assert "***" in result
 
     def test_digest_json_value_field_masked(self) -> None:
-        blob = f'{{"name":"Authorization","value":"Digest {self.DIGEST_CRED}"}}'
+        # In real NDJSON output the JSON encoder escapes inner quotes as \".
+        # DIGEST_CRED contains bare " so we JSON-encode it first to get the
+        # realistic wire form that redact() actually receives.
+        import json as _json_mod
+        encoded_cred = _json_mod.dumps(f"Digest {self.DIGEST_CRED}")[1:-1]  # strip outer quotes
+        blob = f'{{"name":"Authorization","value":"{encoded_cred}"}}'
         result = redact(blob)
-        assert "response=\"deadbeef\"" not in result, (
+        assert "deadbeef" not in result, (
             "Digest credential in JSON value field must be masked"
         )
         assert "***" in result
@@ -367,3 +373,103 @@ class TestLoadInvalidNumericEnv:
         assert cfg.anomaly_pct == 5
         err = capsys.readouterr().err
         assert "anomaly" not in err.lower()
+
+
+# ---------------------------------------------------------------------------
+# [06] HIGH — redact() must NOT break NDJSON structural validity (F-JSON / A3)
+# ---------------------------------------------------------------------------
+# CRITICAL invariant: redact() is applied to rendered --format json output.
+# Every NDJSON line must remain independently parseable after redaction.
+# The greedy patterns (\S.*, \S[^\r\n]*) STOP at newline but NOT at the
+# closing JSON quote, so they consume the `"` and everything after it,
+# producing invalid JSON.  These RED tests prove the regression and lock the fix.
+# ---------------------------------------------------------------------------
+
+
+class TestRedactNdjsonValidity:
+    """After redaction every single-object NDJSON line must still parse with json.loads()."""
+
+    # --- Cookie in JSON value field ---
+
+    def test_cookie_ndjson_reparseable(self) -> None:
+        """Cookie secret inside a JSON object: redacted line must still parse."""
+        line = '{"name":"Cookie","value":"session=SECRETTOK","x":1}'
+        result = redact(line)
+        parsed = _json.loads(result)          # must not raise
+        assert "SECRETTOK" not in result, "secret must be masked"
+        assert parsed.get("x") == 1, "sibling field 'x' must survive intact"
+
+    def test_set_cookie_ndjson_reparseable(self) -> None:
+        """Set-Cookie in JSON: redacted line must still parse; sibling field intact."""
+        line = '{"name":"Set-Cookie","value":"sid=SETSECRET; HttpOnly","extra":"ok"}'
+        result = redact(line)
+        parsed = _json.loads(result)
+        assert "SETSECRET" not in result
+        assert parsed.get("extra") == "ok"
+
+    # --- Authorization Bearer in JSON value field ---
+
+    def test_bearer_ndjson_reparseable(self) -> None:
+        """Bearer token in JSON value: redacted line must still parse."""
+        line = '{"name":"Authorization","value":"Bearer eyABCDEFGHIJKLMN","z":99}'
+        result = redact(line)
+        parsed = _json.loads(result)
+        assert "eyABCDEFGHIJKLMN" not in result
+        assert parsed.get("z") == 99
+
+    # --- Authorization Basic in JSON value field ---
+
+    def test_basic_ndjson_reparseable(self) -> None:
+        """Basic credential in JSON value: redacted line must still parse."""
+        line = '{"name":"Authorization","value":"Basic dXNlcjpwYXNzd29yZA==","z":2}'
+        result = redact(line)
+        parsed = _json.loads(result)
+        assert "dXNlcjpwYXNzd29yZA==" not in result
+        assert parsed.get("z") == 2
+
+    # --- Authorization Digest in JSON value field ---
+
+    def test_digest_ndjson_reparseable(self) -> None:
+        """Digest credential in JSON value: redacted line must still parse."""
+        line = '{"name":"Authorization","value":"Digest username=\\"u\\", response=\\"deadbeef\\"","z":3}'
+        result = redact(line)
+        parsed = _json.loads(result)
+        assert "deadbeef" not in result
+        assert parsed.get("z") == 3
+
+    # --- Authorization header-line value embedded inside a JSON string ---
+
+    def test_auth_header_line_in_json_string_reparseable(self) -> None:
+        """Header-line form stored as a JSON string value: sibling fields survive."""
+        # e.g. a request dump that stores the raw header line as a JSON value
+        line = '{"raw":"Authorization: Bearer SUPERSECRETXYZ","id":42}'
+        result = redact(line)
+        parsed = _json.loads(result)
+        assert "SUPERSECRETXYZ" not in result
+        assert parsed.get("id") == 42
+
+    # --- Cookie header-line value embedded inside a JSON string ---
+
+    def test_cookie_header_line_in_json_string_reparseable(self) -> None:
+        """Cookie header-line stored as JSON string value: sibling fields survive."""
+        line = '{"raw":"Cookie: session=RAWSECRET; path=/","id":7}'
+        result = redact(line)
+        parsed = _json.loads(result)
+        assert "RAWSECRET" not in result
+        assert parsed.get("id") == 7
+
+    # --- Plain header-line forms still work (non-regression) ---
+
+    def test_cookie_header_line_still_masked(self) -> None:
+        """Plain Cookie: header line (not inside JSON) must still be masked."""
+        line = "Cookie: session=SECRETSESSIONTOKEN; path=/"
+        result = redact(line)
+        assert "SECRETSESSIONTOKEN" not in result
+        assert "***" in result
+
+    def test_auth_digest_header_line_still_masked(self) -> None:
+        """Plain Authorization: Digest header line must still be masked."""
+        line = 'Authorization: Digest username="u", realm="r", response="deadbeef"'
+        result = redact(line)
+        assert "deadbeef" not in result
+        assert "***" in result
