@@ -98,3 +98,114 @@ def test_offset_beyond_length_is_pos_not_found() -> None:
     with pytest.raises(PosError) as ei:
         resolve_pos(REQ, "offset:0-99999")
     assert ei.value.code == "POS_NOT_FOUND"
+
+
+# --- [00] body:FIELD on array/object value must not truncate at first comma ---
+
+
+def test_json_array_value_full_span() -> None:
+    """[00] body:roles on an array value must return the full array, not truncate at ','."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b'{"roles":["admin","user"],"id":1}'
+    )
+    p = resolve_pos(req, "body:roles")
+    assert req[p.start : p.end] == b'["admin","user"]'
+
+
+def test_json_object_value_full_span() -> None:
+    """[00] body:data on a nested object value must return the full object."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b'{"data":{"x":1,"y":2},"id":3}'
+    )
+    p = resolve_pos(req, "body:data")
+    assert req[p.start : p.end] == b'{"x":1,"y":2}'
+
+
+def test_json_nested_array_with_braces_full_span() -> None:
+    """[00] array containing objects must be fully captured."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b'{"items":[{"a":1},{"b":2}],"z":0}'
+    )
+    p = resolve_pos(req, "body:items")
+    assert req[p.start : p.end] == b'[{"a":1},{"b":2}]'
+
+
+# --- [01] body:FIELD must resolve TOP-LEVEL key only, not nested matches ---
+
+
+def test_json_top_level_id_wins_over_nested() -> None:
+    """[01] top-level 'id' must be 42, not the nested 99 inside 'data'."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b'{"data":{"id":99},"id":42}'
+    )
+    p = resolve_pos(req, "body:id")
+    assert req[p.start : p.end] == b"42"
+
+
+def test_json_key_absent_at_top_level_raises_not_found() -> None:
+    """[01] key present only in a nested object must raise POS_NOT_FOUND."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b'{"data":{"id":99}}'
+    )
+    with pytest.raises(PosError) as ei:
+        resolve_pos(req, "body:id")
+    assert ei.value.code == "POS_NOT_FOUND"
+
+
+# --- [03] path:0 and path:-1 must raise BAD_SELECTOR ---
+
+
+def test_path_index_zero_raises_bad_selector() -> None:
+    """[03] path:0 is not valid (1-based); must raise BAD_SELECTOR."""
+    with pytest.raises(PosError) as ei:
+        resolve_pos(REQ, "path:0")
+    assert ei.value.code == "BAD_SELECTOR"
+
+
+def test_path_index_negative_raises_bad_selector() -> None:
+    """[03] path:-1 must raise BAD_SELECTOR, not POS_NOT_FOUND."""
+    with pytest.raises(PosError) as ei:
+        resolve_pos(REQ, "path:-1")
+    assert ei.value.code == "BAD_SELECTOR"
+
+
+# --- [05] body:FIELD on JSON with no Content-Type must route to JSON resolver ---
+
+
+def test_json_body_without_content_type_resolves_field() -> None:
+    """[05] JSON body (starts with '{') with no Content-Type must use the JSON resolver."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Host: example.com\r\n"
+        b"\r\n"
+        b'{"id":1}'
+    )
+    p = resolve_pos(req, "body:id")
+    assert req[p.start : p.end] == b"1"
+
+
+def test_form_body_without_content_type_still_resolves() -> None:
+    """[05] Form body (no '{'/']' prefix) without Content-Type must still work as before."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Host: example.com\r\n"
+        b"\r\n"
+        b"foo=bar&baz=qux"
+    )
+    p = resolve_pos(req, "body:foo")
+    assert req[p.start : p.end] == b"bar"

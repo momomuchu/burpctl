@@ -3,9 +3,11 @@
 import json
 
 import httpx
+import pytest
 
 from bp.client import BurpClient
-from bp.runner import run_fuzz
+from bp.pos import Position
+from bp.runner import _payload_lists, run_fuzz
 
 
 def _mock_client() -> BurpClient:
@@ -73,3 +75,33 @@ def test_run_fuzz_cluster_bomb_matrix() -> None:
     )
     assert len(results) == 4  # 2 * 2
     assert {r.payloads for r in results} == {("a", "1"), ("a", "2"), ("b", "1"), ("b", "2")}
+
+
+# --- [38] invalid attack type must raise ValueError before payload resolution ---
+
+
+def test_invalid_attack_type_raises_value_error_in_run_fuzz() -> None:
+    """[38] fuzz --type <invalid> must raise ValueError mentioning 'unknown attack type'."""
+    with pytest.raises(ValueError, match="unknown attack type"):
+        run_fuzz(
+            _mock_client(),
+            5,
+            ["query:u"],
+            {"u": [b"x"]},
+            "turbo-intruder",  # unknown type
+        )
+
+
+def test_invalid_attack_type_payload_lists_raises_before_misleading_error() -> None:
+    """[38] _payload_lists with unknown type + payload provided must raise 'unknown attack type',
+    not the misleading 'needs --payloads list per position' error."""
+    p = Position(5, 6, "query:u")
+    with pytest.raises(ValueError, match="unknown attack type"):
+        _payload_lists([p], {"u": [b"x"]}, "turbo-intruder")
+
+
+def test_invalid_attack_type_message_names_valid_types() -> None:
+    """[38] error message must include at least one valid type name for actionability."""
+    p = Position(5, 6, "query:u")
+    with pytest.raises(ValueError, match="sniper"):
+        _payload_lists([p], {"u": [b"x"]}, "invalid")

@@ -7,7 +7,6 @@ Selectors: ``header:NAME`` ``cookie:NAME`` ``body:FIELD`` ``query:NAME`` ``path:
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -133,6 +132,8 @@ def _resolve_path(raw: bytes, arg: str, selector: str) -> Position:
         idx = int(arg)
     except ValueError:
         raise PosError("BAD_SELECTOR", f"path index must be int, got {arg!r}") from None
+    if idx <= 0:
+        raise PosError("BAD_SELECTOR", f"path index must be >= 1, got {idx}")
     t_start, t_end = request_target_span(raw)
     target = raw[t_start:t_end]
     q = target.find(b"?")
@@ -160,33 +161,172 @@ def _resolve_body(raw: bytes, arg: str, selector: str) -> Position:
     body = raw[b0:]
     if b"application/json" in ct:
         return _resolve_json(body, b0, arg, selector)
-    if b"x-www-form-urlencoded" in ct or (not ct and b"=" in body):
+    if b"x-www-form-urlencoded" in ct:
         return _resolve_form(body, b0, arg, selector)
+    if not ct:
+        # JSON-first: if body (stripped) starts with '{' or '[', treat as JSON.
+        stripped = body.lstrip()
+        if stripped and stripped[0] in (0x7B, 0x5B):  # '{' or '['
+            return _resolve_json(body, b0, arg, selector)
+        if b"=" in body:
+            return _resolve_form(body, b0, arg, selector)
     raise PosError("UNSUPPORTED_BODY", f"content-type {ct!r} unsupported for body:{arg}")
 
 
 def _resolve_json(body: bytes, b0: int, field: str, selector: str) -> Position:
-    pattern = b'"' + re.escape(field).encode() + b'"\\s*:\\s*'
-    m = re.search(pattern, body)
-    if m is None:
-        raise PosError("POS_NOT_FOUND", f'json key "{field}" not found')
-    v0 = m.end()
-    if v0 < len(body) and body[v0] == 0x22:  # '"' → string value
-        j = v0 + 1
-        while j < len(body):
-            c = body[j]
-            if c == 0x5C:  # backslash → skip the escaped char (handles \" inside the value)
-                j += 2
+    """Resolve ``field`` to its value span at the TOP LEVEL of the JSON object in ``body``.
+
+    Scans character by character with bracket/brace depth tracking so that:
+    - Keys inside nested objects/arrays are skipped ([01]).
+    - Array and object values are captured in full by matching their open/close
+      delimiter using a depth counter that respects string literals ([00]).
+    - Primitive values use terminator scanning (unchanged behaviour).
+    """
+    n = len(body)
+    i = 0
+
+    # Skip leading whitespace and the opening '{' of the top-level object.
+    while i < n and body[i] in (0x20, 0x09, 0x0D, 0x0A):
+        i += 1
+    if i >= n or body[i] != 0x7B:  # must start with '{'
+        raise PosError("POS_NOT_FOUND", f'json key "{field}" not found (body is not a JSON object)')
+    i += 1  # consume '{'
+
+    target = field.encode()
+
+    # Iterate over top-level key-value pairs.
+    while i < n:
+        # Skip whitespace and commas between pairs.
+        while i < n and body[i] in (0x20, 0x09, 0x0D, 0x0A, 0x2C):
+            i += 1
+        if i >= n:
+            break
+        if body[i] == 0x7D:  # closing '}' of the top-level object
+            break
+
+        # Expect a quoted key.
+        if body[i] != 0x22:  # '"'
+            raise PosError("POS_NOT_FOUND", f'json key "{field}" not found (unexpected byte at key position)')
+        i += 1  # consume opening '"'
+        key_start = i
+        while i < n:
+            c = body[i]
+            if c == 0x5C:  # backslash escape
+                i += 2
                 continue
-            if c == 0x22:  # unescaped closing quote
-                return Position(b0 + v0 + 1, b0 + j, selector)
-            j += 1
-        raise PosError("POS_NOT_FOUND", "unterminated json string")
-    j = v0  # literal value
-    terminators = (0x2C, 0x7D, 0x5D, 0x20, 0x0D, 0x0A, 0x09)  # , } ] sp cr lf tab
-    while j < len(body) and body[j] not in terminators:
-        j += 1
-    return Position(b0 + v0, b0 + j, selector)
+            if c == 0x22:  # closing '"'
+                break
+            i += 1
+        key_bytes = body[key_start:i]
+        i += 1  # consume closing '"'
+
+        # Skip whitespace then ':'
+        while i < n and body[i] in (0x20, 0x09, 0x0D, 0x0A):
+            i += 1
+        if i >= n or body[i] != 0x3A:  # ':'
+            raise PosError("POS_NOT_FOUND", f'json key "{field}" not found (missing colon)')
+        i += 1  # consume ':'
+
+        # Skip whitespace before value.
+        while i < n and body[i] in (0x20, 0x09, 0x0D, 0x0A):
+            i += 1
+
+        v_start = i  # value starts here
+
+        if key_bytes == target:
+            # Found the top-level key — now locate the full value extent.
+            if i >= n:
+                raise PosError("POS_NOT_FOUND", f'json key "{field}" has no value')
+            first = body[i]
+            if first == 0x22:  # '"' → string value
+                i += 1
+                while i < n:
+                    c = body[i]
+                    if c == 0x5C:
+                        i += 2
+                        continue
+                    if c == 0x22:
+                        return Position(b0 + v_start + 1, b0 + i, selector)
+                    i += 1
+                raise PosError("POS_NOT_FOUND", "unterminated json string")
+            if first in (0x5B, 0x7B):  # '[' or '{' → array/object value
+                # Use depth counting to find the matching close delimiter.
+                open_ch = first
+                close_ch = 0x5D if open_ch == 0x5B else 0x7D
+                depth = 0
+                while i < n:
+                    c = body[i]
+                    if c == 0x22:  # string — skip its contents
+                        i += 1
+                        while i < n:
+                            sc = body[i]
+                            if sc == 0x5C:
+                                i += 2
+                                continue
+                            if sc == 0x22:
+                                break
+                            i += 1
+                    elif c == open_ch:
+                        depth += 1
+                    elif c == close_ch:
+                        depth -= 1
+                        if depth == 0:
+                            return Position(b0 + v_start, b0 + i + 1, selector)
+                    i += 1
+                raise PosError("POS_NOT_FOUND", f'json key "{field}" value is unterminated')
+            # Primitive literal (number, true, false, null).
+            terminators = (0x2C, 0x7D, 0x5D, 0x20, 0x0D, 0x0A, 0x09)
+            while i < n and body[i] not in terminators:
+                i += 1
+            return Position(b0 + v_start, b0 + i, selector)
+
+        else:
+            # Not the target key — skip the value entirely (depth-aware) to stay at depth 0.
+            if i >= n:
+                break
+            first = body[i]
+            if first == 0x22:  # string
+                i += 1
+                while i < n:
+                    c = body[i]
+                    if c == 0x5C:
+                        i += 2
+                        continue
+                    if c == 0x22:
+                        i += 1
+                        break
+                    i += 1
+            elif first in (0x5B, 0x7B):  # array or object
+                open_ch = first
+                close_ch = 0x5D if open_ch == 0x5B else 0x7D
+                depth = 0
+                while i < n:
+                    c = body[i]
+                    if c == 0x22:
+                        i += 1
+                        while i < n:
+                            sc = body[i]
+                            if sc == 0x5C:
+                                i += 2
+                                continue
+                            if sc == 0x22:
+                                break
+                            i += 1
+                    elif c == open_ch:
+                        depth += 1
+                    elif c == close_ch:
+                        depth -= 1
+                        if depth == 0:
+                            i += 1
+                            break
+                    i += 1
+            else:
+                # Primitive literal
+                terminators = (0x2C, 0x7D, 0x5D, 0x20, 0x0D, 0x0A, 0x09)
+                while i < n and body[i] not in terminators:
+                    i += 1
+
+    raise PosError("POS_NOT_FOUND", f'json key "{field}" not found')
 
 
 def _resolve_form(body: bytes, b0: int, field: str, selector: str) -> Position:

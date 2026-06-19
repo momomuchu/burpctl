@@ -89,3 +89,40 @@ def test_expand_rejects_zero_positions() -> None:
         except ValueError:
             raised = True
         assert raised, f"{attack} must reject zero positions, not emit unmodified requests"
+
+
+# --- [02] apply_subs must INSERT Content-Length when header is absent ---
+
+
+def test_apply_subs_inserts_content_length_when_absent() -> None:
+    """[02] POST with body but no Content-Length header must have C-L inserted after substitution."""
+    base = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Host: example.com\r\n"
+        b"Content-Type: application/x-www-form-urlencoded\r\n"
+        b"\r\n"
+        b"id=1"
+    )
+    # Fuzz the body value; no Content-Length present in the base request
+    pos = resolve_pos(base, "body:id")
+    out = apply_subs(base, [Sub(pos, b"9999")])
+    assert b"Content-Length:" in out
+    # The body is "id=9999" (7 bytes)
+    assert b"Content-Length: 7\r\n" in out
+    assert out.endswith(b"id=9999")
+
+
+def test_apply_subs_still_updates_existing_content_length() -> None:
+    """[02] Regression: existing Content-Length must still be updated (not duplicated)."""
+    base = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Length: 4\r\n"
+        b"Content-Type: application/x-www-form-urlencoded\r\n"
+        b"\r\n"
+        b"id=1"
+    )
+    pos = resolve_pos(base, "body:id")
+    out = apply_subs(base, [Sub(pos, b"9999")])
+    # Exactly one Content-Length header in output
+    assert out.count(b"Content-Length:") == 1
+    assert b"Content-Length: 7\r\n" in out

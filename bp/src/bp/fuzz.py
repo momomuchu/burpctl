@@ -51,6 +51,16 @@ def _recompute_content_length(raw: bytes) -> bytes:
     for name, v_start, v_end in iter_headers(raw):
         if name.lower() == b"content-length":
             return raw[:v_start] + str(new_len).encode() + raw[v_end:]
+    # No Content-Length header present — insert one just before the blank-line separator.
+    # Find the end of the header block (the \r\n\r\n or \n\n separator).
+    sep = raw.find(b"\r\n\r\n")
+    if sep != -1:
+        insert_at = sep + 2  # after the first \r\n, before the final \r\n
+        return raw[:insert_at] + b"Content-Length: " + str(new_len).encode() + b"\r\n" + raw[insert_at:]
+    sep = raw.find(b"\n\n")
+    if sep != -1:
+        insert_at = sep + 1
+        return raw[:insert_at] + b"Content-Length: " + str(new_len).encode() + b"\n" + raw[insert_at:]
     return raw
 
 

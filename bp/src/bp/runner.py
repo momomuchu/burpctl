@@ -44,6 +44,11 @@ def _short(name: str) -> str:
 def _payload_lists(
     positions: Sequence[Position], payload_map: Mapping[str, list[bytes]], attack_type: str
 ) -> list[list[bytes]]:
+    _KNOWN_ATTACK_TYPES = ("sniper", "battering-ram", "pitchfork", "cluster-bomb")
+    if attack_type not in _KNOWN_ATTACK_TYPES:
+        raise ValueError(
+            f"unknown attack type {attack_type!r} (want one of {', '.join(_KNOWN_ATTACK_TYPES)})"
+        )
     if attack_type in ("sniper", "battering-ram"):
         if not payload_map:
             raise ValueError("at least one --payloads list is required")
