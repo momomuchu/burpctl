@@ -90,6 +90,25 @@ class DecoderService {
             current = decoded.result
         }
 
+        // [05] Form-urlencoded '+'-as-space layer: if the remaining value contains '+' but no
+        // '%XX' percent-encoded sequences, attempt URLDecoder.decode which maps '+' → space.
+        // If the decoded result actually differs from the input (at least one '+' was present
+        // and substituted), emit a final "url" peel. This is last-resort: it only runs after
+        // detectEncoding already returned "plain", so it never competes with the base64/hex/html
+        // branches above. It also never fires when '%XX' sequences are present (those are caught
+        // by the url branch in detectEncoding and handled in the main loop instead).
+        if (current.contains('+') && !current.contains("%[0-9A-Fa-f]{2}".toRegex())) {
+            val formDecoded = try {
+                URLDecoder.decode(current, Charsets.UTF_8)
+            } catch (_: IllegalArgumentException) {
+                null
+            }
+            if (formDecoded != null && formDecoded != current) {
+                steps.add(DecodeStep(encoding = "url", result = formDecoded))
+                current = formDecoded
+            }
+        }
+
         return SmartDecodeResponse(finalResult = current, steps = steps)
     }
 
