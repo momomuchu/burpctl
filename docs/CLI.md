@@ -22,6 +22,7 @@
 | `-w, --write-out 'TPL'` | curl-style template (`%{status} %{payload}`…) | — _(v1.1 — flag not shipped; `-w`/`--write-out` not available in v1)_ |
 | `--tag NAME` | tags the operation in the Run Ledger | — _(v1.1 — flag not shipped; tag column exists in ledger schema but the CLI flag is not wired)_ |
 | `--no-ledger` | do not record this operation in the Run Ledger | off — **shipped** (ADR-0005); env equivalent `BP_NO_LEDGER=1` |
+| `--no-redact` | do not mask secrets in output (e.g. to read a JWT you decode) | off — **shipped**; env equivalent `BP_REDACT=off` |
 | `--version` | print the bp CLI version and exit | — **shipped** |
 | `-h, --help` | help | — |
 

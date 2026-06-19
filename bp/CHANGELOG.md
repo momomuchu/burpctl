@@ -65,6 +65,25 @@ MED and other:
 - Test suite: 124 → 158 (config security, argv hoist + `--version` + `--no-ledger`, `--pos`
   edge cases, client transport + non-JSON, ledger `exit_code`, fuzz zero-position, obs tag).
 
+### Fixed — realistic-scenario ultraqa (2026-06-19)
+
+Found by running a real local bug-bounty workflow end-to-end (recon -> JWT -> IDOR fuzz)
+against a vulnerable target through Burp, plus a parallel adversarial QA sweep.
+
+- **`check idor` silent false negative (HIGH).** On a URL with neither a `{param}` placeholder
+  nor an existing `?param=`, `substituteParam` returned the URL unchanged, so the baseline and
+  every target value hit the SAME url and a real IDOR was reported "not vulnerable". It now
+  appends `?param=value` when absent. Verified: `check idor http://t/api/user --param id --own 1
+  --target 3` now flags VULNERABLE.
+- **`bp decode` now handles base64url / JWT.** A JWT segment auto-detected as "plain" (not
+  decoded), and `--enc base64` choked on URL-safe payloads (`-`/`_`, no padding). decode now
+  normalizes URL-safe + re-pads, and auto-detects an `eyJ…` JWT segment.
+- **`--no-redact` flag added.** Redaction (on by default) masked JWTs/tokens in the
+  `session send` -> `decode` flow; `--no-redact` (position-tolerant, env `BP_REDACT=off`) lets you
+  read a secret you intentionally decode.
+
+- Test suite: 158 → 164 (Python: --no-redact; Kotlin: substituteParam append, base64url/JWT).
+
 ## [1.0.0] — 2026-06-17
 
 First release. A fully-typed, spec-driven CLI client for the Burp REST extension on `:8089`.
