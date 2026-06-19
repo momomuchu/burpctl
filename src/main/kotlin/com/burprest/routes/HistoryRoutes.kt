@@ -19,14 +19,24 @@ fun Route.historyRoutes(historyDao: HistoryDao, sitemapDao: SitemapDao, repeater
             // negative OFFSET and H2 leaked a raw SQLException (with schema internals) to the client.
             if (page < 0) throw IllegalArgumentException("page must be >= 0")
             if (pageSize !in 1..1000) throw IllegalArgumentException("pageSize must be between 1 and 1000")
+            // since/until are compared lexicographically against ISO-8601 timestamps; reject a
+            // malformed value rather than silently returning wrong results.
+            val since = params["since"]?.also {
+                runCatching { java.time.Instant.parse(it) }
+                    .onFailure { throw IllegalArgumentException("since must be ISO-8601, got '$it'") }
+            }
+            val until = params["until"]?.also {
+                runCatching { java.time.Instant.parse(it) }
+                    .onFailure { throw IllegalArgumentException("until must be ISO-8601, got '$it'") }
+            }
             val filter = HistoryFilter(
                 host = params["host"],
                 method = params["method"],
                 statusCode = params["statusCode"]?.toIntOrNull(),
                 source = params["source"],
                 search = params["search"],
-                since = params["since"],
-                until = params["until"],
+                since = since,
+                until = until,
                 page = page,
                 pageSize = pageSize,
             )

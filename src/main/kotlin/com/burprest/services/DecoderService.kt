@@ -21,7 +21,7 @@ class DecoderService {
                 .replace("'", "&#x27;")
             else -> throw IllegalArgumentException("Unsupported encoding: ${request.encoding}")
         }
-        return EncodeResponse(result = result, encoding = request.encoding)
+        return EncodeResponse(result = result, encoding = request.encoding.lowercase())
     }
 
     fun decode(request: DecodeRequest): DecodeResponse {
