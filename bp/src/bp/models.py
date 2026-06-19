@@ -79,7 +79,7 @@ class ProxyEntry(_Wire):
 
 class ProxyHistory(_Wire):
     total: int
-    entries: list[ProxyEntry] = []
+    entries: list[ProxyEntry]
 
 
 class HistoryEntryResponse(_Wire):
@@ -112,7 +112,7 @@ class HistoryEntryResponse(_Wire):
 class HistoryPageResponse(_Wire):
     """Mirrors the Kotlin HistoryPageResponse page-wrapper shape."""
 
-    entries: list[HistoryEntryResponse] = []
+    entries: list[HistoryEntryResponse]
     total: int
     page: int
     pageSize: int

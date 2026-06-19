@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from bp.cli import _proxy_rows
 from bp.commands.proxynav import _proxy_entry_display
-from bp.models import ProxyEntry
+from bp.models import ProxyEntry, ProxyHistory
 
 
 def test_proxy_entry_model_is_nested() -> None:
@@ -141,3 +141,37 @@ def test_req_display_no_response_entry() -> None:
     result = _proxy_entry_display(entry)
     assert result["status"] is None
     assert result["id"] == 7
+
+
+# ---------------------------------------------------------------------------
+# [12] ProxyHistory.entries required — no spurious [] default
+# Kotlin ProxyHistoryResponse.entries: List<ProxyEntry>  (non-nullable, no default)
+# ---------------------------------------------------------------------------
+
+
+def test_proxy_history_missing_entries_raises_validation_error() -> None:
+    """[12] entries is non-nullable/no-default in Kotlin ProxyHistoryResponse —
+    a payload missing 'entries' must raise pydantic.ValidationError, not silently
+    yield an empty list.
+    """
+    with pytest.raises(ValidationError):
+        ProxyHistory.model_validate({"total": 0})
+
+
+def test_proxy_history_complete_payload_validates() -> None:
+    """[12] A complete ProxyHistory payload including entries must still validate."""
+    ph = ProxyHistory.model_validate(
+        {
+            "total": 1,
+            "entries": [{"id": 1, "request": {"method": "GET", "url": "http://h/p"}}],
+        }
+    )
+    assert ph.total == 1
+    assert len(ph.entries) == 1
+    assert ph.entries[0].id == 1
+
+
+def test_proxy_history_empty_entries_list_is_valid() -> None:
+    """[12] entries=[] (empty list) is a valid non-nullable value and must parse fine."""
+    ph = ProxyHistory.model_validate({"total": 0, "entries": []})
+    assert ph.entries == []

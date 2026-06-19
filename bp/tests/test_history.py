@@ -367,3 +367,34 @@ def test_history_entry_empty_req_headers_list_is_valid() -> None:
     payload = {**ENTRY_DICT, "reqHeaders": []}
     entry = HistoryEntryResponse.model_validate(payload)
     assert entry.reqHeaders == []
+
+
+# ---------------------------------------------------------------------------
+# [11] HistoryPageResponse.entries required — no spurious [] default
+# ---------------------------------------------------------------------------
+
+
+def test_history_page_missing_entries_raises_validation_error() -> None:
+    """[11] entries is non-nullable/no-default in Kotlin HistoryPageResponse —
+    a payload missing 'entries' must raise pydantic.ValidationError, not silently
+    yield an empty list.
+    """
+    from pydantic import ValidationError
+
+    payload = {k: v for k, v in PAGE_DICT.items() if k != "entries"}
+    with pytest.raises(ValidationError):
+        HistoryPageResponse.model_validate(payload)
+
+
+def test_history_page_complete_payload_still_validates() -> None:
+    """[11] A complete HistoryPageResponse payload including entries must still validate."""
+    page = HistoryPageResponse.model_validate(PAGE_DICT)
+    assert len(page.entries) == 1
+    assert page.entries[0].id == 42
+
+
+def test_history_page_empty_entries_list_is_valid() -> None:
+    """[11] entries=[] (empty list) is a valid non-nullable value and must parse fine."""
+    payload = {**PAGE_DICT, "entries": []}
+    page = HistoryPageResponse.model_validate(payload)
+    assert page.entries == []
