@@ -679,6 +679,97 @@ class SecurityScanServiceTest {
     }
 
     // ---------------------------------------------------------------------------
+    // [round-5][01] IDOR — full-body equality: identical first 200 chars but differ after byte 200
+    // ---------------------------------------------------------------------------
+
+    /**
+     * RED->GREEN [round-5][01]: two bodies that share IDENTICAL first 200 chars AND equal total
+     * length but differ AFTER byte 200 (e.g. different role/SSN/salary in the tail).
+     *
+     * Old code: baselineBodyPreview == targetBodyPreview (previews equal) AND
+     *           abs(length - baseline.length) == 0 < threshold -> sameAsBaseline=true -> NOT vulnerable.
+     *           (FALSE NEGATIVE — IDOR missed)
+     *
+     * New code (full-body equality): full baseline body != full target body -> sameAsBaseline=false
+     *           -> baselineSucceeded=true + status 200 + length>0 -> vulnerable=true.
+     */
+    @Test
+    fun `idor - identical first 200 chars same length but different tail is NOT sameAsBaseline and IS vulnerable`() {
+        val sharedPrefix = "x".repeat(200)
+        val baselineBody = sharedPrefix + "role=admin;ssn=111-22-3333;salary=150000"
+        val targetBody   = sharedPrefix + "role=user;ssn=999-88-7777;salary=60000"
+        // Pad target to match length so the old length-delta tiebreaker would also pass
+        val targetBodyPadded = targetBody.padEnd(baselineBody.length, '.')
+
+        every { sessionService.send(match { it.url.contains("own") }) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = baselineBody,
+            durationMs = 0,
+        )
+        every { sessionService.send(match { it.url.contains("other") }) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = targetBodyPadded,
+            durationMs = 0,
+        )
+
+        val resp = svc.idor(
+            IdorRequest(
+                endpoint = "http://t/resource?id={id}",
+                param = "id",
+                ownValues = listOf("own"),
+                targetValues = listOf("other"),
+            )
+        )
+
+        val result = resp.results.first()
+        // Previews are identical (first 200 chars = sharedPrefix), length is same,
+        // but bodies differ after byte 200 — must NOT be sameAsBaseline
+        assertFalse(
+            result.sameAsBaseline,
+            "Bodies share identical first 200 chars and equal length but differ in tail — sameAsBaseline must be false"
+        )
+        assertTrue(
+            result.vulnerable,
+            "Different tail content (role/SSN/salary) for another ID -> IDOR must be flagged vulnerable"
+        )
+        assertEquals(1, resp.vulnerableCount)
+    }
+
+    /**
+     * [round-5][01] counter-case: FULLY identical bodies (including tail) -> sameAsBaseline=true, not vulnerable.
+     */
+    @Test
+    fun `idor - fully identical bodies including tail IS sameAsBaseline and NOT vulnerable`() {
+        val body = "x".repeat(200) + "role=admin;ssn=111-22-3333;salary=150000"
+
+        every { sessionService.send(any()) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = body,
+            durationMs = 0,
+        )
+
+        val resp = svc.idor(
+            IdorRequest(
+                endpoint = "http://t/resource?id={id}",
+                param = "id",
+                ownValues = listOf("own"),
+                targetValues = listOf("other"),
+            )
+        )
+
+        val result = resp.results.first()
+        assertTrue(
+            result.sameAsBaseline,
+            "Fully identical bodies (same prefix AND same tail) -> sameAsBaseline=true"
+        )
+        assertFalse(result.vulnerable, "Fully identical bodies -> not an IDOR -> not vulnerable")
+        assertEquals(0, resp.vulnerableCount)
+    }
+
+    // ---------------------------------------------------------------------------
     // [08] and [11] — model fields wired (note, ignoredOwnValues)
     // ---------------------------------------------------------------------------
 

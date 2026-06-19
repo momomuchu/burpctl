@@ -108,41 +108,35 @@ class SecurityScanService(
             val length = resp.body?.length ?: 0
             val targetBodyPreview = resp.body?.take(200)
 
-            // [09] sameAsBaseline is content-primary with length tiebreaker:
-            //  - When BOTH previews are available and DIFFER → different record → NOT same as baseline.
-            //  - When previews are EQUAL (first 200 chars match) → fall back to length-delta check.
-            //    A target body that shares the first 200 chars but is materially longer (extra secret
-            //    fields beyond byte 200) must NOT be treated as the same record. Reuse the same
-            //    5% / coerceAtLeast(10) threshold to decide "materially different".
-            //  - When previews are unavailable → length-delta check only (original heuristic).
+            // [round-5][01] sameAsBaseline uses FULL-BODY equality (not the 200-char preview).
             //
-            // [01] Asymmetric-null guard (false-negative fix):
-            //  SessionService.send returns body=null for an empty HTTP response body, making
-            //  baselineBodyPreview null. When exactly one of {baselineBodyPreview, targetBodyPreview}
-            //  is null/empty and the other is non-empty, the two records are structurally DIFFERENT
-            //  (one has content, one does not). Force sameAsBaseline=false so a real IDOR returning
-            //  a short affirmative/secret body is not silently missed.
-            //  Exception: BOTH null/empty → both bodies are absent → treat as "same" (no content to
-            //  differentiate; returning false here would produce false positives on public endpoints
-            //  that legitimately return 200 with no body for all resource IDs).
-            val baselineEmpty = baselineBodyPreview.isNullOrEmpty()
-            val targetEmpty = targetBodyPreview.isNullOrEmpty()
-            val lengthThreshold = (baseline.length * 0.05).toInt().coerceAtLeast(10)
+            // Root cause of the round-5 false negative: two bodies sharing identical first 200
+            // chars AND equal length (but differing in the tail — e.g. different role/SSN/salary
+            // after byte 200) were classified sameAsBaseline=true, missing the IDOR.
+            //
+            // Fix: compare the complete body strings directly. The 200-char bodyPreview is still
+            // populated for display purposes (IdorProbeResult.bodyPreview) but plays no role in
+            // the sameAsBaseline decision.
+            //
+            // [01] Asymmetric-null guard (retained):
+            //  SessionService.send returns body=null for an empty HTTP response body. When exactly
+            //  one of {baseline body, target body} is null/empty and the other is non-empty, the
+            //  records are structurally DIFFERENT. Force sameAsBaseline=false.
+            //  Exception: BOTH null/empty → no content to differentiate → treat as "same" to avoid
+            //  false positives on public endpoints returning 200 with no body for all resource IDs.
+            val baselineBody = baselineResp.body  // full string (may be null)
+            val targetBody   = resp.body           // full string (may be null)
+            val baselineEmpty = baselineBody.isNullOrEmpty()
+            val targetEmpty   = targetBody.isNullOrEmpty()
             val sameAsBaseline = if (baselineEmpty != targetEmpty) {
                 // Exactly one side has content → structurally different records
                 false
-            } else if (baselineBodyPreview != null && targetBodyPreview != null) {
-                // Primary signal: content equality of first 200 chars
-                if (baselineBodyPreview != targetBodyPreview) {
-                    false  // Different previews → different record
-                } else {
-                    // Previews equal — tiebreaker: length must also be within threshold
-                    kotlin.math.abs(length - baseline.length) < lengthThreshold
-                }
+            } else if (!baselineEmpty && !targetEmpty) {
+                // Both non-empty: full-body exact equality (covers tail differences past byte 200)
+                baselineBody == targetBody
             } else {
-                // Secondary fallback: both previews null/empty → length-delta check only
-                resp.statusCode == baseline.status &&
-                    kotlin.math.abs(length - baseline.length) < lengthThreshold
+                // Both null/empty → no content on either side → treat as same (avoid false positives)
+                true
             }
 
             // [06] Gate on baseline success: if the own-resource returned a non-2xx status
