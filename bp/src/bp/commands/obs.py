@@ -77,7 +77,7 @@ def log_cmd(
     Reads from ~/.bp/ledger.db (or BP_LEDGER_PATH).  Does not require Burp.
     """
     if not _require_ledger():
-        return
+        raise typer.Exit(1)
 
     filters = QueryFilters(
         since=since, until=until, target=target, tag=tag, status=status, limit=limit

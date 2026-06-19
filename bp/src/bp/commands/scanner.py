@@ -26,8 +26,11 @@ Caveats (surfaced to stderr where relevant):
 
 from __future__ import annotations
 
+from typing import Any
+
 import typer
 
+from bp.client import BurpClient
 from bp.cliutil import run
 
 sub = typer.Typer(
@@ -91,11 +94,16 @@ def scan_status(
     Note: crawlProgress and auditProgress are always 0 (server stub).
     issueCount reflects issues found so far.
     """
-    typer.echo(
-        "note: crawlProgress/auditProgress are always 0 (server stub).",
-        err=True,
-    )
-    run(ctx, lambda c: c.get(f"/scanner/{scan_id}/status"))
+
+    def _do(client: BurpClient) -> Any:
+        result = client.get(f"/scanner/{scan_id}/status")
+        typer.echo(
+            "note: crawlProgress/auditProgress are always 0 (server stub).",
+            err=True,
+        )
+        return result
+
+    run(ctx, _do)
 
 
 @sub.command("issues")

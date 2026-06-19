@@ -14,7 +14,21 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import parse_headers, run
+from bp.cliutil import EXIT_VULN, parse_headers, run
+
+
+def _has_findings(data: dict[str, Any]) -> bool:
+    """Return True when a security-scan response reports at least one finding.
+
+    Covers:
+    - vulnerableCount > 0   (auth-bypass, IDOR, CORS, endpoints)
+    - anomalousCount > 0    (headers bypass)
+    """
+    if data.get("vulnerableCount", 0) > 0:
+        return True
+    if data.get("anomalousCount", 0) > 0:
+        return True
+    return False
 
 # ---------------------------------------------------------------------------
 # Sub-typer
@@ -54,7 +68,17 @@ def check_auth(
         "baseUrl": url,
         "method": method,
     }
-    run(ctx, lambda c: c.post("/scan/auth-bypass", body))
+    _result: dict[str, Any] = {}
+
+    def _do(client: Any) -> Any:
+        resp = client.post("/scan/auth-bypass", body)
+        if isinstance(resp, dict):
+            _result.update(resp)
+        return resp
+
+    run(ctx, _do)
+    if _has_findings(_result):
+        raise typer.Exit(EXIT_VULN)
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +133,17 @@ def check_idor(
     if extra_headers is not None:
         req_body["extraHeaders"] = extra_headers
 
-    run(ctx, lambda c: c.post("/scan/idor", req_body))
+    _result: dict[str, Any] = {}
+
+    def _do(client: Any) -> Any:
+        resp = client.post("/scan/idor", req_body)
+        if isinstance(resp, dict):
+            _result.update(resp)
+        return resp
+
+    run(ctx, _do)
+    if _has_findings(_result):
+        raise typer.Exit(EXIT_VULN)
 
 
 # ---------------------------------------------------------------------------
@@ -137,7 +171,17 @@ def check_headers(
     if body is not None:
         req_body["body"] = body
 
-    run(ctx, lambda c: c.post("/scan/headers", req_body))
+    _result: dict[str, Any] = {}
+
+    def _do(client: Any) -> Any:
+        resp = client.post("/scan/headers", req_body)
+        if isinstance(resp, dict):
+            _result.update(resp)
+        return resp
+
+    run(ctx, _do)
+    if _has_findings(_result):
+        raise typer.Exit(EXIT_VULN)
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +205,17 @@ def check_cors(
         "url": url,
         "method": method,
     }
-    run(ctx, lambda c: c.post("/scan/cors", req_body))
+    _result: dict[str, Any] = {}
+
+    def _do(client: Any) -> Any:
+        resp = client.post("/scan/cors", req_body)
+        if isinstance(resp, dict):
+            _result.update(resp)
+        return resp
+
+    run(ctx, _do)
+    if _has_findings(_result):
+        raise typer.Exit(EXIT_VULN)
 
 
 # ---------------------------------------------------------------------------
@@ -200,7 +254,17 @@ def check_endpoints(
         "tests": tests,
         "limit": limit,
     }
-    run(ctx, lambda c: c.post("/scan/endpoints", req_body))
+    _result: dict[str, Any] = {}
+
+    def _do(client: Any) -> Any:
+        resp = client.post("/scan/endpoints", req_body)
+        if isinstance(resp, dict):
+            _result.update(resp)
+        return resp
+
+    run(ctx, _do)
+    if _has_findings(_result):
+        raise typer.Exit(EXIT_VULN)
 
 
 # ---------------------------------------------------------------------------

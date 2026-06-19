@@ -122,8 +122,12 @@ def fuzz(
         if not sep:
             typer.echo(f"error: --payloads must be NAME=FILE, got {spec!r}", err=True)
             raise typer.Exit(EXIT_USAGE)
-        with open(path, "rb") as fh:
-            payload_map[name] = [ln.rstrip(b"\r\n") for ln in fh if ln.strip()]
+        try:
+            with open(path, "rb") as fh:
+                payload_map[name] = [ln.rstrip(b"\r\n") for ln in fh if ln.strip()]
+        except OSError as exc:
+            typer.echo(f"error: cannot read payload file {path}: {exc}", err=True)
+            raise typer.Exit(EXIT_USAGE) from None
 
     def _do(client: BurpClient) -> Any:
         results = run_fuzz(client, request_id, pos, payload_map, attack_type)
