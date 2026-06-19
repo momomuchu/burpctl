@@ -4,8 +4,9 @@ Commands (CLI.md):
   bp collab new [--count N]   generate 1 or N Collaborator payloads (Pro only)
   bp collab poll [id]         poll interactions for all payloads or a specific id (Pro only)
 
-All endpoints require Burp Suite Professional; Community returns SERVICE_UNAVAILABLE (503)
-which the shared ``run`` runner maps to exit-code 4 (PRO_REQUIRED).
+All endpoints require Burp Suite Professional; on Community the routes return the error code
+``PRO_REQUIRED`` (HTTP 503), which the shared ``run`` runner maps to exit-code 4 (EXIT_PRO).
+(Note: ``SERVICE_UNAVAILABLE`` is a distinct code reserved for infra failures and maps to exit 1.)
 
 SPEC §6.5 flags surfaced on stderr:
   - ``interactionId == id`` is a local key, not a real Burp UUID.
