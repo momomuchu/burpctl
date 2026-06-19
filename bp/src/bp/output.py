@@ -21,6 +21,8 @@ def render(data: Any, fmt: str = "table", *, fields: list[str] | None = None) ->
         raise ValueError("raw requires a single record; use --format json for multiple records")
     if fmt == "raw" and fields is not None:
         raise ValueError("--fields is not valid with --format raw")
+    if fmt == "quiet" and fields is not None:
+        raise ValueError("--fields is not valid with --format quiet")
     if fmt == "json":
         return _render_json(data, fields)
     if fmt == "table":

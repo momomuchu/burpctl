@@ -75,6 +75,38 @@ def test_raw_with_fields_raises_value_error() -> None:
         render({"a": 1}, "raw", fields=["a"])
 
 
+# ---------------------------------------------------------------------------
+# [07] — quiet format with --fields is a usage error (silently ignored before fix)
+# ---------------------------------------------------------------------------
+
+
+def test_quiet_with_fields_raises_value_error() -> None:
+    """[07] render(obj, 'quiet', fields=[...]) must raise ValueError mentioning quiet.
+
+    Before the fix, quiet silently ignored --fields and returned the essential
+    value (status=200) instead of honouring the requested field ('id').
+    This is a usage error parallel to the existing raw+fields guard.
+    """
+    with pytest.raises(ValueError, match="--fields is not valid with --format quiet"):
+        render({"id": 42, "status": 200}, "quiet", fields=["id"])
+
+
+def test_quiet_with_fields_list_raises_value_error() -> None:
+    """[07] quiet+fields on a list input also raises ValueError."""
+    with pytest.raises(ValueError, match="--fields is not valid with --format quiet"):
+        render([{"id": 1}, {"id": 2}], "quiet", fields=["id"])
+
+
+def test_quiet_without_fields_still_works() -> None:
+    """[07] quiet with no fields argument is unaffected by the guard."""
+    assert render({"id": 42, "status": 200}, "quiet") == "200"
+
+
+def test_quiet_fields_none_explicit_still_works() -> None:
+    """[07] quiet with fields=None (explicit) is the same as omitting fields."""
+    assert render({"status": "ok"}, "quiet", fields=None) == "ok"
+
+
 def test_json_dict_is_compact() -> None:
     assert render({"a": 1, "b": 2}, "json") == '{"a":1,"b":2}'
 
