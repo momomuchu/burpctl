@@ -178,15 +178,24 @@ def _resolve_body(raw: bytes, arg: str, selector: str) -> Position:
 
 def _resolve_json_or_reclassify(body: bytes, b0: int, arg: str, selector: str) -> Position:
     """Call ``_resolve_json``; if the body is a JSON array (not an object), re-raise
-    the POS_NOT_FOUND as UNSUPPORTED_BODY so callers get the right diagnostic."""
+    the POS_NOT_FOUND as UNSUPPORTED_BODY so callers get the right diagnostic.
+
+    Only reclassifies as UNSUPPORTED_BODY with an "array" message when the body
+    actually starts with ``[`` (after stripping whitespace).  Empty bodies, scalars,
+    and other non-object shapes propagate the original POS_NOT_FOUND unchanged.
+    """
     try:
         return _resolve_json(body, b0, arg, selector)
     except PosError as exc:
         if exc.code == "POS_NOT_FOUND" and "body is not a JSON object" in str(exc):
-            raise PosError(
-                "UNSUPPORTED_BODY",
-                f"body:{arg} is not supported on a top-level JSON array",
-            ) from None
+            stripped = body.lstrip()
+            if stripped and stripped[0:1] == b"[":
+                raise PosError(
+                    "UNSUPPORTED_BODY",
+                    f"body:{arg} is not supported on a top-level JSON array",
+                ) from None
+            # Empty body, scalar, or other non-object/non-array shape:
+            # propagate the original POS_NOT_FOUND so the caller gets an accurate error.
         raise
 
 

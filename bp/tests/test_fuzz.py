@@ -205,3 +205,62 @@ def test_content_length_rewrite_strips_trailing_ows() -> None:
     out = apply_subs(base, [Sub(pos, b"9999")])
     assert b"Content-Length: 7\r\n" in out
     assert b"Content-Length: 7 \r\n" not in out
+
+
+# --- [01] duplicate Content-Length headers must be collapsed to exactly one ---
+
+
+def test_duplicate_content_length_collapsed_to_one() -> None:
+    """[01] A request with two Content-Length headers after body substitution must have
+    exactly ONE Content-Length with the correct new value — no stale second header."""
+    base = (
+        b"POST /smuggle HTTP/1.1\r\n"
+        b"Content-Length: 5\r\n"
+        b"Content-Length: 5\r\n"
+        b"Content-Type: application/x-www-form-urlencoded\r\n"
+        b"\r\n"
+        b"id=AB"
+    )
+    pos = resolve_pos(base, "body:id")
+    out = apply_subs(base, [Sub(pos, b"9999")])
+    # Exactly one Content-Length header in output
+    assert out.count(b"Content-Length:") == 1
+    # That header must have the correct new value (body is "id=9999" = 7 bytes)
+    assert b"Content-Length: 7\r\n" in out
+
+
+def test_duplicate_content_length_stale_value_absent() -> None:
+    """[01] The stale old value must not appear in the output header block at all."""
+    base = (
+        b"POST /smuggle HTTP/1.1\r\n"
+        b"Content-Length: 5\r\n"
+        b"Content-Length: 99\r\n"
+        b"Content-Type: application/x-www-form-urlencoded\r\n"
+        b"\r\n"
+        b"id=AB"
+    )
+    pos = resolve_pos(base, "body:id")
+    out = apply_subs(base, [Sub(pos, b"9999")])
+    # Only one Content-Length header
+    assert out.count(b"Content-Length:") == 1
+    # The correct value is present
+    assert b"Content-Length: 7\r\n" in out
+    # The stale value 99 must not be present as a Content-Length line
+    assert b"Content-Length: 99" not in out
+
+
+def test_triple_content_length_collapsed_to_one() -> None:
+    """[01] Even three Content-Length headers must be collapsed to exactly one."""
+    base = (
+        b"POST /smuggle HTTP/1.1\r\n"
+        b"Content-Length: 5\r\n"
+        b"Content-Length: 5\r\n"
+        b"Content-Length: 5\r\n"
+        b"Content-Type: application/x-www-form-urlencoded\r\n"
+        b"\r\n"
+        b"id=AB"
+    )
+    pos = resolve_pos(base, "body:id")
+    out = apply_subs(base, [Sub(pos, b"9999")])
+    assert out.count(b"Content-Length:") == 1
+    assert b"Content-Length: 7\r\n" in out

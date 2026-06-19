@@ -311,3 +311,91 @@ def test_json_object_body_still_resolves_normally() -> None:
     )
     p = resolve_pos(req, "body:x")
     assert req[p.start : p.end] == b"7"
+
+
+# --- [00] _resolve_json_or_reclassify must NOT claim "JSON array" for non-arrays ---
+
+
+def test_empty_body_with_json_ct_raises_pos_not_found_not_array_message() -> None:
+    """[00] body:x on an empty body (Content-Type: application/json) must raise
+    POS_NOT_FOUND, not UNSUPPORTED_BODY with a misleading 'JSON array' message."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+    )
+    with pytest.raises(PosError) as ei:
+        resolve_pos(req, "body:x")
+    # Must NOT be reclassified as UNSUPPORTED_BODY (that would be the bug)
+    assert ei.value.code == "POS_NOT_FOUND"
+    # Must NOT claim the body is a JSON array
+    assert "array" not in str(ei.value).lower()
+
+
+def test_whitespace_only_body_with_json_ct_raises_pos_not_found() -> None:
+    """[00] body:x on a whitespace-only body must also raise POS_NOT_FOUND, not the
+    array UNSUPPORTED_BODY — whitespace is not an array."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b"   \r\n"
+    )
+    with pytest.raises(PosError) as ei:
+        resolve_pos(req, "body:x")
+    assert ei.value.code == "POS_NOT_FOUND"
+    assert "array" not in str(ei.value).lower()
+
+
+def test_json_scalar_number_body_raises_pos_not_found_not_array_message() -> None:
+    """[00] body:x on a JSON scalar number (42) must NOT claim 'JSON array'."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b"42"
+    )
+    with pytest.raises(PosError) as ei:
+        resolve_pos(req, "body:x")
+    # code can be POS_NOT_FOUND or UNSUPPORTED_BODY, but must NOT say "array"
+    assert "array" not in str(ei.value).lower()
+
+
+def test_json_scalar_string_body_raises_without_array_message() -> None:
+    """[00] body:x on a JSON scalar string ("hello") must NOT claim 'JSON array'."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b'"hello"'
+    )
+    with pytest.raises(PosError) as ei:
+        resolve_pos(req, "body:x")
+    assert "array" not in str(ei.value).lower()
+
+
+def test_json_array_body_still_raises_unsupported_body_mentioning_array() -> None:
+    """[00] regression: a real JSON array body must still raise UNSUPPORTED_BODY
+    with a message that mentions 'array'."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b"[1,2,3]"
+    )
+    with pytest.raises(PosError) as ei:
+        resolve_pos(req, "body:x")
+    assert ei.value.code == "UNSUPPORTED_BODY"
+    assert "array" in str(ei.value).lower()
+
+
+def test_json_object_body_resolves_correctly_after_fix() -> None:
+    """[00] regression: a valid JSON object body must still resolve normally after fix."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b'{"id":99}'
+    )
+    p = resolve_pos(req, "body:id")
+    assert req[p.start : p.end] == b"99"

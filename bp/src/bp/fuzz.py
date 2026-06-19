@@ -64,14 +64,13 @@ def apply_subs(base: bytes, subs: Sequence[Sub]) -> bytes:
 def _recompute_content_length(raw: bytes) -> bytes:
     new_len = len(raw) - body_start(raw)
     new_val = b" " + str(new_len).encode()
+
+    # Collect every Content-Length header line span: (line_start, line_end_excl_term, term).
+    # We need to update the FIRST and DELETE any subsequent duplicates.
+    cl_spans: list[tuple[int, int, int, bytes]] = []  # (colon_pos, line_end, term_len, term)
     for name, v_start, v_end in iter_headers(raw):
         if name.lower() == b"content-length":
-            # v_start is OWS-trimmed (first non-space after ':').
-            # v_end is OWS-trimmed (last non-space before CRLF).
-            # Find the colon that precedes this value region and the CRLF that follows,
-            # so we replace the entire ": <old-value-with-ows>" with ": <new-value>".
             colon = raw.rfind(b":", 0, v_start)
-            # Find the CRLF (or LF) terminating this header line.
             crlf = raw.find(b"\r\n", v_end)
             lf = raw.find(b"\n", v_end)
             if crlf != -1 and (lf == -1 or crlf <= lf):
@@ -83,7 +82,25 @@ def _recompute_content_length(raw: bytes) -> bytes:
             else:
                 line_end = len(raw)
                 term = b""
-            return raw[: colon + 1] + new_val + term + raw[line_end + len(term) :]
+            cl_spans.append((colon, line_end, len(term), term))
+
+    if cl_spans:
+        # Process right-to-left so byte offsets stay valid as we splice.
+        # Keep the first occurrence (index 0); delete all subsequent ones (index 1+).
+        result = raw
+        for colon, line_end, term_len, term in reversed(cl_spans[1:]):
+            # Delete this duplicate header line entirely (colon+1 … line_end+term_len).
+            # We need the line start: scan back from colon to find the preceding newline or SOF.
+            line_start = result.rfind(b"\n", 0, colon)
+            line_start = line_start + 1 if line_start != -1 else 0
+            result = result[:line_start] + result[line_end + term_len:]
+        # Now update the (only remaining) first Content-Length.
+        # Recompute its span after deletions may have shifted offsets.
+        colon0, line_end0, term_len0, term0 = cl_spans[0]
+        # After deletions above (all were after cl_spans[0]), the first span is unchanged.
+        result = result[: colon0 + 1] + new_val + term0 + result[line_end0 + term_len0:]
+        return result
+
     # No Content-Length header present — insert one just before the blank-line separator.
     # Find the end of the header block (the \r\n\r\n or \n\n separator).
     sep = raw.find(b"\r\n\r\n")
