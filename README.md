@@ -1,8 +1,13 @@
 # burp-wrapper
 
+[![Release](https://img.shields.io/github/v/release/momomuchu/burp-wrapper?sort=semver&color=blue)](https://github.com/momomuchu/burp-wrapper/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](bp/)
+[![Burp Suite](https://img.shields.io/badge/Burp%20Suite-Pro%20%2F%20Community-orange.svg)](https://portswigger.net/burp)
+
 Drive **Burp Suite** from the command line. Two components in this repo:
 
-1. **[`bp`](bp/)** — a fast, fully-typed **CLI client** (Python, **v1.0.0**) — *the recommended interface.*
+1. **[`bp`](bp/)** — a fast, fully-typed **CLI client** (Python, **v1.1.0**) — *the recommended interface.*
    One command instead of hand-crafted JSON: capture, **flexible client-side fuzzing** (any
    injection position, all attack types), scans, decoder, and a **Run Ledger** that records every
    op. Built for bug-bounty hunters and AI agents.
@@ -47,9 +52,9 @@ bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=ssrf.txt \
 
 | Path | What |
 |---|---|
-| [`bp/`](bp/) | The `bp` CLI client (Python, v1.0.0) — [README](bp/README.md) · [CHANGELOG](bp/CHANGELOG.md) |
+| [`bp/`](bp/) | The `bp` CLI client (Python, v1.1.0) — [README](bp/README.md) · [CHANGELOG](bp/CHANGELOG.md) |
 | `src/main/kotlin/com/burprest/` | The Burp REST extension (Kotlin / Ktor / Montoya) |
-| [`docs/`](docs/) | Source-grounded spec: [SPEC](docs/SPEC.md) (69 endpoints / 13 groups), [CLI](docs/CLI.md) grammar, [OUTPUT](docs/OUTPUT.md), [ALGORITHMS](docs/ALGORITHMS.md), 8 [ADRs](docs/adr/) |
+| [`docs/`](docs/) | Source-grounded spec: [SPEC](docs/SPEC.md) (69 endpoints / 13 groups), [CLI](docs/CLI.md) grammar, [OUTPUT](docs/OUTPUT.md), [ALGORITHMS](docs/ALGORITHMS.md), 10 [ADRs](docs/adr/) |
 
 > The REST surface is **13 route groups / 69 endpoints**, source-verified in `docs/SPEC.md`.
 > All endpoints return `{success, data, error}`. The historical `spec.md` design (Python wrapper,
@@ -65,7 +70,7 @@ bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=ssrf.txt \
 
 ```bash
 ./gradlew shadowJar          # extension fat JAR
-cd bp && uv run pytest -q && uv run mypy && uv run ruff check   # bp: 124 tests, typed, lint
+cd bp && uv run pytest -q && uv run mypy && uv run ruff check   # bp: 430 tests, typed, lint
 ```
 
 ## License
