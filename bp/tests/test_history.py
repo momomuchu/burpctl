@@ -198,3 +198,94 @@ def test_history_get_display_table_render_has_no_blob() -> None:
     out = render(proj, "table")
     assert '[{"name"' not in out
     assert "id" in out
+
+
+# ---------------------------------------------------------------------------
+# [12] history replay default output must not leak headers/bodies
+# ---------------------------------------------------------------------------
+
+ENTRY_WITH_SECRETS: dict = {
+    "id": 7,
+    "source": "proxy",
+    "method": "POST",
+    "url": "http://target.example.com/login",
+    "host": "target.example.com",
+    "reqHeaders": [
+        {"name": "Cookie", "value": "session=abc123secret"},
+        {"name": "Authorization", "value": "Bearer tok_supersecret"},
+    ],
+    "reqBody": "username=admin&password=hunter2",
+    "statusCode": 200,
+    "resHeaders": [
+        {"name": "Set-Cookie", "value": "session=newsecret; HttpOnly"},
+    ],
+    "resBody": '{"token":"jwt_verysecret"}',
+    "durationMs": 55,
+    "timestamp": "2026-06-19T09:00:00Z",
+}
+
+REPLAY_RESPONSE: dict = {
+    "original": ENTRY_WITH_SECRETS,
+    "replayed": {**ENTRY_WITH_SECRETS, "id": 0, "source": "replay", "statusCode": 201},
+}
+
+
+def test_replay_display_excludes_blobs() -> None:
+    """[12] _replay_display must strip reqHeaders/resHeaders/reqBody/resBody from both entries."""
+    from bp.commands.history import _replay_display
+
+    result = _replay_display(REPLAY_RESPONSE)
+    for key in ("original", "replayed"):
+        entry = result[key]
+        assert "reqHeaders" not in entry, f"{key}: reqHeaders leaked"
+        assert "resHeaders" not in entry, f"{key}: resHeaders leaked"
+        assert "reqBody" not in entry, f"{key}: reqBody leaked"
+        assert "resBody" not in entry, f"{key}: resBody leaked"
+
+
+def test_replay_display_includes_core_fields() -> None:
+    """[12] _replay_display must include id/source/method/url/host/statusCode/durationMs/timestamp."""
+    from bp.commands.history import _replay_display
+
+    result = _replay_display(REPLAY_RESPONSE)
+    orig = result["original"]
+    assert orig["id"] == 7
+    assert orig["source"] == "proxy"
+    assert orig["method"] == "POST"
+    assert orig["url"] == "http://target.example.com/login"
+    assert orig["host"] == "target.example.com"
+    assert orig["statusCode"] == 200
+    assert orig["durationMs"] == 55
+    assert orig["timestamp"] == "2026-06-19T09:00:00Z"
+
+    repl = result["replayed"]
+    assert repl["id"] == 0
+    assert repl["source"] == "replay"
+    assert repl["statusCode"] == 201
+
+
+def test_replay_display_cookie_value_not_in_rendered_output() -> None:
+    """[12] Cookie/Authorization values must NOT appear in default table render of replay output."""
+    from bp.commands.history import _replay_display
+    from bp.output import render
+
+    projected = _replay_display(REPLAY_RESPONSE)
+    out = render(projected, "table")
+    assert "abc123secret" not in out, "Cookie value leaked in table output"
+    assert "tok_supersecret" not in out, "Authorization value leaked in table output"
+    assert "newsecret" not in out, "Set-Cookie value leaked in table output"
+    assert "hunter2" not in out, "Request body leaked in table output"
+    assert "jwt_verysecret" not in out, "Response body leaked in table output"
+
+
+def test_replay_display_essential_fields_present_in_rendered_output() -> None:
+    """[12] id, method, url, statusCode must be visible in the default table render."""
+    from bp.commands.history import _replay_display
+    from bp.output import render
+
+    projected = _replay_display(REPLAY_RESPONSE)
+    out = render(projected, "table")
+    assert "7" in out, "original id missing from output"
+    assert "POST" in out, "method missing from output"
+    assert "target.example.com" in out, "host/url missing from output"
+    assert "200" in out, "original statusCode missing from output"

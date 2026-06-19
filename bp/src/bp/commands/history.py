@@ -61,7 +61,7 @@ def _history_entry_display(entry: dict[str, Any]) -> dict[str, Any]:
     """Project a single HistoryEntryResponse dict to a clean display dict.
 
     Omits reqHeaders, resHeaders, reqBody, resBody (blobs) for default table/quiet output.
-    Used by 'history get'; --format json bypasses this and returns the full record.
+    Used by 'history get' and 'history replay'; --format json bypasses this and returns the full record.
     """
     he = HistoryEntryResponse.model_validate(entry)
     return {
@@ -73,6 +73,20 @@ def _history_entry_display(entry: dict[str, Any]) -> dict[str, Any]:
         "statusCode": he.statusCode,
         "durationMs": he.durationMs,
         "timestamp": he.timestamp,
+    }
+
+
+def _replay_display(response: dict[str, Any]) -> dict[str, Any]:
+    """Project a ReplayResponse {original, replayed} to a clean display dict.
+
+    Applies _history_entry_display to both the 'original' and 'replayed' entries,
+    stripping reqHeaders, resHeaders, reqBody, resBody (blobs) so that cookies and
+    API keys embedded in header arrays are never emitted to default table/quiet output.
+    --format json bypasses this via history_replay and returns the full raw response.
+    """
+    return {
+        "original": _history_entry_display(response["original"]),
+        "replayed": _history_entry_display(response["replayed"]),
     }
 
 
@@ -221,9 +235,22 @@ def history_replay(
     entry is NOT persisted with a real id (id=0, source='replay'); the
     RepeaterService may re-insert it as a separate row.
 
+    For table/quiet/raw output the response {original, replayed} is projected
+    to the core fields (id, source, method, url, host, statusCode, durationMs,
+    timestamp), suppressing raw header/body blobs so that cookies and API keys
+    embedded in header arrays are never emitted to stdout.  Use --format json
+    to get the full record including reqHeaders, reqBody, resHeaders, resBody.
+
     NOTE: returns 404 if the Burp extension DB failed to initialise.
     """
-    run(ctx, lambda c: c.post(f"/history/{id}/replay"))
+
+    def _do(c: Any) -> Any:
+        response = c.post(f"/history/{id}/replay")
+        if ctx.obj.fmt == "json":
+            return response
+        return _replay_display(response)
+
+    run(ctx, _do)
 
 
 # ---------------------------------------------------------------------------
