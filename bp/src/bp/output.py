@@ -57,9 +57,14 @@ def _cell(value: Any) -> str:
     """Render one table cell: null -> blank, nested dict/list -> compact JSON, else str.
 
     Avoids leaking Python ``repr`` (``None``, ``{'k': 'v'}``) into the human table view.
+    Booleans render as JSON-style ``true``/``false`` (not Python ``True``/``False``).
+    Note: ``bool`` is a subclass of ``int`` in Python, so this check must come before
+    the generic ``str()`` fallback to prevent ``True`` → ``'True'`` leaking.
     """
     if value is None:
         return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
     if isinstance(value, (dict, list)):
         return _json.dumps(value, separators=(",", ":"))
     return str(value)

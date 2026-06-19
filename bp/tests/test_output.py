@@ -198,3 +198,52 @@ def test_quiet_value_none_value_preserves_interior_blank() -> None:
     """[06] [value, None, value] → interior blank line kept ('a\\n\\nb')."""
     result = render([{"status": "a"}, {"status": None}, {"status": "b"}], "quiet")
     assert result == "a\n\nb", f"expected 'a\\n\\nb' but got {result!r}"
+
+
+# ---------------------------------------------------------------------------
+# [08] — _cell() must render bool as JSON-style 'true'/'false', not Python 'True'/'False'
+# ---------------------------------------------------------------------------
+
+
+def test_cell_true_renders_lowercase_true() -> None:
+    """[08] _cell(True) must return 'true' (JSON-style), not Python 'True'."""
+    from bp.output import _cell  # type: ignore[attr-defined]
+
+    assert _cell(True) == "true"
+
+
+def test_cell_false_renders_lowercase_false() -> None:
+    """[08] _cell(False) must return 'false' (JSON-style), not Python 'False'."""
+    from bp.output import _cell  # type: ignore[attr-defined]
+
+    assert _cell(False) == "false"
+
+
+def test_cell_int_zero_unchanged() -> None:
+    """[08] bool is a subclass of int; int 0 must still render as '0', not 'false'."""
+    from bp.output import _cell  # type: ignore[attr-defined]
+
+    assert _cell(0) == "0"
+
+
+def test_cell_int_one_unchanged() -> None:
+    """[08] int 1 must still render as '1', not 'true'."""
+    from bp.output import _cell  # type: ignore[attr-defined]
+
+    assert _cell(1) == "1"
+
+
+def test_table_bool_column_renders_lowercase() -> None:
+    """[08] A table row with a boolean column must show 'true'/'false', not 'True'/'False'."""
+    out = render([{"active": True, "deleted": False}], "table")
+    assert "true" in out
+    assert "false" in out
+    assert "True" not in out
+    assert "False" not in out
+
+
+def test_table_dict_bool_value_renders_lowercase() -> None:
+    """[08] Single-record dict table with bool value must render lowercase."""
+    out = render({"enabled": True}, "table")
+    assert "true" in out
+    assert "True" not in out
