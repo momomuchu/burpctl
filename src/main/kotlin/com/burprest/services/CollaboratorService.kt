@@ -13,6 +13,7 @@ class CollaboratorService(private val api: MontoyaApi) {
     private var client: CollaboratorClient? = null
     private val payloads = ConcurrentHashMap<String, burp.api.montoya.collaborator.CollaboratorPayload>()
 
+    @Synchronized
     private fun ensureClient(): CollaboratorClient {
         if (client == null) {
             val collaborator = try {
@@ -20,7 +21,8 @@ class CollaboratorService(private val api: MontoyaApi) {
             } catch (e: Throwable) {
                 throw IllegalStateException(
                     "Burp Collaborator API not available. This requires Burp Suite Professional. " +
-                    "Community Edition does not support Collaborator. Error: ${e::class.simpleName}: ${e.message}"
+                    "Community Edition does not support Collaborator.",
+                    e,
                 )
             } ?: throw IllegalStateException(
                 "Burp Collaborator API returned null. This requires Burp Suite Professional " +
@@ -31,7 +33,8 @@ class CollaboratorService(private val api: MontoyaApi) {
             } catch (e: Throwable) {
                 throw IllegalStateException(
                     "Failed to create Collaborator client. Ensure Collaborator server is configured " +
-                    "and reachable. Error: ${e::class.simpleName}: ${e.message}"
+                    "and reachable.",
+                    e,
                 )
             }
         }
@@ -43,7 +46,7 @@ class CollaboratorService(private val api: MontoyaApi) {
         val payload = try {
             c.generatePayload()
         } catch (e: Throwable) {
-            throw IllegalStateException("Failed to generate Collaborator payload: ${e::class.simpleName}: ${e.message}")
+            throw IllegalStateException("Failed to generate Collaborator payload.", e)
         }
         val id = UUID.randomUUID().toString().take(8)
         payloads[id] = payload
@@ -62,24 +65,15 @@ class CollaboratorService(private val api: MontoyaApi) {
         return BatchGenerateResponse(payloads = results)
     }
 
+    // No catch on the poll calls: a poll failure is a real error, not "no interactions found"
+    // (which would read as a successful empty poll). It propagates to the route/global handler.
     fun poll(): PollResponse {
         val c = ensureClient()
-        return try {
-            val interactions = c.getAllInteractions()
-            PollResponse(
-                found = interactions.isNotEmpty(),
-                interactions = interactions.map { interaction ->
-                    Interaction(
-                        id = interaction.id().toString(),
-                        type = interaction.type().name,
-                        clientIp = interaction.clientIp().toString(),
-                        timestamp = Instant.now().toString(),
-                    )
-                },
-            )
-        } catch (e: Throwable) {
-            PollResponse(found = false, interactions = emptyList())
-        }
+        val interactions = c.getAllInteractions()
+        return PollResponse(
+            found = interactions.isNotEmpty(),
+            interactions = interactions.map { it.toModel() },
+        )
     }
 
     fun pollById(id: String): PollResponse {
@@ -87,21 +81,17 @@ class CollaboratorService(private val api: MontoyaApi) {
             ?: return PollResponse(found = false, interactions = emptyList())
 
         val c = ensureClient()
-        return try {
-            val interactions = c.getInteractions(InteractionFilter.interactionPayloadFilter(payload.toString()))
-            PollResponse(
-                found = interactions.isNotEmpty(),
-                interactions = interactions.map { interaction ->
-                    Interaction(
-                        id = interaction.id().toString(),
-                        type = interaction.type().name,
-                        clientIp = interaction.clientIp().toString(),
-                        timestamp = Instant.now().toString(),
-                    )
-                },
-            )
-        } catch (e: Throwable) {
-            PollResponse(found = false, interactions = emptyList())
-        }
+        val interactions = c.getInteractions(InteractionFilter.interactionPayloadFilter(payload.toString()))
+        return PollResponse(
+            found = interactions.isNotEmpty(),
+            interactions = interactions.map { it.toModel() },
+        )
     }
+
+    private fun burp.api.montoya.collaborator.Interaction.toModel(): Interaction = Interaction(
+        id = id().toString(),
+        type = type().name,
+        clientIp = clientIp().toString(),
+        timestamp = Instant.now().toString(),
+    )
 }

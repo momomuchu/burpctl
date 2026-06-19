@@ -35,6 +35,12 @@ class SessionService(
     }
 
     fun setSession(request: SetSessionRequest): SessionInfo {
+        // Reject cookie names/values that could inject extra cookies or headers into the Cookie line.
+        request.cookies.forEach { (name, value) ->
+            require(';' !in name && '=' !in name && ';' !in value && '\n' !in name && '\n' !in value) {
+                "Invalid cookie '$name': name must not contain ';' or '=', value must not contain ';' or newlines"
+            }
+        }
         sessionCookies.clear()
         sessionCookies.putAll(request.cookies)
         sessionHeaders.clear()
@@ -69,7 +75,8 @@ class SessionService(
         // Add session cookies
         if (sessionCookies.isNotEmpty()) {
             val cookieHeader = sessionCookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
-            httpReq = httpReq.withAddedHeader("Cookie", cookieHeader)
+            // Remove any existing Cookie first so the session Cookie doesn't become a duplicate header.
+            httpReq = httpReq.withRemovedHeader("Cookie").withAddedHeader("Cookie", cookieHeader)
         }
 
         // Add session headers

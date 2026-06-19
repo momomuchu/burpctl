@@ -112,7 +112,8 @@ class RepeaterService(
             .withMethod(data.method)
 
         data.headers.forEach { h ->
-            req = req.withAddedHeader(h.name, h.value)
+            // Remove any existing same-named header first so we set, not duplicate (e.g. Host).
+            req = req.withRemovedHeader(h.name).withAddedHeader(h.name, h.value)
         }
 
         data.body?.let { req = req.withBody(it) }
