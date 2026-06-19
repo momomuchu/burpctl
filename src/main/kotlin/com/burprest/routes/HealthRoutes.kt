@@ -7,7 +7,7 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Route.healthRoutes(startTime: Long) {
+fun Route.healthRoutes(startTime: Long, burpVersion: String? = null) {
     get("/health") {
         val uptime = (System.currentTimeMillis() - startTime) / 1000
         call.respond(
@@ -16,6 +16,7 @@ fun Route.healthRoutes(startTime: Long) {
                     status = "ok",
                     version = "0.1.0",
                     uptime = uptime,
+                    burpVersion = burpVersion,
                 )
             )
         )
@@ -27,6 +28,7 @@ fun Route.healthRoutes(startTime: Long) {
                 VersionResponse(
                     version = "0.1.0",
                     name = "burp-rest-extension",
+                    burpVersion = burpVersion,
                 )
             )
         )

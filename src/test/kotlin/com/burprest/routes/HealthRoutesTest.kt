@@ -71,4 +71,23 @@ class HealthRoutesTest {
             assertEquals("3.0.3", body["openapi"]?.jsonPrimitive?.content)
         }
     }
+
+    @Test
+    fun `health reports burpVersion when supplied`() = testApplication {
+        application {
+            install(ContentNegotiation) { json() }
+            install(io.ktor.server.routing.Routing) {
+                healthRoutes(System.currentTimeMillis(), "Burp Suite Professional 2025.3")
+            }
+        }
+
+        client.get("/health").apply {
+            assertEquals(HttpStatusCode.OK, status)
+            val data = Json.parseToJsonElement(bodyAsText()).jsonObject["data"]?.jsonObject
+            assertEquals(
+                "Burp Suite Professional 2025.3",
+                data?.get("burpVersion")?.jsonPrimitive?.content,
+            )
+        }
+    }
 }

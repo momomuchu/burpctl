@@ -27,6 +27,14 @@ class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
     private var server: ApplicationEngine? = null
     private val startTime = System.currentTimeMillis()
 
+    // Read the running Burp's version once via Montoya so /health and /version can report it
+    // (the field was previously always null). Best-effort: null if Montoya changes the API.
+    private val burpVersion: String? = try {
+        api.burpSuite().version().let { "${it.name()} ${it.major()}.${it.minor()}" }
+    } catch (_: Throwable) {
+        null
+    }
+
     // Database (nullable — extension works without DB if init fails)
     private val db: DatabaseManager? = try {
         DatabaseManager(
@@ -107,7 +115,7 @@ class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
                 api.logging().logToOutput("[$ts] $method $uri $status ${duration}ms")
             }
 
-            healthRoutes(startTime)
+            healthRoutes(startTime, burpVersion)
             proxyRoutes(proxyService)
             repeaterRoutes(repeaterService)
             collaboratorRoutes(collaboratorService)
