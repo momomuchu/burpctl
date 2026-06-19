@@ -13,22 +13,42 @@ class SecurityScanService(
     private val historyDao: HistoryDao?,
 ) {
 
+    /**
+     * Internal raw probe result carrying response body text alongside status/timing.
+     * Used for content-aware comparisons (auth-bypass similarity, IDOR baseline matching)
+     * without polluting the serialized [AuthBypassProbeResult] model with a body field.
+     */
+    internal data class RawProbe(val status: Int, val bodyText: String, val durationMs: Long) {
+        fun toProbeResult() = AuthBypassProbeResult(
+            status = status,
+            length = bodyText.length,
+            durationMs = durationMs,
+        )
+    }
+
     fun authBypass(request: AuthBypassRequest): AuthBypassResponse {
         require(request.endpoints.isNotEmpty()) { "endpoints list must not be empty" }
 
         val results = request.endpoints.map { endpoint ->
             val url = request.baseUrl.trimEnd('/') + endpoint
 
-            // Probe 1: with full session auth
-            val withAuth = probeWithAuth(url, request.method)
+            // Probe 1: with full session auth — raw to capture body for content comparison
+            val withAuthRaw = probeWithAuthRaw(url, request.method)
+            val withAuth = withAuthRaw.toProbeResult()
 
             // Probe 2: no auth at all (bypass SessionService entirely)
-            val withoutAuth = probeNoAuth(url, request.method)
+            val withoutAuthRaw = probeNoAuthRaw(url, request.method)
+            val withoutAuth = withoutAuthRaw.toProbeResult()
 
             // Probe 3: cookies only (no extra session headers like x-group-id)
             val cookieOnly = probeCookieOnly(url, request.method)
 
-            val vulnerable = withoutAuth.status in 200..299 && withoutAuth.length > 0
+            // [07] Flag vulnerable only when BOTH probes are 2xx AND the unauthenticated
+            // response carries substantially similar content to the authenticated one.
+            // A login page / redirect stub that returns 200 with DIFFERENT content is NOT a bypass.
+            val vulnerable = withoutAuthRaw.status in 200..299
+                && withAuthRaw.status in 200..299
+                && contentSimilar(withAuthRaw.bodyText, withoutAuthRaw.bodyText)
 
             AuthBypassEndpointResult(
                 endpoint = endpoint,
@@ -50,6 +70,15 @@ class SecurityScanService(
         require(request.ownValues.isNotEmpty()) { "ownValues must not be empty" }
         require(request.targetValues.isNotEmpty()) { "targetValues must not be empty" }
 
+        // [11] Surface ignored own values — only the first is used as baseline; callers
+        // supplying multiple ownValues should know the rest are not tested.
+        val ignoredOwnValues = request.ownValues.drop(1)
+
+        // [08] Limitation note: IDOR detection reports any cross-object access regardless of
+        // privilege direction; whether admin→user or user→admin is meaningful is analyst judgment.
+        val idorNote = "Reports any cross-object access regardless of privilege direction; " +
+            "verify findings manually to confirm whether direction implies a real security issue."
+
         // Baseline: use first own value
         val baselineUrl = substituteParam(request.endpoint, request.param, request.ownValues.first())
         val baselineResp = sessionService.send(AuthenticatedRequest(
@@ -57,11 +86,13 @@ class SecurityScanService(
             extraHeaders = request.extraHeaders,
         ))
 
+        val baselineBodyPreview = baselineResp.body?.take(200)
+
         val baseline = IdorProbeResult(
             value = request.ownValues.first(),
             status = baselineResp.statusCode,
             length = baselineResp.body?.length ?: 0,
-            bodyPreview = baselineResp.body?.take(200),
+            bodyPreview = baselineBodyPreview,
             sameAsBaseline = true,
             vulnerable = false,
         )
@@ -75,8 +106,20 @@ class SecurityScanService(
             ))
 
             val length = resp.body?.length ?: 0
-            val sameAsBaseline = resp.statusCode == baseline.status &&
-                kotlin.math.abs(length - baseline.length) < (baseline.length * 0.05).toInt().coerceAtLeast(10)
+            val targetBodyPreview = resp.body?.take(200)
+
+            // [09] sameAsBaseline is content-primary:
+            //  - When BOTH previews are available and differ → different record → NOT same as baseline.
+            //  - When previews are equal (or unavailable) → fall back to length-delta check.
+            val sameAsBaseline = if (baselineBodyPreview != null && targetBodyPreview != null) {
+                // Primary signal: content equality of first 200 chars
+                baselineBodyPreview == targetBodyPreview
+            } else {
+                // Secondary fallback: length delta (original heuristic, kept when content unavailable)
+                resp.statusCode == baseline.status &&
+                    kotlin.math.abs(length - baseline.length) <
+                        (baseline.length * 0.05).toInt().coerceAtLeast(10)
+            }
 
             val vulnerable = !sameAsBaseline && resp.statusCode in 200..299 && length > 0
 
@@ -84,7 +127,7 @@ class SecurityScanService(
                 value = targetValue,
                 status = resp.statusCode,
                 length = length,
-                bodyPreview = resp.body?.take(200),
+                bodyPreview = targetBodyPreview,
                 sameAsBaseline = sameAsBaseline,
                 vulnerable = vulnerable,
             )
@@ -94,6 +137,8 @@ class SecurityScanService(
             baseline = baseline,
             results = results,
             vulnerableCount = results.count { it.vulnerable },
+            ignoredOwnValues = ignoredOwnValues,
+            note = idorNote,
         )
     }
 
@@ -171,15 +216,20 @@ class SecurityScanService(
         val findings = mutableListOf<EndpointFinding>()
 
         if ("auth-bypass" in request.tests) {
-            // Group URLs, test auth bypass
-            val urls = uniqueEndpoints.map { it.second }.distinct()
-            for (url in urls) {
-                val withAuth = probeWithAuth(url, "GET")
-                val withoutAuth = probeNoAuth(url, "GET")
-                if (withoutAuth.status in 200..299 && withoutAuth.length > 0) {
+            // [10] Use the ORIGINAL method from history, not a hardcoded "GET".
+            // A POST-only endpoint probed as GET returns 405 and the bypass is missed.
+            for ((method, url) in uniqueEndpoints) {
+                val withAuthRaw = probeWithAuthRaw(url, method)
+                val withoutAuthRaw = probeNoAuthRaw(url, method)
+                // Report when unauthenticated probe receives a non-error response AND the
+                // content resembles the authenticated response (not just a login page redirect).
+                if (withoutAuthRaw.status in 200..299
+                    && withAuthRaw.status in 200..299
+                    && contentSimilar(withAuthRaw.bodyText, withoutAuthRaw.bodyText)
+                ) {
                     findings.add(EndpointFinding(
-                        endpoint = url, method = "GET", test = "auth-bypass",
-                        detail = "Accessible without auth: ${withoutAuth.status} (${withoutAuth.length} bytes)",
+                        endpoint = url, method = method, test = "auth-bypass",
+                        detail = "Accessible without auth: ${withoutAuthRaw.status} (${withoutAuthRaw.bodyText.length} bytes)",
                         severity = "high",
                     ))
                 }
@@ -216,21 +266,26 @@ class SecurityScanService(
 
     // --- Internal helpers ---
 
-    private fun probeWithAuth(url: String, method: String): AuthBypassProbeResult {
+    /**
+     * Probe with full session auth and return a [RawProbe] that includes the response body.
+     * Internal and open so tests can override via spyk without hitting the Montoya static factory.
+     */
+    internal open fun probeWithAuthRaw(url: String, method: String): RawProbe {
         val start = System.currentTimeMillis()
         val resp = sessionService.send(AuthenticatedRequest(method = method, url = url))
-        return AuthBypassProbeResult(
+        return RawProbe(
             status = resp.statusCode,
-            length = resp.body?.length ?: 0,
+            bodyText = resp.body ?: "",
             durationMs = System.currentTimeMillis() - start,
         )
     }
 
     /**
-     * Send request with NO auth at all — bypasses SessionService entirely.
+     * Probe with NO auth, bypassing SessionService entirely.
      * Not recorded in history (intentional: avoids polluting session history with unauth probes).
+     * Internal and open so tests can override via spyk without hitting the Montoya static factory.
      */
-    private fun probeNoAuth(url: String, method: String): AuthBypassProbeResult {
+    internal open fun probeNoAuthRaw(url: String, method: String): RawProbe {
         return try {
             val start = System.currentTimeMillis()
             val req = HttpRequest.httpRequestFromUrl(url).withMethod(method)
@@ -239,13 +294,13 @@ class SecurityScanService(
             val body = if (resp.body().length() > 0) resp.bodyToString() else ""
             // Filter out SPA HTML catch-all (returns 200 with HTML for any unknown route)
             val isSpaHtml = body.trimStart().startsWith("<!") && body.length > 50000
-            AuthBypassProbeResult(
-                status = if (isSpaHtml) 302 else resp.statusCode().toInt(), // Treat SPA HTML as redirect
-                length = if (isSpaHtml) 0 else body.length,
+            RawProbe(
+                status = if (isSpaHtml) 302 else resp.statusCode().toInt(),
+                bodyText = if (isSpaHtml) "" else body,
                 durationMs = System.currentTimeMillis() - start,
             )
         } catch (e: Exception) {
-            AuthBypassProbeResult(status = 0, length = 0, durationMs = 0)
+            RawProbe(status = 0, bodyText = "", durationMs = 0)
         }
     }
 
@@ -268,6 +323,28 @@ class SecurityScanService(
         } catch (e: Exception) {
             AuthBypassProbeResult(status = 0, length = 0, durationMs = 0)
         }
+    }
+
+    /**
+     * Returns true when two response bodies are substantially similar — i.e. the unauthenticated
+     * probe returned the same protected content as the authenticated one.
+     *
+     * Similarity is determined by:
+     *  1. Exact equality of the first 200 chars (body preview) — primary signal.
+     *  2. Length within 10% as a secondary tiebreaker when bodies are short and previews are equal.
+     *
+     * A short login/redirect page that shares no content with the auth response will score false.
+     */
+    private fun contentSimilar(authBody: String, unauthBody: String): Boolean {
+        if (authBody.isEmpty() && unauthBody.isEmpty()) return true
+        if (authBody.isEmpty() || unauthBody.isEmpty()) return false
+        val authPreview = authBody.take(200)
+        val unauthPreview = unauthBody.take(200)
+        if (authPreview != unauthPreview) return false
+        // Previews match; check overall length ratio for long bodies that share a short prefix
+        val longer = maxOf(authBody.length, unauthBody.length).toDouble()
+        val shorter = minOf(authBody.length, unauthBody.length).toDouble()
+        return shorter / longer >= 0.80
     }
 
     internal fun substituteParam(urlTemplate: String, param: String, value: String): String {

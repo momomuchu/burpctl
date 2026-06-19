@@ -62,6 +62,10 @@ data class IdorResponse(
     val baseline: IdorProbeResult,
     val results: List<IdorProbeResult>,
     val vulnerableCount: Int,
+    // [11] own values beyond the first are not tested (only the first is the baseline); surface them.
+    val ignoredOwnValues: List<String> = emptyList(),
+    // [08] heuristic limitation: cross-object access is flagged regardless of privilege direction.
+    val note: String? = null,
 )
 
 // --- /scan/headers ---
