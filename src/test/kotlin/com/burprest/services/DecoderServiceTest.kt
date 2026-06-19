@@ -72,14 +72,14 @@ class DecoderServiceTest {
     fun `smart decode base64`() {
         val encoded = java.util.Base64.getEncoder().encodeToString("hello".toByteArray())
         val result = service.smartDecode(encoded)
-        assertEquals("hello", result.result)
+        assertEquals("hello", result.finalResult)
         assertTrue(result.steps.isNotEmpty())
     }
 
     @Test
     fun `smart decode plain text unchanged`() {
         val result = service.smartDecode("just plain text here nothing to decode")
-        assertEquals("just plain text here nothing to decode", result.result)
+        assertEquals("just plain text here nothing to decode", result.finalResult)
         assertTrue(result.steps.isEmpty())
     }
 
@@ -209,6 +209,29 @@ class DecoderServiceTest {
         assertEquals("plain", r.encoding)
     }
 
+    // ── [04] RED: unpadded standard base64 must auto-detect as base64, not plain ─────────────────
+
+    @Test
+    fun `04 -auto-detect of unpadded standard base64 dGVzdA classifies as base64 and decodes to test`() {
+        // "dGVzdA" is the unpadded standard base64 of "test" (length 6, 6%4==2 != 0).
+        // Old branch 4 required length%4==0, so this fell through to "plain" and was returned
+        // unchanged. New branch 4 drops the modulo constraint and gates on UTF-8 validity instead.
+        val r = service.decode(DecodeRequest(data = "dGVzdA", encoding = null))
+        assertEquals("base64", r.encoding)
+        assertEquals("test", r.result)
+    }
+
+    @Test
+    fun `04 -auto-detect of plain word test that is valid base64 alphabet returns plain not an error`() {
+        // "test" is length 4, all base64-alphabet chars, 4%4==0 — so old branch 4 classified it
+        // as base64. decodeBase64Flexible("test") yields bytes [0xB6,0xEB,0x2F] which are not
+        // valid UTF-8, causing decodeUtf8OrThrow to throw. New branch gates on isBase64Url-
+        // DecodableAsUtf8 which returns false for "test", so it falls through to "plain".
+        val r = service.decode(DecodeRequest(data = "test", encoding = null))
+        assertEquals("plain", r.encoding)
+        assertEquals("test", r.result)
+    }
+
     // ── [15] RED: smartDecode stops gracefully rather than propagating binary-decode exception ──
 
     @Test
@@ -220,7 +243,7 @@ class DecoderServiceTest {
         val input = java.util.Base64.getEncoder().encodeToString("deadbeef".toByteArray())
         // sanity: input is "ZGVhZGJlZWY="
         val r = service.smartDecode(input)
-        assertEquals("deadbeef", r.result)
+        assertEquals("deadbeef", r.finalResult)
         // exactly one step was peeled (base64 → "deadbeef"); the hex step was aborted
         assertEquals(1, r.steps.size)
         assertEquals("base64", r.steps[0].encoding)

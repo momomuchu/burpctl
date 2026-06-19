@@ -83,7 +83,9 @@ class DecoderRoutesTest {
             assertEquals(HttpStatusCode.OK, status)
             val body = Json.parseToJsonElement(bodyAsText()).jsonObject
             val data = body["data"]?.jsonObject
-            assertEquals("hello", data?.get("result")?.jsonPrimitive?.content)
+            // [05] smart-decode's terminal value is serialized as `final` (spec contract,
+            // docs/bdd/10-decoder-utils.feature §smart-decode), distinct from steps[].result.
+            assertEquals("hello", data?.get("final")?.jsonPrimitive?.content)
         }
     }
 }

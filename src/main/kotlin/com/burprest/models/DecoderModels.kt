@@ -1,5 +1,6 @@
 package com.burprest.models
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -40,7 +41,9 @@ data class HashResponse(
 
 @Serializable
 data class SmartDecodeResponse(
-    val result: String,
+    // Spec contract (docs/bdd/10-decoder-utils.feature §smart-decode): the terminal peeled value
+    // is `data.final` — distinct from each step's `data.steps[].result`.
+    @SerialName("final") val finalResult: String,
     val steps: List<DecodeStep>,
 )
 

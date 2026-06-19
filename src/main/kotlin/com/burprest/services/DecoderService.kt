@@ -86,7 +86,7 @@ class DecoderService {
             current = decoded.result
         }
 
-        return SmartDecodeResponse(result = current, steps = steps)
+        return SmartDecodeResponse(finalResult = current, steps = steps)
     }
 
     private fun detectEncoding(data: String): String = when {
@@ -110,7 +110,12 @@ class DecoderService {
                 isBase64UrlDecodableAsUtf8(data) -> "base64"
 
         // 4. Standard base64 (may contain '+' and '/').
-        data.matches(Regex("^[A-Za-z0-9+/]+=*$")) && data.length % 4 == 0 && data.length >= 4 -> "base64"
+        //    [04] Drop strict length%4==0: decodeBase64Flexible repads internally, so unpadded
+        //    standard base64 (e.g. "dGVzdA", length%4==2) was silently classified "plain".
+        //    Gate on valid-UTF-8 decode instead (same guard used for the url-safe branch above):
+        //    this also fixes the latent inverse where a short all-alpha word like "test" would
+        //    previously pass the modulo check, decode to non-UTF-8 bytes, and throw.
+        data.matches(Regex("^[A-Za-z0-9+/]+=*$")) && data.length >= 2 && isBase64UrlDecodableAsUtf8(data) -> "base64"
 
         // 5. URL-encoded (contains at least one %XX sequence).
         data.contains("%[0-9A-Fa-f]{2}".toRegex()) -> "url"
