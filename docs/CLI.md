@@ -82,4 +82,4 @@ header:NAME   cookie:NAME   body:FIELD   query:NAME   path:INDEX   offset:START-
 - **Rendering** (json/table/raw/quiet/`-w`/`--fields`) is a **cross-cutting contract** proved **once** (`bdd/00-output.feature`), not per endpoint.
 - **Cross-cutting errors** (Burp unreachable → `CONNECTION_REFUSED`, invalid `--id`, unpacked `ApiResponse` envelope, `PRO_REQUIRED` on Community) are proved **once** (`bdd/00-common.feature`).
 - Each endpoint feature tests only its **distinct logic** + its **own contract** (specific pre/post/error conditions).
-- Exit codes: `0` ok · `1` generic error · `2` bad usage · `3` `CONNECTION_REFUSED` · `4` `PRO_REQUIRED`. Errors on stderr; stdout remains parsable.
+- Exit codes: `0` ok · `1` generic error · `2` bad usage · `3` `CONNECTION_REFUSED` · `4` `PRO_REQUIRED` · `5` vulnerabilities found (`bp check …` only, ADR-0010). Errors on stderr; stdout remains parsable.

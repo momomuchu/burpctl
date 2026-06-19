@@ -318,7 +318,7 @@ Default fields: `status,length,time,method,host,contentType`.
 | `id` ★ | int | ledger | local autoincrement |
 | `tag` | string\|null | ledger:`name`/`tag` | founder label (`--tag`) |
 | `timestamp` | string | ledger | ISO8601 |
-| `command` | string | ledger | the `bp` line executed |
+| `command` | string | ledger | the `bp` subcommand name (e.g. `bp check idor`), **not** the full argv — URL/header/payload args are intentionally omitted for privacy |
 | `target` | string\|null | ledger | host/url |
 | `burpOp` | string | ledger | REST endpoint called (e.g. `POST /intruder/attack/create`) |
 | `status` | string | ledger | ok\|err |

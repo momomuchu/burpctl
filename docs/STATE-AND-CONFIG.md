@@ -13,7 +13,7 @@ bodies** by default (bb-mini concept: no leakage, lightweight ledger).
 CREATE TABLE ops (
   id          TEXT PRIMARY KEY,   -- short, temporally sortable (e.g. ULID)
   ts          TEXT NOT NULL,      -- ISO-8601 UTC
-  command     TEXT,               -- bp command line (redacted if redact=on)
+  command     TEXT,               -- bp subcommand name only (e.g. "bp check idor"); URL/header/payload args NOT stored
   burp_op     TEXT,               -- e.g. "POST /intruder/attack/create"
   target      TEXT,               -- targeted host/url
   program     TEXT,               -- nullable (future workspace, ADR-0007)

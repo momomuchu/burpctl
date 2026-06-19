@@ -84,6 +84,51 @@ against a vulnerable target through Burp, plus a parallel adversarial QA sweep.
 
 - Test suite: 158 → 164 (Python: --no-redact; Kotlin: substituteParam append, base64url/JWT).
 
+### Fixed — UltraQA convergence loop (2026-06-19)
+
+A parallel adversarial UltraQA round (8 lanes, 43 findings confirmed three-way) fixed in six
+parallel per-file lanes, then re-verified live against Burp `:8089` + a local vuln target. HIGH:
+
+- **`--pos` JSON resolver corrupted multi-element bodies.** `body:FIELD` on an array/object value
+  truncated at the first comma (`["admin","user"]` → `["admin"`), and a nested same-named key won
+  over the intended top-level field. `_resolve_json` is now a depth-aware top-level scanner.
+- **`bp check idor` false negative on small responses.** The IDOR detector's 10-byte "same as
+  baseline" floor masked a different user's record when the byte delta was small (alice 71B vs
+  bob 67B). Detection is now content-primary — a different `bodyPreview` is flagged regardless of
+  delta. Verified live: a 4-byte-delta cross-account read is now reported VULNERABLE.
+- **`bp check auth` flagged every public 200.** Now compares the unauthenticated probe against the
+  authenticated baseline instead of flagging any 200 response.
+- **Decoder auto-detect mis-classified hex and base64url.** `deadbeef` decoded as base64 garbage
+  (hex is now checked first); url-safe base64 (`-`/`_`, non-JWT) is auto-detected (UTF-8-gated);
+  hex/base64 of non-UTF-8 bytes now raise a clean error instead of silently emitting U+FFFD.
+- **`bp history list --fields` / `--format table` were unusable** — the raw page-wrapper was passed
+  to the renderer, so entry-level fields errored (exit 2) and table showed one giant JSON blob.
+  Entries are now flattened; `--fields id,url` and a row-per-entry table both work.
+- **`bp fuzz --payloads <missing-file>`** raised a raw `FileNotFoundError` traceback (exit 1) →
+  clean usage error (exit 2).
+- **`--fields` was inconsistent across formats** — json raised on an unknown/absent field while
+  table silently rendered blanks. Table now validates per row identically (exit 2).
+- **Empty result sets wrote a lone newline**, breaking NDJSON line readers — now zero bytes.
+
+MED and other:
+
+- **`bp check` now exits 5 when findings are present** (`vulnerableCount`/`anomalousCount > 0`),
+  exit 0 when clean — so pipelines can gate on results (ADR-0010, nmap/nuclei convention).
+- **IDOR response surfaces `ignoredOwnValues`** (only the first `--own` is the baseline) and a
+  `note` documenting the privilege-direction heuristic limitation (cross-object access is reported
+  regardless of direction; verify manually).
+- **`check endpoints` auth-bypass** probes with the request's original method, not a hardcoded GET.
+- Smaller correctness: fuzz adds `Content-Length` when the touched body had none; `path:<=0` is a
+  BAD_SELECTOR; a no-Content-Type `{...}`/`[...]` body resolves as JSON; `fuzz --type <invalid>`
+  names the bad type; `scan status` only prints its stub caveat on success; `bp log` matches
+  `bp tag` (exit 1 when ledger disabled); `encode`/`decode --enc <bad>` is a usage error with a
+  valid-values hint; quiet renders `None` as blank; table unions heterogeneous row keys; `raw` on
+  a list is a usage error.
+- Docs: ledger `command` column documented as subcommand-name-only (not full argv); CLI exit-code
+  list gains `5`.
+
+- Test suite: 164 → 247 (Python 220 + Kotlin). Both suites green; mypy --strict + ruff clean.
+
 ## [1.0.0] — 2026-06-17
 
 First release. A fully-typed, spec-driven CLI client for the Burp REST extension on `:8089`.
