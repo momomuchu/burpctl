@@ -13,11 +13,44 @@ Stub caveats (surfaced to stderr per SPEC §6.2):
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 
 from bp.cliutil import run
+from bp.models import ProxyEntry
+
+
+# ---------------------------------------------------------------------------
+# Display helpers
+# ---------------------------------------------------------------------------
+
+
+def _proxy_entry_display(entry: dict[str, Any]) -> dict[str, Any]:
+    """Project a single ProxyEntry dict to safe core display fields (AX-CAP-BODY).
+
+    Mirrors the _proxy_rows() projection in bp.cli so that 'bp req <id>' and
+    'bp proxy' are consistent: id/method/url/status only.  Request/response
+    header and body blobs are suppressed in default output to prevent PII,
+    cookie, JWT, and credential leakage to stdout.
+
+    Also includes host/timestamp when present in the entry (same information
+    density as 'history get' safe projection).
+
+    For --format json, the caller bypasses this and returns the raw entry.
+    """
+    pe = ProxyEntry.model_validate(entry)
+    row: dict[str, Any] = {
+        "id": pe.id,
+        "method": pe.request.method,
+        "url": pe.request.url,
+        "status": pe.response.statusCode if pe.response else None,
+    }
+    if pe.timestamp is not None:
+        row["timestamp"] = pe.timestamp
+    if pe.listenerInterface is not None:
+        row["listenerInterface"] = pe.listenerInterface
+    return row
 
 
 # ---------------------------------------------------------------------------
@@ -27,8 +60,22 @@ def req(
     ctx: typer.Context,
     id: Annotated[int, typer.Argument(metavar="ID", help="Absolute proxy-history index.")],
 ) -> None:
-    """Fetch a single proxy-history entry by its absolute index."""
-    run(ctx, lambda c: c.get(f"/proxy/history/{id}"))
+    """Fetch a single proxy-history entry by its absolute index.
+
+    For table/quiet/raw output the entry is projected to the core safe fields
+    (id, method, url, status, and optional timestamp/listenerInterface),
+    suppressing request/response header and body blobs so that cookies, JWTs,
+    and any PII or credentials in the response body are never emitted to
+    stdout (AX-CAP-BODY).  Use --format json to get the full raw entry.
+    """
+
+    def _do(c: Any) -> Any:
+        entry = c.get(f"/proxy/history/{id}")
+        if ctx.obj.fmt == "json":
+            return entry
+        return _proxy_entry_display(entry)
+
+    run(ctx, _do)
 
 
 # ---------------------------------------------------------------------------
