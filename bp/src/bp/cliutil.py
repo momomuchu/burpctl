@@ -31,6 +31,9 @@ _EXIT_BY_CODE: dict[str, int] = {
     "CONNECTION_REFUSED": EXIT_CONNECTION,
     "TRANSPORT_ERROR": EXIT_CONNECTION,
     "PRO_REQUIRED": EXIT_PRO,
+    # [15] Community Burp returns SERVICE_UNAVAILABLE for Pro-only scanner surfaces
+    # (crawl/audit/all).  Documented contract: exit 4 (EXIT_PRO).
+    "SERVICE_UNAVAILABLE": EXIT_PRO,
 }
 
 

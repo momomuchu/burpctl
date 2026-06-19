@@ -70,3 +70,24 @@ def test_parse_headers_bad_input_is_usage_exit() -> None:
     with pytest.raises(typer.Exit) as ei:
         parse_headers(["nocolon"])
     assert ei.value.exit_code == 2
+
+
+# ---------------------------------------------------------------------------
+# [15] — SERVICE_UNAVAILABLE BurpError code must map to EXIT_PRO (exit 4)
+# ---------------------------------------------------------------------------
+
+
+def test_service_unavailable_maps_to_exit_pro() -> None:
+    """[15] _EXIT_BY_CODE['SERVICE_UNAVAILABLE'] must equal EXIT_PRO (4).
+
+    Community Burp returns SERVICE_UNAVAILABLE for Pro-only scanner surfaces.
+    The docs contract is exit 4; the map previously fell through to EXIT_GENERIC=1.
+    """
+    from bp.cliutil import EXIT_PRO, _EXIT_BY_CODE  # type: ignore[attr-defined]
+
+    assert "SERVICE_UNAVAILABLE" in _EXIT_BY_CODE, (
+        "_EXIT_BY_CODE missing SERVICE_UNAVAILABLE key"
+    )
+    assert _EXIT_BY_CODE["SERVICE_UNAVAILABLE"] == EXIT_PRO, (
+        f"expected EXIT_PRO={EXIT_PRO}, got {_EXIT_BY_CODE['SERVICE_UNAVAILABLE']}"
+    )

@@ -127,3 +127,32 @@ def test_table_list_renders_none_and_dict_cleanly() -> None:
     out = render([{"id": 1, "meta": {"k": "v"}}, {"id": 2, "meta": None}], "table")
     assert "'k'" not in out and "None" not in out
     assert '{"k":"v"}' in out
+
+
+# ---------------------------------------------------------------------------
+# [06] — quiet format on all-None/empty list must produce '' not '\n'
+# ---------------------------------------------------------------------------
+
+
+def test_quiet_all_none_essential_multi_row_returns_empty_string() -> None:
+    """[06] render with all-None essential values → '' not '\\n' (no spurious blank line)."""
+    result = render([{"status": None}, {"status": None}], "quiet")
+    assert result == "", f"expected '' but got {result!r}"
+
+
+def test_quiet_all_empty_essential_multi_row_returns_empty_string() -> None:
+    """[06] render with all-empty essential values → '' not '\\n'."""
+    result = render([{"unknown_key_xyz": None}, {"unknown_key_xyz": None}], "quiet")
+    assert result == "", f"expected '' but got {result!r}"
+
+
+def test_quiet_mixed_none_and_value_preserves_interior_blank() -> None:
+    """[06] ['a', None] → 'a\\n' — the value row is present; the blank is an interior gap."""
+    result = render([{"status": "a"}, {"status": None}], "quiet")
+    assert result == "a\n", f"expected 'a\\n' but got {result!r}"
+
+
+def test_quiet_value_none_value_preserves_interior_blank() -> None:
+    """[06] [value, None, value] → interior blank line kept ('a\\n\\nb')."""
+    result = render([{"status": "a"}, {"status": None}, {"status": "b"}], "quiet")
+    assert result == "a\n\nb", f"expected 'a\\n\\nb' but got {result!r}"

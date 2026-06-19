@@ -89,7 +89,12 @@ def _render_table(data: Any, fields: list[str] | None) -> str:
 
 def _render_quiet(data: Any) -> str:
     if isinstance(data, list):
-        return "\n".join(_essential(r) for r in data)
+        joined = "\n".join(_essential(r) for r in data)
+        # [06] when every essential value is empty the join produces only '\n'
+        # characters; suppress entirely so the empty-output guard in cliutil.run
+        # can silence stdout (OUTPUT.md §4.4).  Interior blank lines between
+        # real values (e.g. 'a\n\nb') are preserved because strip('\n') is non-empty.
+        return "" if joined.strip("\n") == "" else joined
     return _essential(data)
 
 
