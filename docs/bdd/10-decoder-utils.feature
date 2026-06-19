@@ -4,10 +4,10 @@
 #         §6.12 /utils   (2 endpoints · Community · requires Burp HTTP engine)
 #
 # CLI surface (canonical — CLI.md):
-#   bp encode <data> --encoding <enc>           POST /decoder/encode
-#   bp decode <data> --encoding <enc>           POST /decoder/decode
+#   bp encode <data> --enc <enc>           POST /decoder/encode
+#   bp decode <data> --enc <enc>           POST /decoder/decode
 #   bp decode <data> --smart                    POST /decoder/smart-decode
-#   bp hash   <data> --algorithm <alg>          POST /decoder/hash
+#   bp hash   <data> --algo <alg>          POST /decoder/hash
 #   bp diff   <A> <B> [--method --header --body flags]  POST /utils/diff
 #   bp endpoints <url>                          POST /utils/extract-endpoints
 #
@@ -15,7 +15,7 @@
 # Hash algorithms: md5 | sha1 | sha256 | sha384 | sha512
 #
 # Cross-cutting contracts proven elsewhere (NOT re-proven here):
-#   00-output.feature  : --format / --fields / --quiet / -w / --write-out rendering
+#   00-output.feature  : --format / --fields / --format quiet / -w / --write-out rendering
 #   00-common.feature  : CONNECTION_REFUSED / generic --id / ApiResponse unwrap / PRO_REQUIRED
 #
 # What IS proven here:
@@ -50,7 +50,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Encode a XSS payload to base64
     When I run:
       """
-      bp encode '<script>alert(1)</script>' --encoding base64
+      bp encode '<script>alert(1)</script>' --enc base64
       """
     Then the exit code is 0
     And the data.encoding field equals "base64"
@@ -60,7 +60,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Encode a payload to URL encoding
     When I run:
       """
-      bp encode 'admin OR 1=1--' --encoding url
+      bp encode 'admin OR 1=1--' --enc url
       """
     Then the exit code is 0
     And the data.encoding field equals "url"
@@ -70,7 +70,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Encode a payload to hex
     When I run:
       """
-      bp encode 'SELECT * FROM users' --encoding hex
+      bp encode 'SELECT * FROM users' --enc hex
       """
     Then the exit code is 0
     And the data.encoding field equals "hex"
@@ -81,7 +81,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
     # SPEC FLAG: html encoding covers only: & < > " '
     When I run:
       """
-      bp encode '<img src="x" onerror='"'"'alert(1)'"'"'>' --encoding html
+      bp encode '<img src="x" onerror='"'"'alert(1)'"'"'>' --enc html
       """
     Then the exit code is 0
     And the data.encoding field equals "html"
@@ -92,7 +92,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
     # Proves the exact schema shape for encode; --format json contract per 00-output.feature
     When I run:
       """
-      bp encode 'Bearer eyJhbGci' --encoding url --format json
+      bp encode 'Bearer eyJhbGci' --enc url --format json
       """
     Then the exit code is 0
     And stdout is a single compact JSON line
@@ -103,7 +103,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
     # Supported set: base64 | url | hex | html — anything else → INVALID_REQUEST
     When I run:
       """
-      bp encode 'test' --encoding rot13
+      bp encode 'test' --enc rot13
       """
     Then the exit code is non-zero
     And stderr contains "INVALID_REQUEST"
@@ -113,7 +113,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Encode with missing data argument returns usage error
     When I run:
       """
-      bp encode --encoding base64
+      bp encode --enc base64
       """
     Then the exit code is non-zero
     And stderr contains "required" or "missing"
@@ -128,7 +128,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Decode a base64-encoded JWT header with explicit encoding
     When I run:
       """
-      bp decode 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' --encoding base64
+      bp decode 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' --enc base64
       """
     Then the exit code is 0
     And the data.result field equals '{"alg":"HS256","typ":"JWT"}'
@@ -138,7 +138,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Decode a URL-encoded query parameter with explicit encoding
     When I run:
       """
-      bp decode 'admin%40example.com%3Fref%3Dhome' --encoding url
+      bp decode 'admin%40example.com%3Fref%3Dhome' --enc url
       """
     Then the exit code is 0
     And the data.result field equals "admin@example.com?ref=home"
@@ -147,7 +147,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Decode a hex-encoded payload with explicit encoding
     When I run:
       """
-      bp decode '53454c454354202a2046524f4d207573657273' --encoding hex
+      bp decode '53454c454354202a2046524f4d207573657273' --enc hex
       """
     Then the exit code is 0
     And the data.result field equals "SELECT * FROM users"
@@ -156,7 +156,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Decode HTML entities with explicit encoding
     When I run:
       """
-      bp decode '&lt;script&gt;alert(1)&lt;/script&gt;' --encoding html
+      bp decode '&lt;script&gt;alert(1)&lt;/script&gt;' --enc html
       """
     Then the exit code is 0
     And the data.result field equals "<script>alert(1)</script>"
@@ -196,7 +196,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Decode in JSON mode — endpoint-specific schema (AX agent mode)
     When I run:
       """
-      bp decode 'dXNlcjpwYXNz' --encoding base64 --format json
+      bp decode 'dXNlcjpwYXNz' --enc base64 --format json
       """
     Then the exit code is 0
     And stdout is a single compact JSON line
@@ -206,7 +206,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Decode invalid base64 (odd padding) returns 400 INVALID_REQUEST
     When I run:
       """
-      bp decode 'not-valid-base64!!!' --encoding base64
+      bp decode 'not-valid-base64!!!' --enc base64
       """
     Then the exit code is non-zero
     And stderr contains "INVALID_REQUEST"
@@ -216,7 +216,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
     # SPEC: hex with odd number of characters → INVALID_REQUEST
     When I run:
       """
-      bp decode 'abc' --encoding hex
+      bp decode 'abc' --enc hex
       """
     Then the exit code is non-zero
     And stderr contains "INVALID_REQUEST"
@@ -225,7 +225,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Decode with unsupported explicit encoding returns 400 INVALID_REQUEST
     When I run:
       """
-      bp decode 'dGVzdA==' --encoding base32
+      bp decode 'dGVzdA==' --enc base32
       """
     Then the exit code is non-zero
     And stderr contains "INVALID_REQUEST"
@@ -250,7 +250,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Hash a password with MD5 — verify exact digest and response field
     When I run:
       """
-      bp hash 'password123' --algorithm md5
+      bp hash 'password123' --algo md5
       """
     Then the exit code is 0
     And the data.result field equals "482c811da5d5b4bc6d497ffa98491e38"
@@ -260,7 +260,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Hash a token with SHA-256 — verify exact digest and response field
     When I run:
       """
-      bp hash 'supersecret' --algorithm sha256
+      bp hash 'supersecret' --algo sha256
       """
     Then the exit code is 0
     And the data.result field equals "3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b"
@@ -270,7 +270,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Hash with SHA-1 — verify 40-character hex output
     When I run:
       """
-      bp hash 'admin' --algorithm sha1
+      bp hash 'admin' --algo sha1
       """
     Then the exit code is 0
     And the data.result is a 40-character hex string
@@ -280,7 +280,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Hash with SHA-384 — verify 96-character hex output
     When I run:
       """
-      bp hash 'test-payload' --algorithm sha384
+      bp hash 'test-payload' --algo sha384
       """
     Then the exit code is 0
     And the data.result is a 96-character hex string
@@ -290,7 +290,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario: Hash with SHA-512 — verify 128-character hex output
     When I run:
       """
-      bp hash 'api-secret-key-v2' --algorithm sha512
+      bp hash 'api-secret-key-v2' --algo sha512
       """
     Then the exit code is 0
     And the data.result is a 128-character hex string
@@ -301,7 +301,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
     # SPEC FLAG: "sha-1" may be accepted by JVM but echoed as "sha-1" not "SHA-1" or "sha1"
     When I run:
       """
-      bp hash 'test' --algorithm sha-1 --format json
+      bp hash 'test' --algo sha-1 --format json
       """
     Then the exit code is 0 or non-zero depending on JVM alias acceptance
     And if successful $.data.algorithm equals "sha-1" (not "SHA-1" or "sha1")
@@ -311,13 +311,13 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
     # SPEC: unsupported JVM MessageDigest → INVALID_REQUEST; algorithm echoed as-is
     When I run:
       """
-      bp hash 'test' --algorithm bcrypt
+      bp hash 'test' --algo bcrypt
       """
     Then the exit code is non-zero
     And stderr contains "INVALID_REQUEST"
 
   @error @community @decoder
-  Scenario: Hash with missing --algorithm returns usage error
+  Scenario: Hash with missing --algo returns usage error
     When I run:
       """
       bp hash 'test'
@@ -328,7 +328,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   # ───────────────────────────────────────────────────────────────────────────
   # SMART-DECODE  (POST /decoder/smart-decode)  — bp decode <data> --smart
   # Response contract: data.steps[] (array of {encoding, result}), data.final
-  # SPEC: peels up to 10 layers; ignores --encoding if provided
+  # SPEC: peels up to 10 layers; ignores --enc if provided
   # ───────────────────────────────────────────────────────────────────────────
 
   @happy @community @decoder
@@ -366,15 +366,15 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
     And the data.final field contains "admin:secret"
 
   @happy @community @decoder
-  Scenario: Smart-decode ignores the --encoding flag (spec-mandated behaviour)
-    # SPEC FLAG: --encoding is silently ignored when --smart is used
+  Scenario: Smart-decode ignores the --enc flag (spec-mandated behaviour)
+    # SPEC FLAG: --enc is silently ignored when --smart is used
     When I run:
       """
-      bp decode 'dXNlcjpwYXNz' --smart --encoding hex
+      bp decode 'dXNlcjpwYXNz' --smart --enc hex
       """
     Then the exit code is 0
     And the data.final field equals "user:pass"
-    And no error is returned for the ignored --encoding flag
+    And no error is returned for the ignored --enc flag
 
   @happy @community @decoder
   Scenario: Smart-decode stops at plain text (0 layers detected)
@@ -657,7 +657,7 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
     Given Burp REST is NOT listening on :8089
     When I run:
       """
-      bp encode 'offline-test' --encoding base64
+      bp encode 'offline-test' --enc base64
       """
     Then the exit code is 0
     And the data.result field equals "b2ZmbGluZS10ZXN0"
@@ -670,12 +670,12 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
   Scenario Outline: Encode then decode produces the original value (round-trip)
     When I run encode:
       """
-      bp encode '<original>' --encoding <encoding> --quiet
+      bp encode '<original>' --enc <encoding> --format quiet
       """
     And I capture the encoded output as $ENCODED
     And I run decode:
       """
-      bp decode '$ENCODED' --encoding <encoding> --quiet
+      bp decode '$ENCODED' --enc <encoding> --format quiet
       """
     Then the decoded output equals "<original>"
 
@@ -706,11 +706,11 @@ Feature: Decoder & Utils — encode, decode, hash, smart-decode, diff, extract-e
 
   @happy @community @decoder @ax
   Scenario: AX agent hashes a candidate password to compare against a leaked MD5 digest
-    # AX: --quiet returns raw digest; agent compares without parsing JSON wrapper
+    # AX: --format quiet returns raw digest; agent compares without parsing JSON wrapper
     Given a leaked hash "5f4dcc3b5aa765d61d8327deb882cf99" (MD5 of "password")
     When the agent runs:
       """
-      bp hash 'password' --algorithm md5 --quiet
+      bp hash 'password' --algo md5 --format quiet
       """
     Then the exit code is 0
     And stdout equals "5f4dcc3b5aa765d61d8327deb882cf99"
