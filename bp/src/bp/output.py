@@ -34,19 +34,109 @@ def render(data: Any, fmt: str = "table", *, fields: list[str] | None = None) ->
     raise ValueError(f"unknown format {fmt!r} (want one of {FORMATS})")
 
 
+def _canonical_map(record: dict[str, Any]) -> dict[str, str]:
+    """Return a lowercase-key → canonical-key mapping for a single record.
+
+    When the same lowercase key would map to multiple canonical keys (e.g. ``Foo``
+    and ``foo`` both present), the first one wins — a degenerate case that should
+    not arise in real Burp records.
+    """
+    result: dict[str, str] = {}
+    for k in record:
+        lk = k.lower()
+        if lk not in result:
+            result[lk] = k
+    return result
+
+
+def _resolve_fields(
+    fields: list[str], union_map: dict[str, str]
+) -> tuple[list[str], list[str]]:
+    """Resolve requested field names against a union canonical map.
+
+    Returns (canonical_fields, unknown_fields).
+    canonical_fields preserves the requested order, using canonical (actual record)
+    key casing.  unknown_fields contains requested names that are absent from the
+    union at all.
+
+    OUTPUT.md §2.1 R-FIELDS: "Case-insensitive match, canonical-cased on output."
+    """
+    canonical: list[str] = []
+    unknown: list[str] = []
+    for f in fields:
+        canon = union_map.get(f.lower())
+        if canon is None:
+            unknown.append(f)
+        else:
+            canonical.append(canon)
+    return canonical, unknown
+
+
 def _select(record: dict[str, Any], fields: list[str] | None) -> dict[str, Any]:
+    """Select and reorder fields from a single record using case-insensitive matching.
+
+    OUTPUT.md §2.1 R-FIELDS:
+    - Case-insensitive match against this record's keys.
+    - Unknown (from this record only) → ValueError.
+    - Canonical (actual record) key casing used in output.
+
+    Note: for list contexts, use _select_list_rows which performs union-based
+    validation instead of per-row validation.
+    """
     if fields is None:
         return record
-    unknown = [f for f in fields if f not in record]
+    cmap = _canonical_map(record)
+    canonical, unknown = _resolve_fields(fields, cmap)
     if unknown:
-        valid = ", ".join(record) or "(none)"
+        valid = ", ".join(sorted(record)) or "(none)"
         raise ValueError(f"unknown field(s): {', '.join(unknown)}; valid: {valid}")
-    return {k: record[k] for k in fields}
+    return {k: record[k] for k in canonical}
+
+
+def _select_list_rows(
+    rows: list[dict[str, Any]], fields: list[str]
+) -> list[dict[str, Any]]:
+    """Select fields from a list of rows using union-based validation.
+
+    OUTPUT.md §2.1 R-FIELDS:
+    - A field is "unknown" only if it is absent from EVERY row (union check).
+    - Rows that lack a requested field get None (blank cell / null JSON value).
+    - canonical casing comes from the first row that contains each key.
+
+    This replaces the old per-row _select call which raised when a field was
+    absent from ANY row (over-strict, contra spec).
+    """
+    # Build union map: lowercase → canonical key (first occurrence wins)
+    union_map: dict[str, str] = {}
+    for row in rows:
+        for k in row:
+            lk = k.lower()
+            if lk not in union_map:
+                union_map[lk] = k
+
+    canonical_fields, unknown = _resolve_fields(fields, union_map)
+    if unknown:
+        valid = ", ".join(sorted(union_map.values())) or "(none)"
+        raise ValueError(f"unknown field(s): {', '.join(unknown)}; valid: {valid}")
+
+    result: list[dict[str, Any]] = []
+    for row in rows:
+        # Build a lowercase lookup for this row so we can fetch by canonical name
+        row_lmap = {k.lower(): v for k, v in row.items()}
+        result.append({cf: row_lmap.get(cf.lower()) for cf in canonical_fields})
+    return result
 
 
 def _render_json(data: Any, fields: list[str] | None) -> str:
     if isinstance(data, list):
-        rows = [_select(r, fields) if isinstance(r, dict) else r for r in data]
+        if fields is not None:
+            dicts = [r for r in data if isinstance(r, dict)]
+            selected = _select_list_rows(dicts, fields)
+            # interleave in original order
+            it_sel = iter(selected)
+            rows: list[Any] = [next(it_sel) if isinstance(r, dict) else r for r in data]
+        else:
+            rows = data
         return "\n".join(_json.dumps(r, separators=(",", ":")) for r in rows)
     if isinstance(data, dict):
         data = _select(data, fields)
@@ -75,22 +165,37 @@ def _render_table(data: Any, fields: list[str] | None) -> str:
         rows = [r for r in data if isinstance(r, dict)]
         if not rows:
             return ""
-        # [19][20] validate fields against every row (match _render_json/_select behaviour)
+
+        # [08-NEW] validate fields against the UNION of all row keys (spec-correct)
+        # and render None for rows that lack a field (no error for partial absence).
         if fields is not None:
-            for row in rows:
-                _select(row, fields)  # raises ValueError on unknown/absent field
-            cols = fields
+            selected_rows = _select_list_rows(rows, fields)
+            # cols uses canonical keys from the selected rows
+            cols = list(selected_rows[0].keys()) if selected_rows else list(fields)
+            rows = selected_rows
         else:
             # [22] union of keys across all rows (first-appearance order)
             cols = list(dict.fromkeys(k for r in rows for k in r))
-        widths = {c: max(len(c), *(len(_cell(r.get(c))) for r in rows)) for c in cols}
-        header = "  ".join(c.ljust(widths[c]) for c in cols)
-        body = "\n".join("  ".join(_cell(r.get(c)).ljust(widths[c]) for c in cols) for r in rows)
+
+        # Width: computed from the uppercase header label and cell values
+        widths = {
+            c: max(len(c.upper()), *(len(_cell(r.get(c))) for r in rows))
+            for c in cols
+        }
+        # [06-NEW] Header uses UPPERCASE field names (OUTPUT.md §1.2 F-TABLE)
+        header = "  ".join(c.upper().ljust(widths[c]) for c in cols)
+        body = "\n".join(
+            "  ".join(_cell(r.get(c)).ljust(widths[c]) for c in cols) for r in rows
+        )
         return f"{header}\n{body}"
+
     if isinstance(data, dict):
         record = _select(data, fields)
         width = max((len(k) for k in record), default=0)
-        return "\n".join(f"{k.ljust(width)}  {_cell(v)}" for k, v in record.items())
+        # [06-NEW] Key column is UPPERCASE (OUTPUT.md §1.2 F-TABLE)
+        return "\n".join(
+            f"{k.upper().ljust(width)}  {_cell(v)}" for k, v in record.items()
+        )
     return str(data)
 
 
