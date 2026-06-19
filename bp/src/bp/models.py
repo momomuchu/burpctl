@@ -86,6 +86,13 @@ class HistoryEntryResponse(_Wire):
     """Mirrors the Kotlin HistoryEntryResponse: flat shape (no nested request/response).
 
     Fields taken verbatim from HistoryModels.kt camelCase identifiers.
+
+    Nullability matches HistoryModels.kt exactly:
+      reqHeaders: List<HttpHeader>   — non-nullable, no Kotlin default → required, no Python default
+      reqBody:    String?            — nullable
+      statusCode: Int?               — nullable
+      resHeaders: List<HttpHeader>?  — nullable
+      resBody:    String?            — nullable
     """
 
     id: int
@@ -93,7 +100,7 @@ class HistoryEntryResponse(_Wire):
     method: str
     url: str
     host: str
-    reqHeaders: list[HttpHeader] = []
+    reqHeaders: list[HttpHeader]
     reqBody: str | None = None
     statusCode: int | None = None
     resHeaders: list[HttpHeader] | None = None
@@ -109,3 +116,10 @@ class HistoryPageResponse(_Wire):
     total: int
     page: int
     pageSize: int
+
+
+class ReplayResponse(_Wire):
+    """Mirrors the Kotlin ReplayResponse{original, replayed} shape (HistoryModels.kt)."""
+
+    original: HistoryEntryResponse
+    replayed: HistoryEntryResponse

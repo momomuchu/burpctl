@@ -28,7 +28,7 @@ from typing import Any
 import typer
 
 from bp.cliutil import EXIT_USAGE, run
-from bp.models import HistoryEntryResponse
+from bp.models import HistoryEntryResponse, ReplayResponse
 
 
 # ---------------------------------------------------------------------------
@@ -79,14 +79,20 @@ def _history_entry_display(entry: dict[str, Any]) -> dict[str, Any]:
 def _replay_display(response: dict[str, Any]) -> dict[str, Any]:
     """Project a ReplayResponse {original, replayed} to a clean display dict.
 
+    Validates the response through the ReplayResponse pydantic model first so that
+    a missing or malformed shape raises pydantic.ValidationError — which cliutil.run()
+    already catches and renders as a clean 'unexpected response shape' message (exit 1),
+    with no bare KeyError / raw traceback leaking file paths or class names.
+
     Applies _history_entry_display to both the 'original' and 'replayed' entries,
     stripping reqHeaders, resHeaders, reqBody, resBody (blobs) so that cookies and
     API keys embedded in header arrays are never emitted to default table/quiet output.
     --format json bypasses this via history_replay and returns the full raw response.
     """
+    rr = ReplayResponse.model_validate(response)
     return {
-        "original": _history_entry_display(response["original"]),
-        "replayed": _history_entry_display(response["replayed"]),
+        "original": _history_entry_display(rr.original.model_dump()),
+        "replayed": _history_entry_display(rr.replayed.model_dump()),
     }
 
 

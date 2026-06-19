@@ -197,7 +197,8 @@ def test_history_get_display_table_render_has_no_blob() -> None:
     proj = _history_entry_display(ENTRY_DICT)
     out = render(proj, "table")
     assert '[{"name"' not in out
-    assert "id" in out
+    # Table headers/keys are uppercase per OUTPUT.md §1.2 F-TABLE.
+    assert "ID" in out
 
 
 # ---------------------------------------------------------------------------
@@ -289,3 +290,80 @@ def test_replay_display_essential_fields_present_in_rendered_output() -> None:
     assert "POST" in out, "method missing from output"
     assert "target.example.com" in out, "host/url missing from output"
     assert "200" in out, "original statusCode missing from output"
+
+
+# ---------------------------------------------------------------------------
+# [17] _replay_display defensive validation — no bare KeyError on bad shape
+# ---------------------------------------------------------------------------
+
+
+def test_replay_display_missing_original_key_raises_validation_error_not_key_error() -> None:
+    """[17] _replay_display({'status':'ok'}) — missing 'original'/'replayed' keys must NOT
+    raise a bare KeyError (which leaks tracebacks).  It must raise pydantic.ValidationError
+    so cliutil.run() catches it and emits a clean 'unexpected response shape' message.
+    """
+    from pydantic import ValidationError
+
+    from bp.commands.history import _replay_display
+
+    with pytest.raises(ValidationError):
+        _replay_display({"status": "ok"})
+
+
+def test_replay_display_missing_replayed_key_raises_validation_error_not_key_error() -> None:
+    """[17] Replay response missing 'replayed' key must raise ValidationError, not KeyError."""
+    from pydantic import ValidationError
+
+    from bp.commands.history import _replay_display
+
+    with pytest.raises(ValidationError):
+        _replay_display({"original": ENTRY_WITH_SECRETS})
+
+
+def test_replay_display_empty_dict_raises_validation_error_not_key_error() -> None:
+    """[17] Empty replay response dict must raise ValidationError, not KeyError."""
+    from pydantic import ValidationError
+
+    from bp.commands.history import _replay_display
+
+    with pytest.raises(ValidationError):
+        _replay_display({})
+
+
+def test_replay_display_well_formed_still_projects_correctly() -> None:
+    """[17] A well-formed replay dict must still project both entries correctly after the fix."""
+    from bp.commands.history import _replay_display
+
+    result = _replay_display(REPLAY_RESPONSE)
+    assert result["original"]["id"] == 7
+    assert result["replayed"]["id"] == 0
+    assert result["replayed"]["source"] == "replay"
+
+
+# ---------------------------------------------------------------------------
+# [12] HistoryEntryResponse.reqHeaders required — no silent [] default
+# ---------------------------------------------------------------------------
+
+
+def test_history_entry_missing_req_headers_raises_validation_error() -> None:
+    """[12] reqHeaders is non-nullable/no-default in Kotlin — a payload missing it must
+    raise pydantic.ValidationError (not silently yield []).
+    """
+    from pydantic import ValidationError
+
+    payload = {k: v for k, v in ENTRY_DICT.items() if k != "reqHeaders"}
+    with pytest.raises(ValidationError):
+        HistoryEntryResponse.model_validate(payload)
+
+
+def test_history_entry_complete_payload_still_validates() -> None:
+    """[12] A complete payload including reqHeaders must still validate without error."""
+    entry = HistoryEntryResponse.model_validate(ENTRY_DICT)
+    assert entry.reqHeaders[0].name == "Host"
+
+
+def test_history_entry_empty_req_headers_list_is_valid() -> None:
+    """[12] reqHeaders=[] (empty list) is a valid non-nullable value and must parse fine."""
+    payload = {**ENTRY_DICT, "reqHeaders": []}
+    entry = HistoryEntryResponse.model_validate(payload)
+    assert entry.reqHeaders == []
