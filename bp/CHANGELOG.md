@@ -4,7 +4,10 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 
 ## [Unreleased]
 
-Post-v1.0.0 fixes surfaced by an adversarial UltraQA / Goodhart audit (three-way verified).
+## [1.1.0] — 2026-06-19
+
+Post-v1.0.0 hardening: an adversarial UltraQA / Goodhart audit followed by a 9-round
+parallel ultraqa→fix convergence loop (84 commits, both suites green throughout).
 
 ### Fixed
 - **Config-file `ledger=on` silently disabled the ledger.** The `invert` flag (for the
@@ -215,4 +218,5 @@ First release. A fully-typed, spec-driven CLI client for the Burp REST extension
   unit-tested). Scope-as-pre-fire-gate and the bug-bounty-mini adapter (ADR-0007/C3) remain
   roadmap (`docs/RESEARCH-concepts.md`).
 
-[1.0.0]: https://example.com/bp/releases/tag/v1.0.0
+[1.1.0]: https://github.com/momomuchu/burp-wrapper/releases/tag/v1.1.0
+[1.0.0]: https://github.com/momomuchu/burp-wrapper/releases/tag/v1.0.0
