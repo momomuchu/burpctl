@@ -244,6 +244,53 @@ class DecoderServiceTest {
         assertEquals("test", r.result)
     }
 
+    // ── [04][05] RED: all-hex non-UTF-8 string must be terminal plain, never base64 ─────────────
+
+    @Test
+    fun `04 05 -auto-detect of ff returns plain not base64`() {
+        // "ff" is all-hex, even-length. Its byte 0xFF is not valid UTF-8.
+        // Old behaviour: hex guard fails, falls through to base64 branch, "ff" base64-decodes
+        // to "}" — silent garbage. New behaviour: hex branch is terminal → "plain", result "ff".
+        val r = service.decode(DecodeRequest(data = "ff", encoding = null))
+        assertEquals("plain", r.encoding)
+        assertEquals("ff", r.result)
+    }
+
+    @Test
+    fun `04 05 -auto-detect of a0 returns plain not base64`() {
+        // "a0" hex-decodes to byte 0xA0 (non-UTF-8 in isolation). Same terminal-plain guarantee.
+        val r = service.decode(DecodeRequest(data = "a0", encoding = null))
+        assertEquals("plain", r.encoding)
+        assertEquals("a0", r.result)
+    }
+
+    @Test
+    fun `05 -smart decode of ZmY stops at ff and does not cascade to base64`() {
+        // ZmY= is base64 of "ff". After peeling: current = "ff".
+        // detectEncoding("ff") must return "plain" (hex terminal branch), so smartDecode stops.
+        // Final result must be "ff", not "}" (which would happen if ff fell through to base64).
+        val r = service.smartDecode("ZmY=")
+        assertEquals("ff", r.finalResult)
+        assertEquals(1, r.steps.size)
+        assertEquals("base64", r.steps[0].encoding)
+    }
+
+    // ── [06] RED: url decode of malformed input must not leak JDK class name ───────────────────
+
+    @Test
+    fun `06 -explicit url decode of malformed percent sequence throws without leaking class name`() {
+        // URLDecoder throws "URLDecoder: Illegal hex characters in escape (%) pattern..." —
+        // leaks the JDK class name. The wrapped catch must rethrow with a clean message.
+        val ex = assertFailsWith<IllegalArgumentException> {
+            service.decode(DecodeRequest(data = "%GG", encoding = "url"))
+        }
+        assertTrue(
+            !ex.message.orEmpty().contains("URLDecoder"),
+            "message must not leak JDK class name but was: ${ex.message}"
+        )
+        assertEquals("invalid URL-encoded input", ex.message)
+    }
+
     // ── [15] RED: smartDecode stops gracefully rather than propagating binary-decode exception ──
 
     @Test

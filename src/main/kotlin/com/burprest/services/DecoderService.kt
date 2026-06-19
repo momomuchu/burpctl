@@ -30,7 +30,11 @@ class DecoderService {
         val encoding = request.encoding ?: detectEncoding(request.data)
         val result = when (encoding.lowercase()) {
             "base64" -> decodeBase64Flexible(request.data)
-            "url" -> URLDecoder.decode(request.data, Charsets.UTF_8)
+            "url" -> try {
+                URLDecoder.decode(request.data, Charsets.UTF_8)
+            } catch (_: IllegalArgumentException) {
+                throw IllegalArgumentException("invalid URL-encoded input")
+            }
             "hex" -> {
                 require(request.data.length % 2 == 0) { "Hex input must have an even number of characters" }
                 val bytes = request.data.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
@@ -89,30 +93,33 @@ class DecoderService {
         return SmartDecodeResponse(finalResult = current, steps = steps)
     }
 
-    private fun detectEncoding(data: String): String = when {
+    private fun detectEncoding(data: String): String {
         // 1. base64url JSON, i.e. a JWT segment (starts with eyJ = base64url of '{"').
         //    Decoded flexibly below. Low false-positive: plain words don't start with eyJ +
         //    a base64url-only body.
-        data.startsWith("eyJ") && data.matches(Regex("^[A-Za-z0-9_-]+=*$")) -> "base64"
+        if (data.startsWith("eyJ") && data.matches(Regex("^[A-Za-z0-9_-]+=*$"))) return "base64"
 
-        // 2. [14] Hex check BEFORE standard base64: an all-hex string whose length is divisible
-        //    by 4 (e.g. "deadbeef") would otherwise match the base64 regex first and decode to
-        //    garbage. Pure hex characters are a strict subset of base64 characters, so hex must
-        //    win when all characters are hex digits and the length is even.
-        //    [07] Guard: only classify as "hex" when the decoded bytes are valid UTF-8.
-        //    Auto-detect is a guess; if the hex bytes are binary (e.g. deadbeef → 0xDE 0xAD…),
-        //    fall through to "plain" and return the input unchanged rather than throwing 400.
+        // 2. [14][04][05] Hex branch is TERMINAL: an all-hex even-length string is decided here
+        //    and never falls through to base64. Without this, a non-UTF-8 hex string like "ff"
+        //    would escape the hex guard and be re-interpreted by the base64 branch as garbage
+        //    (e.g. "ff" base64-decodes to "}" — a silent mis-classification).
+        //    Decision:
+        //      - all-hex + even-length + valid UTF-8 decoded bytes → "hex"
+        //      - all-hex + even-length + non-UTF-8 decoded bytes  → "plain" (ambiguous binary;
+        //        do NOT let base64 reinterpret it)
         //    Explicit decode(encoding="hex") still calls decodeUtf8OrThrow — honest error there.
-        data.matches(Regex("^[0-9a-fA-F]+$")) && data.length % 2 == 0 && data.length >= 2
-                && isHexDecodableAsUtf8(data) -> "hex"
+        if (data.matches(Regex("^[0-9a-fA-F]+$")) && data.length % 2 == 0 && data.length >= 2) {
+            return if (isHexDecodableAsUtf8(data)) "hex" else "plain"
+        }
 
         // 3. [13] base64url tokens containing '-' or '_' that are not JWT segments.
         //    Gate: flexible-base64 decode must yield valid UTF-8 text; this prevents classifying
         //    plain hyphenated words (e.g. "foo-bar-baz") as base64.
-        data.matches(Regex("^[A-Za-z0-9_-]+=*$")) &&
-                (data.contains('-') || data.contains('_')) &&
-                data.length >= 4 &&
-                isBase64UrlDecodableAsUtf8(data) -> "base64"
+        if (data.matches(Regex("^[A-Za-z0-9_-]+=*$")) &&
+            (data.contains('-') || data.contains('_')) &&
+            data.length >= 4 &&
+            isBase64UrlDecodableAsUtf8(data)
+        ) return "base64"
 
         // 4. Standard base64 (may contain '+' and '/').
         //    [04] Drop strict length%4==0: decodeBase64Flexible repads internally, so unpadded
@@ -120,15 +127,17 @@ class DecoderService {
         //    Gate on valid-UTF-8 decode instead (same guard used for the url-safe branch above):
         //    this also fixes the latent inverse where a short all-alpha word like "test" would
         //    previously pass the modulo check, decode to non-UTF-8 bytes, and throw.
-        data.matches(Regex("^[A-Za-z0-9+/]+=*$")) && data.length >= 2 && isBase64UrlDecodableAsUtf8(data) -> "base64"
+        if (data.matches(Regex("^[A-Za-z0-9+/]+=*$")) && data.length >= 2 &&
+            isBase64UrlDecodableAsUtf8(data)
+        ) return "base64"
 
         // 5. URL-encoded (contains at least one %XX sequence).
-        data.contains("%[0-9A-Fa-f]{2}".toRegex()) -> "url"
+        if (data.contains("%[0-9A-Fa-f]{2}".toRegex())) return "url"
 
         // 6. HTML entities.
-        data.contains("&amp;") || data.contains("&lt;") || data.contains("&gt;") -> "html"
+        if (data.contains("&amp;") || data.contains("&lt;") || data.contains("&gt;")) return "html"
 
-        else -> "plain"
+        return "plain"
     }
 
     private fun normalizeAlgorithm(algo: String): String = when (algo.lowercase()) {
