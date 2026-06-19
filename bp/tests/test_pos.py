@@ -233,3 +233,81 @@ def test_query_no_fragment_unchanged() -> None:
     req = b"GET /search?q=world&n=5 HTTP/1.1\r\nHost: example.com\r\n\r\n"
     p = resolve_pos(req, "query:q")
     assert req[p.start : p.end] == b"world"
+
+
+# --- [00] JSON key unescape: body:FIELD must match the logical (unescaped) key name ---
+
+
+def test_json_escaped_newline_key_resolved_by_logical_name() -> None:
+    r"""[00] body containing {"a\nb":1} (key with literal \n escape) must be reachable
+    by its logical Python name 'a\nb' (a real newline character)."""
+    body = b'{"a\\nb":1}'
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n" + body
+    p = resolve_pos(req, "body:a\nb")  # logical key: real newline
+    assert req[p.start : p.end] == b"1"
+
+
+def test_json_escaped_quote_key_resolved_by_logical_name() -> None:
+    r"""[00] body containing {"a\"b":2} must be reachable by logical key 'a"b'."""
+    body = b'{"a\\"b":2}'
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n" + body
+    p = resolve_pos(req, 'body:a"b')  # logical key: real double-quote
+    assert req[p.start : p.end] == b"2"
+
+
+def test_json_unescaped_plain_key_still_resolves() -> None:
+    """[00] regression: a plain key (no escapes) must still resolve correctly."""
+    body = b'{"plain":99}'
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n" + body
+    p = resolve_pos(req, "body:plain")
+    assert req[p.start : p.end] == b"99"
+
+
+def test_json_escaped_backslash_key_resolved_by_logical_name() -> None:
+    r"""[00] body {"a\\\\b":3} (wire: a\\b, logical: a\b) resolved by 'a\b'."""
+    body = b'{"a\\\\b":3}'
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n" + body
+    p = resolve_pos(req, "body:a\\b")  # logical key: single backslash
+    assert req[p.start : p.end] == b"3"
+
+
+# --- [03] body:FIELD on a JSON ARRAY must raise UNSUPPORTED_BODY, not POS_NOT_FOUND ---
+
+
+def test_json_array_body_raises_unsupported_body() -> None:
+    """[03] body:x on a top-level JSON array must raise PosError(UNSUPPORTED_BODY),
+    not POS_NOT_FOUND (which implies the field is simply missing)."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b"[1,2,3]"
+    )
+    with pytest.raises(PosError) as ei:
+        resolve_pos(req, "body:x")
+    assert ei.value.code == "UNSUPPORTED_BODY"
+
+
+def test_json_array_body_no_ct_raises_unsupported_body() -> None:
+    """[03] no Content-Type + array body also raises UNSUPPORTED_BODY (auto-detect path)."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Host: example.com\r\n"
+        b"\r\n"
+        b'[{"a":1}]'
+    )
+    with pytest.raises(PosError) as ei:
+        resolve_pos(req, "body:a")
+    assert ei.value.code == "UNSUPPORTED_BODY"
+
+
+def test_json_object_body_still_resolves_normally() -> None:
+    """[03] regression: a JSON object body must still resolve field correctly."""
+    req = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b'{"x":7}'
+    )
+    p = resolve_pos(req, "body:x")
+    assert req[p.start : p.end] == b"7"

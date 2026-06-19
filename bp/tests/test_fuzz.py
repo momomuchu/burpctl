@@ -1,5 +1,7 @@
 """RED tests for A2 — the client-side fuzz engine (docs/ALGORITHMS.md §A2)."""
 
+import pytest
+
 from bp.fuzz import ConcreteRequest, Sub, apply_subs, expand
 from bp.pos import Position, resolve_pos
 
@@ -126,3 +128,80 @@ def test_apply_subs_still_updates_existing_content_length() -> None:
     # Exactly one Content-Length header in output
     assert out.count(b"Content-Length:") == 1
     assert b"Content-Length: 7\r\n" in out
+
+
+# --- [01] Overlapping positions must raise PosError(POS_OVERLAP) before substitution ---
+
+
+def test_overlapping_positions_raise_pos_overlap() -> None:
+    """[01] Two positions that overlap byte ranges must raise PosError('POS_OVERLAP')
+    from apply_subs before any substitution is applied."""
+    from bp.pos import PosError
+
+    # offset:0-10 and offset:5-15 overlap (5-10 is shared)
+    base = b"GET /api/endpoint HTTP/1.1\r\nHost: h\r\n\r\n"
+    p1 = Position(0, 10, "offset:0-10")
+    p2 = Position(5, 15, "offset:5-15")
+    with pytest.raises(PosError) as ei:
+        apply_subs(base, [Sub(p1, b"AAAA"), Sub(p2, b"BBBB")])
+    assert ei.value.code == "POS_OVERLAP"
+
+
+def test_adjacent_positions_are_not_overlap() -> None:
+    """[01] Adjacent (touching but non-overlapping) positions must NOT raise POS_OVERLAP."""
+    base = b"AAAA-BBBB"
+    p1 = Position(0, 4, "offset:0-4")
+    p2 = Position(4, 9, "offset:4-9")
+    # Should not raise
+    out = apply_subs(base, [Sub(p1, b"XX"), Sub(p2, b"YY")])
+    assert out == b"XXYY"
+
+
+def test_identical_positions_raise_pos_overlap() -> None:
+    """[01] Two positions with the same byte range are a degenerate overlap."""
+    from bp.pos import PosError
+
+    base = b"AAAA-BBBB"
+    p1 = Position(0, 4, "offset:0-4")
+    p2 = Position(0, 4, "offset:0-4")
+    with pytest.raises(PosError) as ei:
+        apply_subs(base, [Sub(p1, b"X"), Sub(p2, b"Y")])
+    assert ei.value.code == "POS_OVERLAP"
+
+
+# --- [02] _recompute_content_length must not leave OWS around the new value ---
+
+
+def test_content_length_rewrite_strips_leading_ows() -> None:
+    """[02] Original 'Content-Length:  5 ' (leading OWS) after body change must become
+    exactly 'Content-Length: <N>\\r\\n' with no residual whitespace."""
+    # Build request manually with OWS around the value
+    base = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Length:  5 \r\n"   # leading + trailing OWS
+        b"Content-Type: application/x-www-form-urlencoded\r\n"
+        b"\r\n"
+        b"id=AB"
+    )
+    pos = resolve_pos(base, "body:id")
+    out = apply_subs(base, [Sub(pos, b"9999")])
+    # Must be exactly one space before digits, no trailing space
+    assert b"Content-Length: 7\r\n" in out
+    # Must not have double-space or trailing space before CRLF
+    assert b"Content-Length:  " not in out
+    assert b"Content-Length: 7 \r\n" not in out
+
+
+def test_content_length_rewrite_strips_trailing_ows() -> None:
+    """[02] OWS after the digit (e.g. 'Content-Length: 5 ') must also be removed."""
+    base = (
+        b"POST /api HTTP/1.1\r\n"
+        b"Content-Length: 5 \r\n"   # trailing OWS only
+        b"Content-Type: application/x-www-form-urlencoded\r\n"
+        b"\r\n"
+        b"id=AB"
+    )
+    pos = resolve_pos(base, "body:id")
+    out = apply_subs(base, [Sub(pos, b"9999")])
+    assert b"Content-Length: 7\r\n" in out
+    assert b"Content-Length: 7 \r\n" not in out

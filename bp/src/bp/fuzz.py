@@ -11,7 +11,7 @@ import itertools
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from bp.pos import Position
+from bp.pos import Position, PosError
 from bp.rawhttp import body_start, iter_headers
 
 ATTACK_TYPES = ("sniper", "battering-ram", "pitchfork", "cluster-bomb")
@@ -35,7 +35,22 @@ class ConcreteRequest:
 
 
 def apply_subs(base: bytes, subs: Sequence[Sub]) -> bytes:
-    """Apply non-overlapping ``subs`` to ``base`` (right-to-left), recomputing Content-Length."""
+    """Apply non-overlapping ``subs`` to ``base`` (right-to-left), recomputing Content-Length.
+
+    Raises ``PosError('POS_OVERLAP', ...)`` if any two positions overlap (start < prev end).
+    Adjacent positions (start == prev end) are allowed.
+    """
+    if len(subs) > 1:
+        sorted_subs = sorted(subs, key=lambda x: x.pos.start)
+        prev = sorted_subs[0]
+        for s in sorted_subs[1:]:
+            if s.pos.start < prev.pos.end:
+                raise PosError(
+                    "POS_OVERLAP",
+                    f"positions overlap: {prev.pos.name!r} (end={prev.pos.end})"
+                    f" and {s.pos.name!r} (start={s.pos.start})",
+                )
+            prev = s
     body0 = body_start(base)
     body_touched = any(s.pos.start >= body0 for s in subs)
     out = base
@@ -48,9 +63,27 @@ def apply_subs(base: bytes, subs: Sequence[Sub]) -> bytes:
 
 def _recompute_content_length(raw: bytes) -> bytes:
     new_len = len(raw) - body_start(raw)
+    new_val = b" " + str(new_len).encode()
     for name, v_start, v_end in iter_headers(raw):
         if name.lower() == b"content-length":
-            return raw[:v_start] + str(new_len).encode() + raw[v_end:]
+            # v_start is OWS-trimmed (first non-space after ':').
+            # v_end is OWS-trimmed (last non-space before CRLF).
+            # Find the colon that precedes this value region and the CRLF that follows,
+            # so we replace the entire ": <old-value-with-ows>" with ": <new-value>".
+            colon = raw.rfind(b":", 0, v_start)
+            # Find the CRLF (or LF) terminating this header line.
+            crlf = raw.find(b"\r\n", v_end)
+            lf = raw.find(b"\n", v_end)
+            if crlf != -1 and (lf == -1 or crlf <= lf):
+                line_end = crlf
+                term = b"\r\n"
+            elif lf != -1:
+                line_end = lf
+                term = b"\n"
+            else:
+                line_end = len(raw)
+                term = b""
+            return raw[: colon + 1] + new_val + term + raw[line_end + len(term) :]
     # No Content-Length header present — insert one just before the blank-line separator.
     # Find the end of the header block (the \r\n\r\n or \n\n separator).
     sep = raw.find(b"\r\n\r\n")
