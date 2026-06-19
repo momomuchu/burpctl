@@ -275,6 +275,70 @@ class DecoderServiceTest {
         assertEquals("base64", r.steps[0].encoding)
     }
 
+    // ── [B04] RED: decode() must return canonical lowercase encoding, not the raw request casing ──
+
+    @Test
+    fun `B04 -decode hex with uppercase encoding HEX returns encoding as hex not HEX`() {
+        // Bug: DecodeResponse.encoding echoed the raw request.encoding ("HEX") instead of
+        // the normalized lowercase form used for dispatch. Fix: return encoding.lowercase().
+        val r = service.decode(DecodeRequest(data = "4142", encoding = "HEX"))
+        assertEquals("hex", r.encoding)
+        assertEquals("AB", r.result)
+    }
+
+    @Test
+    fun `B04 -decode base64 with uppercase encoding BASE64 returns encoding as base64`() {
+        val r = service.decode(DecodeRequest(data = "aGVsbG8=", encoding = "BASE64"))
+        assertEquals("base64", r.encoding)
+        assertEquals("hello", r.result)
+    }
+
+    // ── [B05] RED: HTML auto-detect must fire on &quot; and &#x27; entities ────────────────────
+
+    @Test
+    fun `B05 -auto-detect of string with only quot entity returns html encoding and decodes it`() {
+        // encode() emits &quot; for double-quotes; auto-decode must recognise it as html.
+        val encoded = "say &quot;hello&quot;"
+        val r = service.decode(DecodeRequest(data = encoded, encoding = null))
+        assertEquals("html", r.encoding)
+        assertEquals("say \"hello\"", r.result)
+    }
+
+    @Test
+    fun `B05 -auto-detect of string with only apos entity returns html encoding and decodes it`() {
+        // encode() emits &#x27; for apostrophes; auto-decode must recognise it as html.
+        val encoded = "O&#x27;Reilly"
+        val r = service.decode(DecodeRequest(data = encoded, encoding = null))
+        assertEquals("html", r.encoding)
+        assertEquals("O'Reilly", r.result)
+    }
+
+    @Test
+    fun `B05 -roundtrip html encode then auto-decode with only apostrophe in input`() {
+        val original = "O'Reilly"
+        val encoded = service.encode(EncodeRequest(data = original, encoding = "html"))
+        // encoded.result = "O&#x27;Reilly"; auto-decode must recover original.
+        val decoded = service.decode(DecodeRequest(data = encoded.result, encoding = null))
+        assertEquals("html", decoded.encoding)
+        assertEquals(original, decoded.result)
+    }
+
+    @Test
+    fun `B05 -roundtrip html encode then auto-decode with only double-quote in input`() {
+        val original = "say \"hello\""
+        val encoded = service.encode(EncodeRequest(data = original, encoding = "html"))
+        val decoded = service.decode(DecodeRequest(data = encoded.result, encoding = null))
+        assertEquals("html", decoded.encoding)
+        assertEquals(original, decoded.result)
+    }
+
+    @Test
+    fun `B05 -existing html auto-detect with amp lt gt still works`() {
+        val r = service.decode(DecodeRequest(data = "&amp; &lt; &gt;", encoding = null))
+        assertEquals("html", r.encoding)
+        assertEquals("& < >", r.result)
+    }
+
     // ── [06] RED: url decode of malformed input must not leak JDK class name ───────────────────
 
     @Test

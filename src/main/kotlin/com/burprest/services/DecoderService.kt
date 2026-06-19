@@ -51,7 +51,7 @@ class DecoderService {
             "plain" -> request.data
             else -> throw IllegalArgumentException("Unsupported encoding: $encoding")
         }
-        return DecodeResponse(result = result, encoding = encoding)
+        return DecodeResponse(result = result, encoding = encoding.lowercase())
     }
 
     fun hash(request: HashRequest): HashResponse {
@@ -135,7 +135,8 @@ class DecoderService {
         if (data.contains("%[0-9A-Fa-f]{2}".toRegex())) return "url"
 
         // 6. HTML entities.
-        if (data.contains("&amp;") || data.contains("&lt;") || data.contains("&gt;")) return "html"
+        if (data.contains("&amp;") || data.contains("&lt;") || data.contains("&gt;") ||
+            data.contains("&quot;") || data.contains("&#x27;")) return "html"
 
         return "plain"
     }
