@@ -14,10 +14,10 @@ fun Route.collaboratorRoutes(service: CollaboratorService) {
         post("/generate") {
             try {
                 call.respond(ApiResponse.ok(service.generatePayload()))
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 call.respond(HttpStatusCode.ServiceUnavailable, ApiResponse.error<Unit>(
-                    "SERVICE_UNAVAILABLE",
-                    "Burp Collaborator not available. Requires Burp Suite Professional. ${e::class.simpleName}: ${e.message}"
+                    "PRO_REQUIRED",
+                    "Burp Collaborator not available. Requires Burp Suite Professional."
                 ))
             }
         }
@@ -26,10 +26,10 @@ fun Route.collaboratorRoutes(service: CollaboratorService) {
             try {
                 val request = call.receive<BatchGenerateRequest>()
                 call.respond(ApiResponse.ok(service.generateBatch(request.count)))
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 call.respond(HttpStatusCode.ServiceUnavailable, ApiResponse.error<Unit>(
-                    "SERVICE_UNAVAILABLE",
-                    "Burp Collaborator not available. Requires Burp Suite Professional. ${e::class.simpleName}: ${e.message}"
+                    "PRO_REQUIRED",
+                    "Burp Collaborator not available. Requires Burp Suite Professional."
                 ))
             }
         }
@@ -37,10 +37,10 @@ fun Route.collaboratorRoutes(service: CollaboratorService) {
         get("/poll") {
             try {
                 call.respond(ApiResponse.ok(service.poll()))
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 call.respond(HttpStatusCode.ServiceUnavailable, ApiResponse.error<Unit>(
-                    "SERVICE_UNAVAILABLE",
-                    "Burp Collaborator not available. Requires Burp Suite Professional. ${e::class.simpleName}: ${e.message}"
+                    "PRO_REQUIRED",
+                    "Burp Collaborator not available. Requires Burp Suite Professional."
                 ))
             }
         }
@@ -50,10 +50,10 @@ fun Route.collaboratorRoutes(service: CollaboratorService) {
                 ?: return@get call.respond(ApiResponse.error<Unit>("INVALID_PARAM", "Missing ID"))
             try {
                 call.respond(ApiResponse.ok(service.pollById(id)))
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 call.respond(HttpStatusCode.ServiceUnavailable, ApiResponse.error<Unit>(
-                    "SERVICE_UNAVAILABLE",
-                    "Burp Collaborator not available. Requires Burp Suite Professional. ${e::class.simpleName}: ${e.message}"
+                    "PRO_REQUIRED",
+                    "Burp Collaborator not available. Requires Burp Suite Professional."
                 ))
             }
         }
