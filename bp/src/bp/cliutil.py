@@ -50,15 +50,38 @@ class State:
     no_redact: bool = False
 
 
-def run(ctx: typer.Context, fn: Callable[[BurpClient], Any]) -> None:
-    """Run ``fn`` against a BurpClient; record to the Run Ledger and render (redacted) output."""
+def run(
+    ctx: typer.Context,
+    fn: Callable[[BurpClient], Any],
+    *,
+    exit_on: Callable[[Any], "int | None"] | None = None,
+) -> None:
+    """Run ``fn`` against a BurpClient; record to the Run Ledger and render (redacted) output.
+
+    ``exit_on`` is an optional callback invoked with the data returned by ``fn`` after a
+    successful render.  If it returns a non-None / non-zero int, ``run()`` sets that code as
+    the ledger exit_code (so the ledger row is back-filled correctly — ADR-0005 / finding
+    [10]) and then raises ``typer.Exit(code)``.  When ``exit_on`` is None the function
+    returns normally (existing behavior preserved for all non-security-scan commands).
+    """
+    import sqlite3 as _sqlite3
+
     state: State = ctx.obj
     conf = _config.load(
         burp_rest_url=state.url,
         ledger=False if state.no_ledger else None,
         redact=False if state.no_redact else None,
     )
-    ledger = Ledger() if conf.ledger else None
+    # [12] Guard Ledger() construction: a PermissionError or sqlite3.OperationalError must
+    # not abort the command.  Degrade gracefully to ledger=None (same as --no-ledger).
+    ledger: Ledger | None = None
+    if conf.ledger:
+        try:
+            ledger = Ledger()
+        except (PermissionError, OSError, _sqlite3.Error) as _exc:
+            typer.echo(f"warning: ledger unavailable, proceeding without it: {_exc}", err=True)
+            ledger = None
+
     client = BurpClient(state.url, ledger=ledger, redact=conf.redact, command=ctx.command_path)
     exit_code = 0
     try:
@@ -74,6 +97,12 @@ def run(ctx: typer.Context, fn: Callable[[BurpClient], Any]) -> None:
             typer.echo(f"error: {e}", err=True)
             exit_code = EXIT_USAGE
             raise typer.Exit(exit_code) from None
+        # [10] Resolve exit_on BEFORE the finally back-fills the ledger so the stored
+        # exit_code reflects the true process outcome (e.g. EXIT_VULN=5 for findings).
+        if exit_on is not None:
+            resolved = exit_on(data)
+            if resolved:
+                exit_code = resolved
     finally:
         # Back-fill the actual exit code onto every op recorded during this command (F16).
         if ledger is not None:
@@ -85,6 +114,9 @@ def run(ctx: typer.Context, fn: Callable[[BurpClient], Any]) -> None:
     # [18] suppress lone '\n' for empty result sets (OUTPUT.md §4.4: empty stdout + exit 0)
     if out:
         typer.echo(out)
+    # [10] Raise AFTER output is printed and AFTER the finally has run (ledger already correct).
+    if exit_code != 0:
+        raise typer.Exit(exit_code)
 
 
 def parse_header(raw: str, flag: str = "--set-header") -> tuple[str, str]:

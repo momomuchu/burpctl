@@ -433,3 +433,44 @@ def test_redact_masks_jwt_in_value() -> None:
 
 def test_redact_empty_string() -> None:
     assert redact("") == ""
+
+
+# ---------------------------------------------------------------------------
+# [13] RED — Ledger write methods must self-protect against sqlite3.Error
+# ---------------------------------------------------------------------------
+
+
+def _make_broken_ledger(tmp_path: Path) -> Ledger:
+    """Return a Ledger whose connection is closed so every write raises OperationalError."""
+    ledger = Ledger(db_path=tmp_path / "broken.db")
+    ledger.close()  # intentionally closed — any subsequent SQL call raises
+    return ledger
+
+
+def test_record_on_broken_db_does_not_raise(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """[13] RED: Ledger.record() on a closed/broken db must NOT raise; must emit a stderr warning."""
+    ledger = _make_broken_ledger(tmp_path)
+    # Should return without raising even though the db connection is closed
+    ledger.record(OpRecord(status="ok", target="example.com"))
+    # Return value may be anything (empty string, None) — the key contract is no raise
+    captured = capsys.readouterr()
+    assert "warning" in captured.err.lower(), (
+        f"expected a warning on stderr, got {captured.err!r}"
+    )
+
+
+def test_set_exit_code_on_broken_db_does_not_raise(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """[13] RED: Ledger.set_exit_code() on a closed db must NOT raise; must emit a stderr warning."""
+    ledger = _make_broken_ledger(tmp_path)
+    ledger.set_exit_code("any-id", 5)
+    captured = capsys.readouterr()
+    assert "warning" in captured.err.lower(), (
+        f"expected a warning on stderr, got {captured.err!r}"
+    )
+
+
+def test_close_on_already_closed_ledger_does_not_raise(tmp_path: Path) -> None:
+    """[13] RED: double-close must be safe (idempotent, no exception)."""
+    ledger = Ledger(db_path=tmp_path / "c.db")
+    ledger.close()
+    ledger.close()  # second close must not raise

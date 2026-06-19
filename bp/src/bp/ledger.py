@@ -203,7 +203,10 @@ class Ledger:
         self._conn.commit()
 
     def close(self) -> None:
-        self._conn.close()
+        try:
+            self._conn.close()
+        except Exception:
+            pass
 
     def __enter__(self) -> "Ledger":
         return self
@@ -220,35 +223,43 @@ class Ledger:
 
         req_body / resp_body are hashed to sha256 and then discarded —
         raw bytes are NEVER written to the database.
+
+        ADR-0005: sqlite3.Error is caught, a one-line warning is printed to stderr,
+        and an empty string is returned so the caller can proceed without crashing.
         """
         op_id = _short_id()
         ts = datetime.now(timezone.utc).isoformat()
         req_sha256 = _sha256(op.req_body)
         resp_sha256 = _sha256(op.resp_body)
 
-        self._conn.execute(
-            f"INSERT INTO ops ({', '.join(_COLUMNS)}) VALUES ({', '.join('?' * len(_COLUMNS))})",
-            (
-                op_id,
-                ts,
-                op.command,
-                op.burp_op,
-                op.target,
-                op.program,
-                op.tag,
-                op.status,
-                op.exit_code,
-                req_sha256,
-                resp_sha256,
-                op.resp_status,
-                op.resp_len,
-                op.duration_ms,
-                op.error_code,
-                op.req_ref,
-                op.resp_ref,
-            ),
-        )
-        self._conn.commit()
+        try:
+            self._conn.execute(
+                f"INSERT INTO ops ({', '.join(_COLUMNS)}) VALUES ({', '.join('?' * len(_COLUMNS))})",
+                (
+                    op_id,
+                    ts,
+                    op.command,
+                    op.burp_op,
+                    op.target,
+                    op.program,
+                    op.tag,
+                    op.status,
+                    op.exit_code,
+                    req_sha256,
+                    resp_sha256,
+                    op.resp_status,
+                    op.resp_len,
+                    op.duration_ms,
+                    op.error_code,
+                    op.req_ref,
+                    op.resp_ref,
+                ),
+            )
+            self._conn.commit()
+        except sqlite3.Error as exc:
+            import sys
+            print(f"warning: ledger write failed: {exc}", file=sys.stderr)
+            return ""
         return op_id
 
     # ------------------------------------------------------------------
@@ -328,9 +339,17 @@ class Ledger:
 
         record() runs at HTTP time, before the CLI has resolved its exit code; cliutil.run()
         calls this afterwards so the audit row reflects the actual outcome. Returns True if found.
+
+        ADR-0005: sqlite3.Error is caught, a one-line warning is printed to stderr,
+        and False is returned so the caller can proceed without crashing.
         """
-        cursor = self._conn.execute(
-            "UPDATE ops SET exit_code = ? WHERE id = ?", (code, op_id)
-        )
-        self._conn.commit()
+        try:
+            cursor = self._conn.execute(
+                "UPDATE ops SET exit_code = ? WHERE id = ?", (code, op_id)
+            )
+            self._conn.commit()
+        except sqlite3.Error as exc:
+            import sys
+            print(f"warning: ledger write failed: {exc}", file=sys.stderr)
+            return False
         return cursor.rowcount > 0

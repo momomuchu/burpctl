@@ -1,4 +1,4 @@
-"""[12] RED tests — bp check commands exit 5 (EXIT_VULN) when findings present.
+"""[10][12] RED tests — bp check commands exit 5 (EXIT_VULN) when findings present.
 
 Per ADR-0010 (docs/adr/0010-check-exit-on-findings.md), bp check auth/idor/cors/headers/endpoints
 must exit 5 when the scan succeeded AND reported findings (vulnerableCount > 0 or
@@ -116,6 +116,58 @@ try:
     _burp_up = _httpx.get("http://127.0.0.1:8089/health", timeout=1.0).status_code == 200
 except Exception:
     _burp_up = False
+
+
+# ---------------------------------------------------------------------------
+# [10] RED — securityscan must pass exit_on= to run() instead of holder pattern
+# ---------------------------------------------------------------------------
+
+
+def test_check_commands_use_exit_on_not_holder_pattern() -> None:
+    """[10] RED: after the fix, no check_* function calls raise typer.Exit(EXIT_VULN) directly.
+
+    The holder pattern (capture _result, then `if _has_findings(_result): raise typer.Exit(EXIT_VULN)`)
+    must be removed.  Instead each command passes exit_on= to run() which handles both the
+    ledger back-fill and the raise internally.
+
+    This test inspects the bytecode/source of each check_* function to confirm it no longer
+    contains a standalone `typer.Exit(EXIT_VULN)` raise after the `run(ctx, _do)` call.
+    """
+    import ast
+    import inspect
+
+    from bp.commands import securityscan
+
+    commands = [
+        securityscan.check_auth,
+        securityscan.check_idor,
+        securityscan.check_headers,
+        securityscan.check_cors,
+        securityscan.check_endpoints,
+    ]
+
+    for cmd in commands:
+        src = inspect.getsource(cmd)
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
+            pytest.fail(f"Could not parse {cmd.__name__}")
+
+        # After the fix there must be NO raise of typer.Exit(...) at the top level of the
+        # function body (the holder pattern). The exit_on= argument to run() replaces it.
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Raise) and node.exc is not None:
+                exc = node.exc
+                # Detect: raise typer.Exit(EXIT_VULN)
+                if (
+                    isinstance(exc, ast.Call)
+                    and isinstance(exc.func, ast.Attribute)
+                    and exc.func.attr == "Exit"
+                ):
+                    pytest.fail(
+                        f"{cmd.__name__} still contains a direct `raise typer.Exit(...)` — "
+                        "the holder pattern must be replaced by exit_on= in run()"
+                    )
 
 
 @pytest.mark.skipif(not _burp_up, reason="needs live Burp REST on :8089")

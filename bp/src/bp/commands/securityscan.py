@@ -71,17 +71,11 @@ def check_auth(
         "baseUrl": url,
         "method": method,
     }
-    _result: dict[str, Any] = {}
 
     def _do(client: Any) -> Any:
-        resp = client.post("/scan/auth-bypass", body)
-        if isinstance(resp, dict):
-            _result.update(resp)
-        return resp
+        return client.post("/scan/auth-bypass", body)
 
-    run(ctx, _do)
-    if _has_findings(_result):
-        raise typer.Exit(EXIT_VULN)
+    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
 
 
 # ---------------------------------------------------------------------------
@@ -136,17 +130,10 @@ def check_idor(
     if extra_headers is not None:
         req_body["extraHeaders"] = extra_headers
 
-    _result: dict[str, Any] = {}
-
     def _do(client: Any) -> Any:
-        resp = client.post("/scan/idor", req_body)
-        if isinstance(resp, dict):
-            _result.update(resp)
-        return resp
+        return client.post("/scan/idor", req_body)
 
-    run(ctx, _do)
-    if _has_findings(_result):
-        raise typer.Exit(EXIT_VULN)
+    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
 
 
 # ---------------------------------------------------------------------------
@@ -174,17 +161,10 @@ def check_headers(
     if body is not None:
         req_body["body"] = body
 
-    _result: dict[str, Any] = {}
-
     def _do(client: Any) -> Any:
-        resp = client.post("/scan/headers", req_body)
-        if isinstance(resp, dict):
-            _result.update(resp)
-        return resp
+        return client.post("/scan/headers", req_body)
 
-    run(ctx, _do)
-    if _has_findings(_result):
-        raise typer.Exit(EXIT_VULN)
+    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
 
 
 # ---------------------------------------------------------------------------
@@ -208,17 +188,11 @@ def check_cors(
         "url": url,
         "method": method,
     }
-    _result: dict[str, Any] = {}
 
     def _do(client: Any) -> Any:
-        resp = client.post("/scan/cors", req_body)
-        if isinstance(resp, dict):
-            _result.update(resp)
-        return resp
+        return client.post("/scan/cors", req_body)
 
-    run(ctx, _do)
-    if _has_findings(_result):
-        raise typer.Exit(EXIT_VULN)
+    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
 
 
 # ---------------------------------------------------------------------------
@@ -257,17 +231,11 @@ def check_endpoints(
         "tests": tests,
         "limit": limit,
     }
-    _result: dict[str, Any] = {}
 
     def _do(client: Any) -> Any:
-        resp = client.post("/scan/endpoints", req_body)
-        if isinstance(resp, dict):
-            _result.update(resp)
-        return resp
+        return client.post("/scan/endpoints", req_body)
 
-    run(ctx, _do)
-    if _has_findings(_result):
-        raise typer.Exit(EXIT_VULN)
+    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
 
 
 # ---------------------------------------------------------------------------
