@@ -134,4 +134,95 @@ class DecoderServiceTest {
         assertEquals("base64", r.encoding)
         assertTrue(r.result.contains("sub"))
     }
+
+    // ── [14] RED: all-hex even-length string must auto-detect as hex, not base64 ────────────────
+
+    @Test
+    fun `14 -auto-detect of all-hex string that is valid UTF-8 decodes as hex not base64`() {
+        // "4865" hex-decodes to bytes [0x48, 0x65] = "He" (valid UTF-8).
+        // "4865" is also length%4==0 and all-hex, so it previously matched base64 first.
+        // After fix: hex check precedes base64 check → decodes to "He".
+        val r = service.decode(DecodeRequest(data = "4865", encoding = null))
+        assertEquals("hex", r.encoding)
+        assertEquals("He", r.result)
+    }
+
+    @Test
+    fun `14 -auto-detect of deadbeef routes to hex and then throws for binary content not silent base64 garbage`() {
+        // "deadbeef" previously matched base64 first (length%4==0, all base64 chars) and returned
+        // garbled replacement-char text. After fix: hex fires first, then [16] rejects the
+        // non-UTF-8 bytes with a clean IllegalArgumentException — no silent corruption.
+        assertFailsWith<IllegalArgumentException> {
+            service.decode(DecodeRequest(data = "deadbeef", encoding = null))
+        }
+    }
+
+    // ── [16] RED: hex and base64 decode of non-UTF-8 bytes must throw, not silently corrupt ─────
+
+    @Test
+    fun `16 -decode hex of non-UTF-8 bytes throws IllegalArgumentException`() {
+        // 0xDE 0xAD 0xBE 0xEF are not valid UTF-8 — must not return replacement chars.
+        assertFailsWith<IllegalArgumentException> {
+            service.decode(DecodeRequest(data = "deadbeef", encoding = "hex"))
+        }
+    }
+
+    @Test
+    fun `16 -decode hex of valid UTF-8 bytes still returns the text`() {
+        // 0x41=A, 0x42=B — valid ASCII/UTF-8, must still work.
+        val r = service.decode(DecodeRequest(data = "4142", encoding = "hex"))
+        assertEquals("AB", r.result)
+    }
+
+    @Test
+    fun `16 -decode base64 of non-UTF-8 bytes throws IllegalArgumentException`() {
+        // Base64 of bytes [0xDE, 0xAD, 0xBE, 0xEF] = "3q2+7w==" — valid base64 but non-UTF-8.
+        // Must throw rather than return replacement chars.
+        assertFailsWith<IllegalArgumentException> {
+            service.decode(DecodeRequest(data = "3q2+7w==", encoding = "base64"))
+        }
+    }
+
+    @Test
+    fun `16 -decode base64 of valid UTF-8 bytes still returns the text`() {
+        // "aGVsbG8=" = base64 of "hello" — must still work.
+        val r = service.decode(DecodeRequest(data = "aGVsbG8=", encoding = "base64"))
+        assertEquals("hello", r.result)
+    }
+
+    // ── [13] RED: base64url tokens with - or _ that are not eyJ auto-detect as base64 ──────────
+
+    @Test
+    fun `13 -auto-detect of url-safe base64 token with underscore classifies as base64`() {
+        // "Pz8_" = URL-safe base64 of "???" (underscore instead of slash), not starting eyJ.
+        // Must auto-detect as base64 and decode correctly.
+        val r = service.decode(DecodeRequest(data = "Pz8_", encoding = null))
+        assertEquals("base64", r.encoding)
+        assertEquals("???", r.result)
+    }
+
+    @Test
+    fun `13 -hyphenated plain word stays plain (false-positive guard)`() {
+        // "foo-bar-baz" matches the char set but its flexible-base64 decode is not valid UTF-8,
+        // so it must not be classified as base64.
+        val r = service.decode(DecodeRequest(data = "foo-bar-baz", encoding = null))
+        assertEquals("plain", r.encoding)
+    }
+
+    // ── [15] RED: smartDecode stops gracefully rather than propagating binary-decode exception ──
+
+    @Test
+    fun `15 -smartDecode of base64-of-hex-string stops at the hex layer without throwing`() {
+        // base64("deadbeef") = "ZGVhZGJlZWY=" — first peel decodes to the string "deadbeef".
+        // "deadbeef" is then classified as hex; its bytes (0xDE 0xAD 0xBE 0xEF) are not UTF-8,
+        // so the hex decode step would throw. smartDecode must catch that and stop cleanly,
+        // returning "deadbeef" — no replacement chars, no exception propagated.
+        val input = java.util.Base64.getEncoder().encodeToString("deadbeef".toByteArray())
+        // sanity: input is "ZGVhZGJlZWY="
+        val r = service.smartDecode(input)
+        assertEquals("deadbeef", r.result)
+        // exactly one step was peeled (base64 → "deadbeef"); the hex step was aborted
+        assertEquals(1, r.steps.size)
+        assertEquals("base64", r.steps[0].encoding)
+    }
 }

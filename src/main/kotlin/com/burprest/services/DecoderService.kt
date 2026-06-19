@@ -3,6 +3,8 @@ package com.burprest.services
 import com.burprest.models.*
 import java.net.URLDecoder
 import java.net.URLEncoder
+import java.nio.ByteBuffer
+import java.nio.charset.CodingErrorAction
 import java.security.MessageDigest
 import java.util.Base64
 
@@ -31,7 +33,8 @@ class DecoderService {
             "url" -> URLDecoder.decode(request.data, Charsets.UTF_8)
             "hex" -> {
                 require(request.data.length % 2 == 0) { "Hex input must have an even number of characters" }
-                request.data.chunked(2).map { it.toInt(16).toByte() }.toByteArray().let { String(it) }
+                val bytes = request.data.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+                decodeUtf8OrThrow(bytes, "hex")
             }
             "html" -> request.data
                 .replace("&amp;", "&")
@@ -70,7 +73,13 @@ class DecoderService {
             val encoding = detectEncoding(current)
             if (encoding == "plain") break
 
-            val decoded = decode(DecodeRequest(data = current, encoding = encoding))
+            // [15] Wrap each decode step: if decoding throws (binary / non-UTF-8 content)
+            // or makes no progress, stop cleanly and return whatever we have so far.
+            val decoded = try {
+                decode(DecodeRequest(data = current, encoding = encoding))
+            } catch (_: IllegalArgumentException) {
+                break
+            }
             if (decoded.result == current) break
 
             steps.add(DecodeStep(encoding = encoding, result = decoded.result))
@@ -81,13 +90,34 @@ class DecoderService {
     }
 
     private fun detectEncoding(data: String): String = when {
-        // base64url JSON, i.e. a JWT segment (starts with eyJ = base64url of '{"'). Decoded
-        // flexibly below. Low false-positive: plain words don't start with eyJ + base64url body.
+        // 1. base64url JSON, i.e. a JWT segment (starts with eyJ = base64url of '{"').
+        //    Decoded flexibly below. Low false-positive: plain words don't start with eyJ +
+        //    a base64url-only body.
         data.startsWith("eyJ") && data.matches(Regex("^[A-Za-z0-9_-]+=*$")) -> "base64"
+
+        // 2. [14] Hex check BEFORE standard base64: an all-hex string whose length is divisible
+        //    by 4 (e.g. "deadbeef") would otherwise match the base64 regex first and decode to
+        //    garbage. Pure hex characters are a strict subset of base64 characters, so hex must
+        //    win when all characters are hex digits and the length is even.
+        data.matches(Regex("^[0-9a-fA-F]+$")) && data.length % 2 == 0 && data.length >= 2 -> "hex"
+
+        // 3. [13] base64url tokens containing '-' or '_' that are not JWT segments.
+        //    Gate: flexible-base64 decode must yield valid UTF-8 text; this prevents classifying
+        //    plain hyphenated words (e.g. "foo-bar-baz") as base64.
+        data.matches(Regex("^[A-Za-z0-9_-]+=*$")) &&
+                (data.contains('-') || data.contains('_')) &&
+                data.length >= 4 &&
+                isBase64UrlDecodableAsUtf8(data) -> "base64"
+
+        // 4. Standard base64 (may contain '+' and '/').
         data.matches(Regex("^[A-Za-z0-9+/]+=*$")) && data.length % 4 == 0 && data.length >= 4 -> "base64"
+
+        // 5. URL-encoded (contains at least one %XX sequence).
         data.contains("%[0-9A-Fa-f]{2}".toRegex()) -> "url"
-        data.matches(Regex("^[0-9a-fA-F]+$")) && data.length % 2 == 0 && data.length >= 4 -> "hex"
+
+        // 6. HTML entities.
         data.contains("&amp;") || data.contains("&lt;") || data.contains("&gt;") -> "html"
+
         else -> "plain"
     }
 
@@ -104,10 +134,53 @@ class DecoderService {
         // Accept standard AND URL-safe base64 (JWTs), with or without '=' padding.
         val normalized = data.replace('-', '+').replace('_', '/')
         val padded = normalized.padEnd((normalized.length + 3) / 4 * 4, '=')
-        return try {
-            String(Base64.getDecoder().decode(padded))
+        val bytes = try {
+            Base64.getDecoder().decode(padded)
         } catch (_: IllegalArgumentException) {
             throw IllegalArgumentException("Invalid base64 input")
+        }
+        // [16] Reject non-UTF-8 decoded bytes rather than silently substituting U+FFFD.
+        return decodeUtf8OrThrow(bytes, "base64")
+    }
+
+    /**
+     * Decodes [bytes] as UTF-8. Throws [IllegalArgumentException] if the bytes are not valid
+     * UTF-8, so callers never receive silently-corrupted text with U+FFFD replacement chars.
+     */
+    private fun decodeUtf8OrThrow(bytes: ByteArray, encodingLabel: String): String {
+        val decoder = Charsets.UTF_8.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+        return try {
+            decoder.decode(ByteBuffer.wrap(bytes)).toString()
+        } catch (_: java.nio.charset.CharacterCodingException) {
+            throw IllegalArgumentException(
+                "decoded bytes are not valid UTF-8 (binary data); use a hex/raw view to inspect"
+            )
+        }
+    }
+
+    /**
+     * Returns true only if [data] (treated as URL-safe base64) decodes without error AND the
+     * resulting bytes are valid UTF-8. Used as a guard in detectEncoding to avoid classifying
+     * plain hyphenated or underscored tokens as base64.
+     */
+    private fun isBase64UrlDecodableAsUtf8(data: String): Boolean {
+        val normalized = data.replace('-', '+').replace('_', '/')
+        val padded = normalized.padEnd((normalized.length + 3) / 4 * 4, '=')
+        val bytes = try {
+            Base64.getDecoder().decode(padded)
+        } catch (_: IllegalArgumentException) {
+            return false
+        }
+        val decoder = Charsets.UTF_8.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+        return try {
+            decoder.decode(ByteBuffer.wrap(bytes))
+            true
+        } catch (_: java.nio.charset.CharacterCodingException) {
+            false
         }
     }
 }
