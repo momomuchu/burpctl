@@ -61,10 +61,16 @@ class HttpResponseData(_Wire):
 
 
 class ProxyEntry(_Wire):
-    """Mirrors the Kotlin ProxyEntry: request/response are NESTED, not flat (SPEC §8)."""
+    """Mirrors the Kotlin ProxyEntry: request/response are NESTED, not flat (SPEC §8).
 
-    id: int | None = None
-    request: HttpRequestData | None = None
+    Nullability mirrors ProxyModels.kt exactly:
+      id: Int            — non-nullable, required
+      request: HttpRequestData — non-nullable, required
+      response: HttpResponseData? = null — nullable, optional
+    """
+
+    id: int
+    request: HttpRequestData
     response: HttpResponseData | None = None
     timestamp: str | None = None
     listenerInterface: str | None = None

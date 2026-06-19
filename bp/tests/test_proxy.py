@@ -4,6 +4,9 @@ Contract reconciliation — the Python model now mirrors the Kotlin nested shape
 (request/response), and the list view projects id/method/url/status for the table.
 """
 
+import pytest
+from pydantic import ValidationError
+
 from bp.cli import _proxy_rows
 from bp.models import ProxyEntry
 
@@ -30,3 +33,24 @@ def test_proxy_rows_handles_missing_response() -> None:
 
 def test_proxy_rows_empty() -> None:
     assert _proxy_rows([]) == []
+
+
+# --- RED contract-drift tests (Kotlin ProxyModels.kt: id=Int, request=HttpRequestData both non-null) ---
+
+def test_proxy_entry_id_is_required() -> None:
+    """Kotlin: val id: Int  (non-nullable, no default) — omitting must raise ValidationError."""
+    with pytest.raises(ValidationError):
+        ProxyEntry.model_validate({"request": {"method": "GET", "url": "http://h/p"}})
+
+
+def test_proxy_entry_request_is_required() -> None:
+    """Kotlin: val request: HttpRequestData  (non-nullable, no default) — omitting must raise ValidationError."""
+    with pytest.raises(ValidationError):
+        ProxyEntry.model_validate({"id": 1})
+
+
+def test_proxy_entry_response_is_optional() -> None:
+    """Kotlin: val response: HttpResponseData? = null  (nullable with default) — must validate without it."""
+    pe = ProxyEntry.model_validate({"id": 3, "request": {"method": "DELETE", "url": "http://h/r"}})
+    assert pe.id == 3
+    assert pe.response is None

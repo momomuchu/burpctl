@@ -84,8 +84,8 @@ def _proxy_rows(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         rows.append(
             {
                 "id": pe.id,
-                "method": pe.request.method if pe.request else None,
-                "url": pe.request.url if pe.request else None,
+                "method": pe.request.method,
+                "url": pe.request.url,
                 "status": pe.response.statusCode if pe.response else None,
             }
         )
