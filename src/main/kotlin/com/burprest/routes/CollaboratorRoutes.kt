@@ -25,8 +25,11 @@ fun Route.collaboratorRoutes(service: CollaboratorService) {
         }
 
         post("/generate/batch") {
+            val request = call.receive<BatchGenerateRequest>()
+            // Validate before the try so a bad count is a clean 400 (global handler), not the
+            // local PRO_REQUIRED catch below.
+            require(request.count in 1..100) { "count must be between 1 and 100, got ${request.count}" }
             try {
-                val request = call.receive<BatchGenerateRequest>()
                 call.respond(ApiResponse.ok(service.generateBatch(request.count)))
             } catch (_: Throwable) {
                 call.respond(HttpStatusCode.ServiceUnavailable, ApiResponse.error<Unit>(

@@ -114,4 +114,11 @@ class DecoderServiceTest {
             service.hash(HashRequest(data = "hello", algorithm = "totally-bogus"))
         }
     }
+
+    @Test
+    fun `decode odd-length hex is rejected, not silently truncated`() {
+        assertFailsWith<IllegalArgumentException> {
+            service.decode(DecodeRequest(data = "abc", encoding = "hex"))
+        }
+    }
 }

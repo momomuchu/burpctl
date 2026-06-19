@@ -29,7 +29,10 @@ class DecoderService {
         val result = when (encoding.lowercase()) {
             "base64" -> String(Base64.getDecoder().decode(request.data))
             "url" -> URLDecoder.decode(request.data, Charsets.UTF_8)
-            "hex" -> request.data.chunked(2).map { it.toInt(16).toByte() }.toByteArray().let { String(it) }
+            "hex" -> {
+                require(request.data.length % 2 == 0) { "Hex input must have an even number of characters" }
+                request.data.chunked(2).map { it.toInt(16).toByte() }.toByteArray().let { String(it) }
+            }
             "html" -> request.data
                 .replace("&amp;", "&")
                 .replace("&lt;", "<")

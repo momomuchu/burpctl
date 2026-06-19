@@ -2,9 +2,11 @@ package com.burprest.routes
 
 import com.burprest.models.BatchGenerateResponse
 import com.burprest.models.CollaboratorPayload
+import com.burprest.server.installErrorHandling
 import com.burprest.services.CollaboratorService
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
@@ -14,6 +16,7 @@ import io.mockk.mockk
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -54,6 +57,23 @@ class CollaboratorRoutesTest {
             val data = Json.parseToJsonElement(bodyAsText()).jsonObject["data"]?.jsonObject
             // Single generate now returns {payloads:[...]} just like /generate/batch (stable shape).
             assertTrue(data?.containsKey("payloads") == true, bodyAsText())
+        }
+    }
+
+    @Test
+    fun `batch generate rejects a non-positive count with 400`() = testApplication {
+        val service = mockk<CollaboratorService>(relaxed = true)
+        application {
+            install(ContentNegotiation) { json() }
+            installErrorHandling { }
+            install(io.ktor.server.routing.Routing) { collaboratorRoutes(service) }
+        }
+
+        client.post("/collaborator/generate/batch") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"count":0}""")
+        }.apply {
+            assertEquals(HttpStatusCode.BadRequest, status)
         }
     }
 }
