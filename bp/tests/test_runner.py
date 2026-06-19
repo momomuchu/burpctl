@@ -105,3 +105,139 @@ def test_invalid_attack_type_message_names_valid_types() -> None:
     p = Position(5, 6, "query:u")
     with pytest.raises(ValueError, match="sniper"):
         _payload_lists([p], {"u": [b"x"]}, "invalid")
+
+
+# --- [08] _send(): missing 'response' key must raise BurpError, not KeyError ---
+
+
+def _mock_client_missing_response() -> BurpClient:
+    """Mock where /repeater/send data dict has no 'response' key."""
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        path = req.url.path
+        if path.startswith("/proxy/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {
+                        "id": 1,
+                        "request": {
+                            "method": "GET",
+                            "url": "https://t.example.com/s?u=x",
+                            "headers": [{"name": "Host", "value": "t.example.com"}],
+                            "body": None,
+                        },
+                    },
+                    "error": None,
+                },
+            )
+        if path == "/repeater/send":
+            # data has no 'response' key — simulates unexpected server shape
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {"durationMs": 5},  # 'response' key absent
+                    "error": None,
+                },
+            )
+        return httpx.Response(404, json={"success": False, "data": None, "error": {"code": "X", "message": "no"}})
+
+    return BurpClient(client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test"))
+
+
+def test_send_missing_response_key_raises_burp_error() -> None:
+    """[08] _send() with data missing 'response' key must raise BurpError(INVALID_RESPONSE),
+    not a raw KeyError."""
+    from bp.client import BurpError
+
+    with pytest.raises(BurpError) as ei:
+        run_fuzz(_mock_client_missing_response(), 1, ["query:u"], {"u": [b"x"]}, "sniper")
+    assert ei.value.code == "INVALID_RESPONSE"
+
+
+# --- [10] _base_raw(): missing 'request' key in history entry must raise BurpError, not KeyError ---
+
+
+def _mock_client_missing_request() -> BurpClient:
+    """Mock where /proxy/history/{id} data dict has no 'request' key."""
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.path.startswith("/proxy/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {"id": 1},  # 'request' key absent
+                    "error": None,
+                },
+            )
+        return httpx.Response(404, json={"success": False, "data": None, "error": {"code": "X", "message": "no"}})
+
+    return BurpClient(client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test"))
+
+
+def test_base_raw_missing_request_key_raises_burp_error() -> None:
+    """[10] _base_raw() with entry missing 'request' key must raise BurpError(INVALID_RESPONSE),
+    not a raw KeyError."""
+    from bp.client import BurpError
+
+    with pytest.raises(BurpError) as ei:
+        run_fuzz(_mock_client_missing_request(), 1, ["query:u"], {"u": [b"x"]}, "sniper")
+    assert ei.value.code == "INVALID_RESPONSE"
+
+
+# --- [08b] _send(): a present 'response' missing/garbled 'statusCode' must also be clean ---
+
+
+def _mock_client_bad_statuscode(status_value: object | None) -> BurpClient:
+    """Mock where /repeater/send 'response' lacks statusCode (None) or has a non-int one."""
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        path = req.url.path
+        if path.startswith("/proxy/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {
+                        "id": 1,
+                        "request": {
+                            "method": "GET",
+                            "url": "https://t.example.com/s?u=x",
+                            "headers": [{"name": "Host", "value": "t.example.com"}],
+                            "body": None,
+                        },
+                    },
+                    "error": None,
+                },
+            )
+        if path == "/repeater/send":
+            resp: dict[str, object] = {"body": "x"}
+            if status_value is not None:
+                resp["statusCode"] = status_value
+            return httpx.Response(
+                200, json={"success": True, "data": {"response": resp, "durationMs": 5}, "error": None}
+            )
+        return httpx.Response(404, json={"success": False, "data": None, "error": {"code": "X", "message": "no"}})
+
+    return BurpClient(client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test"))
+
+
+def test_send_missing_statuscode_raises_burp_error() -> None:
+    """[08b] response present but no 'statusCode' -> clean BurpError, not a raw KeyError."""
+    from bp.client import BurpError
+
+    with pytest.raises(BurpError) as ei:
+        run_fuzz(_mock_client_bad_statuscode(None), 1, ["query:u"], {"u": [b"x"]}, "sniper")
+    assert ei.value.code == "INVALID_RESPONSE"
+
+
+def test_send_noninteger_statuscode_raises_burp_error() -> None:
+    """[08b]/[09] non-integer 'statusCode' -> clean BurpError, not a raw ValueError traceback."""
+    from bp.client import BurpError
+
+    with pytest.raises(BurpError) as ei:
+        run_fuzz(_mock_client_bad_statuscode("not-a-number"), 1, ["query:u"], {"u": [b"x"]}, "sniper")
+    assert ei.value.code == "INVALID_RESPONSE"

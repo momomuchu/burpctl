@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlsplit
 
-from bp.client import BurpClient
+from bp.client import BurpClient, BurpError
 from bp.fuzz import expand
 from bp.pos import Position, resolve_pos
 from bp.wire import build_raw, to_send_request
@@ -29,6 +29,8 @@ class FuzzResult:
 
 
 def _base_raw(entry: Mapping[str, Any]) -> tuple[bytes, str, str]:
+    if "request" not in entry:
+        raise BurpError("INVALID_RESPONSE", "history entry missing 'request' field")
     req = entry["request"]
     headers = [(h["name"], h["value"]) for h in req.get("headers", [])]
     raw = build_raw(req["method"], req["url"], headers, req.get("body"))
@@ -70,8 +72,15 @@ def _payload_lists(
 
 def _send(client: BurpClient, raw: bytes, scheme: str, host: str) -> tuple[int, int, int]:
     data = client.post("/repeater/send", {"request": to_send_request(raw, scheme, host)})
+    if "response" not in data:
+        raise BurpError("INVALID_RESPONSE", "repeater/send reply missing 'response' field")
     resp = data["response"]
-    status = int(resp["statusCode"])
+    if "statusCode" not in resp:
+        raise BurpError("INVALID_RESPONSE", "repeater/send reply missing 'statusCode' field")
+    try:
+        status = int(resp["statusCode"])
+    except (TypeError, ValueError):
+        raise BurpError("INVALID_RESPONSE", "repeater/send reply has a non-integer 'statusCode'") from None
     length = len(resp.get("body") or "")
     duration = int(data.get("durationMs", 0))
     return status, length, duration

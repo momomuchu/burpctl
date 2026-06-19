@@ -121,7 +121,10 @@ def _resolve_query(raw: bytes, arg: str, selector: str) -> Position:
     q = target.find(b"?")
     if q == -1:
         raise PosError("POS_NOT_FOUND", "no query string")
-    span = _scan_kv(target, arg.encode(), q + 1)
+    # Strip the fragment (everything from the first '#') — query string ends at '#'.
+    frag = target.find(b"#", q + 1)
+    qs_end = frag if frag != -1 else len(target)
+    span = _scan_kv(target[:qs_end], arg.encode(), q + 1)
     if span is None:
         raise PosError("POS_NOT_FOUND", f"query param {arg!r} not found")
     return Position(t_start + span[0], t_start + span[1], selector)

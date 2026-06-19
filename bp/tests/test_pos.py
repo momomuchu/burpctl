@@ -209,3 +209,27 @@ def test_form_body_without_content_type_still_resolves() -> None:
     )
     p = resolve_pos(req, "body:foo")
     assert req[p.start : p.end] == b"bar"
+
+
+# --- [20] query:NAME must not include the URL fragment in the resolved value ---
+
+
+def test_query_last_param_strips_fragment() -> None:
+    """[20] query:q on /search?q=hello#section2 must resolve to b'hello', not b'hello#section2'."""
+    req = b"GET /search?q=hello#section2 HTTP/1.1\r\nHost: example.com\r\n\r\n"
+    p = resolve_pos(req, "query:q")
+    assert req[p.start : p.end] == b"hello"
+
+
+def test_query_middle_param_strips_fragment() -> None:
+    """[20] query:q on /a?x=1&q=hello#frag must resolve to b'hello', not b'hello#frag'."""
+    req = b"GET /a?x=1&q=hello#frag HTTP/1.1\r\nHost: example.com\r\n\r\n"
+    p = resolve_pos(req, "query:q")
+    assert req[p.start : p.end] == b"hello"
+
+
+def test_query_no_fragment_unchanged() -> None:
+    """[20] query:q on a URL with no fragment must still resolve correctly."""
+    req = b"GET /search?q=world&n=5 HTTP/1.1\r\nHost: example.com\r\n\r\n"
+    p = resolve_pos(req, "query:q")
+    assert req[p.start : p.end] == b"world"
