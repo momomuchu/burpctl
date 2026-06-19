@@ -1,74 +1,69 @@
 # Roadmap
 
-Where `burp-wrapper` is going. This is the honest, source-grounded plan — every item below is already
-marked in the docs (`docs/CLI.md`, `docs/SPEC.md`, `bp/CHANGELOG.md`) as deferred or `v1.1`. It is a
-direction, not a promise of dates.
+Where `burp-wrapper` is headed. This is a direction, not a dated promise — priorities follow real
+usage and contributions. Every item here is a product feature already marked `v1.1 / not shipped` in
+[`docs/CLI.md`](docs/CLI.md).
 
-**Want to take one?** Comment on (or open) the matching issue and say so, then read
-[`CONTRIBUTING.md`](CONTRIBUTING.md). Items tagged **needs-extension** require Kotlin work in
-`src/main/kotlin/com/burprest/` (a new route + `docs/SPEC.md` entry) before the CLI can expose them.
-
----
-
-## ✅ Shipped — v1.1.0
-
-Post-v1.0.0 hardening from a 9-round adversarial UltraQA loop: IDOR/decoder rebuilds, JSON-safe
-secret redaction, PII suppression, ledger hardening (ADR-0005), exit-code contract (ADR-0010, `check`
-exits `5` on findings), OUTPUT.md compliance, and contract-drift fixes. See
-[`bp/CHANGELOG.md`](bp/CHANGELOG.md).
+**Want to build one?** Open (or comment on) the matching issue, then read
+[`CONTRIBUTING.md`](CONTRIBUTING.md). Items marked **needs extension** require a new Kotlin route +
+spec entry before the CLI can expose them.
 
 ---
 
-## 🎯 Next — v1.1.x CLI surface (no extension changes needed)
+## ✅ Recently shipped — v1.1.0
 
-These are `bp`-side features whose backend routes already exist; they're documented as `v1.1 — not
-shipped` in `docs/CLI.md`.
+A hardening release: the IDOR and decoder engines were rebuilt, secret redaction was completed and
+made JSON-safe, response bodies/PII are suppressed from default output, the Run Ledger was hardened
+(private files, no credentials at rest), and `bp check` now exits `5` when it finds something.
+Full notes in [`bp/CHANGELOG.md`](bp/CHANGELOG.md).
 
-- **`-w` / `--write-out 'TPL'`** — curl-style output templates (`%{status} %{payload}`…).
-- **`--tag NAME`** global flag — tag an op in the Run Ledger (the `tag` column already exists; the flag isn't wired).
-- **`bp send --batch @file`** → `POST /repeater/send/batch`.
-- **`bp fuzz <id> --param NAME --payloads @f`** — the one-parameter quick-fuzz shortcut → `POST /intruder/quick-fuzz`.
-- **`bp history list` extra filters** — `--source` / `--search` / `--since` / `--until` / `--page-size`.
-- **TTY-aware default format** — auto-pick `table` for a terminal, `json` for a pipe (today the default is always `table`).
-- **`bp show <opId>`** — replay an op from the ledger, plus the `program` / `req_ref` / `resp_ref`
-  columns (requires `--ledger-bodies`, ADR-0005).
+## 🎯 Next — CLI features (backend already exists)
 
-## ⏳ Async attack lifecycle (needs-extension)
+Quick wins on the `bp` side; the REST endpoints are already there.
 
-The current fuzzer is **synchronous** (client-side, fired via `/repeater/send`). The async path is
-specced but not shipped:
+- **`-w` / `--write-out 'TPL'`** — curl-style output templates, e.g. `%{status} %{payload}`.
+- **`--tag NAME`** — label an operation in the Run Ledger.
+- **`bp send --batch @file`** — fire a batch of repeater requests from a file.
+- **`bp fuzz --param NAME`** — a one-parameter quick-fuzz shortcut.
+- **More `bp history list` filters** — by source, free-text search, and time range.
+- **TTY-aware output** — default to `table` in a terminal, `json` in a pipe (today it's always `table`).
+- **`bp show <opId>`** — re-render a past operation from the Run Ledger.
 
-- **`bp fuzz status | results | pause | resume | stop <attackId>`** → `/intruder/attack/{id}/*`.
-- **`bp scan pause | resume | stop <scanId>`** → the scanner lifecycle verbs.
+## ⏳ Async attack & scan lifecycle *(needs extension)*
 
-## 🧭 Bigger bets (deferred, needs-extension + an ADR)
+Today fuzzing is synchronous. The async path is specced but not built:
 
-- **Bug-bounty-mini adapter (C3, ADR-0007)** — an optional wrapper adding scope-check, op logging,
-  and anti-injection guards for bounty workflows. Three sub-choices to elaborate (see `docs/SPEC.md §12`).
-- **Scope-as-pre-fire-gate** — refuse to fire a request at an out-of-scope host before it leaves `bp`.
-- **New Burp tool groups** — Sequencer / Comparer / Logger / Dashboard. None are in the extension's
-  `configureRouting()` yet; each needs Montoya wiring + routes + spec before a CLI verb.
+- **`bp fuzz status | results | pause | resume | stop <id>`**
+- **`bp scan pause | resume | stop <id>`**
+
+## 🧭 Later — more Burp tools *(needs extension)*
+
+Surfacing additional Burp tools through the REST API + CLI. None are wired yet; each needs Montoya
+integration, routes, and a spec entry first:
+
+- **Sequencer** (token randomness analysis)
+- **Comparer** (diff two items)
+- **Logger / Dashboard** (event + issue feeds)
 
 ---
 
 ## 🔬 Known limitations (improvements welcome)
 
-Surfaced and accepted during the UltraQA campaign — heuristic edges, not bugs:
+Honest edges, surfaced during testing — not bugs:
 
-- **IDOR detection is exact full-body comparison.** Robust against same-length/different-content
-  records, but a target that differs only by volatile noise (timestamps, CSRF tokens) may read as
-  "different." A normalization/fuzzy-compare option is a good contribution.
-- **Decoder auto-detect is best-effort.** Ambiguous short strings (e.g. all-hex that's also valid
-  base64) resolve conservatively to `plain`; pass an explicit `--enc` for certainty.
-- **CI gates the diff, not a live Burp.** Live/integration coverage runs locally against `:8089`.
+- **IDOR detection uses full-body comparison.** Strong against same-length / different-content
+  records, but a response that differs only by volatile noise (timestamps, CSRF tokens) can read as
+  "different." A normalization / fuzzy-compare mode would be a great contribution.
+- **Decoder auto-detect is best-effort.** Genuinely ambiguous short strings resolve conservatively to
+  `plain`; pass an explicit `--enc` when you need certainty.
 
 ---
 
 ## How priorities are set
 
-1. Correctness & security invariants (ledger/redaction/scope) come first.
-2. Then `bp`-side features that need no extension change (low risk, high value).
-3. Then extension work behind an ADR.
+1. **Correctness & security** invariants first (ledger, redaction, exit codes).
+2. Then **`bp`-side features** that need no extension change — low risk, high value.
+3. Then **extension work**, each behind a design record.
 
-Issues labelled `good-first-issue` are a friendly entry point. Don't see your idea? Open a feature
-request — the roadmap grows from real use.
+New here? Issues labelled `good-first-issue` are the friendliest start. Idea not listed? Open a
+feature request — the roadmap grows from real use.
