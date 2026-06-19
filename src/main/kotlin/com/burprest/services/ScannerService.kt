@@ -7,6 +7,7 @@ import burp.api.montoya.scanner.CrawlConfiguration
 import burp.api.montoya.scanner.Crawl
 import burp.api.montoya.scanner.audit.Audit
 import com.burprest.models.*
+import com.burprest.server.ProRequiredException
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -28,10 +29,9 @@ class ScannerService(private val api: MontoyaApi) {
             scans[id] = ScanState.CrawlState(id, crawl)
             return ScanStartResponse(scanId = id, status = "running")
         } catch (e: Throwable) {
-            throw IllegalStateException(
+            throw ProRequiredException(
                 "Failed to start crawl. This requires Burp Suite Professional with Scanner enabled. " +
                 "Ensure the target URL is in scope.",
-                e,
             )
         }
     }
@@ -44,10 +44,9 @@ class ScannerService(private val api: MontoyaApi) {
             scans[id] = ScanState.AuditState(id, audit)
             return ScanStartResponse(scanId = id, status = "running")
         } catch (e: Throwable) {
-            throw IllegalStateException(
+            throw ProRequiredException(
                 "Failed to start audit. Active scanning requires Burp Suite Professional. " +
                 "Community Edition only supports passive scanning.",
-                e,
             )
         }
     }
@@ -62,9 +61,8 @@ class ScannerService(private val api: MontoyaApi) {
             scans[id] = ScanState.CrawlAndAuditState(id, crawl, audit)
             return ScanStartResponse(scanId = id, status = "running")
         } catch (e: Throwable) {
-            throw IllegalStateException(
+            throw ProRequiredException(
                 "Failed to start crawl+audit. This requires Burp Suite Professional.",
-                e,
             )
         }
     }

@@ -22,6 +22,14 @@ import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
+/**
+ * Thrown by service methods that require Burp Suite Professional when the running edition is
+ * Community.  [installErrorHandling] maps this to HTTP 503 with code `PRO_REQUIRED` so the
+ * Python client can distinguish a genuine Pro-gating failure (exit 4) from an ordinary
+ * service/infra failure like a missing database (SERVICE_UNAVAILABLE → exit 1).
+ */
+class ProRequiredException(message: String) : RuntimeException(message)
+
 class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
 
     private var server: ApplicationEngine? = null
@@ -139,8 +147,10 @@ class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
 
 /**
  * Install the ktor StatusPages error handling. Extracted from [RestServer] so it can be unit-tested
- * with a throwing route. Author-controlled errors (IllegalArgumentException from route validation
- * and Pro-gating IllegalStateException) keep their own message because we wrote that text.
+ * with a throwing route. Author-controlled errors (IllegalArgumentException from route validation)
+ * keep their own message because we wrote that text. [ProRequiredException] is handled before
+ * [IllegalStateException]: the former signals a Pro-gate (code PRO_REQUIRED → Python exit 4) while
+ * the latter signals a generic infra/service failure (code SERVICE_UNAVAILABLE → Python exit 1).
  * BadRequestException and SerializationException are sanitised: ktor / kotlinx.serialization
  * populate their messages with fully-qualified Kotlin class names ("Failed to convert request body
  * to class com.burprest.models.XxxRequest") so we log the raw detail to [logError] and send only a
@@ -172,6 +182,16 @@ fun Application.installErrorHandling(logError: (String) -> Unit) {
             call.respond(
                 HttpStatusCode.BadRequest,
                 ApiResponse.error<Unit>("INVALID_REQUEST", cause.message ?: "Bad request"),
+            )
+        }
+        exception<ProRequiredException> { call, cause ->
+            // [13] Pro-gated scanner surfaces (crawl/audit/crawl-and-audit on Community) throw
+            // ProRequiredException so the Python client receives code PRO_REQUIRED → exit 4.
+            // This is intentionally distinct from SERVICE_UNAVAILABLE (infra failure → exit 1).
+            logError("[burp-rest] Pro-required: ${cause.message}")
+            call.respond(
+                HttpStatusCode.ServiceUnavailable,
+                ApiResponse.error<Unit>("PRO_REQUIRED", "this operation requires Burp Suite Professional"),
             )
         }
         exception<IllegalStateException> { call, cause ->

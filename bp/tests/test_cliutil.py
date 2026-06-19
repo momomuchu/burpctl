@@ -13,11 +13,12 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 import typer
+from pydantic import ValidationError
 from typer.testing import CliRunner
 
 from bp.cli import app
 from bp.client import BurpClient
-from bp.cliutil import EXIT_VULN, parse_header, parse_headers, run
+from bp.cliutil import EXIT_GENERIC, EXIT_VULN, parse_header, parse_headers, run
 from bp.ledger import Ledger
 from bp.output import render
 
@@ -82,23 +83,92 @@ def test_parse_headers_bad_input_is_usage_exit() -> None:
 
 
 # ---------------------------------------------------------------------------
-# [15] — SERVICE_UNAVAILABLE BurpError code must map to EXIT_PRO (exit 4)
+# [13] — SERVICE_UNAVAILABLE must map to EXIT_GENERIC (1); PRO_REQUIRED -> EXIT_PRO (4)
 # ---------------------------------------------------------------------------
 
 
-def test_service_unavailable_maps_to_exit_pro() -> None:
-    """[15] _EXIT_BY_CODE['SERVICE_UNAVAILABLE'] must equal EXIT_PRO (4).
+def test_service_unavailable_maps_to_exit_generic() -> None:
+    """[13] _EXIT_BY_CODE['SERVICE_UNAVAILABLE'] must equal EXIT_GENERIC (1).
 
-    Community Burp returns SERVICE_UNAVAILABLE for Pro-only scanner surfaces.
-    The docs contract is exit 4; the map previously fell through to EXIT_GENERIC=1.
+    SERVICE_UNAVAILABLE now represents a genuine service/infra failure (e.g. missing DB for
+    endpoints check).  Pro-only scanner failures travel as PRO_REQUIRED -> EXIT_PRO (4).
+    Previously SERVICE_UNAVAILABLE was mapped to EXIT_PRO (4) — that is the bug fixed here.
     """
     from bp.cliutil import EXIT_PRO, _EXIT_BY_CODE  # type: ignore[attr-defined]
 
     assert "SERVICE_UNAVAILABLE" in _EXIT_BY_CODE, (
         "_EXIT_BY_CODE missing SERVICE_UNAVAILABLE key"
     )
-    assert _EXIT_BY_CODE["SERVICE_UNAVAILABLE"] == EXIT_PRO, (
-        f"expected EXIT_PRO={EXIT_PRO}, got {_EXIT_BY_CODE['SERVICE_UNAVAILABLE']}"
+    assert _EXIT_BY_CODE["SERVICE_UNAVAILABLE"] == EXIT_GENERIC, (
+        f"[13] expected EXIT_GENERIC={EXIT_GENERIC}, got {_EXIT_BY_CODE['SERVICE_UNAVAILABLE']}"
+    )
+    # PRO_REQUIRED must still map to EXIT_PRO so scanner crawl/audit on Community exits 4.
+    assert _EXIT_BY_CODE.get("PRO_REQUIRED") == EXIT_PRO, (
+        f"[13] PRO_REQUIRED must still map to EXIT_PRO={EXIT_PRO}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# [12] RED — pydantic ValidationError must not leak class names; must exit 1
+# ---------------------------------------------------------------------------
+
+
+def _make_validation_error() -> ValidationError:
+    """Return a real pydantic ValidationError without requiring the actual model."""
+    from pydantic import BaseModel
+
+    class _Dummy(BaseModel):
+        x: int
+
+    try:
+        _Dummy.model_validate({"x": "not-an-int-sentinel"})  # type: ignore[arg-type]
+    except ValidationError as exc:
+        return exc
+    raise AssertionError("model_validate did not raise")  # pragma: no cover
+
+
+def test_run_validation_error_exits_generic(capsys: pytest.CaptureFixture[str]) -> None:
+    """[12] RED: fn raising pydantic.ValidationError must exit 1 (EXIT_GENERIC), not 2 (EXIT_USAGE).
+
+    Before the fix, ValidationError is a subclass of ValueError so the existing
+    `except (PosError, ValueError)` handler catches it and exits 2 with a pydantic message
+    that contains the internal class name.  After the fix, a dedicated `except ValidationError`
+    handler fires first, exits 1, and emits only a clean class-name-free message.
+    """
+    ctx = _make_ctx(no_ledger=True)
+    exc = _make_validation_error()
+
+    def _fn(_client: BurpClient) -> Any:
+        raise exc
+
+    with pytest.raises(typer.Exit) as ei:
+        run(ctx, _fn)
+
+    assert ei.value.exit_code == EXIT_GENERIC, (
+        f"[12] ValidationError must exit EXIT_GENERIC={EXIT_GENERIC}, got {ei.value.exit_code}"
+    )
+
+
+def test_run_validation_error_stderr_no_class_names(capsys: pytest.CaptureFixture[str]) -> None:
+    """[12] RED: stderr must not contain 'ProxyEntry', 'pydantic', or 'validation error'."""
+    ctx = _make_ctx(no_ledger=True)
+    exc = _make_validation_error()
+
+    def _fn(_client: BurpClient) -> Any:
+        raise exc
+
+    with pytest.raises(typer.Exit):
+        run(ctx, _fn)
+
+    captured = capsys.readouterr()
+    stderr = captured.err.lower()
+    assert "proxyentry" not in stderr, f"[12] leaked class name 'ProxyEntry' in stderr: {captured.err!r}"
+    assert "pydantic" not in stderr, f"[12] leaked 'pydantic' in stderr: {captured.err!r}"
+    # 'validation error' is the pydantic heading — must not appear verbatim
+    assert "validation error" not in stderr, f"[12] leaked pydantic header in stderr: {captured.err!r}"
+    # Clean message must be present
+    assert "unexpected response" in stderr or "server returned" in stderr, (
+        f"[12] expected clean error message in stderr, got: {captured.err!r}"
     )
 
 

@@ -14,6 +14,8 @@ from typing import Any
 
 import typer
 
+from pydantic import ValidationError
+
 from bp import config as _config
 from bp.client import BurpClient, BurpError
 from bp.config import redact
@@ -31,9 +33,12 @@ _EXIT_BY_CODE: dict[str, int] = {
     "CONNECTION_REFUSED": EXIT_CONNECTION,
     "TRANSPORT_ERROR": EXIT_CONNECTION,
     "PRO_REQUIRED": EXIT_PRO,
-    # [15] Community Burp returns SERVICE_UNAVAILABLE for Pro-only scanner surfaces
-    # (crawl/audit/all).  Documented contract: exit 4 (EXIT_PRO).
-    "SERVICE_UNAVAILABLE": EXIT_PRO,
+    # [13] SERVICE_UNAVAILABLE is now a genuine infra/service failure (e.g. missing endpoints DB).
+    # Pro-only scanner failures (crawl/audit/crawl-and-audit on Community) are distinguished at
+    # the Kotlin source and travel as PRO_REQUIRED -> EXIT_PRO (4).  SERVICE_UNAVAILABLE ->
+    # EXIT_GENERIC (1) so that "check endpoints" with no DB gives a honest infra error, not a
+    # misleading "Pro required" message.
+    "SERVICE_UNAVAILABLE": EXIT_GENERIC,
     # NOTE: INVALID_REQUEST intentionally falls through to EXIT_GENERIC (1). A server 400 for a
     # not-found resource ("Scan not found", "History entry N not found") is a runtime failure,
     # not a malformed-invocation usage error (exit 2). Remapping it to exit 2 is a public exit-code
@@ -92,6 +97,15 @@ def run(
         except BurpError as e:
             typer.echo(f"error: {e}", err=True)
             exit_code = _EXIT_BY_CODE.get(e.code, EXIT_GENERIC)
+            raise typer.Exit(exit_code) from None
+        except ValidationError:
+            # [12] pydantic ValidationError is a subclass of ValueError, so without this guard it
+            # would fall into the (PosError, ValueError) handler below → exit 2 (usage) and leak the
+            # raw pydantic message (internal class names, pydantic.dev URLs).  A schema mismatch is a
+            # server-response problem, not a user-invocation error.  Emit a clean, class-name-free
+            # message and exit 1 (generic).
+            typer.echo("error: server returned an unexpected response shape", err=True)
+            exit_code = EXIT_GENERIC
             raise typer.Exit(exit_code) from None
         except (PosError, ValueError) as e:
             typer.echo(f"error: {e}", err=True)

@@ -69,4 +69,49 @@ class StatusPagesTest {
             assertTrue(bodyAsText().contains("page must be >= 0"))
         }
     }
+
+    // -------------------------------------------------------------------------
+    // [13] ProRequiredException -> PRO_REQUIRED; IllegalStateException stays SERVICE_UNAVAILABLE
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `ProRequiredException maps to PRO_REQUIRED code not SERVICE_UNAVAILABLE`() = testApplication {
+        // [13] RED→GREEN: scanner crawl/audit on Community throws ProRequiredException; the
+        // StatusPages handler must return code PRO_REQUIRED (not SERVICE_UNAVAILABLE) so the
+        // Python client exits 4 (EXIT_PRO), not 1 (EXIT_GENERIC).
+        application {
+            install(ContentNegotiation) { json() }
+            installErrorHandling { }
+            routing {
+                get("/pro-gate") { throw ProRequiredException("requires Burp Suite Professional") }
+            }
+        }
+        client.get("/pro-gate").apply {
+            assertEquals(HttpStatusCode.ServiceUnavailable, status)
+            val text = bodyAsText()
+            assertTrue(text.contains("PRO_REQUIRED"), "expected PRO_REQUIRED code in body: $text")
+            assertFalse(text.contains("SERVICE_UNAVAILABLE"), "must not contain SERVICE_UNAVAILABLE: $text")
+            // Internal detail must not leak to the client
+            assertFalse(text.contains("ProRequiredException"), "leaked exception class: $text")
+        }
+    }
+
+    @Test
+    fun `IllegalStateException still maps to SERVICE_UNAVAILABLE not PRO_REQUIRED`() = testApplication {
+        // [13] Regression lock: ordinary IllegalStateException (e.g. missing endpoints DB) must
+        // still produce SERVICE_UNAVAILABLE → Python client exits 1 (EXIT_GENERIC), not 4.
+        application {
+            install(ContentNegotiation) { json() }
+            installErrorHandling { }
+            routing {
+                get("/infra-fail") { throw IllegalStateException("endpoints DB not initialised") }
+            }
+        }
+        client.get("/infra-fail").apply {
+            assertEquals(HttpStatusCode.ServiceUnavailable, status)
+            val text = bodyAsText()
+            assertTrue(text.contains("SERVICE_UNAVAILABLE"), "expected SERVICE_UNAVAILABLE in body: $text")
+            assertFalse(text.contains("PRO_REQUIRED"), "must not contain PRO_REQUIRED: $text")
+        }
+    }
 }
