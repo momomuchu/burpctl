@@ -27,11 +27,7 @@ class DecoderService {
     fun decode(request: DecodeRequest): DecodeResponse {
         val encoding = request.encoding ?: detectEncoding(request.data)
         val result = when (encoding.lowercase()) {
-            "base64" -> try {
-                String(Base64.getDecoder().decode(request.data))
-            } catch (_: IllegalArgumentException) {
-                throw IllegalArgumentException("Invalid base64 input")
-            }
+            "base64" -> decodeBase64Flexible(request.data)
             "url" -> URLDecoder.decode(request.data, Charsets.UTF_8)
             "hex" -> {
                 require(request.data.length % 2 == 0) { "Hex input must have an even number of characters" }
@@ -85,6 +81,9 @@ class DecoderService {
     }
 
     private fun detectEncoding(data: String): String = when {
+        // base64url JSON, i.e. a JWT segment (starts with eyJ = base64url of '{"'). Decoded
+        // flexibly below. Low false-positive: plain words don't start with eyJ + base64url body.
+        data.startsWith("eyJ") && data.matches(Regex("^[A-Za-z0-9_-]+=*$")) -> "base64"
         data.matches(Regex("^[A-Za-z0-9+/]+=*$")) && data.length % 4 == 0 && data.length >= 4 -> "base64"
         data.contains("%[0-9A-Fa-f]{2}".toRegex()) -> "url"
         data.matches(Regex("^[0-9a-fA-F]+$")) && data.length % 2 == 0 && data.length >= 4 -> "hex"
@@ -99,5 +98,16 @@ class DecoderService {
         "sha384", "sha-384" -> "SHA-384"
         "sha512", "sha-512" -> "SHA-512"
         else -> algo
+    }
+
+    private fun decodeBase64Flexible(data: String): String {
+        // Accept standard AND URL-safe base64 (JWTs), with or without '=' padding.
+        val normalized = data.replace('-', '+').replace('_', '/')
+        val padded = normalized.padEnd((normalized.length + 3) / 4 * 4, '=')
+        return try {
+            String(Base64.getDecoder().decode(padded))
+        } catch (_: IllegalArgumentException) {
+            throw IllegalArgumentException("Invalid base64 input")
+        }
     }
 }

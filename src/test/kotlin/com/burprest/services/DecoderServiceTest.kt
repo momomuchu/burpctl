@@ -121,4 +121,17 @@ class DecoderServiceTest {
             service.decode(DecodeRequest(data = "abc", encoding = "hex"))
         }
     }
+
+    @Test
+    fun `decode base64 accepts url-safe chars and missing padding (JWT)`() {
+        // "Pz8_" is the URL-safe base64 of "???" (standard would be "Pz8/"), and unpadded.
+        assertEquals("???", service.decode(DecodeRequest(data = "Pz8_", encoding = "base64")).result)
+    }
+
+    @Test
+    fun `auto-detect decodes a JWT segment starting with eyJ`() {
+        val r = service.decode(DecodeRequest(data = "eyJzdWIiOiIxIn0", encoding = null))
+        assertEquals("base64", r.encoding)
+        assertTrue(r.result.contains("sub"))
+    }
 }
