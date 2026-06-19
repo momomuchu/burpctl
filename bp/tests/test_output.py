@@ -4,6 +4,66 @@ import pytest
 
 from bp.output import render
 
+# ---------------------------------------------------------------------------
+# [19] & [20] — _render_table field validation must match _render_json
+# ---------------------------------------------------------------------------
+
+
+def test_table_unknown_field_raises_value_error() -> None:
+    """[20] render(list, 'table', fields=['zzz']) must raise ValueError like json path."""
+    with pytest.raises(ValueError):
+        render([{"a": 1}], "table", fields=["zzz"])
+
+
+def test_table_field_absent_from_first_row_raises_value_error() -> None:
+    """[19] field 'b' absent from row 0 → ValueError, consistent with json behaviour."""
+    with pytest.raises(ValueError):
+        render([{"a": 1}, {"a": 2, "b": 3}], "table", fields=["b"])
+
+
+# ---------------------------------------------------------------------------
+# [21] — _essential must not render None as the literal string 'None'
+# ---------------------------------------------------------------------------
+
+
+def test_quiet_none_essential_value_is_empty_string() -> None:
+    """[21] render([{status: None}], 'quiet') → empty line, not 'None'."""
+    assert render([{"status": None}], "quiet") == ""
+
+
+def test_quiet_none_non_dict_item_renders_empty() -> None:
+    """[21] A None item in a quiet list renders '' not 'None'."""
+    assert render([None], "quiet") == ""
+
+
+# ---------------------------------------------------------------------------
+# [22] — _render_table column union across all rows (heterogeneous rows)
+# ---------------------------------------------------------------------------
+
+
+def test_table_heterogeneous_rows_include_all_columns() -> None:
+    """[22] Both 'a' and 'b' columns must appear when rows have disjoint keys."""
+    out = render([{"a": 1}, {"b": 2}], "table")
+    header = out.splitlines()[0]
+    assert "a" in header and "b" in header
+
+
+# ---------------------------------------------------------------------------
+# [23] — raw format on a list is a usage error; --fields with raw is also an error
+# ---------------------------------------------------------------------------
+
+
+def test_raw_list_raises_value_error() -> None:
+    """[23] render(list, 'raw') must raise ValueError — OUTPUT.md §1.3 R-RAW-SINGLE."""
+    with pytest.raises(ValueError, match="raw requires a single record"):
+        render([{"a": 1}], "raw")
+
+
+def test_raw_with_fields_raises_value_error() -> None:
+    """[23] render(obj, 'raw', fields=[...]) must raise ValueError."""
+    with pytest.raises(ValueError, match="--fields is not valid with --format raw"):
+        render({"a": 1}, "raw", fields=["a"])
+
 
 def test_json_dict_is_compact() -> None:
     assert render({"a": 1, "b": 2}, "json") == '{"a":1,"b":2}'

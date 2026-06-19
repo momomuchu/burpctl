@@ -10,8 +10,30 @@ from typer.testing import CliRunner
 
 from bp.cli import app
 from bp.cliutil import parse_header, parse_headers
+from bp.output import render
 
 runner = CliRunner()
+
+
+# ---------------------------------------------------------------------------
+# [18] — empty render output must produce zero bytes on stdout (no lone '\n')
+# ---------------------------------------------------------------------------
+
+
+def test_empty_render_produces_no_output(capsys: pytest.CaptureFixture[str]) -> None:
+    """[18] render([]) returns '' and echo must be suppressed so stdout is zero bytes.
+
+    This test invokes render() directly (the guard lives in cliutil.run before typer.echo).
+    The contract: if render returns '', no echo call happens → stdout stays empty.
+    We verify the render contract here; the cliutil guard is what makes it work end-to-end.
+    """
+    result = render([], "json")
+    assert result == "", f"render([]) should be '' but got {result!r}"
+
+
+def test_empty_table_render_produces_no_output() -> None:
+    """[18] render([], 'table') must also return '' so the empty-output guard triggers."""
+    assert render([], "table") == ""
 
 
 def test_invalid_format_is_usage_error_not_traceback() -> None:

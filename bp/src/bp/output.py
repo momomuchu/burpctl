@@ -16,6 +16,11 @@ _ESSENTIAL = ("status", "statusCode", "id", "attackId", "payload", "result", "va
 
 
 def render(data: Any, fmt: str = "table", *, fields: list[str] | None = None) -> str:
+    # [23] raw requires a single record (OUTPUT.md §1.3 R-RAW-SINGLE)
+    if fmt == "raw" and isinstance(data, list):
+        raise ValueError("raw requires a single record; add --index N or use --format json")
+    if fmt == "raw" and fields is not None:
+        raise ValueError("--fields is not valid with --format raw")
     if fmt == "json":
         return _render_json(data, fields)
     if fmt == "table":
@@ -63,7 +68,14 @@ def _render_table(data: Any, fields: list[str] | None) -> str:
         rows = [r for r in data if isinstance(r, dict)]
         if not rows:
             return ""
-        cols = fields or list(rows[0].keys())
+        # [19][20] validate fields against every row (match _render_json/_select behaviour)
+        if fields is not None:
+            for row in rows:
+                _select(row, fields)  # raises ValueError on unknown/absent field
+            cols = fields
+        else:
+            # [22] union of keys across all rows (first-appearance order)
+            cols = list(dict.fromkeys(k for r in rows for k in r))
         widths = {c: max(len(c), *(len(_cell(r.get(c))) for r in rows)) for c in cols}
         header = "  ".join(c.ljust(widths[c]) for c in cols)
         body = "\n".join("  ".join(_cell(r.get(c)).ljust(widths[c]) for c in cols) for r in rows)
@@ -82,11 +94,15 @@ def _render_quiet(data: Any) -> str:
 
 
 def _essential(record: Any) -> str:
+    if record is None:
+        return ""
     if isinstance(record, dict):
         for key in _ESSENTIAL:
             if key in record:
-                return str(record[key])
-        return str(next(iter(record.values()), ""))
+                v = record[key]
+                return "" if v is None else str(v)
+        first = next(iter(record.values()), None)
+        return "" if first is None else str(first)
     return str(record)
 
 

@@ -25,6 +25,7 @@ EXIT_GENERIC = 1
 EXIT_USAGE = 2
 EXIT_CONNECTION = 3
 EXIT_PRO = 4
+EXIT_VULN = 5  # security-scan finding(s) present (nmap/nuclei convention) — see ADR-0010
 
 _EXIT_BY_CODE: dict[str, int] = {
     "CONNECTION_REFUSED": EXIT_CONNECTION,
@@ -74,7 +75,9 @@ def run(ctx: typer.Context, fn: Callable[[BurpClient], Any]) -> None:
             ledger.close()
     if conf.redact:
         out = redact(out)
-    typer.echo(out)
+    # [18] suppress lone '\n' for empty result sets (OUTPUT.md §4.4: empty stdout + exit 0)
+    if out:
+        typer.echo(out)
 
 
 def parse_header(raw: str, flag: str = "--set-header") -> tuple[str, str]:
