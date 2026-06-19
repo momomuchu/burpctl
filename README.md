@@ -73,6 +73,13 @@ bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=ssrf.txt \
 cd bp && uv run pytest -q && uv run mypy && uv run ruff check   # bp: 430 tests, typed, lint
 ```
 
+## Contributing
+
+Issues and PRs welcome — `burp-wrapper` is spec-driven and test-first. Start with
+**[CONTRIBUTING.md](CONTRIBUTING.md)** (disciplines, dev setup, the Definition of Done), check the
+**[ROADMAP](ROADMAP.md)** for what's planned, and report vulnerabilities privately per
+**[SECURITY.md](SECURITY.md)**.
+
 ## License
 
 MIT

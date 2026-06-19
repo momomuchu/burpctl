@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "🔒 Report a security vulnerability"
+    url: https://github.com/momomuchu/burp-wrapper/security/advisories/new
+    about: "Do not file security issues publicly — use a private advisory (see SECURITY.md)."
+  - name: "🗺️ Roadmap"
+    url: https://github.com/momomuchu/burp-wrapper/blob/main/ROADMAP.md
+    about: "Check what's already planned before requesting a feature."
+  - name: "📖 Docs & spec"
+    url: https://github.com/momomuchu/burp-wrapper/tree/main/docs
+    about: "SPEC, CLI grammar, OUTPUT contract, and ADRs."

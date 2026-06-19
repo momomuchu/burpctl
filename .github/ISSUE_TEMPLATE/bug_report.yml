@@ -1,0 +1,61 @@
+name: "🐞 Bug report"
+description: "A defect in the bp CLI or the Burp REST extension"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! Please don't include secrets (tokens, cookies, real target hosts).
+        For a **security vulnerability**, use [SECURITY.md](https://github.com/momomuchu/burp-wrapper/blob/main/SECURITY.md) instead — not a public issue.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - "bp (Python CLI)"
+        - "burp-rest-extension (Kotlin)"
+        - "both / not sure"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "Output of `bp --version`, or the commit / release tag."
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: burp
+    attributes:
+      label: Burp edition
+      options: ["Professional", "Community", "n/a"]
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: "The exact command(s) and what you did. Redact any secrets."
+      placeholder: |
+        1. bp ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+      placeholder: |
+        Expected: ...
+        Actual:   ... (include exit code and any stderr, with secrets redacted)
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: "OS, Python version, JDK version (if extension-side)."
+      placeholder: "macOS 14 · Python 3.11 · JDK 17"
+    validations:
+      required: false

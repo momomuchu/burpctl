@@ -1,0 +1,43 @@
+name: "✨ Feature request"
+description: "Propose a new bp command, flag, or extension capability"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! Please check [ROADMAP.md](https://github.com/momomuchu/burp-wrapper/blob/main/ROADMAP.md) first — your idea may already be planned.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: "What are you trying to do that bp can't (or makes hard) today?"
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: "The command/flag/behavior you'd like. A sample invocation helps."
+      placeholder: "e.g. bp fuzz <id> --param id --payloads @ids.txt"
+    validations:
+      required: true
+  - type: dropdown
+    id: side
+    attributes:
+      label: Which side?
+      description: "A new endpoint needs a Kotlin route + docs/SPEC.md entry before the CLI can use it."
+      options:
+        - "bp CLI only (backend route already exists)"
+        - "needs a new/changed extension endpoint"
+        - "not sure"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight
+      options:
+        - label: "I checked ROADMAP.md and existing issues for duplicates."
+          required: true
+        - label: "This is for authorized/ethical security testing."
+          required: true
