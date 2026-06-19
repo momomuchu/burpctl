@@ -74,3 +74,32 @@ class ProxyEntry(_Wire):
 class ProxyHistory(_Wire):
     total: int
     entries: list[ProxyEntry] = []
+
+
+class HistoryEntryResponse(_Wire):
+    """Mirrors the Kotlin HistoryEntryResponse: flat shape (no nested request/response).
+
+    Fields taken verbatim from HistoryModels.kt camelCase identifiers.
+    """
+
+    id: int
+    source: str
+    method: str
+    url: str
+    host: str
+    reqHeaders: list[HttpHeader] = []
+    reqBody: str | None = None
+    statusCode: int | None = None
+    resHeaders: list[HttpHeader] | None = None
+    resBody: str | None = None
+    durationMs: int
+    timestamp: str
+
+
+class HistoryPageResponse(_Wire):
+    """Mirrors the Kotlin HistoryPageResponse page-wrapper shape."""
+
+    entries: list[HistoryEntryResponse] = []
+    total: int
+    page: int
+    pageSize: int
