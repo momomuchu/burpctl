@@ -170,7 +170,9 @@ def check_idor(
         help="Extra header as 'Name: Value' (repeatable).",
     ),
 ) -> None:
-    """Cross-account IDOR probe (>5 % delta-length or status 2xx).
+    """Cross-account IDOR probe: flags a target when its full response body differs from the
+    own-resource baseline (content-primary, with an empty-vs-non-empty guard) AND both return 2xx
+    and the baseline itself succeeded. Catches same-length, different-content records.
 
     Sends IdorRequest { endpoint, param, ownValues, targetValues, method, body?,
     extraHeaders? } to POST /scan/idor.

@@ -470,7 +470,7 @@ blocking.
 | Method | Path | Pro | Request model (Kotlin types) | Hunter usage |
 |---|---|---|---|---|
 | POST | `/scan/auth-bypass` | C | `AuthBypassRequest` { endpoints:List\<String\> (required), baseUrl:String (required), method:String="GET" } | triple-probe (withAuth/withoutAuth/cookieOnly) → unauthenticated access. |
-| POST | `/scan/idor` | C | `IdorRequest` { endpoint, param, ownValues:List\<String\>, targetValues:List\<String\> (all required), method="GET", body:String?, extraHeaders:Map?\} | cross-account access (>5% length delta, 2xx status). |
+| POST | `/scan/idor` | C | `IdorRequest` { endpoint, param, ownValues:List\<String\>, targetValues:List\<String\> (all required), method="GET", body:String?, extraHeaders:Map?\} | cross-account access: target full-body differs from the own baseline (content equality, empty-vs-non-empty guard) with both 2xx and a 2xx baseline. |
 | POST | `/scan/headers` | C | `HeadersBypassRequest` { url:String (required), method="GET", body:String? } | 16 IP-spoof/URL-override headers → 403 bypass. |
 | POST | `/scan/cors` | C | `CorsRequest` { url:String (required), method="GET" } | 8 crafted origins → exploitable credentialed CORS. |
 | POST | `/scan/endpoints` | C **+DB** | `EndpointsScanRequest` { host:String (required), tests:List\<String\>=["auth-bypass","method-switch"], limit:Int=100 } | bulk scan of proxy history by host. |
