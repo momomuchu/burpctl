@@ -202,6 +202,12 @@ class SecurityScanService(
     fun cors(request: CorsRequest): CorsResponse {
         val host = try { URI(request.url).host ?: "unknown" } catch (_: Exception) { "unknown" }
 
+        // Probe only with genuinely attacker-controlled origins.
+        // "https://sub.<host>" is intentionally excluded: it is the target's own legitimate
+        // subdomain, not an attacker-controlled origin. A server with a correct wildcard-
+        // subdomain CORS policy (reflecting *.corp.com with credentials) echoes it back,
+        // which previously caused a false positive. Exploiting a reflected subdomain would
+        // require an independent subdomain-takeover — a separate finding class.
         val origins = listOf(
             "https://evil.com",
             "null",
@@ -210,7 +216,6 @@ class SecurityScanService(
             "https://${host}evil.com",
             "https://evil.com%40$host",
             "https://$host%60.evil.com",
-            "https://sub.$host",
         )
 
         val results = origins.map { origin ->

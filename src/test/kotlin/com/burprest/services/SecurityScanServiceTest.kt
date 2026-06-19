@@ -996,6 +996,99 @@ class SecurityScanServiceTest {
     }
 
     // ---------------------------------------------------------------------------
+    // [03] CORS — own-subdomain reflection must NOT be flagged vulnerable (false-positive guard)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * RED->GREEN [03]: a server that echoes back the target's OWN subdomain origin
+     * (https://sub.corp.com) with ACAC=true must NOT be flagged vulnerable.
+     *
+     * Rationale: https://sub.<host> is the target's own legitimate subdomain, NOT an
+     * attacker-controlled origin.  A correct wildcard-subdomain CORS policy (reflecting
+     * any *.corp.com with credentials) is expected behaviour.  Exploiting it would
+     * require an independent subdomain-takeover — a separate, distinct class of finding.
+     * The CORS detector's probe list must contain only genuinely attacker-controlled
+     * origins so that a reflected-subdomain response cannot produce a false positive.
+     *
+     * Scenario:
+     *   - Target URL: https://corp.com/api/data  (host = "corp.com")
+     *   - Server policy: reflect any *.corp.com origin with ACAC=true.
+     *   - Only the https://sub.corp.com probe would be reflected; all other probes
+     *     (evil.com, null, etc.) are rejected (ACAO absent / not reflected).
+     *
+     * Before fix: "https://sub.corp.com" is in the probe list -> reflected -> vulnerable=true (FALSE POSITIVE).
+     * After fix:  "https://sub.corp.com" is removed from probe list -> no reflection match -> vulnerable=false.
+     */
+    @Test
+    fun `cors - server reflecting own subdomain origin with credentials is NOT vulnerable`() {
+        every { sessionService.send(any()) } answers {
+            val req = firstArg<AuthenticatedRequest>()
+            val origin = req.extraHeaders?.get("Origin") ?: return@answers AuthenticatedResponse(
+                statusCode = 200, headers = emptyList(), body = "ok", durationMs = 0,
+            )
+            // Server reflects ONLY its own subdomain (https://sub.corp.com).
+            // All other origins (evil.com, null, scheme tricks) are rejected.
+            val isOwnSubdomain = origin == "https://sub.corp.com"
+            val headers = if (isOwnSubdomain) {
+                listOf(
+                    HttpHeader("Access-Control-Allow-Origin", origin),
+                    HttpHeader("Access-Control-Allow-Credentials", "true"),
+                )
+            } else {
+                // Not reflected — no CORS headers for attacker-controlled origins
+                emptyList()
+            }
+            AuthenticatedResponse(statusCode = 200, headers = headers, body = "ok", durationMs = 0)
+        }
+
+        val resp = svc.cors(CorsRequest(url = "https://corp.com/api/data", method = "GET"))
+
+        // The own-subdomain origin must not appear in the probe list at all; if it does
+        // it would produce vulnerable=true here, which is the false positive under test.
+        assertTrue(
+            resp.results.none { it.vulnerable },
+            "Server reflecting its own subdomain (https://sub.corp.com) with credentials " +
+                "must NOT be flagged vulnerable — subdomain is not an attacker-controlled origin; " +
+                "got vulnerable probes: ${resp.results.filter { it.vulnerable }.map { it.origin }}"
+        )
+        assertEquals(0, resp.vulnerableCount)
+    }
+
+    /**
+     * RED->GREEN [03] regression: a server reflecting https://evil.com (genuine attacker-controlled
+     * origin) with ACAC=true IS still flagged vulnerable after the subdomain is removed.
+     */
+    @Test
+    fun `cors - server reflecting evil dot com origin with credentials IS vulnerable`() {
+        every { sessionService.send(any()) } answers {
+            val req = firstArg<AuthenticatedRequest>()
+            val origin = req.extraHeaders?.get("Origin") ?: return@answers AuthenticatedResponse(
+                statusCode = 200, headers = emptyList(), body = "ok", durationMs = 0,
+            )
+            // Server reflects ONLY https://evil.com — a genuine attacker-controlled origin
+            val isEvilOrigin = origin == "https://evil.com"
+            val headers = if (isEvilOrigin) {
+                listOf(
+                    HttpHeader("Access-Control-Allow-Origin", origin),
+                    HttpHeader("Access-Control-Allow-Credentials", "true"),
+                )
+            } else {
+                emptyList()
+            }
+            AuthenticatedResponse(statusCode = 200, headers = headers, body = "ok", durationMs = 0)
+        }
+
+        val resp = svc.cors(CorsRequest(url = "https://corp.com/api/data", method = "GET"))
+
+        assertTrue(
+            resp.results.any { it.vulnerable },
+            "Server reflecting https://evil.com (attacker-controlled) with ACAC=true " +
+                "must still be flagged vulnerable; got: ${resp.results.map { it.origin to it.vulnerable }}"
+        )
+        assertTrue(resp.vulnerableCount > 0)
+    }
+
+    // ---------------------------------------------------------------------------
     // [03] probeWithAuthRaw — must not propagate exceptions (sentinel on failure)
     // ---------------------------------------------------------------------------
 
