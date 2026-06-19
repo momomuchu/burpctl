@@ -790,4 +790,160 @@ class SecurityScanServiceTest {
         val resp = svc.idor(IdorRequest("http://t?id={id}", "id", listOf("1", "2", "3"), listOf("99")))
         assertEquals(listOf("2", "3"), resp.ignoredOwnValues)
     }
+
+    // ---------------------------------------------------------------------------
+    // [02] substituteParam — case-insensitive query-param match (IDOR false-negative guard)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * RED->[02]: caller passes --param ID (uppercase) but URL has ?id=1 (lowercase).
+     * Old code: Regex is case-sensitive, misses ?id=, falls to append branch -> ?id=1&ID=3.
+     * Server ignores duplicate-cased param, serves original resource, IDOR silently missed.
+     * Fix: add RegexOption.IGNORE_CASE so ?id= is REPLACED, not appended.
+     * Expected: the result contains exactly one occurrence of the param assignment with value 3,
+     * and does NOT contain a second ampersand-separated assignment for the same param.
+     */
+    @Test
+    fun `substituteParam replaces existing query param case-insensitively when caller param casing differs from URL`() {
+        // URL has ?id= (lower), caller passes ID (upper)
+        val result = svc.substituteParam("http://t/u?id=1", "ID", "3")
+        // Must NOT append &ID=3 — that would mean two assignments for the same logical param
+        assertFalse(
+            result.contains("id=1"),
+            "Old lowercase assignment must be replaced, not kept: got $result"
+        )
+        assertFalse(
+            result.contains("&ID=3"),
+            "No second ampersand-appended assignment must exist: got $result"
+        )
+        // The value 3 must appear exactly once as a param assignment
+        assertTrue(
+            result.contains("=3"),
+            "New value must appear in the result: got $result"
+        )
+        // The URL's ORIGINAL param-name casing (id) must be preserved — replacing it with the
+        // caller's casing (ID) would still miss a case-sensitive server that only reads ?id=.
+        assertTrue(
+            result.contains("id=3"),
+            "Matched URL param name (id) must be preserved, not rewritten to caller casing: got $result"
+        )
+    }
+
+    @Test
+    fun `substituteParam exact-case replacement still works after adding IGNORE_CASE`() {
+        // Regression lock: existing same-case replacement must not be broken
+        assertEquals(
+            "http://t/u?id=3&x=1",
+            svc.substituteParam("http://t/u?id=1&x=1", "id", "3")
+        )
+    }
+
+    // ---------------------------------------------------------------------------
+    // [04] contentSimilar — full-body equality: bodies identical in first 200 chars
+    //      and similar length but different tails must NOT be similar
+    // ---------------------------------------------------------------------------
+
+    /**
+     * RED->[04]: two bodies with identical first 200 chars and within-80%-length-ratio
+     * but diverging after byte 200.
+     * Old code: preview match + length ratio >= 0.80 -> contentSimilar=true -> false positive.
+     * Fix: require FULL-body equality; 200-char/length checks are only fast-negative pre-checks.
+     * Expected: contentSimilar=false -> authBypass not flagged vulnerable.
+     */
+    @Test
+    fun `authBypass - bodies equal in first 200 chars and similar length but different tails are NOT similar`() {
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+
+        val sharedPrefix = "A".repeat(200)
+        val authBody   = sharedPrefix + "secret-field=salary=150000;role=admin"
+        val unauthBody = sharedPrefix + "public-stub=no-content;role=guest---"   // same length, different tail
+
+        // Ensure same length so the old 80%-ratio check would have passed
+        val unauthBodyPadded = unauthBody.padEnd(authBody.length, '-')
+
+        every { spy.probeWithAuthRaw(any(), any()) } returns
+            SecurityScanService.RawProbe(200, authBody, 0)
+        every { spy.probeNoAuthRaw(any(), any()) } returns
+            SecurityScanService.RawProbe(200, unauthBodyPadded, 0)
+
+        val resp = spy.authBypass(
+            AuthBypassRequest(
+                endpoints = listOf("/api/sensitive"),
+                baseUrl = "http://t",
+                method = "GET",
+            )
+        )
+
+        assertFalse(
+            resp.results.first().vulnerable,
+            "Bodies share 200-char prefix and similar length but differ after byte 200 " +
+                "-> contentSimilar must be false -> NOT vulnerable; got: ${resp.results.first()}"
+        )
+        assertEquals(0, resp.vulnerableCount)
+    }
+
+    @Test
+    fun `authBypass - fully identical bodies including tail ARE similar and vulnerable`() {
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+        val body = "A".repeat(200) + "role=admin;salary=150000"
+
+        every { spy.probeWithAuthRaw(any(), any()) } returns
+            SecurityScanService.RawProbe(200, body, 0)
+        every { spy.probeNoAuthRaw(any(), any()) } returns
+            SecurityScanService.RawProbe(200, body, 0)
+
+        val resp = spy.authBypass(
+            AuthBypassRequest(
+                endpoints = listOf("/api/sensitive"),
+                baseUrl = "http://t",
+                method = "GET",
+            )
+        )
+
+        assertTrue(
+            resp.results.first().vulnerable,
+            "Fully identical bodies -> contentSimilar=true -> vulnerable=true"
+        )
+        assertEquals(1, resp.vulnerableCount)
+    }
+
+    // ---------------------------------------------------------------------------
+    // [03] probeWithAuthRaw — must not propagate exceptions (sentinel on failure)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * RED->[03]: sessionService.send throws an exception inside probeWithAuthRaw.
+     * Old code: no try/catch -> exception propagates -> whole scan aborts with opaque error.
+     * Fix: wrap in same try/catch as probeNoAuthRaw, return RawProbe(status=0, bodyText="", durationMs=0).
+     * Expected: probeWithAuthRaw returns the sentinel instead of throwing.
+     */
+    @Test
+    fun `probeWithAuthRaw returns sentinel RawProbe when sessionService send throws`() {
+        val throwingSvc = mockk<SessionService>(relaxed = true)
+        every { throwingSvc.send(any()) } throws RuntimeException("connection refused")
+
+        val localSvc = SecurityScanService(api, throwingSvc, historyDao)
+
+        // Must not throw; must return the zero sentinel
+        val result = localSvc.probeWithAuthRaw("http://t/api/resource", "GET")
+
+        assertEquals(0, result.status, "Sentinel status must be 0 on exception: got ${result.status}")
+        assertEquals("", result.bodyText, "Sentinel bodyText must be empty on exception: got '${result.bodyText}'")
+        assertEquals(0L, result.durationMs, "Sentinel durationMs must be 0 on exception: got ${result.durationMs}")
+    }
+
+    @Test
+    fun `probeWithAuthRaw returns real response when sessionService send succeeds`() {
+        every { sessionService.send(any()) } returns AuthenticatedResponse(
+            statusCode = 200,
+            headers = emptyList(),
+            body = "real-body",
+            durationMs = 42,
+        )
+
+        val result = svc.probeWithAuthRaw("http://t/api/resource", "GET")
+
+        assertEquals(200, result.status)
+        assertEquals("real-body", result.bodyText)
+    }
 }

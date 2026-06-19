@@ -295,15 +295,24 @@ class SecurityScanService(
     /**
      * Probe with full session auth and return a [RawProbe] that includes the response body.
      * Internal and open so tests can override via spyk without hitting the Montoya static factory.
+     *
+     * Any exception (malformed URL, transient network failure, session error) is caught and
+     * returned as the sentinel RawProbe(status=0, bodyText="", durationMs=0), matching the
+     * behaviour of [probeNoAuthRaw]. This prevents one bad endpoint from aborting the whole
+     * scan with an opaque error while maintaining symmetry between the two probe paths.
      */
     internal open fun probeWithAuthRaw(url: String, method: String): RawProbe {
-        val start = System.currentTimeMillis()
-        val resp = sessionService.send(AuthenticatedRequest(method = method, url = url))
-        return RawProbe(
-            status = resp.statusCode,
-            bodyText = resp.body ?: "",
-            durationMs = System.currentTimeMillis() - start,
-        )
+        return try {
+            val start = System.currentTimeMillis()
+            val resp = sessionService.send(AuthenticatedRequest(method = method, url = url))
+            RawProbe(
+                status = resp.statusCode,
+                bodyText = resp.body ?: "",
+                durationMs = System.currentTimeMillis() - start,
+            )
+        } catch (e: Exception) {
+            RawProbe(status = 0, bodyText = "", durationMs = 0)
+        }
     }
 
     /**
@@ -352,28 +361,39 @@ class SecurityScanService(
     }
 
     /**
-     * Returns true when two response bodies are substantially similar — i.e. the unauthenticated
-     * probe returned the same protected content as the authenticated one.
+     * Returns true when two response bodies are identical — i.e. the unauthenticated probe
+     * returned the exact same protected content as the authenticated one.
      *
-     * Similarity is determined by:
-     *  1. Exact equality of the first 200 chars (body preview) — primary signal.
-     *  2. Length within 10% as a secondary tiebreaker when bodies are short and previews are equal.
+     * The 200-char preview and 80%-length-ratio checks are kept only as fast negative
+     * pre-checks: if the previews already differ, or the lengths are wildly different, we
+     * return false immediately without comparing the full strings. Otherwise we require
+     * full-body string equality as the primary (and only positive) signal.
      *
-     * A short login/redirect page that shares no content with the auth response will score false.
+     * Rationale for changing from preview+ratio to full-body equality:
+     *  Two bodies sharing an identical JSON envelope prefix (first 200 chars) and a similar
+     *  total length but diverging in the tail (e.g. different role/SSN/salary fields) would
+     *  previously be judged "similar" — a false positive in auth-bypass and a false negative
+     *  in IDOR. Full-body equality eliminates that class of error.
      */
     private fun contentSimilar(authBody: String, unauthBody: String): Boolean {
         // Both empty: inconclusive — no protected content is present to confirm a bypass.
-        // Returning true here would flag every public endpoint that returns an empty 200 body
+        // Returning true here would flag every public endpoint returning an empty 200 body
         // as a vulnerability (false positive). Return false so callers skip it.
         if (authBody.isEmpty() && unauthBody.isEmpty()) return false
         if (authBody.isEmpty() || unauthBody.isEmpty()) return false
+
+        // Fast negative pre-checks (avoid full-string comparison when clearly different):
+        // 1. First-200-char preview must match.
         val authPreview = authBody.take(200)
         val unauthPreview = unauthBody.take(200)
         if (authPreview != unauthPreview) return false
-        // Previews match; check overall length ratio for long bodies that share a short prefix
+        // 2. Length ratio must be at least 80% (catches wildly different tail lengths early).
         val longer = maxOf(authBody.length, unauthBody.length).toDouble()
         val shorter = minOf(authBody.length, unauthBody.length).toDouble()
-        return shorter / longer >= 0.80
+        if (shorter / longer < 0.80) return false
+
+        // Primary signal: full-body string equality.
+        return authBody == unauthBody
     }
 
     internal fun substituteParam(urlTemplate: String, param: String, value: String): String {
@@ -381,10 +401,14 @@ class SecurityScanService(
         if (urlTemplate.contains("{$param}")) {
             return urlTemplate.replace("{$param}", value)
         }
-        // 2) existing ?param=old / &param=old -> replace the value
-        val queryParamRegex = Regex("([?&])${Regex.escape(param)}=([^&#]*)")
+        // 2) existing ?param=old / &param=old -> replace the value (case-insensitive so
+        //    --param ID matches ?id= in the URL and replaces rather than appends, which would
+        //    produce a duplicate-cased param the server ignores, silently missing the IDOR).
+        //    PRESERVE the URL's original param-name casing (group 2) — replacing it with the
+        //    caller's casing would still miss a case-sensitive server that only reads ?id=.
+        val queryParamRegex = Regex("([?&])(${Regex.escape(param)})=([^&#]*)", RegexOption.IGNORE_CASE)
         if (queryParamRegex.containsMatchIn(urlTemplate)) {
-            return queryParamRegex.replace(urlTemplate) { "${it.groupValues[1]}$param=$value" }
+            return queryParamRegex.replace(urlTemplate) { "${it.groupValues[1]}${it.groupValues[2]}=$value" }
         }
         // 3) param absent: APPEND it. Otherwise the IDOR check would test the SAME url for the
         // baseline and every target value (a silent false negative on a real IDOR). Preserve any
