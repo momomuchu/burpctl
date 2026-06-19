@@ -47,14 +47,28 @@ class HttpHeader(_Wire):
     value: str
 
 
+class HttpRequestData(_Wire):
+    method: str
+    url: str
+    headers: list[HttpHeader] = []
+    body: str | None = None
+
+
+class HttpResponseData(_Wire):
+    statusCode: int
+    headers: list[HttpHeader] = []
+    body: str | None = None
+
+
 class ProxyEntry(_Wire):
-    id: str | int | None = None
-    method: str | None = None
-    url: str | None = None
-    host: str | None = None
-    statusCode: int | None = None
-    length: int | None = None
-    mimeType: str | None = None
+    """Mirrors the Kotlin ProxyEntry: request/response are NESTED, not flat (SPEC §8)."""
+
+    id: int | None = None
+    request: HttpRequestData | None = None
+    response: HttpResponseData | None = None
+    timestamp: str | None = None
+    listenerInterface: str | None = None
+    clientIp: str | None = None
 
 
 class ProxyHistory(_Wire):

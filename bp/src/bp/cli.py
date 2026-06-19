@@ -16,6 +16,7 @@ import typer
 from bp import __version__
 from bp.client import DEFAULT_BASE_URL, BurpClient
 from bp.cliutil import EXIT_USAGE, State, run
+from bp.models import ProxyEntry
 from bp.output import FORMATS
 from bp.runner import run_fuzz
 
@@ -64,6 +65,26 @@ def version(ctx: typer.Context) -> None:
     run(ctx, lambda c: c.version().model_dump())
 
 
+def _proxy_rows(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Flatten the server's nested ProxyEntry (request/response) into display rows.
+
+    The extension returns ``{id, request:{method,url,...}, response:{statusCode,...}}``; for the
+    list view we project the essentials so the table shows id/method/url/status, not raw JSON blobs.
+    """
+    rows: list[dict[str, Any]] = []
+    for e in entries:
+        pe = ProxyEntry.model_validate(e)
+        rows.append(
+            {
+                "id": pe.id,
+                "method": pe.request.method if pe.request else None,
+                "url": pe.request.url if pe.request else None,
+                "status": pe.response.statusCode if pe.response else None,
+            }
+        )
+    return rows
+
+
 @app.command()
 def proxy(
     ctx: typer.Context,
@@ -75,7 +96,7 @@ def proxy(
     params: dict[str, Any] = {
         k: v for k, v in (("host", host), ("limit", limit), ("offset", offset)) if v is not None
     }
-    run(ctx, lambda c: c.get("/proxy/history", **params).get("entries", []))
+    run(ctx, lambda c: _proxy_rows(c.get("/proxy/history", **params).get("entries", [])))
 
 
 @app.command()
