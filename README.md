@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="docs/media/logo.png" alt="burpctl (bp) — a CLI for Burp Suite" width="128" height="128">
+</div>
+
 # bp
 
 [![Release](https://img.shields.io/github/v/release/momomuchu/burpctl?sort=semver&color=blue)](https://github.com/momomuchu/burpctl/releases)
@@ -8,6 +12,11 @@
 
 > **Drive Burp Suite from the command line.** Mark any byte range, fuzz it fast, and get clean
 > parsable output — *without leaving Burp's session, scope, and history behind.*
+>
+> A scriptable **Burp Suite CLI** and **Intruder alternative** for bug-bounty hunters and pentesters.
+
+<!-- DEMO: once recorded (see docs/media/README.md), drop the GIF here:
+     ![burpctl demo — proxy to multi-position fuzz to anomaly, in one command](docs/media/demo.gif) -->
 
 The reason to reach for `bp` over `ffuf` or Turbo Intruder: those are fast, but they run *outside*
 Burp — you lose your session, cookies, upstream config, and scope. `bp` builds the attack
@@ -35,6 +44,22 @@ It's two pieces:
 - 🧰 **Works on Community too** — only `collaborator` and `scan` start need Pro (they exit `4` with a clear message); everything else runs on Community.
 - 🔩 **Scriptable & automation-friendly** — `--format json` emits NDJSON (one record per line); stable exit codes; no interactive prompts. That also makes it easy to drive from scripts or AI agents.
 - ✅ **Spec-driven & tested** — 433 Python tests + a Kotlin suite, `mypy --strict` + `ruff` clean, CI on every push.
+
+## How it compares
+
+Where `bp` fits next to the tools you already reach for when Burp's Intruder is too slow or too clicky:
+
+| | Runs **inside** Burp (session/scope/cookies) | All 4 attack types | Fast on **Community** | Shell-scriptable CLI |
+|---|:---:|:---:|:---:|:---:|
+| **`bp`** | ✅ | ✅ sniper · ram · pitchfork · cluster-bomb | ✅ (fires via Repeater) | ✅ |
+| Burp Intruder (Pro) | ✅ | ✅ | ✅ | ❌ GUI only |
+| Burp Intruder (Community) | ✅ | ✅ | ❌ deliberately throttled | ❌ GUI only |
+| [Turbo Intruder](https://github.com/PortSwigger/turbo-intruder) | ✅ (extension) | ⚠️ Python-scripted | ✅ very fast | ⚠️ in-Burp scripting |
+| [ffuf](https://github.com/ffuf/ffuf) | ❌ outside Burp | ✅ | ✅ | ✅ |
+
+Honest take: `ffuf` and Turbo Intruder win on raw throughput. `bp` wins when you want a **one-line,
+scriptable command that stays inside your authenticated Burp session and scope** — and full-speed
+multi-position fuzzing on **Community** without the GUI throttle.
 
 ## Quickstart
 
@@ -89,6 +114,32 @@ response is `{success, data, error}`.
 ./gradlew test                                              # Kotlin extension
 cd bp && uv run pytest -q && uv run mypy --strict src && uv run ruff check src tests   # bp: 433 tests, typed, linted
 ```
+
+## FAQ
+
+**Does it work on Burp Suite Community?**
+Yes. Every command runs on Community except `collaborator` and starting an active `scan` — those need
+Pro and exit `4` with a clear message. Fuzzing in particular is *not* subject to Community's Intruder
+throttle, because `bp` fires each request through Burp's Repeater.
+
+**How is this different from ffuf?**
+`ffuf` is a great standalone fuzzer, but it runs *outside* Burp — it doesn't know your Burp session,
+cookies, upstream/proxy config, or scope. `bp` drives Burp itself, so your fuzzing inherits all of
+that. Use `ffuf` for raw speed on unauthenticated endpoints; use `bp` when you're mid-hunt inside an
+authenticated Burp session.
+
+**Do I need Burp Suite Professional?**
+No, for almost everything. Only Collaborator (out-of-band payloads) and starting an active scan
+require Pro. Proxy history, Repeater, fuzzing, scope, decoder, sitemap, and the IDOR/CORS/auth-bypass
+checks all work on Community.
+
+**Can I drive it from a script or an AI agent?**
+Yes — `--format json` emits NDJSON (one record per line), exit codes are stable and documented, and
+there are no interactive prompts. That makes it easy to wire into CI, shell pipelines, or an agent.
+
+**Is `bp` the same as `burpctl`?**
+Yes. `bp` is the primary command (short, one token); `burpctl` is an installed alias — identical
+behaviour.
 
 ## Contributing
 

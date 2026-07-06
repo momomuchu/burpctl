@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <!-- GitHub social preview (1280x640). Export to PNG and upload in
+       Settings -> Social preview. Edit freely; keep it 1280x640. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1117"/>
+      <stop offset="1" stop-color="#161b22"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1280" height="8" fill="#ff6633"/>
+
+  <!-- wordmark -->
+  <text x="80" y="180" font-size="104" font-weight="700" fill="#e6edf3">bp</text>
+  <text x="232" y="180" font-size="40" fill="#7d8590">/ burpctl</text>
+
+  <!-- tagline -->
+  <text x="82" y="248" font-size="40" font-weight="600" fill="#ff9166">Drive Burp Suite from the command line.</text>
+
+  <!-- sub -->
+  <text x="82" y="306" font-size="27" fill="#adbac7">Mark any byte range. Multi-position fuzzing through Burp's Repeater —</text>
+  <text x="82" y="344" font-size="27" fill="#adbac7">unthrottled on Community. Scanner · scope · decoder · IDOR/CORS checks.</text>
+
+  <!-- terminal card -->
+  <rect x="80" y="392" width="1120" height="176" rx="12" fill="#010409" stroke="#30363d" stroke-width="1.5"/>
+  <circle cx="108" cy="420" r="6" fill="#ff5f56"/>
+  <circle cx="130" cy="420" r="6" fill="#ffbd2e"/>
+  <circle cx="152" cy="420" r="6" fill="#27c93f"/>
+  <text x="104" y="470" font-size="24" fill="#7ee787">$ <tspan fill="#e6edf3">bp fuzz 42 --pos 'header:X-Forwarded-For' \</tspan></text>
+  <text x="140" y="504" font-size="24" fill="#e6edf3">--payloads X-Forwarded-For=ssrf.txt --type cluster-bomb \</text>
+  <text x="140" y="538" font-size="24" fill="#e6edf3">--anomalous-only <tspan fill="#7d8590"># one command. your session. your scope.</tspan></text>
+
+  <!-- badges strip -->
+  <text x="1200" y="128" text-anchor="end" font-size="22" fill="#7d8590">MIT · Python 3.11+ · mypy --strict · 433 tests</text>
+  <text x="1200" y="600" text-anchor="end" font-size="22" fill="#7d8590">github.com/momomuchu/burpctl</text>
+</svg>
