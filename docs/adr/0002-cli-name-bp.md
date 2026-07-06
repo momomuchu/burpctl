@@ -1,10 +1,11 @@
 # ADR-0002 — CLI name = `bp`, alias `burpctl`
 
-**Status:** superseded by [ADR-0011](0011-rebrand-burpctl.md) — 2026-07-06 (original: accepted 2026-06-16)
+**Status:** accepted 2026-06-16 · briefly superseded by [ADR-0011](0011-rebrand-burpctl.md), then
+reinstated by [ADR-0012](0012-primary-name-bp.md) — 2026-07-06
 **Criticality:** [HIGH][BLOCKS:high]
 
-> **Superseded:** the primary name is now `burpctl` (project brand + primary command), with `bp`
-> kept as the 2-char alias — the inverse of this ADR's original primacy. Rationale in ADR-0011.
+> **History:** ADR-0011 briefly made `burpctl` the primary name; ADR-0012 reverted to this ADR's
+> original stance — `bp` primary, `burpctl` alias — on the founder's "one token" rationale.
 
 ---
 

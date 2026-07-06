@@ -1,8 +1,11 @@
 # ADR-0011 — Rebrand to `burpctl` (primary), `bp` as alias
 
-**Status:** accepted — 2026-07-06
+**Status:** superseded by [ADR-0012](0012-primary-name-bp.md) — 2026-07-06 (accepted then reverted same day)
 **Criticality:** [HIGH][BLOCKS:low]
-**Supersedes:** [ADR-0002](0002-cli-name-bp.md)
+**Supersedes:** [ADR-0002](0002-cli-name-bp.md) (itself reinstated by ADR-0012)
+
+> **Superseded:** `burpctl`-as-primary shipped to `main` but was never released; ADR-0012 reverted
+> to `bp` primary (`burpctl` kept as alias). The README/hook improvements from this ADR were kept.
 
 ---
 

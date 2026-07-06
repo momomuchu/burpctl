@@ -10,4 +10,5 @@ Decisions 0001–0006 locked 2026-06-16 by founder. Later ADRs carry their own d
 | [ADR-0004](0004-fuzz-async-lifecycle.md) | `bp fuzz` single verb with `--async`; no split create/start | [HIGH] |
 | [ADR-0005](0005-run-ledger-observability.md) | C4 Run Ledger on by default; SQLite `~/.bp/`; `--no-ledger` opt-out | [HIGH] |
 | [ADR-0006](0006-methodology-sdd-tdd-ddd.md) | Methodology: SDD + TDD + DDD + spec-as-contract; trunk; atomic commits | [HIGH] |
-| [ADR-0011](0011-rebrand-burpctl.md) | Rebrand to `burpctl` (primary), `bp` alias — supersedes 0002 | [HIGH] |
+| [ADR-0011](0011-rebrand-burpctl.md) | Rebrand to `burpctl` (primary) — *superseded by 0012* | [HIGH] |
+| [ADR-0012](0012-primary-name-bp.md) | Primary name reverts to `bp`; `burpctl` kept as alias — supersedes 0011 | [HIGH] |

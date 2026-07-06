@@ -1,8 +1,8 @@
 """[rebrand] Lock the console entry points declared in pyproject.toml.
 
-The rebrand (ADR-0011) makes `burpctl` the primary command and keeps `bp` as a
-2-char alias; both must map to `bp.cli:cli_main`. Nothing else tested the
-`[project.scripts]` table, so a future edit could silently drop `burpctl`.
+`bp` is the primary command; `burpctl` is an installed alias (ADR-0012). Both
+must map to `bp.cli:cli_main`. Nothing else tested the `[project.scripts]`
+table, so a future edit could silently drop either command.
 No Burp required: this reads the packaging metadata only.
 """
 

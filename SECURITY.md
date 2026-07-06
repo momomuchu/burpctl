@@ -1,6 +1,6 @@
 # Security Policy
 
-`burpctl` is offensive-security tooling: a CLI and a Burp extension that drive a security proxy.
+`bp` is offensive-security tooling: a CLI and a Burp extension that drive a security proxy.
 We take the security **of the tool itself** seriously, and we expect users to apply it ethically.
 
 ## Reporting a vulnerability
@@ -47,5 +47,5 @@ The latest release on `main` receives security fixes. Older tags are not maintai
 
 This tool exists for **authorized** testing only — systems you own, a lab, or an in-scope bug-bounty /
 pentest engagement. Using it against systems you are not authorized to test may be illegal. By using
-`burpctl` you accept responsibility for staying within scope and the law. The maintainers are not
+`bp` you accept responsibility for staying within scope and the law. The maintainers are not
 liable for misuse.

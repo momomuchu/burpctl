@@ -78,7 +78,7 @@ wheels = [
 ]
 
 [[package]]
-name = "burpctl"
+name = "bp"
 version = "1.1.0"
 source = { editable = "." }
 dependencies = [

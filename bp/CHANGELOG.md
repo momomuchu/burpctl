@@ -4,12 +4,15 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 
 ## [Unreleased]
 
+### Added
+- **`burpctl` alias.** The CLI now also installs as `burpctl` (identical to `bp`, for users who
+  prefer the `*ctl` convention). `bp` stays the primary command and distribution name (ADR-0012).
+  Both console scripts point at `bp.cli:cli_main`, and `--help`/usage output reflects whichever name
+  you invoked.
+
 ### Changed
-- **Rebrand to `burpctl`** (ADR-0011). The primary command and distribution name are now `burpctl`;
-  `bp` is kept as an identical 2-char alias. Both console scripts point at `bp.cli:cli_main`, and
-  `--help` / usage output now reflects whichever name you invoked. The Python import package stays
-  `bp` (unchanged). No exit-code or REST-contract change (the only behavior change is that
-  `--help`/usage text now prints the invoked command name).
+- **README reframed** around the real hook: fast multi-position fuzzing fired via Burp's Repeater
+  (not the throttled Community Intruder), staying inside the session/scope.
 
 ## [1.1.0] — 2026-06-19
 

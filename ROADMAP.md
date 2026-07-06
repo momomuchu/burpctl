@@ -1,6 +1,6 @@
 # Roadmap
 
-Where `burpctl` is headed. This is a direction, not a dated promise — priorities follow real
+Where `bp` is headed. This is a direction, not a dated promise — priorities follow real
 usage and contributions. Every item here is a product feature already marked `v1.1 / not shipped` in
 [`docs/CLI.md`](docs/CLI.md).
 

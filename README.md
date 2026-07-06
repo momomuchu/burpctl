@@ -1,4 +1,4 @@
-# burpctl
+# bp
 
 [![Release](https://img.shields.io/github/v/release/momomuchu/burpctl?sort=semver&color=blue)](https://github.com/momomuchu/burpctl/releases)
 [![CI](https://github.com/momomuchu/burpctl/actions/workflows/ci.yml/badge.svg)](https://github.com/momomuchu/burpctl/actions/workflows/ci.yml)
@@ -9,9 +9,9 @@
 > **Drive Burp Suite from the command line.** Mark any byte range, fuzz it fast, and get clean
 > parsable output — *without leaving Burp's session, scope, and history behind.*
 
-The reason to reach for `burpctl` over `ffuf` or Turbo Intruder: those are fast, but they run
-*outside* Burp — you lose your session, cookies, upstream config, and scope. `burpctl` builds the
-attack client-side and sends every shot through Burp's **Repeater** (`/repeater/send`), *not* Burp's
+The reason to reach for `bp` over `ffuf` or Turbo Intruder: those are fast, but they run *outside*
+Burp — you lose your session, cookies, upstream config, and scope. `bp` builds the attack
+client-side and sends every shot through Burp's **Repeater** (`/repeater/send`), *not* Burp's
 Intruder engine — so your fuzzing inherits all of that context in one scriptable command instead of a
 UI full of clicks. And because it rides Repeater, it sidesteps the deliberate rate-throttle that
 **Burp Community** applies to Intruder: multi-position, matrix-style fuzzing at full speed while
@@ -19,11 +19,11 @@ staying inside the proxy you're already using.
 
 It's two pieces:
 
-- **`burpctl`** — a fast, fully-typed **Python CLI** (the interface you'll use; `bp` is a 2-char alias).
-- **burp-rest-extension** — a **Kotlin** Burp extension that exposes Burp's [Montoya API](https://portswigger.net/burp/documentation/desktop/extensions/creating) as a local REST API for `burpctl` to drive.
+- **`bp`** — a fast, fully-typed **Python CLI** (the interface you'll use; also installed as `burpctl`).
+- **burp-rest-extension** — a **Kotlin** Burp extension that exposes Burp's [Montoya API](https://portswigger.net/burp/documentation/desktop/extensions/creating) as a local REST API for `bp` to drive.
 
 ```
- you ──►  burpctl (CLI)  ──REST :8089──►  burp-rest-extension  ──Montoya──►  Burp Suite (Pro / Community)
+ you ──►  bp (CLI)  ──REST :8089──►  burp-rest-extension  ──Montoya──►  Burp Suite (Pro / Community)
 ```
 
 ## Features
@@ -38,7 +38,7 @@ It's two pieces:
 
 ## Quickstart
 
-**Requirements:** Burp Suite (Pro or Community) · JDK 17+ (to build the extension) · Python 3.11+ (for `burpctl`).
+**Requirements:** Burp Suite (Pro or Community) · JDK 17+ (to build the extension) · Python 3.11+ (for `bp`).
 
 **1. Build & load the extension**
 
@@ -51,24 +51,24 @@ The REST server auto-starts — look for `Server started on http://127.0.0.1:808
 
 > Prefer not to build? Grab the prebuilt jar from the [latest release](https://github.com/momomuchu/burpctl/releases/latest).
 
-**2. Install & use `burpctl`**
+**2. Install & use `bp`**
 
 ```bash
-cd bp && uv tool install .          # or: pipx install .   (installs `burpctl` + `bp` alias)
+cd bp && uv tool install .          # or: pipx install .   (installs `bp` + `burpctl` alias)
 
-burpctl health                                       # is the extension up?
-burpctl proxy --host target.example --limit 20       # captured history → request IDs
+bp health                                       # is the extension up?
+bp proxy --host target.example --limit 20       # captured history → request IDs
 
 # fuzz two positions at once, cluster-bomb, show only anomalies:
-burpctl fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=ssrf.txt \
-                --pos 'cookie:role'            --payloads role=privesc.txt \
-                --type cluster-bomb --anomalous-only
+bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=ssrf.txt \
+           --pos 'cookie:role'            --payloads role=privesc.txt \
+           --type cluster-bomb --anomalous-only
 
-burpctl check idor 'https://target/api/user?id=1' --param id --own 1 --target 2   # exits 5 if vulnerable
+bp check idor 'https://target/api/user?id=1' --param id --own 1 --target 2   # exits 5 if vulnerable
 ```
 
 > **Output:** default is a human `table`; add `--format json` (NDJSON), `raw`, or `quiet` for scripts and agents.
-> Global flags (`--url` / `--format` / `--fields`) work in either position. `bp` is a drop-in alias for `burpctl`.
+> Global flags (`--url` / `--format` / `--fields`) work in either position. `burpctl` is a drop-in alias for `bp`.
 
 👉 **Full command reference: [`bp/README.md`](bp/README.md).**
 
@@ -76,7 +76,7 @@ burpctl check idor 'https://target/api/user?id=1' --param id --own 1 --target 2 
 
 | Path | What |
 |---|---|
-| [`bp/`](bp/) | The `burpctl` CLI (Python) — [README](bp/README.md) · [CHANGELOG](bp/CHANGELOG.md) |
+| [`bp/`](bp/) | The `bp` CLI (Python) — [README](bp/README.md) · [CHANGELOG](bp/CHANGELOG.md) |
 | `src/main/kotlin/com/burprest/` | The Burp REST extension (Kotlin / Ktor / Montoya) |
 | [`docs/`](docs/) | Source-grounded contracts: [SPEC](docs/SPEC.md) · [CLI grammar](docs/CLI.md) · [OUTPUT](docs/OUTPUT.md) · [ALGORITHMS](docs/ALGORITHMS.md) · [ADRs](docs/adr/) |
 
@@ -87,12 +87,12 @@ response is `{success, data, error}`.
 
 ```bash
 ./gradlew test                                              # Kotlin extension
-cd bp && uv run pytest -q && uv run mypy --strict src && uv run ruff check src tests   # burpctl: 433 tests, typed, linted
+cd bp && uv run pytest -q && uv run mypy --strict src && uv run ruff check src tests   # bp: 433 tests, typed, linted
 ```
 
 ## Contributing
 
-Issues and PRs welcome — `burpctl` is spec-driven and test-first. Start with
+Issues and PRs welcome — `bp` is spec-driven and test-first. Start with
 **[CONTRIBUTING.md](CONTRIBUTING.md)** (disciplines, dev setup, Definition of Done), see the
 **[ROADMAP](ROADMAP.md)** for what's planned, and report vulnerabilities privately per
 **[SECURITY.md](SECURITY.md)**.

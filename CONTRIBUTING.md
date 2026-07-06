@@ -1,6 +1,6 @@
-# Contributing to burpctl
+# Contributing to bp
 
-Thanks for your interest! `burpctl` is two things in one repo:
+Thanks for your interest! `bp` is two things in one repo:
 
 - **`bp/`** — the Python CLI client (the recommended interface), and
 - **`src/main/kotlin/com/burprest/`** — the Kotlin Burp REST extension (Ktor / Montoya) it talks to on `:8089`.

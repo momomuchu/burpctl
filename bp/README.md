@@ -1,12 +1,12 @@
-# burpctl — Burp Suite REST CLI
+# bp — Burp Suite REST CLI
 
-`burpctl` drives **Burp Suite** from the command line via the `burp-rest-extension` on
+`bp` drives **Burp Suite** from the command line via the `burp-rest-extension` on
 `http://127.0.0.1:8089`: one command instead of hand-crafted JSON, with **flexible client-side
 fuzzing** (arbitrary injection positions, all attack types) that stays inside Burp's session and
 scope, concise output, and a **Run Ledger** that records every operation. Scriptable and
 agent-friendly by design.
 
-> **`bp` is a 2-char alias for `burpctl`** — they are identical. Examples below use `bp` for brevity.
+> **`burpctl` is an alias for `bp`** — they are identical. Examples below use `bp` (the primary command).
 
 Fully typed (Python 3.11+, `mypy --strict`), spec-driven (`docs/`), test-driven (`pytest`).
 
