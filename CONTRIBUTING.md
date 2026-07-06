@@ -1,6 +1,6 @@
-# Contributing to burp-wrapper
+# Contributing to burpctl
 
-Thanks for your interest! `burp-wrapper` is two things in one repo:
+Thanks for your interest! `burpctl` is two things in one repo:
 
 - **`bp/`** — the Python CLI client (the recommended interface), and
 - **`src/main/kotlin/com/burprest/`** — the Kotlin Burp REST extension (Ktor / Montoya) it talks to on `:8089`.
@@ -65,7 +65,7 @@ You can work on either component independently.
 ```bash
 cd bp
 uv sync                                   # or: python -m venv .venv && pip install -e ".[dev]"
-uv run pytest -q                          # ~430 unit/contract tests, no Burp required
+uv run pytest -q                          # ~430+ unit/contract tests, no Burp required
 uv run mypy --strict src                  # must be clean
 uv run ruff check src tests               # must be clean
 ```

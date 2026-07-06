@@ -1,13 +1,13 @@
 # Security Policy
 
-`burp-wrapper` is offensive-security tooling: a CLI and a Burp extension that drive a security proxy.
+`burpctl` is offensive-security tooling: a CLI and a Burp extension that drive a security proxy.
 We take the security **of the tool itself** seriously, and we expect users to apply it ethically.
 
 ## Reporting a vulnerability
 
 **Please do not open a public issue for a security vulnerability.**
 
-Report it privately via **[GitHub Security Advisories](https://github.com/momomuchu/burp-wrapper/security/advisories/new)**
+Report it privately via **[GitHub Security Advisories](https://github.com/momomuchu/burpctl/security/advisories/new)**
 ("Report a vulnerability"). If you can't use that, open a minimal issue asking a maintainer to contact
 you — without details — and we'll move it to a private channel.
 
@@ -47,5 +47,5 @@ The latest release on `main` receives security fixes. Older tags are not maintai
 
 This tool exists for **authorized** testing only — systems you own, a lab, or an in-scope bug-bounty /
 pentest engagement. Using it against systems you are not authorized to test may be illegal. By using
-`burp-wrapper` you accept responsibility for staying within scope and the law. The maintainers are not
+`burpctl` you accept responsibility for staying within scope and the law. The maintainers are not
 liable for misuse.

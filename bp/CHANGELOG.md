@@ -4,6 +4,13 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 
 ## [Unreleased]
 
+### Changed
+- **Rebrand to `burpctl`** (ADR-0011). The primary command and distribution name are now `burpctl`;
+  `bp` is kept as an identical 2-char alias. Both console scripts point at `bp.cli:cli_main`, and
+  `--help` / usage output now reflects whichever name you invoked. The Python import package stays
+  `bp` (unchanged). No exit-code or REST-contract change (the only behavior change is that
+  `--help`/usage text now prints the invoked command name).
+
 ## [1.1.0] — 2026-06-19
 
 Post-v1.0.0 hardening: an extensive adversarial QA pass followed by iterative
@@ -216,5 +223,5 @@ First release. A fully-typed, spec-driven CLI client for the Burp REST extension
 - Per-command unit tests (commands covered by CLI-conformance + live smoke; logic layers are
   unit-tested). Scope-as-pre-fire-gate (ADR-0007/C3) remains a planned roadmap item.
 
-[1.1.0]: https://github.com/momomuchu/burp-wrapper/releases/tag/v1.1.0
-[1.0.0]: https://github.com/momomuchu/burp-wrapper/releases/tag/v1.0.0
+[1.1.0]: https://github.com/momomuchu/burpctl/releases/tag/v1.1.0
+[1.0.0]: https://github.com/momomuchu/burpctl/releases/tag/v1.0.0

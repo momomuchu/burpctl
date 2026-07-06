@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thanks for the report! Please don't include secrets (tokens, cookies, real target hosts).
-        For a **security vulnerability**, use [SECURITY.md](https://github.com/momomuchu/burp-wrapper/blob/main/SECURITY.md) instead — not a public issue.
+        For a **security vulnerability**, use [SECURITY.md](https://github.com/momomuchu/burpctl/blob/main/SECURITY.md) instead — not a public issue.
   - type: dropdown
     id: component
     attributes:

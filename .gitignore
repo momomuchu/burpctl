@@ -35,3 +35,6 @@ USER.md
 
 # Local machine setup — machine-specific paths, never commit
 bin/
+
+# make-no-mistakes harness scratch state (not part of the project)
+.mnm/

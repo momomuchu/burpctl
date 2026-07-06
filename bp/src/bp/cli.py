@@ -1,4 +1,4 @@
-"""bp — Burp Suite REST CLI entry point. See docs/CLI.md.
+"""burpctl — Burp Suite REST CLI entry point. See docs/CLI.md.
 
 Global options resolve to a State object on the typer context; each command runs against a
 BurpClient and renders via the output layer. Command groups live in ``bp.commands.*`` and are
@@ -7,6 +7,7 @@ registered onto ``app`` below. Exit codes follow CLI.md (3=conn, 4=pro).
 
 from __future__ import annotations
 
+import os
 import sys
 from dataclasses import asdict
 from typing import Any
@@ -23,7 +24,7 @@ from bp.runner import run_fuzz
 app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
-    help="bp — drive Burp Suite via its REST extension on :8089",
+    help="burpctl — drive Burp Suite via its REST extension on :8089 (alias: bp)",
 )
 
 
@@ -46,7 +47,7 @@ def main(
         False, "--no-redact", help="Do not mask secrets in output (e.g. to read a JWT you decode)."
     ),
     version: bool = typer.Option(
-        False, "--version", help="Show bp version and exit.", is_eager=True, callback=_version_cb
+        False, "--version", help="Show burpctl version and exit.", is_eager=True, callback=_version_cb
     ),
 ) -> None:
     if fmt not in FORMATS:
@@ -212,5 +213,10 @@ def _hoist_global_opts(argv: list[str]) -> list[str]:
 
 
 def cli_main() -> None:
-    """Console entrypoint (bp). Applies ADR-0009 option hoisting, then dispatches."""
-    app(args=_hoist_global_opts(sys.argv[1:]), prog_name="bp")
+    """Console entrypoint (burpctl / bp). Applies ADR-0009 option hoisting, then dispatches.
+
+    ``prog_name`` reflects the command the user actually invoked, so ``burpctl --help`` and
+    ``bp --help`` each show their own name in usage/error output (ADR-0011: both are installed).
+    """
+    prog = os.path.basename(sys.argv[0]) or "burpctl"
+    app(args=_hoist_global_opts(sys.argv[1:]), prog_name=prog)
