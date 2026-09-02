@@ -30,6 +30,10 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
   entry's absolute Burp proxy-history index, so `bp req <id>` and `bp send <id>` select the row shown.
 - **`--format json` help obscured list framing.** The option now says that list-valued output is
   NDJSON, matching the canonical output docs and preventing whole-document JSON parser assumptions.
+- **`bp scope set` falsely claimed a full Burp-scope replacement.** Live `scope check` showed the
+  prior URL still admitted after `set`; help/spec now state that only the extension-managed list is
+  replaced because Montoya cannot enumerate/remove earlier engine rules. Scope help also states the
+  live boundary result: target scope classifies traffic but does not block proxy forwarding.
 
 ## [1.1.0] — 2026-06-19
 

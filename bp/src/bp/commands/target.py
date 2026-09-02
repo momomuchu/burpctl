@@ -1,8 +1,8 @@
 """bp target — scope management and sitemap commands. See docs/CLI.md + SPEC.md §6.8.
 
 Endpoints (all Community, scope tracked in-memory on the JVM heap):
-  GET  /target/scope          — read in-memory scope (≠ Burp UI scope)
-  POST /target/scope          — FULL REPLACE (destructive): clear + set
+  GET  /target/scope          — read extension-managed scope changes (≠ Burp UI scope)
+  POST /target/scope          — replace the extension-managed list, then add its entries to Burp
   POST /target/scope/add      — add one URL (AddScopeRequest)
   POST /target/scope/remove   — remove/exclude one URL (same DTO as add)
   GET  /target/scope/check    — authoritative scope verdict (delegates to Burp engine)
@@ -13,9 +13,11 @@ CLI.md grammar:
   bp sitemap [prefix]                        — FLAT top-level command on app
 
 Caveats surfaced per SPEC:
-  - GET /target/scope reflects the *in-memory* scope, NOT the Burp UI scope.
+  - GET /target/scope reflects the extension-managed list, NOT the complete Burp UI scope.
     Use /scope/check for the authoritative Burp-engine verdict.
-  - POST /target/scope is a *full replace* — sending includes=[] wipes all scope.
+  - POST /target/scope replaces only that extension-managed list. Montoya has no scope-list or
+    remove-rule API, so earlier Burp/UI rules remain active.
+  - Scope classifies traffic for Burp features; it does not block proxy forwarding.
   - /scope/check without url query param returns INVALID_PARAM inside an HTTP 200
     envelope (Burp extension early-return quirk).
 """
@@ -32,15 +34,18 @@ from bp.cliutil import EXIT_USAGE, run
 # "scope" sub-Typer — registered as app.add_typer(scope, name="scope")
 # ---------------------------------------------------------------------------
 
-scope = typer.Typer(no_args_is_help=True, help="Read, set, or update the Burp target scope.")
+scope = typer.Typer(
+    no_args_is_help=True,
+    help="Classify Burp target scope; this does not block proxy traffic.",
+)
 
 
 @scope.command("show")
 def scope_show(ctx: typer.Context) -> None:
-    """Show current in-memory scope (includes + excludes).
+    """Show scope entries changed through this extension process.
 
-    NOTE: reflects the *extension's* in-memory scope, not the Burp UI scope.
-    Use 'bp scope check <url>' for an authoritative Burp-engine verdict.
+    NOTE: this is not a complete Burp UI scope listing. Use
+    'bp scope check <url>' for the authoritative Burp-engine verdict.
     """
     run(ctx, lambda c: c.get("/target/scope"))
 
@@ -58,18 +63,18 @@ def scope_set(
     ] = [],
     confirm: Annotated[
         bool,
-        typer.Option("--confirm/--no-confirm", help="Confirm destructive full-replace."),
+        typer.Option("--confirm/--no-confirm", help="Confirm replacing the extension-managed list."),
     ] = False,
 ) -> None:
-    """FULL-REPLACE the scope (destructive: clears all existing entries first).
+    """Replace entries tracked by this extension process, then add them to Burp.
 
-    WARNING: This replaces the *entire* scope. Passing no --include wipes all scope.
-    Use --confirm to suppress this warning, or 'bp scope add' to add incrementally.
+    Earlier entries added through Burp or this extension remain active in the Burp engine because
+    Montoya does not expose a scope-list or remove-rule API. Use 'bp scope add' for one new entry.
     """
     if not confirm:
         typer.echo(
-            "warning: 'bp scope set' is a full replace — it clears all existing scope entries.\n"
-            "         Pass --confirm to proceed, or use 'bp scope add' for incremental changes.",
+            "warning: 'bp scope set' replaces the extension-managed scope list, but cannot remove\n"
+            "         earlier Burp-engine rules. Pass --confirm, or use 'bp scope add'.",
             err=True,
         )
         raise typer.Exit(EXIT_USAGE)

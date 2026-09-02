@@ -69,7 +69,7 @@ framing.
 | `bp scan crawl\|audit\|all <url>` | `POST /scanner/{crawl,audit,crawl-and-audit}` | scanner (Pro) |
 | `bp scan status\|issues <scanId>` · `bp scan defs` | `/scanner/{id}/*` · `/scanner/issue-definitions` | scanner (Pro) _(pause\|resume\|stop: v1.1 — not shipped)_ |
 | `bp check auth\|idor\|headers\|cors\|endpoints <url>` | `POST /scan/*` | securityscan |
-| `bp scope show\|set\|add\|remove\|check [url]` | `GET/POST /target/scope*` | target |
+| `bp scope show\|set\|add\|remove\|check [url]` | `GET/POST /target/scope*`; manages/classifies Burp scope but does not block proxy traffic; `set` cannot remove prior engine/UI rules | target |
 | `bp sitemap [prefix]` | `GET /target/sitemap` | target |
 | `bp encode\|decode\|hash <data> [--smart]` | `POST /decoder/*` | decoder |
 | `bp config get\|set project\|user` · `bp ext` | `GET/PUT /config/*` · `GET /extensions` | config |

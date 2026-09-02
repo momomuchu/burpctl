@@ -93,3 +93,19 @@ def test_global_help_labels_json_list_output_as_ndjson() -> None:
 
     assert result.exit_code == 0
     assert "json (NDJSON for lists)" in result.stdout
+
+
+def test_scope_set_help_does_not_claim_full_replacement() -> None:
+    result = runner.invoke(app, ["scope", "set", "--help"])
+
+    assert result.exit_code == 0
+    assert "FULL-REPLACE" not in result.stdout
+    assert "wipes all scope" not in result.stdout
+    assert "extension-managed" in result.stdout
+
+
+def test_scope_help_discloses_classification_only() -> None:
+    result = runner.invoke(app, ["scope", "--help"])
+
+    assert result.exit_code == 0
+    assert "does not block proxy traffic" in result.stdout

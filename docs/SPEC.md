@@ -496,25 +496,24 @@ EndpointsScanRequest {"host":"t.com","tests":["auth-bypass","method-switch"],"li
 
 ### 6.8 · target `/target` — 6 endpoints · C
 
-Scope tracked **in memory** (JVM heap, reset on
-restart). `/scope/check` delegates to the Burp
-scope engine (reflects the UI).
+Scope changes tracked **in memory** (JVM heap, reset on restart). `/scope/check` delegates to the
+Burp scope engine (reflects earlier extension and UI rules). Burp target scope classifies traffic for
+Burp features; it does not block requests traversing the proxy listener.
 
 | Method | Path | Pro | Request model | Hunter usage |
 |---|---|---|---|---|
 | GET | `/target/sitemap` | C | query: `url:String?` (prefix) | dumps the Burp sitemap (wordlist / hidden endpoints). |
-| GET | `/target/scope` | C | — | reads the in-memory scope (≠ Burp UI). |
-| POST | `/target/scope` | C | `SetScopeRequest` { includes:List\<String\> (required), excludes:List\<String\>=[] } | **replaces** (clear+set) the entire scope. |
+| GET | `/target/scope` | C | — | reads entries changed through the current extension process (not the complete Burp UI/engine scope). |
+| POST | `/target/scope` | C | `SetScopeRequest` { includes:List\<String\> (required), excludes:List\<String\>=[] } | replaces the extension-managed list, then adds those rules to Burp; cannot remove earlier engine rules. |
 | POST | `/target/scope/add` | C | `AddScopeRequest` { url:String (required) } | adds 1 URL. |
 | POST | `/target/scope/remove` | C | `AddScopeRequest` { url:String } | excludes 1 URL (same DTO as add). |
 | GET | `/target/scope/check` | C | query: `url:String` (required) | authoritative scope verdict (Burp engine). |
 
-- **Flags**: `POST /target/scope` is a
-  **full replace** — `includes=[]` clears the entire
-  scope. `GET /target/scope` does **not** see
-  the scope configured in the UI; `/scope/check`
-  does. `/scope/check` without url → `INVALID_PARAM`
-  inside an **HTTP 200** envelope (early-return).
+- **Flags**: `POST /target/scope` clears only the extension's tracked list before applying the new
+  rules. Montoya exposes no complete scope listing or rule-removal operation, so earlier Burp/UI
+  rules remain active and `includes=[]` does not clear the engine scope. `GET /target/scope` does
+  **not** see rules configured in the UI or by an earlier extension process; `/scope/check` does.
+  `/scope/check` without url → `INVALID_PARAM` inside an **HTTP 200** envelope (early-return).
   `ScopeCheckRequest` = **dead** DTO (unused).
 
 #### fuzzModels — target
