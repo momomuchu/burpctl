@@ -43,7 +43,7 @@ It's two pieces:
 - 📒 **Run Ledger** — every bp-to-extension operation is recorded locally with **sha256 fingerprints only** (never raw bodies), and **secret redaction is on by default**; it is not a curl/xh/browser traffic log.
 - 🧰 **Works on Community too** — only `collaborator` and `scan` start need Pro (they exit `4` with a clear message); everything else runs on Community.
 - 🔩 **Scriptable & automation-friendly** — `--format json` emits NDJSON (one record per line); stable exit codes; no interactive prompts. That also makes it easy to drive from scripts or AI agents.
-- ✅ **Spec-driven & tested** — 433 Python tests + a Kotlin suite, `mypy --strict` + `ruff` clean, CI on every push.
+- ✅ **Spec-driven & tested** — 441 Python tests + 110 Kotlin tests, `mypy --strict` + `ruff` clean, CI on every push.
 
 ## How it compares
 
@@ -112,7 +112,7 @@ response is `{success, data, error}`.
 
 ```bash
 ./gradlew test                                              # Kotlin extension
-cd bp && uv run pytest -q && uv run mypy --strict src && uv run ruff check src tests   # bp: 433 tests, typed, linted
+cd bp && uv run pytest -q && uv run mypy --strict src && uv run ruff check src tests   # 441 Python tests
 ```
 
 ## FAQ
