@@ -16,7 +16,7 @@ import typer
 
 from bp import __version__
 from bp.client import DEFAULT_BASE_URL, BurpClient
-from bp.cliutil import EXIT_USAGE, State, run
+from bp.cliutil import EXIT_GENERIC, EXIT_USAGE, State, run
 from bp.models import ProxyEntry
 from bp.output import FORMATS
 from bp.runner import FuzzResult, run_fuzz
@@ -117,6 +117,11 @@ def _fuzz_rows(results: list[FuzzResult], anomalous_only: bool) -> list[dict[str
     return [row for row in rows if row["baseline"] or row["anomalous"]]
 
 
+def _fuzz_exit(rows: list[dict[str, Any]]) -> int | None:
+    """Fail the command after rendering if any attempted shot has an error row."""
+    return EXIT_GENERIC if any(row["error"] is not None for row in rows) else None
+
+
 @app.command()
 def fuzz(
     ctx: typer.Context,
@@ -150,7 +155,7 @@ def fuzz(
         results = run_fuzz(client, request_id, pos, payload_map, attack_type)
         return _fuzz_rows(results, anomalous_only)
 
-    run(ctx, _do)
+    run(ctx, _do, exit_on=_fuzz_exit)
 
 
 def _register_command_groups() -> None:

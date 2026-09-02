@@ -18,7 +18,8 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 - **`bp fuzz` sent one invisible extra request.** The fresh unmodified control is now returned as an
   explicit `baseline:true` row (`index:-1`, empty payloads), including under `--anomalous-only`.
   N payloads therefore produce N+1 sends and N+1 visible results without comparing against stale
-  proxy-history state.
+  proxy-history state. Invalid or empty plans are rejected before that control send, and response
+  lengths now count UTF-8 bytes rather than Python characters.
 - **Raw-framing limitation was easy to miss.** `bp fuzz --help` and the canonical CLI/algorithm docs
   now state that body fuzzing deduplicates/recalculates `Content-Length` and Burp rebuilds the wire
   request, so `send`/`fuzz` are not request-smuggling transports.

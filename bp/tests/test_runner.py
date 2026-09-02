@@ -5,17 +5,19 @@ import json
 import httpx
 import pytest
 
-from bp.cli import _fuzz_rows
+from bp.cli import _fuzz_exit, _fuzz_rows
 from bp.client import BurpClient
 from bp.pos import Position
 from bp.runner import _payload_lists, run_fuzz
 
 
-def _mock_client(sends: list[str] | None = None) -> BurpClient:
+def _mock_client(sends: list[str] | None = None, calls: list[str] | None = None) -> BurpClient:
     base_url = "https://t.example.com/s?u=_&p=_"
 
     def handler(req: httpx.Request) -> httpx.Response:
         path = req.url.path
+        if calls is not None:
+            calls.append(path)
         if path.startswith("/proxy/history/"):
             return httpx.Response(
                 200,
@@ -74,6 +76,15 @@ def test_run_fuzz_sniper_flags_anomaly() -> None:
     assert admin.status == 500 and admin.anomalous  # status differs from baseline
 
 
+def test_empty_selector_is_rejected_before_api_call() -> None:
+    calls: list[str] = []
+
+    with pytest.raises(ValueError, match="at least one --pos"):
+        run_fuzz(_mock_client(calls=calls), 5, [], {"u": [b"one"]}, "sniper")
+
+    assert calls == []
+
+
 def test_invalid_or_empty_fuzz_plan_sends_nothing() -> None:
     for selectors, payloads, message in (
         ([], {"u": [b"one"]}, "at least one --pos"),
@@ -93,6 +104,100 @@ def test_anomalous_only_retains_fresh_baseline() -> None:
     assert [row["baseline"] for row in visible] == [True, False]
     assert visible[0]["index"] == -1
     assert visible[1]["payloads"] == ("admin",)
+
+
+def test_response_lengths_are_utf8_bytes() -> None:
+    sends = 0
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        nonlocal sends
+        if req.url.path.startswith("/proxy/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {
+                        "request": {
+                            "method": "GET",
+                            "url": "https://t.example.com/s?u=base",
+                            "headers": [],
+                            "body": None,
+                        }
+                    },
+                    "error": None,
+                },
+            )
+        sends += 1
+        body = "🙂" * 10 if sends == 1 else "x" * 10
+        return httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {"response": {"statusCode": 200, "body": body}, "durationMs": 1},
+                "error": None,
+            },
+        )
+
+    client = BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
+    results = run_fuzz(client, 5, ["query:u"], {"u": [b"one"]}, "sniper")
+
+    assert [result.length for result in results] == [40, 10]
+    assert results[1].anomalous is True
+
+
+def test_later_send_error_returns_one_row_per_attempt() -> None:
+    sends = 0
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        nonlocal sends
+        if req.url.path.startswith("/proxy/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {
+                        "request": {
+                            "method": "GET",
+                            "url": "https://t.example.com/s?u=base",
+                            "headers": [],
+                            "body": None,
+                        }
+                    },
+                    "error": None,
+                },
+            )
+        sends += 1
+        if sends == 3:
+            return httpx.Response(
+                500,
+                json={
+                    "success": False,
+                    "data": None,
+                    "error": {"code": "SEND_FAILED", "message": "payload failed"},
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {"response": {"statusCode": 200, "body": "ok"}},
+                "error": None,
+            },
+        )
+
+    client = BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
+    results = run_fuzz(client, 5, ["query:u"], {"u": [b"one", b"two"]}, "sniper")
+
+    assert sends == len(results) == 3
+    assert results[-1].payloads == ("two",)
+    assert results[-1].status == 0
+    assert results[-1].error == "SEND_FAILED: payload failed"
+    assert results[-1].anomalous is True
+    assert _fuzz_exit([r.__dict__ for r in results]) == 1
 
 
 def test_run_fuzz_cluster_bomb_matrix() -> None:
@@ -234,14 +339,12 @@ def _mock_client_missing_response() -> BurpClient:
     return BurpClient(client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test"))
 
 
-def test_send_missing_response_key_raises_burp_error() -> None:
-    """[08] _send() with data missing 'response' key must raise BurpError(INVALID_RESPONSE),
-    not a raw KeyError."""
-    from bp.client import BurpError
+def test_send_missing_response_key_returns_clean_error_row() -> None:
+    results = run_fuzz(_mock_client_missing_response(), 1, ["query:u"], {"u": [b"x"]}, "sniper")
 
-    with pytest.raises(BurpError) as ei:
-        run_fuzz(_mock_client_missing_response(), 1, ["query:u"], {"u": [b"x"]}, "sniper")
-    assert ei.value.code == "INVALID_RESPONSE"
+    assert len(results) == 1
+    assert results[0].baseline is True
+    assert results[0].error == "INVALID_RESPONSE: repeater/send reply missing 'response' field"
 
 
 # --- [10] _base_raw(): missing 'request' key in history entry must raise BurpError, not KeyError ---
@@ -313,19 +416,15 @@ def _mock_client_bad_statuscode(status_value: object | None) -> BurpClient:
     return BurpClient(client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test"))
 
 
-def test_send_missing_statuscode_raises_burp_error() -> None:
-    """[08b] response present but no 'statusCode' -> clean BurpError, not a raw KeyError."""
-    from bp.client import BurpError
+def test_send_missing_statuscode_returns_clean_error_row() -> None:
+    results = run_fuzz(_mock_client_bad_statuscode(None), 1, ["query:u"], {"u": [b"x"]}, "sniper")
 
-    with pytest.raises(BurpError) as ei:
-        run_fuzz(_mock_client_bad_statuscode(None), 1, ["query:u"], {"u": [b"x"]}, "sniper")
-    assert ei.value.code == "INVALID_RESPONSE"
+    assert results[0].error == "INVALID_RESPONSE: repeater/send reply missing 'statusCode' field"
 
 
-def test_send_noninteger_statuscode_raises_burp_error() -> None:
-    """[08b]/[09] non-integer 'statusCode' -> clean BurpError, not a raw ValueError traceback."""
-    from bp.client import BurpError
+def test_send_noninteger_statuscode_returns_clean_error_row() -> None:
+    results = run_fuzz(
+        _mock_client_bad_statuscode("not-a-number"), 1, ["query:u"], {"u": [b"x"]}, "sniper"
+    )
 
-    with pytest.raises(BurpError) as ei:
-        run_fuzz(_mock_client_bad_statuscode("not-a-number"), 1, ["query:u"], {"u": [b"x"]}, "sniper")
-    assert ei.value.code == "INVALID_RESPONSE"
+    assert results[0].error == "INVALID_RESPONSE: repeater/send reply has a non-integer 'statusCode'"

@@ -27,6 +27,7 @@ class FuzzResult:
     duration_ms: int
     anomalous: bool
     baseline: bool
+    error: str | None
 
 
 def _base_raw(entry: Mapping[str, Any]) -> tuple[bytes, str, str]:
@@ -82,7 +83,10 @@ def _send(client: BurpClient, raw: bytes, scheme: str, host: str) -> tuple[int, 
         status = int(resp["statusCode"])
     except (TypeError, ValueError):
         raise BurpError("INVALID_RESPONSE", "repeater/send reply has a non-integer 'statusCode'") from None
-    length = len(resp.get("body") or "")
+    body = resp.get("body") or ""
+    if not isinstance(body, str):
+        raise BurpError("INVALID_RESPONSE", "repeater/send response body is not text")
+    length = len(body.encode("utf-8"))
     duration = int(data.get("durationMs", 0))
     return status, length, duration
 
@@ -97,6 +101,8 @@ def run_fuzz(
     anomaly_pct: int = 5,
 ) -> list[FuzzResult]:
     """Run the full client-side fuzz against ``request_id`` and return per-request results."""
+    if not selectors:
+        raise ValueError("fuzz requires at least one --pos position")
     entry = client.get(f"/proxy/history/{request_id}")
     raw, scheme, host = _base_raw(entry)
     positions = [resolve_pos(raw, s) for s in selectors]
@@ -105,7 +111,21 @@ def run_fuzz(
     if not concrete:
         raise ValueError("fuzz requires at least one concrete request")
 
-    base_status, base_len, base_duration = _send(client, raw, scheme, host)
+    try:
+        base_status, base_len, base_duration = _send(client, raw, scheme, host)
+    except BurpError as exc:
+        return [
+            FuzzResult(
+                index=-1,
+                payloads=(),
+                status=0,
+                length=0,
+                duration_ms=0,
+                anomalous=False,
+                baseline=True,
+                error=str(exc),
+            )
+        ]
     threshold = max(base_len * anomaly_pct // 100, 20)
 
     results: list[FuzzResult] = [
@@ -117,20 +137,38 @@ def run_fuzz(
             duration_ms=base_duration,
             anomalous=False,
             baseline=True,
+            error=None,
         )
     ]
     for i, cr in enumerate(concrete):
-        status, length, duration = _send(client, cr.raw, scheme, host)
+        payloads = tuple(payload.decode("utf-8", "replace") for payload in cr.payloads)
+        try:
+            status, length, duration = _send(client, cr.raw, scheme, host)
+        except BurpError as exc:
+            results.append(
+                FuzzResult(
+                    index=i,
+                    payloads=payloads,
+                    status=0,
+                    length=0,
+                    duration_ms=0,
+                    anomalous=True,
+                    baseline=False,
+                    error=str(exc),
+                )
+            )
+            continue
         anomalous = status != base_status or abs(length - base_len) > threshold
         results.append(
             FuzzResult(
                 index=i,
-                payloads=tuple(p.decode("utf-8", "replace") for p in cr.payloads),
+                payloads=payloads,
                 status=status,
                 length=length,
                 duration_ms=duration,
                 anomalous=anomalous,
                 baseline=False,
+                error=None,
             )
         )
     return results
