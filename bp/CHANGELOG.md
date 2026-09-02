@@ -20,6 +20,9 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 - **Raw-framing limitation was easy to miss.** `bp fuzz --help` and the canonical CLI/algorithm docs
   now state that body fuzzing deduplicates/recalculates `Content-Length` and Burp rebuilds the wire
   request, so `send`/`fuzz` are not request-smuggling transports.
+- **`bp send` left no active-workspace request row.** A completed replay now appends one
+  four-field `requests.jsonl` row when the current workspace and request identity are present,
+  without treating bp's separate SQLite REST-operation row as target-request evidence (ADR-0013).
 
 ## [1.1.0] — 2026-06-19
 
