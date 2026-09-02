@@ -43,19 +43,13 @@ For example, `bp send` produces an `ops` row whose `burp_op` is `POST /repeater/
 fingerprints cover that REST exchange. Plain `curl`, `xh`, and browser traffic produces no Run
 Ledger row. Use Burp proxy history for traffic that traverses its proxy listener.
 
-### 1.1 · Active-workspace request row
+### 1.1 · Workspace request ledgers remain caller-owned
 
-Under ADR-0013, a successful `bp send` also appends one target-request row to
-`./requests.jsonl` when the current directory has `SCOPE.md` or an existing `requests.jsonl` and
-either `BP_REQUEST_TAG` or `CLAUDE_CODE_SESSION_ID` is non-empty. The row contains exactly
-`tag`, `request` (`METHOD absolute-URL`), quoted three-digit `status`, and a non-secret body-length
-`fact`; it contains no headers or bodies. Recognizable credential-bearing URLs are refused with a
-warning instead of being transformed or persisted, but detection is not exhaustive and callers must
-keep secrets out of URLs. This row is request evidence and is separate from the SQLite operation
-log. Standalone use outside an identifiable workspace creates no such file.
-
-`BP_REQUEST_TAG` takes precedence over the Claude session fallback. `--no-ledger` suppresses only
-SQLite Run Ledger entries; it does not suppress the active workspace's required request row.
+`bp send` does not append a workspace `requests.jsonl` row. The target URL returned by Burp may
+contain userinfo, OAuth codes, reset/invitation capabilities, signed-query credentials, path tokens,
+or application-specific secrets; writing it automatically cannot satisfy both exact-request and
+no-secret-at-rest contracts without a caller-supplied safe representation and an explicit schema.
+The local Run Ledger row and extension DB history do not substitute for that workspace evidence.
 
 ## 2 · Configuration — file + env + flags
 
@@ -73,10 +67,9 @@ anomaly_pct     = 5           # length anomaly threshold (see ALGORITHMS A2)
 agent_mode      = auto        # auto | on | off (NDJSON for AI agent, see OUTPUT.md)
 ```
 
-**Env variables** (prefix `BP_`, plus integration variables):
+**Env variables** (prefix `BP_`, plus legacy `BURP_REST_URL`):
 `BURP_REST_URL`, `BP_ENFORCE_SCOPE`, `BP_ENVELOPE`, `BP_REDACT`, `BP_NO_LEDGER`, `BP_THROTTLE_MS`,
-`BP_AGENT` (see OUTPUT.md), `BP_REQUEST_TAG` (active-workspace request identity), and
-`CLAUDE_CODE_SESSION_ID` (workspace fallback identity).
+and `BP_AGENT` (see OUTPUT.md).
 
 **Equivalent flags** (per command): `--url`, `--enforce-scope`, `--envelope`, `--redact`, `--no-ledger`, `--throttle-ms`. Each flag overrides env+config for that invocation.
 

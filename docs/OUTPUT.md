@@ -561,7 +561,8 @@ the default when piped (A4).
   `/repeater/send` calls (one explicit fresh baseline plus N payload sends) and therefore N+2 Run
   Ledger rows. It makes N+1 target sends and returns N+1 result rows, preserving request/result
   bijection. `req_ref` and `resp_ref` are currently null; no `bp show` command is shipped.
-  Target-request evidence in an active workspace is the separate ADR-0013 row.
+  Target-request evidence remains caller-owned: `bp send` cannot safely auto-persist the exact target
+  URL because it may carry a credential, and Run Ledger hashes are not a substitute.
 
 ### 6.2 · `bp tag` and `--no-ledger`
 

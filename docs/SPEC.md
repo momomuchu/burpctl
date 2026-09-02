@@ -103,8 +103,8 @@ kubectl / systemctl).
 | **W** | SDD / TDD / DDD / spec-as-contract methodology. | cross-cutting |
 
 > **C4 complements `curl`; it does not replace target traffic evidence.** It makes bp's REST control
-> calls timestamped and queryable. Burp proxy history and active-workspace request rows answer the
-> separate question of what reached a target.
+> calls timestamped and queryable. Burp proxy or extension history and caller-owned request evidence
+> answer the separate question of what reached a target.
 
 ---
 
@@ -803,8 +803,8 @@ observe curl, xh, browser, or other proxy traffic and does not by itself prove a
 
 **Traceability boundary**: timestamps, endpoint names, outcomes, REST metadata, and hashes establish
 which control-plane calls were attempted and whether they resolved or failed in transport. They are
-useful operational evidence, not a complete engagement ledger or replay source. ADR-0013 separately
-defines the bounded active-workspace row for a completed `bp send` target request.
+useful operational evidence, not a complete engagement ledger or replay source. Exact target-request
+evidence remains caller-owned because a returned URL may itself contain credential material.
 
 ---
 

@@ -23,11 +23,10 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 - **Raw-framing limitation was easy to miss.** `bp fuzz --help` and the canonical CLI/algorithm docs
   now state that body fuzzing deduplicates/recalculates `Content-Length` and Burp rebuilds the wire
   request, so `send`/`fuzz` are not request-smuggling transports.
-- **`bp send` left no active-workspace request row.** A completed replay now appends one
-  four-field `requests.jsonl` row when the current workspace and request identity are present,
-  without treating bp's separate SQLite REST-operation row as target-request evidence (ADR-0013).
-  The writer refuses recognizable credential-bearing URLs, symlink/non-regular destinations, and
-  multi-link files with a visible warning; blank explicit tags fall back to the session identity.
+- **Workspace request-row mismatch is now explicit.** `bp send` still records only its
+  bp-to-extension SQLite operation; it does not auto-append `requests.jsonl`, because the exact
+  returned target URL may itself contain credentials and the existing four-field workspace schema
+  has no truthful redacted representation. Callers must preserve target-request evidence.
 - **`bp session send` falsely claimed proxy-history recording.** Help and the REST spec now identify
   the extension's conditional server-side history as the actual sink; Montoya sends do not appear
   in `bp proxy`.

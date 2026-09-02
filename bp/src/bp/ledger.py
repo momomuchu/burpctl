@@ -14,18 +14,12 @@ tag(id, name)       -> bool        UPDATE ops SET tag=name WHERE id=id.
 from __future__ import annotations
 
 import hashlib
-import json
 import os
-import re
 import sqlite3
-import stat
-import sys
-from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qsl, unquote, urlsplit
 
 # ---------------------------------------------------------------------------
 # ULID-lite: sortable short id without external deps
@@ -191,152 +185,6 @@ def _sha256(data: bytes | None) -> str | None:
     if data is None:
         return None
     return hashlib.sha256(data).hexdigest()
-
-
-_SENSITIVE_QUERY_KEYS = {
-    "accesskey",
-    "accesstoken",
-    "apikey",
-    "assertion",
-    "auth",
-    "authorization",
-    "authtoken",
-    "clientpassword",
-    "clientsecret",
-    "credential",
-    "idtoken",
-    "jsessionid",
-    "jwt",
-    "passwd",
-    "password",
-    "refreshtoken",
-    "resettoken",
-    "samlresponse",
-    "secret",
-    "session",
-    "sessionid",
-    "signature",
-    "ticket",
-    "token",
-    "xamzcredential",
-    "xamzsignature",
-}
-_SENSITIVE_QUERY_SUFFIXES = ("credential", "password", "secret", "signature", "token")
-_SENSITIVE_CONTEXT_KEYS = {"code", "key", "policy", "sig"}
-_SENSITIVE_PATH_PREDECESSORS = {
-    "callback",
-    "invite",
-    "magic",
-    "oauth",
-    "recover",
-    "recovery",
-    "reset",
-    "verify",
-    "verification",
-}
-
-
-def _looks_opaque_secret(value: str) -> bool:
-    decoded = unquote(value)
-    return (
-        len(decoded) >= 24
-        and re.fullmatch(r"[A-Za-z0-9._~+/=-]+", decoded) is not None
-        and len(set(decoded)) >= 8
-    )
-
-
-def _sensitive_url_parameter(name: str, value: str) -> bool:
-    normalized = re.sub(r"[^a-z0-9]", "", unquote(name).lower())
-    if normalized in _SENSITIVE_QUERY_KEYS:
-        return True
-    return (
-        normalized.endswith(_SENSITIVE_QUERY_SUFFIXES)
-        or normalized in _SENSITIVE_CONTEXT_KEYS
-    ) and _looks_opaque_secret(value)
-
-
-def _credential_bearing_url(url: str) -> bool:
-    """Conservatively detect URL forms unsafe for a non-secret request index."""
-    parsed = urlsplit(url)
-    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-        return True
-    if parsed.username is not None or parsed.password is not None or parsed.fragment:
-        return True
-    for key, value in parse_qsl(parsed.query, keep_blank_values=True):
-        if _sensitive_url_parameter(key, value):
-            return True
-    segments = [unquote(segment) for segment in parsed.path.split("/") if segment]
-    for segment in segments:
-        for parameter in segment.split(";")[1:]:
-            key, separator, value = parameter.partition("=")
-            if separator and _sensitive_url_parameter(key, value):
-                return True
-    for index, segment in enumerate(segments):
-        context = {part.lower() for part in segments[max(0, index - 2) : index]}
-        if context & _SENSITIVE_PATH_PREDECESSORS and _looks_opaque_secret(segment):
-            return True
-    return False
-
-
-# ---------------------------------------------------------------------------
-# Workspace request ledger (ADR-0013)
-# ---------------------------------------------------------------------------
-
-
-def append_workspace_request(result: Mapping[str, Any]) -> bool:
-    """Append one completed replay to an active workspace's ``requests.jsonl``.
-
-    A workspace is active only when the current directory contains ``SCOPE.md`` or an existing
-    ``requests.jsonl``, and a non-empty request tag is available. Standalone bp use remains inert.
-    The compact row is emitted with one ``os.write`` call so concurrent appenders do not split it
-    at the Python buffering layer.
-    """
-    try:
-        root = Path.cwd()
-        path = root / "requests.jsonl"
-        preferred_tag = (os.environ.get("BP_REQUEST_TAG") or "").strip()
-        fallback_tag = (os.environ.get("CLAUDE_CODE_SESSION_ID") or "").strip()
-        tag = preferred_tag or fallback_tag
-        if not tag or (not path.is_file() and not (root / "SCOPE.md").is_file()):
-            return False
-
-        request = result["request"]
-        response = result["response"]
-        if not isinstance(request, Mapping) or not isinstance(response, Mapping):
-            raise ValueError("send result has no request/response objects")
-        method = str(request["method"])
-        url = str(request["url"])
-        if _credential_bearing_url(url):
-            raise ValueError("credential-bearing URL is unsafe for requests.jsonl")
-        status = int(response["statusCode"])
-        body = response.get("body")
-        if body is not None and not isinstance(body, str):
-            raise ValueError("send response body is not text")
-        row = {
-            "tag": tag,
-            "request": f"{method} {url}",
-            "status": f"{status:03d}",
-            "fact": f"decision:len={len((body or '').encode('utf-8'))}",
-        }
-        encoded = (json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
-        flags = os.O_APPEND | os.O_CREAT | os.O_WRONLY | getattr(os, "O_NONBLOCK", 0)
-        if path.is_symlink():
-            raise OSError("requests.jsonl must not be a symlink")
-        flags |= getattr(os, "O_NOFOLLOW", 0)
-        fd = os.open(path, flags, 0o600)
-        try:
-            destination = os.fstat(fd)
-            if not stat.S_ISREG(destination.st_mode) or destination.st_nlink != 1:
-                raise OSError("requests.jsonl must be one regular, unlinked file")
-            written = os.write(fd, encoded)
-        finally:
-            os.close(fd)
-        if written != len(encoded):
-            raise OSError(f"short append ({written}/{len(encoded)} bytes)")
-    except (KeyError, TypeError, ValueError, OSError) as exc:
-        print(f"warning: workspace request ledger write failed: {exc}", file=sys.stderr)
-        return False
-    return True
 
 
 # ---------------------------------------------------------------------------

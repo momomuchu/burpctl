@@ -5,21 +5,16 @@ All tests use a real SQLite DB in a tmp directory — no mocks, no Burp required
 
 from __future__ import annotations
 
-import json
 import os
 import stat
-from collections.abc import Callable
 from pathlib import Path
-from typing import Any, cast
 
 import httpx
 import pytest
-import typer
 
 from bp.client import BurpClient
-from bp.commands import repeater
 from bp.config import load, redact
-from bp.ledger import Ledger, OpRecord, QueryFilters, append_workspace_request
+from bp.ledger import Ledger, OpRecord, QueryFilters
 
 
 # ---------------------------------------------------------------------------
@@ -80,192 +75,6 @@ def test_multiple_records_ordered_newest_first(tmp_ledger: Ledger) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Workspace request ledger: one completed target request per JSONL row
-# ---------------------------------------------------------------------------
-
-
-def test_send_command_appends_workspace_request_row(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "session-readable")
-    (tmp_path / "SCOPE.md").write_text("local test scope\n")
-    target_result = {
-        "request": {"method": "PATCH", "url": "https://target.test/items/7"},
-        "response": {"statusCode": 403, "body": "denied"},
-    }
-
-    class Client:
-        def post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
-            assert (path, payload) == ("/repeater/send", {"requestId": 7})
-            return target_result
-
-    def fake_run(_ctx: typer.Context, fn: Callable[[Any], Any]) -> None:
-        fn(Client())
-
-    monkeypatch.setattr(repeater, "run", fake_run)
-    repeater.send_cmd(cast(typer.Context, object()), 7, [], None, None, None)
-
-    rows = [json.loads(line) for line in (tmp_path / "requests.jsonl").read_text().splitlines()]
-    assert rows == [
-        {
-            "tag": "session-readable",
-            "request": "PATCH https://target.test/items/7",
-            "status": "403",
-            "fact": "decision:len=6",
-        }
-    ]
-
-
-def test_workspace_request_warns_when_cwd_disappears(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    workspace = tmp_path / "gone"
-    workspace.mkdir()
-    monkeypatch.chdir(workspace)
-    workspace.rmdir()
-
-    assert append_workspace_request(_workspace_result("https://target.test/ordinary")) is False
-    assert "workspace request ledger write failed" in capsys.readouterr().err
-
-
-def test_append_workspace_request_is_inert_outside_workspace(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "session-readable")
-    result = {
-        "request": {"method": "GET", "url": "https://target.test/"},
-        "response": {"statusCode": 200, "body": "ok"},
-    }
-
-    assert append_workspace_request(result) is False
-    assert not (tmp_path / "requests.jsonl").exists()
-
-
-_CREDENTIAL_URLS = (
-    "https://user:password@target.test/path",
-    "https://target.test/oauth/callback?code=0123456789abcdef0123456789abcdef",
-    "https://target.test/reset/0123456789abcdef0123456789abcdef",
-    "https://target.test/file?X-Amz-Signature=controlled-signature",
-    "https://target.test/data?api_key=controlled-key",
-    "https://target.test/refresh?reset_token=0123456789abcdef0123456789abcdef",
-    "https://target.test/refresh?refresh_token=0123456789abcdef0123456789abcdef",
-    "https://target.test/oidc?id_token=0123456789abcdef0123456789abcdef",
-    "https://target.test/data?authToken=0123456789abcdef0123456789abcdef",
-    "https://target.test/file?X-Goog-Signature=0123456789abcdef0123456789abcdef",
-    "https://target.test/file?sig=0123456789abcdef0123456789abcdef",
-    "https://target.test/reset/password/0123456789abcdef0123456789abcdef",
-    "https://target.test/login?password=hunter2",
-    "https://target.test/data?token=abc123",
-    "https://target.test/oauth?client_password=s3cr3t",
-    "https://target.test/app?session=abc123",
-    "https://target.test/sso?ticket=ST-controlled",
-    "https://target.test/acs?SAMLResponse=controlled-assertion",
-    "https://target.test/login?assertion=eyJ.controlled.signature",
-    "https://target.test/login?jwt=eyJ.controlled.signature",
-    "https://target.test/login?auth=dXNlcjpwYXNz",
-    "https://target.test/app;jsessionid=0123456789abcdef0123456789abcdef",
-)
-_BENIGN_URLS = (
-    "https://target.test/objects/550e8400-e29b-41d4-a716-446655440000",
-    "https://target.test/objects?id=550e8400-e29b-41d4-a716-446655440000",
-    "https://target.test/items?cursor=0123456789abcdef0123456789abcdef",
-    "https://target.test/result?code=404",
-    "https://target.test/object?key=widget",
-    "https://target.test/reset/status",
-    "https://target.test/file?policy=public",
-)
-
-
-def _workspace_result(url: str) -> dict[str, Any]:
-    return {
-        "request": {"method": "GET", "url": url},
-        "response": {"statusCode": 200, "body": "ok"},
-    }
-
-
-def _activate_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "session-readable")
-    path = tmp_path / "requests.jsonl"
-    path.touch()
-    return path
-
-
-@pytest.mark.parametrize("url", _CREDENTIAL_URLS)
-def test_workspace_request_rejects_credential_bearing_url(
-    url: str,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    path = _activate_workspace(tmp_path, monkeypatch)
-
-    assert append_workspace_request(_workspace_result(url)) is False
-    assert path.read_bytes() == b""
-    assert "credential-bearing URL" in capsys.readouterr().err
-
-
-@pytest.mark.parametrize("url", _BENIGN_URLS)
-def test_workspace_request_accepts_noncredential_url_controls(
-    url: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    path = _activate_workspace(tmp_path, monkeypatch)
-
-    assert append_workspace_request(_workspace_result(url)) is True
-    assert json.loads(path.read_text())["request"] == f"GET {url}"
-
-
-def test_workspace_request_refuses_symlink_destination(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "session-readable")
-    destination = tmp_path / "destination"
-    destination.write_text("unchanged\n")
-    (tmp_path / "requests.jsonl").symlink_to(destination)
-
-    assert append_workspace_request(_workspace_result("https://target.test/ordinary")) is False
-    assert destination.read_text() == "unchanged\n"
-    assert "workspace request ledger write failed" in capsys.readouterr().err
-
-
-@pytest.mark.parametrize("kind", ["hardlink", "fifo"])
-def test_workspace_request_refuses_nonregular_or_linked_destination(
-    kind: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "session-readable")
-    path = tmp_path / "requests.jsonl"
-    if kind == "hardlink":
-        destination = tmp_path / "destination"
-        destination.write_text("unchanged\n")
-        os.link(destination, path)
-    else:
-        (tmp_path / "SCOPE.md").touch()
-        os.mkfifo(path)
-
-    assert append_workspace_request(_workspace_result("https://target.test/ordinary")) is False
-    if kind == "hardlink":
-        assert destination.read_text() == "unchanged\n"
-
-
-def test_blank_explicit_request_tag_falls_back_to_session(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    path = _activate_workspace(tmp_path, monkeypatch)
-    monkeypatch.setenv("BP_REQUEST_TAG", "   ")
-
-    assert append_workspace_request(_workspace_result("https://target.test/ordinary")) is True
-    assert json.loads(path.read_text())["tag"] == "session-readable"
-
-
-# ---------------------------------------------------------------------------
 # Ledger: no raw body stored
 # ---------------------------------------------------------------------------
 
@@ -300,7 +109,9 @@ def test_no_raw_body_stored(tmp_ledger: Ledger) -> None:
             continue
         if isinstance(val, str):
             assert "Secret body" not in val, f"raw resp body text leaked into column {key!r}"
-            assert "secret.internal" not in val, f"raw req host leaked into column {key!r}"
+            assert "secret.internal" not in val, (
+                f"raw req host leaked into column {key!r}"
+            )
 
 
 def test_sha256_correct(tmp_ledger: Ledger) -> None:
@@ -563,9 +374,7 @@ def test_empty_redact_env_keeps_redaction_on(monkeypatch: pytest.MonkeyPatch) ->
 def test_empty_url_env_falls_back_to_default(monkeypatch: pytest.MonkeyPatch) -> None:
     """An empty env var is treated as unset, not as an empty URL."""
     monkeypatch.setenv("BURP_REST_URL", "")
-    assert (
-        load(config_path=Path("/nonexistent/path/config")).burp_rest_url == "http://127.0.0.1:8089"
-    )
+    assert load(config_path=Path("/nonexistent/path/config")).burp_rest_url == "http://127.0.0.1:8089"
 
 
 def test_invalid_bool_token_in_file_keeps_safe_default(tmp_path: Path) -> None:
@@ -619,7 +428,7 @@ def test_redact_leaves_non_sensitive_intact() -> None:
 
 def test_redact_masks_jwt_in_value() -> None:
     """A JWT appearing inline (e.g. JSON value) must be masked."""
-    text = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.SIGNATURE"
+    text = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.SIGNATURE'
     result = redact(text)
     assert "eyJzdWIiOiJ1c2VyIn0" not in result
 
@@ -640,26 +449,26 @@ def _make_broken_ledger(tmp_path: Path) -> Ledger:
     return ledger
 
 
-def test_record_on_broken_db_does_not_raise(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_record_on_broken_db_does_not_raise(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """[13] RED: Ledger.record() on a closed/broken db must NOT raise; must emit a stderr warning."""
     ledger = _make_broken_ledger(tmp_path)
     # Should return without raising even though the db connection is closed
     ledger.record(OpRecord(status="ok", target="example.com"))
     # Return value may be anything (empty string, None) — the key contract is no raise
     captured = capsys.readouterr()
-    assert "warning" in captured.err.lower(), f"expected a warning on stderr, got {captured.err!r}"
+    assert "warning" in captured.err.lower(), (
+        f"expected a warning on stderr, got {captured.err!r}"
+    )
 
 
-def test_set_exit_code_on_broken_db_does_not_raise(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_set_exit_code_on_broken_db_does_not_raise(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """[13] RED: Ledger.set_exit_code() on a closed db must NOT raise; must emit a stderr warning."""
     ledger = _make_broken_ledger(tmp_path)
     ledger.set_exit_code("any-id", 5)
     captured = capsys.readouterr()
-    assert "warning" in captured.err.lower(), f"expected a warning on stderr, got {captured.err!r}"
+    assert "warning" in captured.err.lower(), (
+        f"expected a warning on stderr, got {captured.err!r}"
+    )
 
 
 def test_close_on_already_closed_ledger_does_not_raise(tmp_path: Path) -> None:
@@ -712,7 +521,9 @@ def test_ledger_dir_mode_is_0o700(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 
     assert bp_dir.exists(), "~/.bp/ directory was not created"
     dir_mode = stat.S_IMODE(os.stat(bp_dir).st_mode)
-    assert dir_mode == 0o700, f"~/.bp/ dir must be 0o700 (owner only), got {oct(dir_mode)}"
+    assert dir_mode == 0o700, (
+        f"~/.bp/ dir must be 0o700 (owner only), got {oct(dir_mode)}"
+    )
 
 
 def test_ledger_chmod_best_effort_does_not_raise_on_existing_db(tmp_path: Path) -> None:
