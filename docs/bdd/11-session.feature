@@ -6,7 +6,7 @@
 #   - Session (cookies + headers) is a singleton; full replace on /session/set (not merge).
 #   - /session/set requires at least one cookie; headers-only → INVALID_REQUEST.
 #   - headers field defaults to null when --header is omitted.
-#   - /session/send goes through Burp HTTP engine → appears in proxy history.
+#   - /session/send uses Burp's HTTP engine and conditional extension DB history, not proxy history.
 #   - extraHeaders on send/batch OVERRIDE (not merge) session headers.
 #   - Batch send is strictly sequential; abort-on-first-failure (no partial success).
 #   - Cookie-jar = auto-captured Set-Cookie; in-memory only; survives /session/clear
@@ -190,26 +190,25 @@ Feature: Session — set/get/clear auth state, authenticated send, batch send, a
     And no Run Ledger entry is created for this operation
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # POST /session/send  →  bp session send --url U [--method M] [--body S] [--extra-header 'N: V']…
-  # Routes through Burp HTTP engine → appears in proxy history.
+  # POST /session/send → bp session send U [--method M] [--body S] [--set-header 'N: V']…
+  # Uses Burp HTTP engine; conditional extension DB history records it, proxy history does not.
   # extraHeaders OVERRIDE (not merge) session headers.
   # Works even with no active session (sends without auth).
   # ═══════════════════════════════════════════════════════════════════════════
 
   @happy @community @ledger
-  Scenario: Session send — GET request; session cookies injected; appears in proxy history
+  Scenario: Session send — GET request; session cookies injected; appears in extension history
     Given a session is active with cookies {"session_token":"eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiYWRtaW4ifQ.sig"}
     When I run:
       """
-      bp session send \
-        --url "https://api.example.com/v1/users/profile" \
+      bp session send "https://api.example.com/v1/users/profile" \
         --method GET \
         --format json
       """
     Then the exit code is 0
     And the JSON field "data.statusCode" is an integer
-    And the request appears in the Burp proxy history with the session cookie injected
-    And the Run Ledger records an entry with burp_op "POST /session/send" and target "api.example.com"
+    And the request appears in extension DB history with the session cookie injected
+    And the Run Ledger records burp_op "POST /session/send" with target "127.0.0.1:8089"
 
   @happy @community
   Scenario: Session send — POST with body; JSON schema contract (statusCode + body fields)
@@ -244,18 +243,18 @@ Feature: Session — set/get/clear auth state, authenticated send, batch send, a
     And the JSON field "data.statusCode" is present
 
   @happy @community
-  Scenario: Session send — request appears in proxy history (side-effect contract)
-    # §6.11: /session/send routes through Burp HTTP engine → recorded in proxy history
+  Scenario: Session send — request appears in conditional extension history
+    # /session/send uses Montoya sendRequest; HistoryDao records it when the DB is available.
     Given a session is active with cookies {"auth":"token"}
     When I run:
       """
-      bp session send \
-        --url "https://api.example.com/v1/items" \
+      bp session send "https://api.example.com/v1/items" \
         --method GET \
         --format json
       """
     Then the exit code is 0
-    And a subsequent "bp proxy --host api.example.com --format json" shows this request
+    And a subsequent "bp history list --host api.example.com --format json" shows this request when the DB is available
+    And "bp proxy --host api.example.com --format json" gains no entry from this Montoya send
 
   @happy @community
   Scenario: Session send — works with no active session (sends unauthenticated)

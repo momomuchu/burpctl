@@ -220,20 +220,14 @@ Feature: Proxy — history list/filter/pagination, single request, WebSocket, in
     And bp surfaces the error with a message indicating the entry was not found or an internal server error occurred
     And stdout or stderr contains "INTERNAL_ERROR" or "not found" or a non-zero HTTP status code hint
 
-  @error @community
-  Scenario: Offset-relative id instability warning is surfaced by bp
-    # Per spec: id = start+idx (offset-relative → unstable between offsets).
-    # bp must warn users to use absolute ids via bp req <id>, not relative page ids.
+  @happy @community
+  Scenario: Filtered and paginated proxy ids remain absolute
     Given the proxy has captured 20 requests
-    When I run:
-      """
-      bp proxy --limit 5 --offset 10 --format json
-      """
+    When I run "bp proxy --limit 5 --offset 10 --format json"
     Then the exit code is 0
-    And bp emits a warning on stderr:
-      """
-      Warning: item ids in paginated results are offset-relative and unstable. Use 'bp req <id>' with the absolute index for stable access.
-      """
+    And each row id is its absolute index in the unfiltered Burp history
+    And "bp req <id>" returns the same URL shown for that id
+    And no offset-relative id warning is emitted
 
   @error @community
   Scenario: bp req with missing id argument shows usage error

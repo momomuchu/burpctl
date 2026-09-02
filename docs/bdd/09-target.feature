@@ -9,7 +9,7 @@
 #                     statusCode and mimeType are nullable → serialised as null (encodeDefaults=true)
 #
 # Key invariants (§6.8):
-#   POST /target/scope         = FULL REPLACE: includes=[] WIPES all scope (destructive).
+#   POST /target/scope         = replaces only the extension-managed snapshot; prior engine/UI rules remain.
 #   GET  /target/scope         = reads in-memory scope ONLY — does NOT reflect Burp UI scope.
 #   GET  /target/scope/check   = authoritative Burp engine verdict — DOES reflect Burp UI scope.
 #   GET  /target/scope/check without ?url= → INVALID_PARAM inside HTTP 200 envelope (not 4xx).
@@ -253,79 +253,44 @@ Feature: Target — sitemap dump, scope management, and authoritative scope chec
     And no new ledger entry is created for this operation
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # POST /target/scope — SetScopeRequest { includes:List<String>, excludes:List<String>=[] }
-  # FULL REPLACE: clear + set. includes=[] WIPES the entire scope. DESTRUCTIVE.
+  # POST /target/scope replaces the extension-managed snapshot and applies those rules.
+  # Montoya cannot enumerate/remove prior engine or UI scope rules; this is not an engine wipe.
   # ═══════════════════════════════════════════════════════════════════════════
 
   @happy @community
-  Scenario: Scope set with one include replaces the entire previous scope
-    Given the in-memory scope previously included "https://old.example.com"
-    When I run:
-      """
-      bp scope set --include https://new.example.com --format json
-      """
+  Scenario: Scope set replaces only the extension-managed snapshot
+    Given this or an earlier extension process included "https://old.example.com"
+    When I run "bp scope set --include https://new.example.com --confirm --format json"
     Then the exit code is 0
-    And the REST call sends POST /target/scope with {"includes":["https://new.example.com"],"excludes":[]}
     And bp scope show returns includes containing only "https://new.example.com"
-    And "https://old.example.com" is no longer present
+    And bp scope check still reports both old.example.com and new.example.com in scope
 
   @happy @community
-  Scenario: Scope set with multiple includes sets all of them
-    When I run:
-      """
-      bp scope set \
-        --include https://target.example.com \
-        --include https://api.target.example.com \
-        --include https://staging.target.example.com \
-        --format json
-      """
-    Then the exit code is 0
-    And bp scope show returns exactly 3 include entries
-
-  @happy @community
-  Scenario: Scope set with excludes sets both includes and excludes
+  Scenario: Scope set with includes and excludes updates the tracked snapshot
     When I run:
       """
       bp scope set \
         --include https://target.example.com \
         --exclude https://target.example.com/logout \
-        --exclude https://target.example.com/static \
-        --format json
+        --confirm --format json
       """
     Then the exit code is 0
-    And the REST body contains "\"includes\":[\"https://target.example.com\"]"
-    And the REST body contains "\"excludes\":[\"https://target.example.com/logout\",\"https://target.example.com/static\"]"
+    And bp scope show contains that include and exclude
 
   @happy @community
-  Scenario: Scope set with omitted --exclude sends excludes as empty list (default)
-    When I run:
-      """
-      bp scope set --include https://target.example.com --format json
-      """
+  Scenario: Empty confirmed set clears the snapshot but not prior engine rules
+    Given the engine already includes "https://target.example.com"
+    When I run "bp scope set --confirm --format json"
     Then the exit code is 0
-    And the POST /target/scope body sent to :8089 contains "\"excludes\":[]"
+    And bp scope show returns empty includes and excludes
+    And bp scope check still reports "https://target.example.com" in scope
 
   @error @community
-  Scenario: Scope set with no --include argument WIPES the entire scope (destructive full-replace)
-    Given the in-memory scope previously included "https://target.example.com"
-    When I run:
-      """
-      bp scope set --format json
-      """
-    Then the exit code is 0
-    And the POST /target/scope body sent to :8089 contains "\"includes\":[]"
-    And bp scope show returns an empty includes list
-    And stderr contains a warning such as "WARNING: --include not provided; this will clear the entire scope"
-
-  @error @community
-  Scenario: Scope set wipe is surfaced as stderr warning even when exit code is 0
-    When I run:
-      """
-      bp scope set
-      """
-    Then the exit code is 0
-    And stderr contains a warning such as "WARNING: includes is empty — all scope entries will be wiped"
-    And the POST /target/scope body sent to :8089 contains "\"includes\":[]"
+  Scenario: Scope set requires explicit confirmation
+    When I run "bp scope set --include https://target.example.com --format json"
+    Then the exit code is 2
+    And stderr says the extension-managed list would be replaced
+    And no POST /target/scope call is made
 
   @happy @community @ledger
   Scenario: Scope set with --tag records the operation in C4 ledger
