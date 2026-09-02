@@ -16,7 +16,7 @@ import typer
 
 from bp import __version__
 from bp.client import DEFAULT_BASE_URL, BurpClient
-from bp.cliutil import EXIT_GENERIC, EXIT_USAGE, State, run
+from bp.cliutil import EXIT_USAGE, State, exit_code_for_error_code, run
 from bp.models import ProxyEntry
 from bp.output import FORMATS
 from bp.runner import FuzzResult, run_fuzz
@@ -114,12 +114,21 @@ def _fuzz_rows(results: list[FuzzResult], anomalous_only: bool) -> list[dict[str
     rows = [asdict(result) for result in results]
     if not anomalous_only:
         return rows
-    return [row for row in rows if row["baseline"] or row["anomalous"]]
+    return [
+        row for row in rows if row["baseline"] or row["anomalous"] or row["error"] is not None
+    ]
 
 
 def _fuzz_exit(rows: list[dict[str, Any]]) -> int | None:
-    """Fail the command after rendering if any attempted shot has an error row."""
-    return EXIT_GENERIC if any(row["error"] is not None for row in rows) else None
+    """Fail after rendering if a shot has an error row, preserving partial evidence."""
+    failures = [row for row in rows if row["error"] is not None]
+    if not failures:
+        return None
+    typer.echo(
+        f"error: {len(failures)} fuzz send(s) failed; attempted-shot rows remain on stdout",
+        err=True,
+    )
+    return max(exit_code_for_error_code(row["error_code"]) for row in failures)
 
 
 @app.command()

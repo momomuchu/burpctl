@@ -46,6 +46,11 @@ _EXIT_BY_CODE: dict[str, int] = {
 }
 
 
+def exit_code_for_error_code(code: str) -> int:
+    """Map a Burp error code to the stable CLI exit contract."""
+    return _EXIT_BY_CODE.get(code, EXIT_GENERIC)
+
+
 @dataclass
 class State:
     url: str
@@ -96,7 +101,7 @@ def run(
             out = render(data, state.fmt, fields=state.fields)
         except BurpError as e:
             typer.echo(f"error: {e}", err=True)
-            exit_code = _EXIT_BY_CODE.get(e.code, EXIT_GENERIC)
+            exit_code = exit_code_for_error_code(e.code)
             raise typer.Exit(exit_code) from None
         except ValidationError:
             # [12] pydantic ValidationError is a subclass of ValueError, so without this guard it

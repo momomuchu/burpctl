@@ -96,6 +96,15 @@ def test_invalid_or_empty_fuzz_plan_sends_nothing() -> None:
         assert sends == []
 
 
+def test_non_utf8_request_target_is_rejected_before_send() -> None:
+    sends: list[str] = []
+
+    with pytest.raises(ValueError, match="structured REST bridge"):
+        run_fuzz(_mock_client(sends), 5, ["query:u"], {"u": [b"\xff"]}, "sniper")
+
+    assert sends == []
+
+
 def test_anomalous_only_retains_fresh_baseline() -> None:
     results = run_fuzz(_mock_client(), 5, ["query:u"], {"u": [b"guest", b"admin"]}, "sniper")
 
@@ -196,8 +205,18 @@ def test_later_send_error_returns_one_row_per_attempt() -> None:
     assert results[-1].payloads == ("two",)
     assert results[-1].status == 0
     assert results[-1].error == "SEND_FAILED: payload failed"
-    assert results[-1].anomalous is True
-    assert _fuzz_exit([r.__dict__ for r in results]) == 1
+    assert results[-1].anomalous is False
+    assert results[-1].error_code == "SEND_FAILED"
+    rows = [r.__dict__ for r in results]
+    assert _fuzz_rows(results, anomalous_only=True)[-1]["error_code"] == "SEND_FAILED"
+    assert _fuzz_exit(rows) == 1
+
+
+def test_fuzz_error_exit_preserves_connection_category(capsys: pytest.CaptureFixture[str]) -> None:
+    rows = [{"error": "CONNECTION_REFUSED: down", "error_code": "CONNECTION_REFUSED"}]
+
+    assert _fuzz_exit(rows) == 3
+    assert "attempted-shot rows remain on stdout" in capsys.readouterr().err
 
 
 def test_run_fuzz_cluster_bomb_matrix() -> None:
@@ -344,7 +363,47 @@ def test_send_missing_response_key_returns_clean_error_row() -> None:
 
     assert len(results) == 1
     assert results[0].baseline is True
-    assert results[0].error == "INVALID_RESPONSE: repeater/send reply missing 'response' field"
+    assert results[0].error == "INVALID_RESPONSE: repeater/send reply missing 'response' object"
+
+
+@pytest.mark.parametrize(
+    ("send_data", "message"),
+    [
+        ({"response": None}, "missing 'response' object"),
+        ({"response": {"statusCode": 200, "body": []}}, "response body is not text"),
+        (
+            {"response": {"statusCode": 200, "body": "ok"}, "durationMs": "invalid"},
+            "invalid 'durationMs'",
+        ),
+    ],
+)
+def test_malformed_send_shapes_return_error_rows(
+    send_data: dict[str, object], message: str
+) -> None:
+    def handler(req: httpx.Request) -> httpx.Response:
+        data = (
+            {
+                "request": {
+                    "method": "GET",
+                    "url": "https://t.example.com/s?u=base",
+                    "headers": [],
+                    "body": None,
+                }
+            }
+            if req.url.path.startswith("/proxy/history/")
+            else send_data
+        )
+        return httpx.Response(200, json={"success": True, "data": data, "error": None})
+
+    client = BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
+    results = run_fuzz(client, 5, ["query:u"], {"u": [b"one"]}, "sniper")
+
+    assert len(results) == 1
+    assert results[0].baseline is True
+    assert results[0].error_code == "INVALID_RESPONSE"
+    assert message in (results[0].error or "")
 
 
 # --- [10] _base_raw(): missing 'request' key in history entry must raise BurpError, not KeyError ---

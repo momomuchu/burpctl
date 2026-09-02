@@ -28,6 +28,7 @@ class FuzzResult:
     anomalous: bool
     baseline: bool
     error: str | None
+    error_code: str | None
 
 
 def _base_raw(entry: Mapping[str, Any]) -> tuple[bytes, str, str]:
@@ -72,10 +73,10 @@ def _payload_lists(
     return lists
 
 
-def _send(client: BurpClient, raw: bytes, scheme: str, host: str) -> tuple[int, int, int]:
-    data = client.post("/repeater/send", {"request": to_send_request(raw, scheme, host)})
-    if "response" not in data:
-        raise BurpError("INVALID_RESPONSE", "repeater/send reply missing 'response' field")
+def _send_request(client: BurpClient, request: Mapping[str, Any]) -> tuple[int, int, int]:
+    data = client.post("/repeater/send", {"request": request})
+    if "response" not in data or not isinstance(data["response"], Mapping):
+        raise BurpError("INVALID_RESPONSE", "repeater/send reply missing 'response' object")
     resp = data["response"]
     if "statusCode" not in resp:
         raise BurpError("INVALID_RESPONSE", "repeater/send reply missing 'statusCode' field")
@@ -83,12 +84,24 @@ def _send(client: BurpClient, raw: bytes, scheme: str, host: str) -> tuple[int, 
         status = int(resp["statusCode"])
     except (TypeError, ValueError):
         raise BurpError("INVALID_RESPONSE", "repeater/send reply has a non-integer 'statusCode'") from None
-    body = resp.get("body") or ""
-    if not isinstance(body, str):
+    body = resp.get("body")
+    if body is None:
+        body = ""
+    elif not isinstance(body, str):
         raise BurpError("INVALID_RESPONSE", "repeater/send response body is not text")
     length = len(body.encode("utf-8"))
-    duration = int(data.get("durationMs", 0))
+    try:
+        duration = int(data.get("durationMs", 0))
+    except (TypeError, ValueError):
+        raise BurpError("INVALID_RESPONSE", "repeater/send reply has invalid 'durationMs'") from None
     return status, length, duration
+
+
+def _prepare_send(raw: bytes, scheme: str, host: str) -> Mapping[str, Any]:
+    try:
+        return to_send_request(raw, scheme, host)
+    except (IndexError, UnicodeDecodeError, ValueError) as exc:
+        raise ValueError(f"fuzz request cannot cross the structured REST bridge: {exc}") from None
 
 
 def run_fuzz(
@@ -110,9 +123,11 @@ def run_fuzz(
     concrete = expand(raw, positions, lists, attack_type)
     if not concrete:
         raise ValueError("fuzz requires at least one concrete request")
+    base_request = _prepare_send(raw, scheme, host)
+    prepared = [(item, _prepare_send(item.raw, scheme, host)) for item in concrete]
 
     try:
-        base_status, base_len, base_duration = _send(client, raw, scheme, host)
+        base_status, base_len, base_duration = _send_request(client, base_request)
     except BurpError as exc:
         return [
             FuzzResult(
@@ -124,6 +139,7 @@ def run_fuzz(
                 anomalous=False,
                 baseline=True,
                 error=str(exc),
+                error_code=exc.code,
             )
         ]
     threshold = max(base_len * anomaly_pct // 100, 20)
@@ -138,12 +154,13 @@ def run_fuzz(
             anomalous=False,
             baseline=True,
             error=None,
+            error_code=None,
         )
     ]
-    for i, cr in enumerate(concrete):
+    for i, (cr, request) in enumerate(prepared):
         payloads = tuple(payload.decode("utf-8", "replace") for payload in cr.payloads)
         try:
-            status, length, duration = _send(client, cr.raw, scheme, host)
+            status, length, duration = _send_request(client, request)
         except BurpError as exc:
             results.append(
                 FuzzResult(
@@ -152,9 +169,10 @@ def run_fuzz(
                     status=0,
                     length=0,
                     duration_ms=0,
-                    anomalous=True,
+                    anomalous=False,
                     baseline=False,
                     error=str(exc),
+                    error_code=exc.code,
                 )
             )
             continue
@@ -169,6 +187,7 @@ def run_fuzz(
                 anomalous=anomalous,
                 baseline=False,
                 error=None,
+                error_code=None,
             )
         )
     return results
