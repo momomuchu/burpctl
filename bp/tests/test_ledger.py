@@ -5,16 +5,21 @@ All tests use a real SQLite DB in a tmp directory — no mocks, no Burp required
 
 from __future__ import annotations
 
+import json
 import os
 import stat
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, cast
 
 import httpx
 import pytest
+import typer
 
 from bp.client import BurpClient
+from bp.commands import repeater
 from bp.config import load, redact
-from bp.ledger import Ledger, OpRecord, QueryFilters
+from bp.ledger import Ledger, OpRecord, QueryFilters, append_workspace_request
 
 
 # ---------------------------------------------------------------------------
@@ -72,6 +77,56 @@ def test_multiple_records_ordered_newest_first(tmp_ledger: Ledger) -> None:
     # newest first (ORDER BY ts DESC)
     assert rows[0].id == id3
     assert rows[2].id == id1
+
+
+# ---------------------------------------------------------------------------
+# Workspace request ledger: one completed target request per JSONL row
+# ---------------------------------------------------------------------------
+
+
+def test_send_command_appends_workspace_request_row(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "session-readable")
+    (tmp_path / "SCOPE.md").write_text("local test scope\n")
+    target_result = {
+        "request": {"method": "PATCH", "url": "https://target.test/items/7"},
+        "response": {"statusCode": 403, "body": "denied"},
+    }
+
+    class Client:
+        def post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+            assert (path, payload) == ("/repeater/send", {"requestId": 7})
+            return target_result
+
+    def fake_run(_ctx: typer.Context, fn: Callable[[Any], Any]) -> None:
+        fn(Client())
+
+    monkeypatch.setattr(repeater, "run", fake_run)
+    repeater.send_cmd(cast(typer.Context, object()), 7, [], None, None, None)
+
+    rows = [json.loads(line) for line in (tmp_path / "requests.jsonl").read_text().splitlines()]
+    assert rows == [{
+        "tag": "session-readable",
+        "request": "PATCH https://target.test/items/7",
+        "status": "403",
+        "fact": "decision:len=6",
+    }]
+
+
+def test_append_workspace_request_is_inert_outside_workspace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "session-readable")
+    result = {
+        "request": {"method": "GET", "url": "https://target.test/"},
+        "response": {"statusCode": 200, "body": "ok"},
+    }
+
+    assert append_workspace_request(result) is False
+    assert not (tmp_path / "requests.jsonl").exists()
 
 
 # ---------------------------------------------------------------------------

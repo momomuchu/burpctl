@@ -19,6 +19,7 @@ from typing import Any
 import typer
 
 from bp.cliutil import EXIT_USAGE, parse_headers, run
+from bp.ledger import append_workspace_request
 
 # ---------------------------------------------------------------------------
 # Sub-application
@@ -112,7 +113,9 @@ def send_cmd(
         if mods:
             payload["modifications"] = mods
 
-        return client.post("/repeater/send", payload)
+        result = client.post("/repeater/send", payload)
+        append_workspace_request(result)
+        return result
 
     run(ctx, _do)
 

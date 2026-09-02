@@ -14,8 +14,11 @@ tag(id, name)       -> bool        UPDATE ops SET tag=name WHERE id=id.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import sqlite3
+import sys
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -185,6 +188,56 @@ def _sha256(data: bytes | None) -> str | None:
     if data is None:
         return None
     return hashlib.sha256(data).hexdigest()
+
+
+# ---------------------------------------------------------------------------
+# Workspace request ledger (ADR-0013)
+# ---------------------------------------------------------------------------
+
+
+def append_workspace_request(result: Mapping[str, Any]) -> bool:
+    """Append one completed replay to an active workspace's ``requests.jsonl``.
+
+    A workspace is active only when the current directory contains ``SCOPE.md`` or an existing
+    ``requests.jsonl``, and a non-empty request tag is available. Standalone bp use remains inert.
+    The compact row is emitted with one ``os.write`` call so concurrent appenders do not split it
+    at the Python buffering layer.
+    """
+    root = Path.cwd()
+    path = root / "requests.jsonl"
+    tag = (os.environ.get("BP_REQUEST_TAG") or os.environ.get("CLAUDE_CODE_SESSION_ID") or "").strip()
+    if not tag or (not path.is_file() and not (root / "SCOPE.md").is_file()):
+        return False
+
+    try:
+        request = result["request"]
+        response = result["response"]
+        if not isinstance(request, Mapping) or not isinstance(response, Mapping):
+            raise ValueError("send result has no request/response objects")
+        method = str(request["method"])
+        url = str(request["url"])
+        status = int(response["statusCode"])
+        body = response.get("body")
+        if body is not None and not isinstance(body, str):
+            raise ValueError("send response body is not text")
+        row = {
+            "tag": tag,
+            "request": f"{method} {url}",
+            "status": f"{status:03d}",
+            "fact": f"decision:len={len((body or '').encode('utf-8'))}",
+        }
+        encoded = (json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
+        fd = os.open(path, os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
+        try:
+            written = os.write(fd, encoded)
+        finally:
+            os.close(fd)
+        if written != len(encoded):
+            raise OSError(f"short append ({written}/{len(encoded)} bytes)")
+    except (KeyError, TypeError, ValueError, OSError) as exc:
+        print(f"warning: workspace request ledger write failed: {exc}", file=sys.stderr)
+        return False
+    return True
 
 
 # ---------------------------------------------------------------------------
