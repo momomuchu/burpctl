@@ -218,24 +218,24 @@ source Kotlin field (SPEC §6/§8); `cli:` marks a `bp`-computed field.
 | `duration_ms` | int | srv:`durationMs` | Burp send duration |
 | `anomalous` | bool | cli | status or byte-length divergence from the fresh baseline |
 | `baseline` | bool | cli | exactly one first row per valid fuzz invocation |
+| `error` | string\|null | cli | typed send/response-shape error; null when a target response exists |
+| `error_code` | string\|null | cli | stable Burp error code used for process exit mapping |
 
-All seven fields are emitted by default. `--anomalous-only` retains the baseline and removes only
-non-anomalous payload rows, so every filtered set still carries its control.
+All nine fields are emitted by default. `--anomalous-only` retains the baseline and every error row,
+removing only successful non-anomalous payload rows, so every filtered set carries its control and
+transport gaps.
 
 #### 2.2.2 · `bp proxy history` (`ProxyHistoryEntry`, SPEC §6.2)
 
 | Field | Type | Source | Notes |
 |---|---|---|---|
-| `id` ★ | int | srv:`id` | absolute index in current Burp proxy history, preserved across filtering and offsets |
-| `method` | string | srv | |
-| `host` | string | srv | |
-| `url` | string | srv | full URL |
-| `status` | int\|null | srv:`statusCode` | |
-| `length` | int\|null | srv | response length |
-| `mimeType` | string\|null | srv | |
-| `timestamp` | string\|null | srv | **always null** (SPEC §6.2 flag) — rendered `null` |
+| `id` ★ | int | cli/srv | absolute index in current Burp proxy history, preserved across filtering and offsets |
+| `method` | string | cli:`request.method` | |
+| `url` | string | cli:`request.url` | full URL |
+| `status` | int\|null | cli:`response.statusCode` | null when no response is attached |
 
-Default fields: `id,method,status,host,url,length`.
+Default fields: `id,method,url,status`. Other nested request/response fields are available only from
+`bp req <id> --format json`; they are not valid `bp proxy --fields` projections.
 
 #### 2.2.3 · `bp history` (DB-backed `HistoryEntryResponse`, SPEC §6.13)
 
@@ -491,9 +491,12 @@ the default when piped (A4).
 ### 5.1 · Stream routing
 
 - **[CRITICAL][BLOCKS:high] E-STREAMS** **stdout = data only.** **stderr = everything else**
-  (errors, warnings, Pro/Community degradation, progress, the AX truncation note). Re-statement of
-  A2 with teeth: a command that fails prints **nothing** to stdout (no partial record, no `null`),
-  so `$(bp ... )` capture is always clean.
+  (errors, warnings, Pro/Community degradation, progress, the AX truncation note). Ordinarily a
+  command that fails before producing data prints nothing to stdout. **Fuzz partial-evidence
+  exception:** after any `/repeater/send` attempt, `bp fuzz` emits one data row for that attempt even
+  if a later shot fails, then writes a summary error to stderr and exits with the highest applicable
+  stable error category. This preserves request/result cardinality without turning a transport error
+  into `anomalous:true`.
 
 ### 5.2 · Error object shape
 
@@ -532,8 +535,10 @@ the default when piped (A4).
 - **[HIGH][BLOCKS:low] E-QUIET** `--quiet` affects **stdout only**. Errors still go to **stderr**
   and still set the exit code. So:
   - Success → essential value(s) on stdout, exit 0.
-  - Failure → **nothing** on stdout, error on stderr (prose in human mode, JSON in agent mode),
-    exit per §5.3.
+  - Failure before data → nothing on stdout, error on stderr, exit per §5.3.
+  - Fuzz partial failure after a shot attempt → essential values for retained baseline/error rows on
+    stdout, summary error on stderr, typed non-zero exit. Use `--format json`, not `quiet`, when the
+    error details themselves are evidence.
   - This makes `V=$(bp scope check --url X --quiet) || handle_error` correct: on failure `$V` is
     empty and the `||` branch fires.
 - **[MEDIUM][BLOCKS:none] E-QUIET-EMPTY** (re OPEN-Q1) A successful op that yields an empty

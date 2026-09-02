@@ -121,16 +121,20 @@ applySubs(base, subs: [{start, end, payload}]) -> bytes:
 | `cluster-bomb` | `s_k`/position | for each tuple ∈ `product(s_1,…,s_n)`: subs=`[{p_k, tuple[k]} ∀k]` | `∏|s_k|` |
 
 **Firing + baseline + anomaly:**
-1. Materialize and validate every `ConcreteRequest`; an empty/invalid plan returns a usage error
-   before any target send (and an empty selector list before any REST call).
+1. Materialize, convert through the structured REST bridge, and validate every `ConcreteRequest`;
+   an empty/invalid plan returns a usage error before any target send (and an empty selector list
+   before any REST call).
 2. Fire the unmodified `base` once and emit that attempted control first as
-   `{index:-1, payloads:[], baseline:true, anomalous:false, status, length, duration_ms, error}`.
+   `{index:-1, payloads:[], baseline:true, anomalous:false, status, length, duration_ms, error,
+   error_code}`.
 3. For each `ConcreteRequest`, `POST /repeater/send` and emit a result with `baseline:false`.
 4. A successful payload is anomalous when `statusCode ≠ status0` or `|length − len0|` exceeds the
-   threshold. A payload send error emits `status:0`, `length:0`, `anomalous:true`, and the typed
-   error. A baseline send error emits its baseline error row and stops before payload sends.
+   threshold. A payload send error emits `status:0`, `length:0`, `anomalous:false`, `error`, and
+   `error_code`: no target response exists to compare, so infrastructure failure is not an anomaly.
+   A baseline send error emits its baseline error row and stops before payload sends.
 5. `--anomalous-only` retains the baseline and every error row, filtering only successful ordinary
-   payload rows; any error row makes the command exit 1 after rendering all attempted-shot evidence.
+   payload rows; error rows make the command exit in the typed stable category after rendering all
+   attempted-shot evidence (`CONNECTION_REFUSED`/`TRANSPORT_ERROR` remain exit 3; generic errors 1).
 
 The fresh baseline prevents a stale history response from inverting anomaly classification after
 session, state, or target drift. Every attempted target send has one returned row: N payloads produce
