@@ -280,15 +280,15 @@ def append_workspace_request(result: Mapping[str, Any]) -> bool:
     The compact row is emitted with one ``os.write`` call so concurrent appenders do not split it
     at the Python buffering layer.
     """
-    root = Path.cwd()
-    path = root / "requests.jsonl"
-    preferred_tag = (os.environ.get("BP_REQUEST_TAG") or "").strip()
-    fallback_tag = (os.environ.get("CLAUDE_CODE_SESSION_ID") or "").strip()
-    tag = preferred_tag or fallback_tag
-    if not tag or (not path.is_file() and not (root / "SCOPE.md").is_file()):
-        return False
-
     try:
+        root = Path.cwd()
+        path = root / "requests.jsonl"
+        preferred_tag = (os.environ.get("BP_REQUEST_TAG") or "").strip()
+        fallback_tag = (os.environ.get("CLAUDE_CODE_SESSION_ID") or "").strip()
+        tag = preferred_tag or fallback_tag
+        if not tag or (not path.is_file() and not (root / "SCOPE.md").is_file()):
+            return False
+
         request = result["request"]
         response = result["response"]
         if not isinstance(request, Mapping) or not isinstance(response, Mapping):

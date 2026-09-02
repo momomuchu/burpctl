@@ -117,6 +117,20 @@ def test_send_command_appends_workspace_request_row(
     ]
 
 
+def test_workspace_request_warns_when_cwd_disappears(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    workspace = tmp_path / "gone"
+    workspace.mkdir()
+    monkeypatch.chdir(workspace)
+    workspace.rmdir()
+
+    assert append_workspace_request(_workspace_result("https://target.test/ordinary")) is False
+    assert "workspace request ledger write failed" in capsys.readouterr().err
+
+
 def test_append_workspace_request_is_inert_outside_workspace(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
