@@ -121,17 +121,21 @@ applySubs(base, subs: [{start, end, payload}]) -> bytes:
 | `cluster-bomb` | `s_k`/position | for each tuple ∈ `product(s_1,…,s_n)`: subs=`[{p_k, tuple[k]} ∀k]` | `∏|s_k|` |
 
 **Firing + baseline + anomaly:**
-1. Fire the unmodified `base` once and emit that completed control first as
-   `{index:-1, payloads:[], baseline:true, anomalous:false, status, length, duration_ms}`.
-2. For each `ConcreteRequest`, `POST /repeater/send` and emit a result with `baseline:false`.
-3. **anomalous = true** if `statusCode ≠ status0` **or** `|length − len0|` exceeds threshold
-   (recommendation: `> max(0.05·len0, k·σ)`; threshold to be locked in by test).
-4. `--throttle-ms N` between shots; `--anomalous-only` retains the baseline control and filters
-   non-baseline rows to anomalies; `--no-ledger` is respected.
+1. Materialize and validate every `ConcreteRequest`; an empty/invalid plan returns a usage error
+   before any target send (and an empty selector list before any REST call).
+2. Fire the unmodified `base` once and emit that attempted control first as
+   `{index:-1, payloads:[], baseline:true, anomalous:false, status, length, duration_ms, error}`.
+3. For each `ConcreteRequest`, `POST /repeater/send` and emit a result with `baseline:false`.
+4. A successful payload is anomalous when `statusCode ≠ status0` or `|length − len0|` exceeds the
+   threshold. A payload send error emits `status:0`, `length:0`, `anomalous:true`, and the typed
+   error. A baseline send error emits its baseline error row and stops before payload sends.
+5. `--anomalous-only` retains the baseline and every error row, filtering only successful ordinary
+   payload rows; any error row makes the command exit 1 after rendering all attempted-shot evidence.
 
 The fresh baseline prevents a stale history response from inverting anomaly classification after
-session, state, or target drift. Every target send has one returned result: N payloads produce N+1
-sends and N+1 rows, with the extra row explicitly identified as the baseline.
+session, state, or target drift. Every attempted target send has one returned row: N payloads produce
+N+1 attempts and N+1 rows when all run, with the extra row explicitly identified as the baseline.
+Response `length` is UTF-8 body bytes, not the host language's character count.
 
 **Guards (config, non-blocking by default — ADR-0007):**
 - Total count `> threshold` (recommendation 10000) → **warn** (or confirm if `--confirm`), not a hard block.
