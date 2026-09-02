@@ -25,10 +25,13 @@ Write exactly one compact JSON object with string keys `tag`, `request`, `status
 {"tag":"<tag>","request":"<METHOD> <absolute-url>","status":"<three-digits>","fact":"decision:len=<response-body-utf8-bytes>"}
 ```
 
-Append the encoded row in one operating-system write. A row failure warns on stderr after the
-target result exists; it never changes or hides that result. An unsuccessful REST operation and an
-operation without a completed target response append nothing. `BP_REQUEST_TAG` permits a generic
-caller-supplied attempt identity; the Claude session identity is the zero-ceremony fallback used by
+Append the encoded row in one operating-system write to a single regular, non-symlink file. Refuse
+recognizable credential-bearing URLs (userinfo; credential-named query parameters; opaque OAuth
+codes and recovery/invitation path tokens) with a visible warning and no row rather than persisting
+a transformed URL as though it were the request sent. A row failure warns on stderr after the target
+result exists; it never changes or hides that result. An unsuccessful REST operation and an operation
+without a completed target response append nothing. `BP_REQUEST_TAG` permits a generic
+caller-supplied attempt identity; a blank value falls through to the Claude session identity used by
 an existing workspace.
 
 This workspace row and `~/.bp/ledger.db` have different purposes. `--no-ledger` continues to disable
@@ -39,9 +42,9 @@ Outside an identified workspace, `bp` retains its standalone behavior and create
 ## Consequences
 
 - One `bp send` target request now has one workspace row without shell-side receipt construction.
-- The row contains no target body, response body, headers, cookies, or credential bytes.
-- Callers must keep secrets out of request URLs; the ledger intentionally records the effective
-  method and URL needed to identify the request.
+- The row contains no target body, response body, headers, cookies, or recognized credential-bearing
+  URL. URL secret detection is intentionally conservative and non-exhaustive; callers must still
+  keep secrets out of request URLs.
 - Other effect-bearing commands need their own request/result bijection before they can use this
   writer. This decision does not falsely treat one control-plane Run Ledger row as target evidence.
 

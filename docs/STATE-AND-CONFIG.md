@@ -49,8 +49,10 @@ Under ADR-0013, a successful `bp send` also appends one target-request row to
 `./requests.jsonl` when the current directory has `SCOPE.md` or an existing `requests.jsonl` and
 either `BP_REQUEST_TAG` or `CLAUDE_CODE_SESSION_ID` is non-empty. The row contains exactly
 `tag`, `request` (`METHOD absolute-URL`), quoted three-digit `status`, and a non-secret body-length
-`fact`; it contains no headers or bodies. This row is request evidence and is separate from the
-SQLite operation log. Standalone use outside an identifiable workspace creates no such file.
+`fact`; it contains no headers or bodies. Recognizable credential-bearing URLs are refused with a
+warning instead of being transformed or persisted, but detection is not exhaustive and callers must
+keep secrets out of URLs. This row is request evidence and is separate from the SQLite operation
+log. Standalone use outside an identifiable workspace creates no such file.
 
 `BP_REQUEST_TAG` takes precedence over the Claude session fallback. `--no-ledger` suppresses only
 SQLite Run Ledger entries; it does not suppress the active workspace's required request row.
