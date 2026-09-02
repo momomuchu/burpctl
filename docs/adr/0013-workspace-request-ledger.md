@@ -1,6 +1,6 @@
 # ADR-0013 — Mirror completed replay sends into an active workspace request ledger
 
-**Status:** accepted — 2026-09-02  
+**Status:** accepted — 2026-09-02
 **Criticality:** [HIGH]
 
 ## Context
