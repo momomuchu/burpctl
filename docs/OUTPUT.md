@@ -16,7 +16,7 @@
 3. `--fields` picks *which* columns and their order; `-w` builds a *custom line* from `%{tokens}`.
 4. Default format is `table` for all streams in v1; pass `--format json` for agents/pipes. _(v1.1 — TTY-aware auto-detect not yet implemented)_
 5. Errors always go to **stderr** as one JSON object; data goes to **stdout**; exit code carries success/failure.
-6. Each bp-to-extension REST call is written as one **Run Ledger** row (`~/.bp/`) unless
+6. Each attempted bp-to-extension REST call is written as one **Run Ledger** row (`~/.bp/`) unless
    `--no-ledger`; this is operation metadata, not a mirror of every shown result or all proxy traffic.
 7. `bp fuzz ... -w '%{status} %{payload}'` prints ONLY the HTTP code + payload, one line per request.
 
@@ -179,7 +179,7 @@ $ bp fuzz results a1b2c3d4 --format quiet
 | `bp collaborator new` | the payload host | the thing you paste into a target |
 | `bp scope check` | `in-scope` \| `out-of-scope` | branch a script |
 | `bp health` | `ok` \| `down` | liveness gate |
-| `bp ledger list` | `id` | chain to `bp show` |
+| `bp log` | `id` | identify a row for `bp tag` |
 | `bp scan *` (securityscan) | `vulnerable` \| `clean` | one-word verdict |
 
 ---
@@ -308,21 +308,23 @@ Default fields: `interactionId,type,clientIp,timestamp`.
 
 Default fields: `status,length,time,method,host,contentType`.
 
-#### 2.2.7 · `bp ledger list` / `bp show` (LedgerEntry, SPEC §9)
+#### 2.2.7 · `bp log` / `bp tag` (Run Ledger operation row)
 
 | Field | Type | Source | Notes |
 |---|---|---|---|
-| `id` ★ | int | ledger | local autoincrement |
-| `tag` | string\|null | ledger:`name`/`tag` | user label (`--tag`) |
-| `timestamp` | string | ledger | ISO8601 |
-| `command` | string | ledger | the `bp` subcommand name (e.g. `bp check idor`), **not** the full argv — URL/header/payload args are intentionally omitted for privacy |
-| `target` | string\|null | ledger | host/url |
-| `burpOp` | string | ledger | REST endpoint called (e.g. `POST /intruder/attack/create`) |
-| `status` | string | ledger | ok\|err |
-| `requestRef` | string\|null | ledger | pointer to stored request |
-| `responseRef` | string\|null | ledger | pointer to stored response |
+| `id` ★ | string | ledger | time-prefixed local key |
+| `ts` | string | ledger | ISO-8601 operation time |
+| `command` | string\|null | ledger | subcommand name, not full argv |
+| `burp_op` | string\|null | ledger | REST method/path |
+| `target` | string\|null | ledger | Burp REST listener host[:port], not application host |
+| `program` / `tag` | string\|null | ledger | reserved workspace / retroactive label |
+| `status` | string | ledger | `ok`, `error`, or `refused` |
+| `exit_code` / `error_code` | int\|null / string\|null | ledger | process and typed-error outcome |
+| `req_sha256` / `resp_sha256` | string\|null | ledger | REST-envelope hashes; not raw bodies |
+| `resp_status` / `resp_len` / `duration_ms` | int\|null | ledger | REST exchange metadata |
+| `req_ref` / `resp_ref` | string\|null | ledger | reserved; currently null |
 
-Default fields: `id,timestamp,tag,status,target,burpOp`.
+Default fields: every field above in schema order. Use `--fields` to project an export.
 
 ---
 
@@ -364,7 +366,7 @@ columns. `-w` owns stdout (R-PREC).
 
 - **[HIGH][BLOCKS:low] R-WCATALOG** A token that names a **catalog field** for the current family
   but is not in the above core list resolves to that field's value (e.g. `%{severity}` on
-  `bp scanner issues`, `%{interactionId}` on `bp collaborator poll`, `%{tag}` on `bp ledger list`).
+  `bp scanner issues`, `%{interactionId}` on `bp collaborator poll`, `%{tag}` on `bp log`).
   The core 11 tokens above are guaranteed on **every** family (resolving to empty where the family
   lacks them). This keeps the headline contract universal while letting power users reach any field.
 - **[MEDIUM][BLOCKS:none] R-WUNKNOWN** An unknown token (not core, not a catalog field) is a usage
@@ -547,7 +549,7 @@ the default when piped (A4).
 
 ### 6.1 · Every bp REST call is recorded
 
-- **[MEDIUM][BLOCKS:none] L-RECORD** Every resolved call from `bp` to `:8089` writes one
+- **[MEDIUM][BLOCKS:none] L-RECORD** Every attempted call from `bp` to `:8089` writes one
   **LedgerEntry** to `~/.bp/` SQLite, independent of `--format`. It stores operation metadata:
   command name, REST listener, `burpOp`, REST request/response hashes, REST HTTP status/length,
   duration, outcome, exit code, and optional tag. It does not store target bodies and does not
@@ -569,10 +571,9 @@ the default when piped (A4).
   invocation. Use for dry-runs, health polls, or when an entry would be noise. It does **not** affect
   stdout/stderr/exit at all. A `--no-ledger` op leaves **zero** trace in `~/.bp/` (verifiable: ledger
   count unchanged).
-- **[LOW][BLOCKS:none] L-READONLY** Read-only `bp` subcommands that don't touch `:8089`
-  (`bp ledger list`, `bp show`, `bp version`, `bp --schema`) never write a ledger entry regardless of
-  `--no-ledger` (nothing to record). `bp health` records by default (it *is* a `:8089` op) but is a
-  common `--no-ledger` candidate.
+- **[LOW][BLOCKS:none] L-READONLY** Local `bp log` / `bp tag` operations do not call `:8089` and
+  do not create Run Ledger rows themselves. `bp --version` is likewise local; `bp version` calls the
+  extension and is recorded by default.
 
 ### 6.3 · Stored references and re-rendering are not shipped
 
@@ -586,7 +587,7 @@ the default when piped (A4).
 - **[HIGH][BLOCKS:none] L-BANNER** When an op is recorded, `bp` may emit a one-line confirmation
   (`recorded as ledger #17 [tag: ssrf-probe]`) — but **only to stderr**, never stdout, so it never
   contaminates data or `-w` output. With `--no-ledger`, no banner. In agent mode the banner is
-  suppressed entirely (it's noise for a parser; the agent can `bp ledger list` if it wants the id).
+  suppressed entirely (it's noise for a parser; the agent can run `bp log --limit 1` for the id).
 
 ---
 

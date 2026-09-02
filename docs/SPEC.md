@@ -99,12 +99,12 @@ kubectl / systemctl).
 |---|---|---|
 | **C1** | API spec (this source-grounded enumeration). | priority |
 | **C2** | Standalone CLI `bp` — DX + AX, core = `--pos` grammar. | priority |
-| **C4** | **Run Ledger** — every operation stored in a local DB, named, taggable, verifiable (§9). | shipped |
+| **C4** | **Run Ledger** — bp-to-extension REST operation metadata in a local DB (§9). | shipped |
 | **W** | SDD / TDD / DDD / spec-as-contract methodology. | cross-cutting |
 
-> **C4 = the differentiating value vs `curl`.** Without
-> a ledger, `bp` is just another HTTP wrapper.
-> With it, it becomes a **traceable / ISO-grade** tool.
+> **C4 complements `curl`; it does not replace target traffic evidence.** It makes bp's REST control
+> calls timestamped and queryable. Burp proxy history and active-workspace request rows answer the
+> separate question of what reached a target.
 
 ---
 
@@ -786,35 +786,27 @@ JSON names = Kotlin identifiers (camelCase).
 
 ## 9 · C4 Run Ledger (observability / ISO)
 
-Every `bp` operation (fuzz, send,
-scan, collaborator…) is recorded in a
-**local SQLite DB under `~/.bp/`**, independent
-of the extension's DB. This is `bp`'s differentiator
-vs `curl`: every action is traceable, replayable, and
-timestamped.
+Each attempted HTTP call from `bp` to the REST extension is recorded in a **local SQLite DB under
+`~/.bp/`**, independent of the extension's DB. It is control-plane operation metadata; it does not
+observe curl, xh, browser, or other proxy traffic and does not by itself prove a target request.
 
 **Fields per entry**:
 
-- `id` (local), `name` / `tag` (user label),
-  `timestamp`, `target` (host/url),
-  `command` (the `bp` command line executed),
-  `request_ref` / `response_ref`, `status`
-  (ok/err), `burp_op` (REST endpoint called).
+- `id`, `ts`, optional `tag`, `command` (subcommand name), `target` (Burp REST listener),
+  `burp_op`, operation `status`, `exit_code`, REST request/response SHA-256 values, REST response
+  status/length, duration, error code, and reserved refs. Current `req_ref`/`resp_ref` values are
+  null and raw bodies are not stored.
 
 **Queryable**:
 
-- `bp log` — lists / filters runs.
-- `bp tag <id> <label>` — annotates after the fact.
-- `bp show <id>` — req/resp detail.
+- `bp log` lists and filters operation rows and exports them through the ordinary output formats.
+- `bp tag <id> <label>` annotates an existing row.
+- No `bp show` or target-request reconstruction command is shipped.
 
-**ISO / traceability framing**: a hunter or an
-auditor can **replay**, **prove**, and
-**timestamp** every action taken against a target —
-something `curl` does not provide. Aligns `bp` with
-engagement traceability requirements.
-
-**Scope**: all operations are recorded. Retention
-and export format (JSON/CSV) are configurable.
+**Traceability boundary**: timestamps, endpoint names, outcomes, REST metadata, and hashes establish
+which control-plane calls were attempted and whether they resolved or failed in transport. They are
+useful operational evidence, not a complete engagement ledger or replay source. ADR-0013 separately
+defines the bounded active-workspace row for a completed `bp send` target request.
 
 ---
 
