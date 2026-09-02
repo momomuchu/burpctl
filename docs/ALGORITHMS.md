@@ -121,12 +121,17 @@ applySubs(base, subs: [{start, end, payload}]) -> bytes:
 | `cluster-bomb` | `s_k`/position | for each tuple ∈ `product(s_1,…,s_n)`: subs=`[{p_k, tuple[k]} ∀k]` | `∏|s_k|` |
 
 **Firing + baseline + anomaly:**
-1. Read the captured history entry's response → **baseline** `{status0, len0}`; do not replay the
-   unmodified request, because every send must correspond to a returned result.
-2. For each `ConcreteRequest`: `POST /repeater/send` → `{index, payload(s), statusCode, length, durationMs}` → `AttackResultEntry`.
+1. Fire the unmodified `base` once and emit that completed control first as
+   `{index:-1, payloads:[], baseline:true, anomalous:false, status, length, duration_ms}`.
+2. For each `ConcreteRequest`, `POST /repeater/send` and emit a result with `baseline:false`.
 3. **anomalous = true** if `statusCode ≠ status0` **or** `|length − len0|` exceeds threshold
    (recommendation: `> max(0.05·len0, k·σ)`; threshold to be locked in by test).
-4. `--throttle-ms N` between shots; `--anomalous-only` filters output; `--no-ledger` respected.
+4. `--throttle-ms N` between shots; `--anomalous-only` retains the baseline control and filters
+   non-baseline rows to anomalies; `--no-ledger` is respected.
+
+The fresh baseline prevents a stale history response from inverting anomaly classification after
+session, state, or target drift. Every target send has one returned result: N payloads produce N+1
+sends and N+1 rows, with the extra row explicitly identified as the baseline.
 
 **Guards (config, non-blocking by default — ADR-0007):**
 - Total count `> threshold` (recommendation 10000) → **warn** (or confirm if `--confirm`), not a hard block.
@@ -140,7 +145,7 @@ bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=a.txt(2) \
            --type cluster-bomb
 → resolvePos × 3 → 3 Pos (sorted offsets, non-overlapping)
 → product 2×2×3 = 12 ConcreteRequest, each applySubs(right→left) + Content-Length if body
-→ 12 shots /repeater/send → 12 AttackResultEntry, anomalies compared to the captured response
+→ 13 shots /repeater/send → 13 FuzzResult rows: 1 explicit fresh baseline + 12 payload rows
 ```
 
 **RED test cases (TDD):**

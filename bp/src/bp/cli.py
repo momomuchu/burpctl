@@ -19,7 +19,7 @@ from bp.client import DEFAULT_BASE_URL, BurpClient
 from bp.cliutil import EXIT_USAGE, State, run
 from bp.models import ProxyEntry
 from bp.output import FORMATS
-from bp.runner import run_fuzz
+from bp.runner import FuzzResult, run_fuzz
 
 app = typer.Typer(
     add_completion=False,
@@ -109,6 +109,14 @@ def proxy(
     run(ctx, lambda c: _proxy_rows(c.get("/proxy/history", **params).get("entries", [])))
 
 
+def _fuzz_rows(results: list[FuzzResult], anomalous_only: bool) -> list[dict[str, Any]]:
+    """Renderable fuzz rows, retaining the fresh control even in anomaly-only output."""
+    rows = [asdict(result) for result in results]
+    if not anomalous_only:
+        return rows
+    return [row for row in rows if row["baseline"] or row["anomalous"]]
+
+
 @app.command()
 def fuzz(
     ctx: typer.Context,
@@ -116,7 +124,9 @@ def fuzz(
     pos: list[str] = typer.Option([], "--pos", help="position selector, e.g. 'header:Authorization'"),
     payloads: list[str] = typer.Option([], "--payloads", help="NAME=FILE (a payload list per position)"),
     attack_type: str = typer.Option("sniper", "--type", help="sniper|battering-ram|pitchfork|cluster-bomb"),
-    anomalous_only: bool = typer.Option(False, "--anomalous-only", help="show only anomalous results"),
+    anomalous_only: bool = typer.Option(
+        False, "--anomalous-only", help="show the fresh baseline plus anomalous payload results"
+    ),
 ) -> None:
     """Fuzz a captured request client-side (all attack types, byte-offset precise).
 
@@ -138,8 +148,7 @@ def fuzz(
 
     def _do(client: BurpClient) -> Any:
         results = run_fuzz(client, request_id, pos, payload_map, attack_type)
-        rows = [asdict(r) for r in results]
-        return [r for r in rows if r["anomalous"]] if anomalous_only else rows
+        return _fuzz_rows(results, anomalous_only)
 
     run(ctx, _do)
 

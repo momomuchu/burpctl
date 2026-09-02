@@ -5,6 +5,7 @@ import json
 import httpx
 import pytest
 
+from bp.cli import _fuzz_rows
 from bp.client import BurpClient
 from bp.pos import Position
 from bp.runner import _payload_lists, run_fuzz
@@ -28,7 +29,6 @@ def _mock_client() -> BurpClient:
                             "headers": [{"name": "Host", "value": "t.example.com"}],
                             "body": None,
                         },
-                        "response": {"statusCode": 200, "body": "x" * 100},
                     },
                     "error": None,
                 },
@@ -59,11 +59,27 @@ def _mock_client() -> BurpClient:
 
 def test_run_fuzz_sniper_flags_anomaly() -> None:
     results = run_fuzz(_mock_client(), 5, ["query:u"], {"u": [b"guest", b"admin"]}, "sniper")
-    assert len(results) == 2  # 1 position * 2 payloads
-    guest = next(r for r in results if r.payloads == ("guest",))
-    admin = next(r for r in results if r.payloads == ("admin",))
+    baseline = next(r for r in results if r.baseline)
+    payload_results = [r for r in results if not r.baseline]
+    assert baseline.index == -1
+    assert baseline.payloads == ()
+    assert baseline.status == 200
+    assert not baseline.anomalous
+    assert len(payload_results) == 2  # 1 position * 2 payloads
+    guest = next(r for r in payload_results if r.payloads == ("guest",))
+    admin = next(r for r in payload_results if r.payloads == ("admin",))
     assert guest.status == 200 and not guest.anomalous
     assert admin.status == 500 and admin.anomalous  # status differs from baseline
+
+
+def test_anomalous_only_retains_fresh_baseline() -> None:
+    results = run_fuzz(_mock_client(), 5, ["query:u"], {"u": [b"guest", b"admin"]}, "sniper")
+
+    visible = _fuzz_rows(results, anomalous_only=True)
+
+    assert [row["baseline"] for row in visible] == [True, False]
+    assert visible[0]["index"] == -1
+    assert visible[1]["payloads"] == ("admin",)
 
 
 def test_run_fuzz_cluster_bomb_matrix() -> None:
@@ -74,11 +90,16 @@ def test_run_fuzz_cluster_bomb_matrix() -> None:
         {"u": [b"a", b"b"], "p": [b"1", b"2"]},
         "cluster-bomb",
     )
-    assert len(results) == 4  # 2 * 2
-    assert {r.payloads for r in results} == {("a", "1"), ("a", "2"), ("b", "1"), ("b", "2")}
+    assert len(results) == 5  # 1 returned baseline + 2 * 2 payloads
+    assert {r.payloads for r in results if not r.baseline} == {
+        ("a", "1"),
+        ("a", "2"),
+        ("b", "1"),
+        ("b", "2"),
+    }
 
 
-def test_run_fuzz_sends_only_returned_payload_results() -> None:
+def test_run_fuzz_returns_one_result_per_send() -> None:
     sends: list[str] = []
 
     def handler(req: httpx.Request) -> httpx.Response:
@@ -120,9 +141,13 @@ def test_run_fuzz_sends_only_returned_payload_results() -> None:
     )
     results = run_fuzz(client, 5, ["query:u"], {"u": [b"one", b"two"]}, "sniper")
 
-    assert len(results) == 2
+    assert len(results) == 3
     assert len(sends) == len(results)
-    assert all("u=base" not in url for url in sends)
+    assert results[0].baseline is True
+    assert results[0].payloads == ()
+    assert results[0].index == -1
+    assert all(not result.baseline for result in results[1:])
+    assert sends[0].endswith("u=base")
 
 
 # --- [38] invalid attack type must raise ValueError before payload resolution ---

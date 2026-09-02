@@ -553,10 +553,11 @@ the default when piped (A4).
   duration, outcome, exit code, and optional tag. It does not store target bodies and does not
   observe curl, xh, browser, or other proxy traffic.
 - **[MEDIUM][BLOCKS:none] L-GRAIN** Granularity is one row per REST call, not one row per CLI
-  invocation or rendered result. A fuzz with N payloads makes one history fetch plus N
-  `/repeater/send` calls and therefore N+1 Run Ledger rows, while it makes exactly N target sends
-  and returns N result rows. `req_ref` and `resp_ref` are currently null; no `bp show` command is
-  shipped. Target-request evidence in an active workspace is the separate ADR-0013 row.
+  invocation or rendered result. A fuzz with N payloads makes one history fetch plus N+1
+  `/repeater/send` calls (one explicit fresh baseline plus N payload sends) and therefore N+2 Run
+  Ledger rows. It makes N+1 target sends and returns N+1 result rows, preserving request/result
+  bijection. `req_ref` and `resp_ref` are currently null; no `bp show` command is shipped.
+  Target-request evidence in an active workspace is the separate ADR-0013 row.
 
 ### 6.2 · `--tag` and `--no-ledger`
 
