@@ -166,6 +166,8 @@ _CREDENTIAL_URLS = (
     "https://target.test/acs?SAMLResponse=controlled-assertion",
     "https://target.test/login?assertion=eyJ.controlled.signature",
     "https://target.test/login?jwt=eyJ.controlled.signature",
+    "https://target.test/login?auth=dXNlcjpwYXNz",
+    "https://target.test/app;jsessionid=0123456789abcdef0123456789abcdef",
 )
 _BENIGN_URLS = (
     "https://target.test/objects/550e8400-e29b-41d4-a716-446655440000",

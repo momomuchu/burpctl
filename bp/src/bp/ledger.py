@@ -198,12 +198,14 @@ _SENSITIVE_QUERY_KEYS = {
     "accesstoken",
     "apikey",
     "assertion",
+    "auth",
     "authorization",
     "authtoken",
     "clientpassword",
     "clientsecret",
     "credential",
     "idtoken",
+    "jsessionid",
     "jwt",
     "passwd",
     "password",
@@ -243,6 +245,16 @@ def _looks_opaque_secret(value: str) -> bool:
     )
 
 
+def _sensitive_url_parameter(name: str, value: str) -> bool:
+    normalized = re.sub(r"[^a-z0-9]", "", unquote(name).lower())
+    if normalized in _SENSITIVE_QUERY_KEYS:
+        return True
+    return (
+        normalized.endswith(_SENSITIVE_QUERY_SUFFIXES)
+        or normalized in _SENSITIVE_CONTEXT_KEYS
+    ) and _looks_opaque_secret(value)
+
+
 def _credential_bearing_url(url: str) -> bool:
     """Conservatively detect URL forms unsafe for a non-secret request index."""
     parsed = urlsplit(url)
@@ -251,15 +263,14 @@ def _credential_bearing_url(url: str) -> bool:
     if parsed.username is not None or parsed.password is not None or parsed.fragment:
         return True
     for key, value in parse_qsl(parsed.query, keep_blank_values=True):
-        normalized = re.sub(r"[^a-z0-9]", "", unquote(key).lower())
-        if normalized in _SENSITIVE_QUERY_KEYS:
-            return True
-        if (
-            normalized.endswith(_SENSITIVE_QUERY_SUFFIXES)
-            or normalized in _SENSITIVE_CONTEXT_KEYS
-        ) and _looks_opaque_secret(value):
+        if _sensitive_url_parameter(key, value):
             return True
     segments = [unquote(segment) for segment in parsed.path.split("/") if segment]
+    for segment in segments:
+        for parameter in segment.split(";")[1:]:
+            key, separator, value = parameter.partition("=")
+            if separator and _sensitive_url_parameter(key, value):
+                return True
     for index, segment in enumerate(segments):
         context = {part.lower() for part in segments[max(0, index - 2) : index]}
         if context & _SENSITIVE_PATH_PREDECESSORS and _looks_opaque_secret(segment):
