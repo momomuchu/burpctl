@@ -207,29 +207,26 @@ $ bp fuzz results a1b2c3d4 --format quiet
 Catalog order = canonical JSON order. `★` marks the `quiet` essential value. `srv:` notes the
 source Kotlin field (SPEC §6/§8); `cli:` marks a `bp`-computed field.
 
-#### 2.2.1 · `bp fuzz results` (Intruder `AttackResultEntry`, SPEC §6.4)
+#### 2.2.1 · `bp fuzz` synchronous client-side results
 
 | Field | Type | Source | Notes |
 |---|---|---|---|
-| `index` | int | srv:`index` | 0-based position in the attack |
-| `payload` | string | srv:`payload` | the injected value |
-| `status` ★ | int | srv:`statusCode` | `0` if request errored (renamed `statusCode`→`status` for `-w` ergonomics) |
-| `length` | int | srv:`length` | response byte length |
-| `time` | int(ms) | srv:`durationMs` | alias; `durationMs` also accepted |
-| `contentType` | string\|null | srv:`contentType` | |
-| `anomalous` | bool | srv:`anomalous` | **only meaningful in `quick-fuzz`** (SPEC §6.4: server sets it only there). For `attack/results` it is `false`/absent → `bp` renders `null`, not a false `false`. **[HIGH][BLOCKS:none] R-ANOM** |
-| `error` | string\|null | srv:`error` | transport error message |
-| `location` | string\|null | cli: parsed from response `Location:` header | redirect target |
-| `requestId` | int\|null | cli: history index if the row was persisted | for chaining to `bp repeater send --id` |
-| `bodyPreview` | string\|null | srv:`bodyPreview` | capped (§4.3); NOT in default fields |
+| `index` | int | cli | `-1` for the explicit fresh baseline; payload rows are 0-based |
+| `payloads` | list[string] | cli | empty for the baseline; values applied for a payload row |
+| `status` ★ | int | srv:`response.statusCode` | target HTTP status |
+| `length` | int | cli | UTF-8 response-body byte length |
+| `duration_ms` | int | srv:`durationMs` | Burp send duration |
+| `anomalous` | bool | cli | status or byte-length divergence from the fresh baseline |
+| `baseline` | bool | cli | exactly one first row per valid fuzz invocation |
 
-Default `table`/`json` fields (when `--fields` absent): `index,payload,status,length,time,contentType,anomalous`. `error`, `location`, `requestId`, `bodyPreview` are opt-in.
+All seven fields are emitted by default. `--anomalous-only` retains the baseline and removes only
+non-anomalous payload rows, so every filtered set still carries its control.
 
 #### 2.2.2 · `bp proxy history` (`ProxyHistoryEntry`, SPEC §6.2)
 
 | Field | Type | Source | Notes |
 |---|---|---|---|
-| `id` ★ | int | srv:`id` | **offset-relative → unstable** across offsets (SPEC §6.2). Prefer `bp history` for stable Long ids |
+| `id` ★ | int | srv:`id` | absolute index in current Burp proxy history, preserved across filtering and offsets |
 | `method` | string | srv | |
 | `host` | string | srv | |
 | `url` | string | srv | full URL |
@@ -561,12 +558,10 @@ the default when piped (A4).
   bijection. `req_ref` and `resp_ref` are currently null; no `bp show` command is shipped.
   Target-request evidence in an active workspace is the separate ADR-0013 row.
 
-### 6.2 · `--tag` and `--no-ledger`
+### 6.2 · `bp tag` and `--no-ledger`
 
-- **[MEDIUM][BLOCKS:none] L-TAG** `--tag NAME` writes `NAME` into the entry's `tag`/`name` field at
-  record time (user label, SPEC §9). Equivalent to a later `bp tag <id> NAME`. The tag is
-  **metadata only** — it never appears in stdout records unless the user selects `--fields tag`
-  (ledger family) — so `--tag` never pollutes data output.
+- **[MEDIUM][BLOCKS:none] L-TAG** Global run-time `--tag NAME` is not shipped. After an operation,
+  `bp tag <opId> NAME` writes a retroactive metadata label; `bp log --tag NAME` then filters it.
 - **[HIGH][BLOCKS:none] L-NOLEDGER** `--no-ledger` suppresses the ledger write for that one
   invocation. Use for dry-runs, health polls, or when an entry would be noise. It does **not** affect
   stdout/stderr/exit at all. A `--no-ledger` op leaves **zero** trace in `~/.bp/` (verifiable: ledger

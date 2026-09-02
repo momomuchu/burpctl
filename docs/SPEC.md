@@ -239,11 +239,9 @@ Pro, no DB. Paths without prefix.
 | POST | `/proxy/intercept/forward` | C | — **stub** | `{forwarded:true}` no-op. |
 | POST | `/proxy/intercept/drop` | C | — **stub** | `{dropped:true}` no-op. |
 
-- **Key contract**: `ProxyHistoryResponse.total`
-  = filtered size before pagination; `id` =
-  `start+idx` (offset-relative → **unstable**
-  across offsets). Use `/{id}` (absolute index)
-  for stability.
+- **Key contract**: `ProxyHistoryResponse.total` is the filtered size before pagination. Every row's
+  `id` is its absolute index in `api.proxy().history()`, preserved across host filtering and offsets,
+  so it can be passed directly to `/proxy/history/{id}`, `bp req`, `bp send`, or `bp fuzz`.
 - **err**: `/{id}` non-integer → `INVALID_PARAM`;
   out of bounds → 500 Ktor (unmapped).
 - **Flags**: `listenerInterface`, `clientIp`,
