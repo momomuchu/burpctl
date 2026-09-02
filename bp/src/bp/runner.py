@@ -101,6 +101,9 @@ def run_fuzz(
     raw, scheme, host = _base_raw(entry)
     positions = [resolve_pos(raw, s) for s in selectors]
     lists = _payload_lists(positions, payload_map, attack_type)
+    concrete = expand(raw, positions, lists, attack_type)
+    if not concrete:
+        raise ValueError("fuzz requires at least one concrete request")
 
     base_status, base_len, base_duration = _send(client, raw, scheme, host)
     threshold = max(base_len * anomaly_pct // 100, 20)
@@ -116,7 +119,7 @@ def run_fuzz(
             baseline=True,
         )
     ]
-    for i, cr in enumerate(expand(raw, positions, lists, attack_type)):
+    for i, cr in enumerate(concrete):
         status, length, duration = _send(client, cr.raw, scheme, host)
         anomalous = status != base_status or abs(length - base_len) > threshold
         results.append(

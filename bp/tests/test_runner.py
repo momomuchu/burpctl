@@ -11,7 +11,7 @@ from bp.pos import Position
 from bp.runner import _payload_lists, run_fuzz
 
 
-def _mock_client() -> BurpClient:
+def _mock_client(sends: list[str] | None = None) -> BurpClient:
     base_url = "https://t.example.com/s?u=_&p=_"
 
     def handler(req: httpx.Request) -> httpx.Response:
@@ -35,6 +35,8 @@ def _mock_client() -> BurpClient:
             )
         if path == "/repeater/send":
             sent_url = json.loads(req.content)["request"]["url"]
+            if sends is not None:
+                sends.append(sent_url)
             anomalous = "u=admin" in sent_url
             return httpx.Response(
                 200,
@@ -70,6 +72,17 @@ def test_run_fuzz_sniper_flags_anomaly() -> None:
     admin = next(r for r in payload_results if r.payloads == ("admin",))
     assert guest.status == 200 and not guest.anomalous
     assert admin.status == 500 and admin.anomalous  # status differs from baseline
+
+
+def test_invalid_or_empty_fuzz_plan_sends_nothing() -> None:
+    for selectors, payloads, message in (
+        ([], {"u": [b"one"]}, "at least one --pos"),
+        (["query:u"], {"u": []}, "at least one concrete request"),
+    ):
+        sends: list[str] = []
+        with pytest.raises(ValueError, match=message):
+            run_fuzz(_mock_client(sends), 5, selectors, payloads, "sniper")
+        assert sends == []
 
 
 def test_anomalous_only_retains_fresh_baseline() -> None:
