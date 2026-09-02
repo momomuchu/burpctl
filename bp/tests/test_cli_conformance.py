@@ -70,3 +70,11 @@ CLI_COMMANDS: list[list[str]] = [
 def test_command_reachable(cmd: list[str]) -> None:
     result = runner.invoke(app, [*cmd, "--help"])
     assert result.exit_code == 0, f"`bp {' '.join(cmd)}` not reachable (exit {result.exit_code})"
+
+
+def test_fuzz_help_discloses_raw_framing_limit() -> None:
+    result = runner.invoke(app, ["fuzz", "--help"])
+
+    assert result.exit_code == 0
+    assert "not a raw-framing transport" in result.stdout
+    assert "Content-Length" in result.stdout

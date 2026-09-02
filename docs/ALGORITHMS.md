@@ -97,8 +97,16 @@ applySubs(base, subs: [{start, end, payload}]) -> bytes:
         out = out[0:sub.start] + sub.payload + out[sub.end:]
     if any substitution touches the body:
         recalculate Content-Length = byteLength(body after the blank line)  # on out
+        keep one Content-Length field; collapse duplicates
     return out
 ```
+> **Transport boundary:** byte-offset precision describes this substitution, not the final wire
+> message. `bp` converts the result to structured method/URL/headers/body data and the REST
+> extension asks Montoya to build and send it. Body substitution therefore cannot preserve
+> conflicting length fields, transfer-coding/trailers, request-line HTTP version, or non-UTF-8 body
+> bytes. `bp send` and `bp fuzz` are not raw-framing transports and must not be used where exact
+> framing is the experiment.
+>
 > **Why right→left:** substituting a value of different length shifts all offsets *after* it.
 > By applying from the largest `start` to the smallest, offsets not yet processed remain valid.
 > This is THE classic bug to avoid.

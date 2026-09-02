@@ -40,6 +40,15 @@ header:NAME   cookie:NAME   body:FIELD   query:NAME   path:INDEX   offset:START-
 (`cluster-bomb` = Cartesian product = N-D matrix; `pitchfork` = lockstep).
 `--payloads NAME=FILE` binds a list to the named position `NAME` (≥1 per position for pitchfork/cluster-bomb).
 
+`--pos` is byte-precise only while selecting and replacing bytes in `bp`'s reconstructed HTTP/1
+request. It is **not raw-framing transport**: a substitution that touches the body recalculates
+`Content-Length` and collapses duplicate `Content-Length` fields; the REST bridge converts the result
+to structured method/URL/headers/body data; and Burp's Montoya client builds the outbound request.
+Consequently the original request-line HTTP version, conflicting length fields, transfer-coding and
+trailers, and non-UTF-8 body bytes are not preserved end to end. Do not use `bp send` or `bp fuzz`
+for request-smuggling, desynchronization, or any experiment whose oracle depends on exact wire
+framing.
+
 ## Command map (1 verb → actual endpoints)
 
 | Command | REST endpoint(s) | Group |

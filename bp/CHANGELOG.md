@@ -17,6 +17,9 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 ### Fixed
 - **`bp fuzz` sent one invisible extra request.** Anomaly detection now compares payload responses
   with the response already captured in proxy history, so N returned results mean exactly N sends.
+- **Raw-framing limitation was easy to miss.** `bp fuzz --help` and the canonical CLI/algorithm docs
+  now state that body fuzzing deduplicates/recalculates `Content-Length` and Burp rebuilds the wire
+  request, so `send`/`fuzz` are not request-smuggling transports.
 
 ## [1.1.0] — 2026-06-19
 

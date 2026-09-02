@@ -116,7 +116,11 @@ def fuzz(
     attack_type: str = typer.Option("sniper", "--type", help="sniper|battering-ram|pitchfork|cluster-bomb"),
     anomalous_only: bool = typer.Option(False, "--anomalous-only", help="show only anomalous results"),
 ) -> None:
-    """Fuzz a captured request client-side (all attack types, byte-offset precise)."""
+    """Fuzz a captured request client-side (all attack types, byte-offset precise).
+
+    \b
+    Framing limit: not a raw-framing transport; recomputes Content-Length.
+    """
     payload_map: dict[str, list[bytes]] = {}
     for spec in payloads:
         name, sep, path = spec.partition("=")
