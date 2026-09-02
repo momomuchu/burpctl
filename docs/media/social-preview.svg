@@ -32,6 +32,6 @@
   <text x="140" y="538" font-size="24" fill="#e6edf3">--anomalous-only <tspan fill="#7d8590"># one command. Burp HTTP stack.</tspan></text>
 
   <!-- badges strip -->
-  <text x="1200" y="128" text-anchor="end" font-size="22" fill="#7d8590">MIT · Python 3.11+ · mypy --strict · 441 Python / 110 Kotlin tests</text>
+  <text x="1200" y="128" text-anchor="end" font-size="22" fill="#7d8590">MIT · Python 3.11+ · mypy --strict · 440+ Python / 110 Kotlin tests</text>
   <text x="1200" y="600" text-anchor="end" font-size="22" fill="#7d8590">github.com/momomuchu/burpctl</text>
 </svg>
