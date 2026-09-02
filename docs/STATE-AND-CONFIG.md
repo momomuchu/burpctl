@@ -38,10 +38,10 @@ CREATE INDEX idx_ops_tag    ON ops(tag);
 - `bp tag <opId> <name>` → UPDATE tag. (Query surface = `OUTPUT.md`.)
 
 The Run Ledger records `bp`'s control-plane REST operations, not Burp's complete target traffic.
-For example, `bp send` produces an `ops` row whose `burp_op` is `POST /repeater/send`, whose target
-is the REST listener, and whose request/response fingerprints cover that REST exchange. Plain
-`curl`, `xh`, and browser traffic produces no Run Ledger row. Use Burp proxy history for traffic
-that traverses its proxy listener.
+For example, `bp send` produces an `ops` row whose `burp_op` is `POST /repeater/send`, whose
+`target` is the REST listener host (not the target application), and whose request/response
+fingerprints cover that REST exchange. Plain `curl`, `xh`, and browser traffic produces no Run
+Ledger row. Use Burp proxy history for traffic that traverses its proxy listener.
 
 ### 1.1 · Active-workspace request row
 

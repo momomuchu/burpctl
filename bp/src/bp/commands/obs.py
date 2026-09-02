@@ -85,7 +85,8 @@ def log_cmd(
     """Query bp-to-extension REST operations in the local Run Ledger.
 
     Reads from ~/.bp/ledger.db (or BP_LEDGER_PATH) and does not require Burp. This is not a proxy
-    traffic log: curl, xh, browser, and other non-bp traffic never writes it.
+    traffic log: curl, xh, browser, and other non-bp traffic never writes it. The `target` field is
+    the Burp REST listener host, not the target application's host.
     """
     if not _require_ledger(ctx):
         raise typer.Exit(1)

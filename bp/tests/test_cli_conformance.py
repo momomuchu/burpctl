@@ -118,3 +118,4 @@ def test_log_help_discloses_control_plane_coverage() -> None:
     output = " ".join(result.stdout.split())
     assert "bp-to-extension REST operations" in output
     assert "not a proxy traffic log" in output
+    assert "REST listener host" in output
