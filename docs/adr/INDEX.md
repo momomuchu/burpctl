@@ -12,3 +12,4 @@ Decisions 0001–0006 locked 2026-06-16 by founder. Later ADRs carry their own d
 | [ADR-0006](0006-methodology-sdd-tdd-ddd.md) | Methodology: SDD + TDD + DDD + spec-as-contract; trunk; atomic commits | [HIGH] |
 | [ADR-0011](0011-rebrand-burpctl.md) | Rebrand to `burpctl` (primary) — *superseded by 0012* | [HIGH] |
 | [ADR-0012](0012-primary-name-bp.md) | Primary name reverts to `bp`; `burpctl` kept as alias — supersedes 0011 | [HIGH] |
+| [ADR-0013](0013-workspace-request-ledger.md) | Mirror completed replay sends into an active workspace request ledger | [HIGH] |
