@@ -7,6 +7,7 @@ registered onto ``app`` below. Exit codes follow CLI.md (3=conn, 4=pro).
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from dataclasses import asdict
@@ -119,15 +120,22 @@ def _fuzz_rows(results: list[FuzzResult], anomalous_only: bool) -> list[dict[str
     ]
 
 
-def _fuzz_exit(rows: list[dict[str, Any]]) -> int | None:
+def _fuzz_exit(rows: list[dict[str, Any]], fmt: str = "table") -> int | None:
     """Fail after rendering if a shot has an error row, preserving partial evidence."""
     failures = [row for row in rows if row["error"] is not None]
     if not failures:
         return None
-    typer.echo(
-        f"error: {len(failures)} fuzz send(s) failed; attempted-shot rows remain on stdout",
-        err=True,
-    )
+    message = f"{len(failures)} fuzz send(s) failed; attempted-shot rows remain on stdout"
+    if fmt == "json":
+        typer.echo(
+            json.dumps(
+                {"error": {"code": "FUZZ_PARTIAL_FAILURE", "message": message}},
+                separators=(",", ":"),
+            ),
+            err=True,
+        )
+    else:
+        typer.echo(f"error: {message}", err=True)
     return max(exit_code_for_error_code(row["error_code"]) for row in failures)
 
 
@@ -164,7 +172,7 @@ def fuzz(
         results = run_fuzz(client, request_id, pos, payload_map, attack_type)
         return _fuzz_rows(results, anomalous_only)
 
-    run(ctx, _do, exit_on=_fuzz_exit)
+    run(ctx, _do, exit_on=lambda rows: _fuzz_exit(rows, ctx.obj.fmt))
 
 
 def _register_command_groups() -> None:

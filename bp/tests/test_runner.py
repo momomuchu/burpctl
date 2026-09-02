@@ -212,11 +212,61 @@ def test_later_send_error_returns_one_row_per_attempt() -> None:
     assert _fuzz_exit(rows) == 1
 
 
+def test_terminal_send_error_stops_remaining_payloads() -> None:
+    sends = 0
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        nonlocal sends
+        if req.url.path.startswith("/proxy/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {
+                        "request": {
+                            "method": "GET",
+                            "url": "https://t.example.com/s?u=base",
+                            "headers": [],
+                            "body": None,
+                        }
+                    },
+                    "error": None,
+                },
+            )
+        sends += 1
+        if sends > 1:
+            raise httpx.ConnectError("down", request=req)
+        return httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {"response": {"statusCode": 200, "body": "ok"}},
+                "error": None,
+            },
+        )
+
+    client = BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
+    results = run_fuzz(client, 5, ["query:u"], {"u": [b"one", b"two", b"three"]}, "sniper")
+
+    assert sends == len(results) == 2
+    assert results[-1].error_code == "CONNECTION_REFUSED"
+
+
 def test_fuzz_error_exit_preserves_connection_category(capsys: pytest.CaptureFixture[str]) -> None:
     rows = [{"error": "CONNECTION_REFUSED: down", "error_code": "CONNECTION_REFUSED"}]
 
     assert _fuzz_exit(rows) == 3
     assert "attempted-shot rows remain on stdout" in capsys.readouterr().err
+
+
+def test_fuzz_error_exit_is_json_in_json_mode(capsys: pytest.CaptureFixture[str]) -> None:
+    rows = [{"error": "SEND_FAILED: failed", "error_code": "SEND_FAILED"}]
+
+    assert _fuzz_exit(rows, "json") == 1
+    diagnostic = json.loads(capsys.readouterr().err)
+    assert diagnostic["error"]["code"] == "FUZZ_PARTIAL_FAILURE"
 
 
 def test_run_fuzz_cluster_bomb_matrix() -> None:

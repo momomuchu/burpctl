@@ -175,6 +175,8 @@ def run_fuzz(
                     error_code=exc.code,
                 )
             )
+            if exc.code in {"CONNECTION_REFUSED", "TRANSPORT_ERROR", "INVALID_RESPONSE"}:
+                break
             continue
         anomalous = status != base_status or abs(length - base_len) > threshold
         results.append(

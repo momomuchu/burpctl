@@ -135,6 +135,8 @@ applySubs(base, subs: [{start, end, payload}]) -> bytes:
 5. `--anomalous-only` retains the baseline and every error row, filtering only successful ordinary
    payload rows; error rows make the command exit in the typed stable category after rendering all
    attempted-shot evidence (`CONNECTION_REFUSED`/`TRANSPORT_ERROR` remain exit 3; generic errors 1).
+   Connection/transport and invalid-response errors stop the remaining prepared corpus after their
+   triggering row; per-shot server failures may continue. JSON output gets a JSON stderr summary.
 
 The fresh baseline prevents a stale history response from inverting anomaly classification after
 session, state, or target drift. Every attempted target send has one returned row: N payloads produce
