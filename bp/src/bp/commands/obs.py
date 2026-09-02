@@ -70,7 +70,7 @@ def log_cmd(
         None, "--until", metavar="T", help="ISO-8601 upper bound for ts (inclusive)."
     ),
     target: str | None = typer.Option(
-        None, "--target", metavar="H", help="Filter by exact target host/url."
+        None, "--target", metavar="H", help="Filter by exact Burp REST listener host[:port]."
     ),
     tag: str | None = typer.Option(
         None, "--tag", metavar="X", help="Filter by exact tag value."
