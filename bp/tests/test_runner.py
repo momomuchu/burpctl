@@ -28,6 +28,7 @@ def _mock_client() -> BurpClient:
                             "headers": [{"name": "Host", "value": "t.example.com"}],
                             "body": None,
                         },
+                        "response": {"statusCode": 200, "body": "x" * 100},
                     },
                     "error": None,
                 },
@@ -75,6 +76,53 @@ def test_run_fuzz_cluster_bomb_matrix() -> None:
     )
     assert len(results) == 4  # 2 * 2
     assert {r.payloads for r in results} == {("a", "1"), ("a", "2"), ("b", "1"), ("b", "2")}
+
+
+def test_run_fuzz_sends_only_returned_payload_results() -> None:
+    sends: list[str] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.path.startswith("/proxy/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {
+                        "request": {
+                            "method": "GET",
+                            "url": "https://t.example.com/s?u=base",
+                            "headers": [{"name": "Host", "value": "t.example.com"}],
+                            "body": None,
+                        },
+                        "response": {"statusCode": 200, "body": "baseline"},
+                    },
+                    "error": None,
+                },
+            )
+        if req.url.path == "/repeater/send":
+            sent_url = json.loads(req.content)["request"]["url"]
+            sends.append(sent_url)
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {
+                        "response": {"statusCode": 200, "headers": [], "body": "baseline"},
+                        "durationMs": 1,
+                    },
+                    "error": None,
+                },
+            )
+        return httpx.Response(404)
+
+    client = BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
+    results = run_fuzz(client, 5, ["query:u"], {"u": [b"one", b"two"]}, "sniper")
+
+    assert len(results) == 2
+    assert len(sends) == len(results)
+    assert all("u=base" not in url for url in sends)
 
 
 # --- [38] invalid attack type must raise ValueError before payload resolution ---
@@ -128,6 +176,7 @@ def _mock_client_missing_response() -> BurpClient:
                             "headers": [{"name": "Host", "value": "t.example.com"}],
                             "body": None,
                         },
+                        "response": {"statusCode": 200, "body": "x"},
                     },
                     "error": None,
                 },
@@ -209,6 +258,7 @@ def _mock_client_bad_statuscode(status_value: object | None) -> BurpClient:
                             "headers": [{"name": "Host", "value": "t.example.com"}],
                             "body": None,
                         },
+                        "response": {"statusCode": 200, "body": "x"},
                     },
                     "error": None,
                 },

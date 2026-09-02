@@ -14,6 +14,10 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 - **README reframed** around the real hook: fast multi-position fuzzing fired via Burp's Repeater
   (not the throttled Community Intruder), staying inside the session/scope.
 
+### Fixed
+- **`bp fuzz` sent one invisible extra request.** Anomaly detection now compares payload responses
+  with the response already captured in proxy history, so N returned results mean exactly N sends.
+
 ## [1.1.0] — 2026-06-19
 
 Post-v1.0.0 hardening: an extensive adversarial QA pass followed by iterative

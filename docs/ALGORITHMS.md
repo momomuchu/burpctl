@@ -113,7 +113,8 @@ applySubs(base, subs: [{start, end, payload}]) -> bytes:
 | `cluster-bomb` | `s_k`/position | for each tuple ∈ `product(s_1,…,s_n)`: subs=`[{p_k, tuple[k]} ∀k]` | `∏|s_k|` |
 
 **Firing + baseline + anomaly:**
-1. Fire unmodified `base` 1× → **baseline** `{status0, len0}`.
+1. Read the captured history entry's response → **baseline** `{status0, len0}`; do not replay the
+   unmodified request, because every send must correspond to a returned result.
 2. For each `ConcreteRequest`: `POST /repeater/send` → `{index, payload(s), statusCode, length, durationMs}` → `AttackResultEntry`.
 3. **anomalous = true** if `statusCode ≠ status0` **or** `|length − len0|` exceeds threshold
    (recommendation: `> max(0.05·len0, k·σ)`; threshold to be locked in by test).
@@ -131,7 +132,7 @@ bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=a.txt(2) \
            --type cluster-bomb
 → resolvePos × 3 → 3 Pos (sorted offsets, non-overlapping)
 → product 2×2×3 = 12 ConcreteRequest, each applySubs(right→left) + Content-Length if body
-→ 12 shots /repeater/send + 1 baseline → 12 AttackResultEntry, anomalies flagged
+→ 12 shots /repeater/send → 12 AttackResultEntry, anomalies compared to the captured response
 ```
 
 **RED test cases (TDD):**

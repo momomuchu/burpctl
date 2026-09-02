@@ -1,7 +1,7 @@
 """bp fuzz orchestration (docs/ALGORITHMS.md A2 + the firing flow).
 
 Fetch the base request by id → build raw → resolve --pos (A1) → expand combinations (A2) →
-fire each via /repeater/send (structured, via the wire bridge) → baseline + anomaly flagging.
+fire each via /repeater/send (structured, via the wire bridge) → recorded-baseline anomaly flagging.
 The Burp Intruder is sniper/by-name only, so bp owns all of this.
 """
 
@@ -36,6 +36,22 @@ def _base_raw(entry: Mapping[str, Any]) -> tuple[bytes, str, str]:
     raw = build_raw(req["method"], req["url"], headers, req.get("body"))
     parts = urlsplit(req["url"])
     return raw, (parts.scheme or "https"), parts.netloc
+
+
+def _baseline(entry: Mapping[str, Any]) -> tuple[int, int]:
+    """Return the recorded response signature without firing an extra request."""
+    if "response" not in entry or not isinstance(entry["response"], Mapping):
+        raise BurpError("INVALID_RESPONSE", "history entry missing 'response' field")
+    response = entry["response"]
+    if "statusCode" not in response:
+        raise BurpError("INVALID_RESPONSE", "history response missing 'statusCode' field")
+    try:
+        status = int(response["statusCode"])
+    except (TypeError, ValueError):
+        raise BurpError(
+            "INVALID_RESPONSE", "history response has a non-integer 'statusCode'"
+        ) from None
+    return status, len(response.get("body") or "")
 
 
 def _short(name: str) -> str:
@@ -96,11 +112,12 @@ def run_fuzz(
     anomaly_pct: int = 5,
 ) -> list[FuzzResult]:
     """Run the full client-side fuzz against ``request_id`` and return per-request results."""
-    raw, scheme, host = _base_raw(client.get(f"/proxy/history/{request_id}"))
+    entry = client.get(f"/proxy/history/{request_id}")
+    raw, scheme, host = _base_raw(entry)
     positions = [resolve_pos(raw, s) for s in selectors]
     lists = _payload_lists(positions, payload_map, attack_type)
 
-    base_status, base_len, _ = _send(client, raw, scheme, host)
+    base_status, base_len = _baseline(entry)
     threshold = max(base_len * anomaly_pct // 100, 20)
 
     results: list[FuzzResult] = []
