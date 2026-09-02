@@ -38,7 +38,9 @@ def _version_cb(value: bool) -> None:
 def main(
     ctx: typer.Context,
     url: str = typer.Option(DEFAULT_BASE_URL, "--url", envvar="BURP_REST_URL", help="REST base URL"),
-    fmt: str = typer.Option("table", "--format", help="json|table|raw|quiet"),
+    fmt: str = typer.Option(
+        "table", "--format", help="json (NDJSON for lists)|table|raw|quiet"
+    ),
     fields: str | None = typer.Option(None, "--fields", help="comma-separated fields"),
     no_ledger: bool = typer.Option(
         False, "--no-ledger", help="Skip the Run Ledger for this invocation (ADR-0005)."

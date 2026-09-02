@@ -28,6 +28,8 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
   in `bp proxy`.
 - **Filtered `bp proxy` rows exposed unusable IDs.** Host-filtered and offset views now retain each
   entry's absolute Burp proxy-history index, so `bp req <id>` and `bp send <id>` select the row shown.
+- **`--format json` help obscured list framing.** The option now says that list-valued output is
+  NDJSON, matching the canonical output docs and preventing whole-document JSON parser assumptions.
 
 ## [1.1.0] — 2026-06-19
 

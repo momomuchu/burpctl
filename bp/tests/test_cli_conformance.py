@@ -86,3 +86,10 @@ def test_session_send_help_names_server_side_history() -> None:
     assert result.exit_code == 0
     assert "server-side history" in result.stdout
     assert "proxy history" not in result.stdout
+
+
+def test_global_help_labels_json_list_output_as_ndjson() -> None:
+    result = runner.invoke(app, ["--help"])
+
+    assert result.exit_code == 0
+    assert "json (NDJSON for lists)" in result.stdout
