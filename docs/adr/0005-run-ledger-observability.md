@@ -59,7 +59,7 @@ user remembered to flag.
 | Alternative | Rejection reason |
 |---|---|
 | Opt-in via `--ledger` flag | Would record nothing by default, defeating the ISO-traceability goal. Hunters forget flags; the ledger must be passive. |
-| Log to a file (plain text) | Not queryable. `bp log --host t.com` and `bp tag` require a structured store. SQLite is the lightest structured option with zero network dependency. |
+| Log to a file (plain text) | Not queryable. `bp log --target 127.0.0.1:8089` and `bp tag` require a structured store. SQLite is the lightest structured option with zero network dependency. |
 | Store in the extension's DB (`~/.burp-rest/burpdata`) | The ledger is a `bp` client concern, not a server concern. Mixing them creates coupling; the extension DB may be absent (init failure). `~/.bp/` is owned by the CLI. |
 | One row per CLI invocation | Requires buffering and synthesising multiple REST outcomes, while the shipped client observes and records at the HTTP boundary. Target-request cardinality belongs to the separate workspace ledger (ADR-0013). |
 | Global disable flag instead of `--no-ledger` | A global disable buried in config would make the ledger silently absent for all ops. `--no-ledger` is per-invocation, explicit, and visible in the command history. |
