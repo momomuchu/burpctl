@@ -23,6 +23,9 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 - **`bp send` left no active-workspace request row.** A completed replay now appends one
   four-field `requests.jsonl` row when the current workspace and request identity are present,
   without treating bp's separate SQLite REST-operation row as target-request evidence (ADR-0013).
+- **`bp session send` falsely claimed proxy-history recording.** Help and the REST spec now identify
+  the extension's conditional server-side history as the actual sink; Montoya sends do not appear
+  in `bp proxy`.
 
 ## [1.1.0] — 2026-06-19
 

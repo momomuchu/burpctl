@@ -78,3 +78,11 @@ def test_fuzz_help_discloses_raw_framing_limit() -> None:
     assert result.exit_code == 0
     assert "not a raw-framing transport" in result.stdout
     assert "Content-Length" in result.stdout
+
+
+def test_session_send_help_names_server_side_history() -> None:
+    result = runner.invoke(app, ["session", "send", "--help"])
+
+    assert result.exit_code == 0
+    assert "server-side history" in result.stdout
+    assert "proxy history" not in result.stdout

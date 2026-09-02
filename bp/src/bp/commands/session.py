@@ -152,7 +152,9 @@ def session_send(
 ) -> None:
     """Send an authenticated request via the active session (POST /session/send).
 
-    The request is made through the Burp HTTP engine and appears in Burp's proxy history.
+    The request is made through the Burp HTTP engine and, when the extension database is available,
+    is recorded in its server-side history (`bp history`). It does not traverse the proxy listener
+    and therefore does not appear in `bp proxy` history.
     Session cookies and headers are automatically applied.
 
     Extra headers supplied via --set-header *override* session headers (not additive).

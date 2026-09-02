@@ -595,7 +595,7 @@ is **distinct** from session cookies.
 | POST | `/session/set` | C | `SetSessionRequest` { cookies:Map (required), headers:Map?=null, name:String?=null } | loads auth cookies+headers (full **replace**). |
 | GET | `/session/get` | C | — | inspects the active session. |
 | DELETE | `/session/clear` | C | — | resets cookies/headers (not the cookie-jar). |
-| POST | `/session/send` | C | `AuthenticatedRequest` { method="GET", url:String (required), body:String?=null, extraHeaders:Map?=null } | authenticated request via Burp (appears in history). |
+| POST | `/session/send` | C | `AuthenticatedRequest` { method="GET", url:String (required), body:String?=null, extraHeaders:Map?=null } | authenticated request via Burp; recorded in the extension's server-side history when its DB is available, not in proxy-listener history. |
 | POST | `/session/send/batch` | C | `BatchAuthenticatedRequest` { requests:List\<AuthenticatedRequest\> } | multi-step sequence (workflow / IDOR). |
 | GET | `/session/cookie-jar` | C | — | auto-captured cookies by domain. |
 | DELETE | `/session/cookie-jar` | C | — | clears the cookie-jar (not the session). |
