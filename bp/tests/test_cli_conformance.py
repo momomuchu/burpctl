@@ -109,3 +109,12 @@ def test_scope_help_discloses_classification_only() -> None:
 
     assert result.exit_code == 0
     assert "does not block proxy traffic" in result.stdout
+
+
+def test_log_help_discloses_control_plane_coverage() -> None:
+    result = runner.invoke(app, ["log", "--help"])
+
+    assert result.exit_code == 0
+    output = " ".join(result.stdout.split())
+    assert "bp-to-extension REST operations" in output
+    assert "not a proxy traffic log" in output

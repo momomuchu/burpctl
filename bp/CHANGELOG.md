@@ -34,6 +34,9 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
   prior URL still admitted after `set`; help/spec now state that only the extension-managed list is
   replaced because Montoya cannot enumerate/remove earlier engine rules. Scope help also states the
   live boundary result: target scope classifies traffic but does not block proxy forwarding.
+- **Run Ledger docs overstated coverage and compaction.** Live SQLite rows prove one entry per
+  bp-to-extension REST call (not invocation), no curl/xh/browser coverage, and null replay refs.
+  `bp log --help`, OUTPUT, and ADR-0005 now describe what can actually be queried/exported.
 
 ## [1.1.0] — 2026-06-19
 

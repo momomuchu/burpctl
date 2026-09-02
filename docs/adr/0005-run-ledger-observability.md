@@ -7,9 +7,10 @@
 
 ## Decision
 
-Every `bp` operation that calls `:8089` writes one **LedgerEntry** to a SQLite database at
-`~/.bp/` automatically. The ledger is **on by default**. To suppress recording for a single
-invocation, pass `--no-ledger`.
+Every resolved HTTP operation from `bp` to `:8089` writes one **LedgerEntry** to a SQLite database
+at `~/.bp/` automatically. One CLI invocation may perform several REST operations and therefore
+write several rows. The ledger is **on by default**. To suppress recording for a single invocation,
+pass `--no-ledger`.
 
 ### LedgerEntry schema
 
@@ -46,8 +47,9 @@ the primary differentiator of `bp` vs a raw `curl` script:
   in any format, from stored refs, without re-running.
 - `--tag` lets a hunter annotate operations with engagement context at run time or retroactively,
   enabling grep-able audit trails (`bp log --tag ssrf-probe`).
-- One entry per invocation (not per result row) keeps the ledger compact even for attacks with
-  thousands of payload rows.
+- Granularity follows the REST boundary: a multi-call command records one row for each call. This is
+  control-plane observability, not a compact target-request ledger; ADR-0013 defines the separate
+  active-workspace row for completed target replays.
 
 On by default because opt-in observability is not observability — it only captures the runs the
 user remembered to flag.
@@ -61,7 +63,7 @@ user remembered to flag.
 | Opt-in via `--ledger` flag | Would record nothing by default, defeating the ISO-traceability goal. Hunters forget flags; the ledger must be passive. |
 | Log to a file (plain text) | Not queryable. `bp log --host t.com` and `bp tag` require a structured store. SQLite is the lightest structured option with zero network dependency. |
 | Store in the extension's DB (`~/.burp-rest/burpdata`) | The ledger is a `bp` client concern, not a server concern. Mixing them creates coupling; the extension DB may be absent (init failure). `~/.bp/` is owned by the CLI. |
-| Per-result-row entries for fuzz attacks | A 10 000-payload cluster-bomb would write 10 000 rows. The ledger would explode in size. One entry per invocation with a responseRef preserves the ability to re-render without bloat. |
+| One row per CLI invocation | Requires buffering and synthesising multiple REST outcomes, while the shipped client observes and records at the HTTP boundary. Target-request cardinality belongs to the separate workspace ledger (ADR-0013). |
 | Global disable flag instead of `--no-ledger` | A global disable buried in config would make the ledger silently absent for all ops. `--no-ledger` is per-invocation, explicit, and visible in the command history. |
 
 ---

@@ -82,9 +82,10 @@ def log_cmd(
         100, "--limit", metavar="N", help="Maximum number of rows to return (default 100)."
     ),
 ) -> None:
-    """Query the run ledger (bp log [--since --until --target --tag --status --limit]).
+    """Query bp-to-extension REST operations in the local Run Ledger.
 
-    Reads from ~/.bp/ledger.db (or BP_LEDGER_PATH).  Does not require Burp.
+    Reads from ~/.bp/ledger.db (or BP_LEDGER_PATH) and does not require Burp. This is not a proxy
+    traffic log: curl, xh, browser, and other non-bp traffic never writes it.
     """
     if not _require_ledger(ctx):
         raise typer.Exit(1)

@@ -16,7 +16,8 @@
 3. `--fields` picks *which* columns and their order; `-w` builds a *custom line* from `%{tokens}`.
 4. Default format is `table` for all streams in v1; pass `--format json` for agents/pipes. _(v1.1 — TTY-aware auto-detect not yet implemented)_
 5. Errors always go to **stderr** as one JSON object; data goes to **stdout**; exit code carries success/failure.
-6. Every shown record is also written to the **Run Ledger** (`~/.bp/`) unless `--no-ledger`.
+6. Each bp-to-extension REST call is written as one **Run Ledger** row (`~/.bp/`) unless
+   `--no-ledger`; this is operation metadata, not a mirror of every shown result or all proxy traffic.
 7. `bp fuzz ... -w '%{status} %{payload}'` prints ONLY the HTTP code + payload, one line per request.
 
 **Terms** — *AX* = agent experience (machine-readable output). *Record* = one row/entry. *write-out* = a `-w` template line. *Anomalous* = a fuzz result that differs from baseline. *Ledger* = local SQLite audit log of every op.
@@ -544,17 +545,18 @@ the default when piped (A4).
 
 ## 6 · Composition with the Run Ledger
 
-### 6.1 · Every shown record is recorded
+### 6.1 · Every bp REST call is recorded
 
-- **[MEDIUM][BLOCKS:none] L-RECORD** Per SPEC §9, every `bp` operation that hits `:8089` writes one
-  **LedgerEntry** to `~/.bp/` SQLite, **independent of `--format`** (A7). The ledger stores the
-  *operation* (command line, target, burpOp, request/response refs, status, timestamp, tag) — not
-  the rendered stdout. Changing `--format`/`--fields`/`-w` never changes what is recorded; it only
-  changes what you *see*. This is the `bp`-vs-`curl` differentiator (SPEC §4 C4).
-- **[MEDIUM][BLOCKS:none] L-GRAIN** Granularity: **one ledger entry per `bp` invocation**, not per
-  result row. A fuzz of 318 payloads = **one** entry whose `responseRef` points to the stored result
-  set (so `bp show <id>` can re-render any format later). This keeps the ledger compact and ISO-
-  auditable without exploding on large attacks.
+- **[MEDIUM][BLOCKS:none] L-RECORD** Every resolved call from `bp` to `:8089` writes one
+  **LedgerEntry** to `~/.bp/` SQLite, independent of `--format`. It stores operation metadata:
+  command name, REST listener, `burpOp`, REST request/response hashes, REST HTTP status/length,
+  duration, outcome, exit code, and optional tag. It does not store target bodies and does not
+  observe curl, xh, browser, or other proxy traffic.
+- **[MEDIUM][BLOCKS:none] L-GRAIN** Granularity is one row per REST call, not one row per CLI
+  invocation or rendered result. A fuzz with N payloads makes one history fetch plus N
+  `/repeater/send` calls and therefore N+1 Run Ledger rows, while it makes exactly N target sends
+  and returns N result rows. `req_ref` and `resp_ref` are currently null; no `bp show` command is
+  shipped. Target-request evidence in an active workspace is the separate ADR-0013 row.
 
 ### 6.2 · `--tag` and `--no-ledger`
 
@@ -571,13 +573,12 @@ the default when piped (A4).
   `--no-ledger` (nothing to record). `bp health` records by default (it *is* a `:8089` op) but is a
   common `--no-ledger` candidate.
 
-### 6.3 · Re-rendering from the ledger
+### 6.3 · Stored references and re-rendering are not shipped
 
-- **[MEDIUM][BLOCKS:none] L-REPLAY-FMT** Because the ledger stores the raw response refs, **all four
-  formats + `--fields` + `-w` work identically on `bp show <id>`** as they did on the live command.
-  `bp show 17 --format json`, `bp show 17 -w '%{status} %{payload}'` re-render the stored result set.
-  This closes the loop: the output contract is uniform whether data is live or replayed from the
-  ledger — the same parser, same schema, same tokens. **[HIGH][BLOCKS:none]**
+- `req_ref` and `resp_ref` exist in the SQLite schema but current operations leave them null.
+  `bp show <id>` and result re-rendering are not commands in the shipped CLI. `bp log --format json`
+  exports the metadata rows that do exist; it cannot reconstruct a target request or response from
+  their hashes.
 
 ### 6.4 · Ledger banner discipline
 
@@ -612,11 +613,12 @@ the default when piped (A4).
 - [HIGH][BLOCKS:low] R-WESC / R-WSAFE — escaping + control-byte safety in `-w`.
 - [HIGH][BLOCKS:none] A5 / AX-SUMMARIZE — never dump bodies; summary-first for big sets.
 - [HIGH][BLOCKS:none] R-ANOM — `anomalous` only meaningful in quick-fuzz; else null.
-- [HIGH][BLOCKS:none] L-REPLAY-FMT / L-NOLEDGER — uniform re-render; clean opt-out.
+- [HIGH][BLOCKS:none] L-NOLEDGER — clean local operation-log opt-out.
 
 ### MEDIUM
 
-- [MEDIUM][BLOCKS:none] L-RECORD / L-GRAIN / L-TAG — one entry per invocation, format-independent.
+- [MEDIUM][BLOCKS:none] L-RECORD / L-GRAIN / L-TAG — one entry per REST call,
+  format-independent; global run-time tagging remains unshipped.
 - [MEDIUM][BLOCKS:none] AX-NO-PRETTY — compact in agent mode; `--pretty` TTY-only.
 - [MEDIUM][BLOCKS:none] R-WUNKNOWN — unknown token fails loud.
 - [MEDIUM][BLOCKS:none] OPEN-Q1 / E-QUIET-EMPTY — empty-essential exit policy (open decision, see §8).
