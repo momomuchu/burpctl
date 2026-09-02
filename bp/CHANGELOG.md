@@ -26,6 +26,8 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 - **`bp session send` falsely claimed proxy-history recording.** Help and the REST spec now identify
   the extension's conditional server-side history as the actual sink; Montoya sends do not appear
   in `bp proxy`.
+- **Filtered `bp proxy` rows exposed unusable IDs.** Host-filtered and offset views now retain each
+  entry's absolute Burp proxy-history index, so `bp req <id>` and `bp send <id>` select the row shown.
 
 ## [1.1.0] — 2026-06-19
 

@@ -10,10 +10,11 @@ class ProxyService(private val api: MontoyaApi) {
     fun getHistory(limit: Int? = null, offset: Int? = null, filterHost: String? = null): ProxyHistoryResponse {
         val history = api.proxy().history()
 
+        val indexed = history.withIndex()
         val filtered = if (filterHost != null) {
-            history.filter { it.finalRequest().url().contains(filterHost) }
+            indexed.filter { (_, entry) -> entry.finalRequest().url().contains(filterHost) }
         } else {
-            history
+            indexed.toList()
         }
 
         val start = offset ?: 0
@@ -22,7 +23,7 @@ class ProxyService(private val api: MontoyaApi) {
 
         return ProxyHistoryResponse(
             total = filtered.size,
-            entries = page.mapIndexed { idx, entry -> entry.toProxyEntry(start + idx) },
+            entries = page.map { (absoluteIndex, entry) -> entry.toProxyEntry(absoluteIndex) },
         )
     }
 

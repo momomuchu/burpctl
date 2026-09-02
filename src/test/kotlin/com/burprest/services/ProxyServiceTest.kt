@@ -104,6 +104,7 @@ class ProxyServiceTest {
         val result = service.getHistory(filterHost = "example.com")
         assertEquals(2, result.total)
         assertEquals(2, result.entries.size)
+        assertEquals(listOf(0, 2), result.entries.map { it.id })
     }
 
     @Test
