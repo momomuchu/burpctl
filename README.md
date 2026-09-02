@@ -11,7 +11,7 @@
 [![Burp Suite](https://img.shields.io/badge/Burp%20Suite-Pro%20%2F%20Community-orange.svg)](https://portswigger.net/burp)
 
 > **Drive Burp Suite from the command line.** Mark any byte range, fuzz it fast, and get clean
-> parsable output — *without leaving Burp's session, scope, and history behind.*
+> parsable output — *through Burp's HTTP stack and project context.*
 >
 > A scriptable **Burp Suite CLI** and **Intruder alternative** for bug-bounty hunters and pentesters.
 
@@ -19,7 +19,7 @@
      ![burpctl demo — proxy to multi-position fuzz to anomaly, in one command](docs/media/demo.gif) -->
 
 The reason to reach for `bp` over `ffuf` or Turbo Intruder: those are fast, but they run *outside*
-Burp — you lose your session, cookies, upstream config, and scope. `bp` builds the attack
+Burp — you lose its HTTP stack, upstream configuration, and project context. `bp` builds the attack
 client-side and sends every shot through Burp's **Repeater** (`/repeater/send`), *not* Burp's
 Intruder engine — so your fuzzing inherits all of that context in one scriptable command instead of a
 UI full of clicks. And because it rides Repeater, it sidesteps the deliberate rate-throttle that
@@ -40,7 +40,7 @@ It's two pieces:
 - 💥 **Flexible client-side fuzzing** — mark *any* byte range (`header:`, `cookie:`, `body:`, `query:`, `path:`, raw `offset:`), multiple positions at once, and all four attack types (sniper, battering-ram, pitchfork, cluster-bomb) with built-in anomaly detection. Not throttled on Community.
 - 🎯 **Full Burp surface from one CLI** — proxy history, repeater, intruder, scanner, target/scope, decoder, collaborator, sitemap, sessions.
 - 🔎 **Security checks** — built-in probes for auth-bypass, IDOR, CORS, and security headers; exit code `5` on findings so you can gate CI/scripts.
-- 📒 **Run Ledger** — every operation is recorded locally with **sha256 fingerprints only** (never raw bodies), and **secret redaction is on by default**.
+- 📒 **Run Ledger** — every bp-to-extension operation is recorded locally with **sha256 fingerprints only** (never raw bodies), and **secret redaction is on by default**; it is not a curl/xh/browser traffic log.
 - 🧰 **Works on Community too** — only `collaborator` and `scan` start need Pro (they exit `4` with a clear message); everything else runs on Community.
 - 🔩 **Scriptable & automation-friendly** — `--format json` emits NDJSON (one record per line); stable exit codes; no interactive prompts. That also makes it easy to drive from scripts or AI agents.
 - ✅ **Spec-driven & tested** — 433 Python tests + a Kotlin suite, `mypy --strict` + `ruff` clean, CI on every push.
@@ -49,7 +49,7 @@ It's two pieces:
 
 Where `bp` fits next to the tools you already reach for when Burp's Intruder is too slow or too clicky:
 
-| | Runs **inside** Burp (session/scope/cookies) | All 4 attack types | Fast on **Community** | Shell-scriptable CLI |
+| | Uses **Burp's HTTP stack** | All 4 attack types | Fast on **Community** | Shell-scriptable CLI |
 |---|:---:|:---:|:---:|:---:|
 | **`bp`** | ✅ | ✅ sniper · ram · pitchfork · cluster-bomb | ✅ (fires via Repeater) | ✅ |
 | Burp Intruder (Pro) | ✅ | ✅ | ✅ | ❌ GUI only |
@@ -58,7 +58,7 @@ Where `bp` fits next to the tools you already reach for when Burp's Intruder is 
 | [ffuf](https://github.com/ffuf/ffuf) | ❌ outside Burp | ✅ | ✅ | ✅ |
 
 Honest take: `ffuf` and Turbo Intruder win on raw throughput. `bp` wins when you want a **one-line,
-scriptable command that stays inside your authenticated Burp session and scope** — and full-speed
+scriptable command that uses Burp's HTTP stack and project context** — and full-speed
 multi-position fuzzing on **Community** without the GUI throttle.
 
 ## Quickstart
@@ -123,10 +123,11 @@ Pro and exit `4` with a clear message. Fuzzing in particular is *not* subject to
 throttle, because `bp` fires each request through Burp's Repeater.
 
 **How is this different from ffuf?**
-`ffuf` is a great standalone fuzzer, but it runs *outside* Burp — it doesn't know your Burp session,
-cookies, upstream/proxy config, or scope. `bp` drives Burp itself, so your fuzzing inherits all of
-that. Use `ffuf` for raw speed on unauthenticated endpoints; use `bp` when you're mid-hunt inside an
-authenticated Burp session.
+`ffuf` is a great standalone fuzzer, but it runs *outside* Burp — it doesn't use Burp's HTTP stack,
+upstream configuration, or project context. `bp` drives Burp itself. A replay preserves the captured
+request's cookies and headers; Burp target scope is classification metadata, not a forwarding block.
+Use `ffuf` for raw speed on unauthenticated endpoints; use `bp` when you want Burp's configured HTTP
+stack and captured request as the experiment base.
 
 **Do I need Burp Suite Professional?**
 No, for almost everything. Only Collaborator (out-of-band payloads) and starting an active scan

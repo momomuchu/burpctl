@@ -2,8 +2,10 @@
 
 `bp` drives **Burp Suite** from the command line via the `burp-rest-extension` on
 `http://127.0.0.1:8089`: one command instead of hand-crafted JSON, with **flexible client-side
-fuzzing** (arbitrary injection positions, all attack types) that stays inside Burp's session and
-scope, concise output, and a **Run Ledger** that records every operation. Scriptable and
+fuzzing** (arbitrary injection positions, all attack types) through Burp's HTTP stack, concise
+output, and a **Run Ledger** that records every bp-to-extension operation. A captured replay keeps
+its request cookies and headers; Burp target scope classifies traffic but does not block forwarding.
+Scriptable and
 agent-friendly by design.
 
 > **`burpctl` is an alias for `bp`** — they are identical. Examples below use `bp` (the primary command).
@@ -41,8 +43,8 @@ bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=ssrf.txt \
 bp collab new                              # OOB payload (blind SSRF/RCE) — Pro
 bp scan all https://target.example         # crawl + audit — Pro
 bp encode 'a:b' --enc base64               # offline decoder
-bp scope check https://target.example      # scope-aware
-bp log --tag recon --limit 50              # query the Run Ledger
+bp scope check https://target.example      # classify with Burp's scope engine
+bp log --tag recon --limit 50              # query bp REST-operation records
 ```
 
 ## Command surface
@@ -57,8 +59,9 @@ Full grammar: [`docs/CLI.md`](../docs/CLI.md).
 ## Output & config
 
 - `--format json|table|raw|quiet`, `--fields a,b,c`, `--url` (or `BURP_REST_URL`).
-- **Run Ledger** ON by default (`~/.bp/ledger.db`): every op recorded with sha256
-  fingerprints (never raw bodies). `BP_NO_LEDGER=1` to opt out; secrets redacted by default.
+- **Run Ledger** ON by default (`~/.bp/ledger.db`): every bp REST op recorded with sha256
+  fingerprints (never raw bodies); it is not a complete curl/xh/browser traffic log.
+  `BP_NO_LEDGER=1` opts out; secrets are redacted by default.
 - Config precedence: flag > env > `~/.bp/config` > default. See [`docs/OUTPUT.md`](../docs/OUTPUT.md),
   [`docs/STATE-AND-CONFIG.md`](../docs/STATE-AND-CONFIG.md).
 
