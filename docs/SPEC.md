@@ -115,7 +115,7 @@ marked deprecated (archived, not deleted).
   groups that are actually functional).
 - **LOW** — the OpenAPI spec embedded at
   `/docs` declares **0.2.0** while
-  `/health` and `/version` return **0.1.0**;
+  `/health` and `/version` return **2.0.0**;
   it also omits several real endpoints.
 
 ---
@@ -259,7 +259,7 @@ Pro, no DB. Paths without prefix.
   unconditional HTTP 200; `INTERNAL_ERROR`
   500 only on unexpected Throwable.
 - Responses: `ApiResponse<HealthResponse>`
-  {status:'ok', version:'0.1.0', uptime:Long,
+  {status:'ok', version:'2.0.0', uptime:Long,
   burpVersion:null}. `/docs` = raw JSON (**not**
   wrapped, `respondText()`).
 - **Flag**: `burpVersion` is never populated.

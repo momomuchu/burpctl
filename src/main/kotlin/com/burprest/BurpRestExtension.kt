@@ -22,14 +22,10 @@ class BurpRestExtension : BurpExtension {
 
         api.logging().logToOutput(
             """
-            |╔══════════════════════════════════════════╗
-            |║       Burp REST API Extension            ║
-            |║       v0.1.0                             ║
-            |║                                          ║
-            |║  API: http://127.0.0.1:$port             ║
-            |║  Docs: http://127.0.0.1:$port/docs       ║
-            |║  Health: http://127.0.0.1:$port/health    ║
-            |╚══════════════════════════════════════════╝
+            |Burp REST API Extension v$EXTENSION_VERSION
+            |  API:    http://127.0.0.1:$port
+            |  Docs:   http://127.0.0.1:$port/docs
+            |  Health: http://127.0.0.1:$port/health
             """.trimMargin()
         )
     }

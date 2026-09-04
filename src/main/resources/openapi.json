@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Burp REST Extension API",
-    "version": "0.1.0",
+    "version": "2.0.0",
     "description": "Strict executable contract for the loopback Burp REST extension. Every response is an ApiResponse envelope; x-burpctl-support marks discoverable operations unavailable in pinned Montoya."
   },
   "servers": [

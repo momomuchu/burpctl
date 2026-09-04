@@ -1,5 +1,6 @@
 package com.burprest.routes
 
+import com.burprest.EXTENSION_VERSION
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonArray
@@ -38,5 +39,14 @@ class OpenApiContractTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun `served openapi document reports the running extension version`() {
+        val resource = requireNotNull(javaClass.getResource("/openapi.json"))
+        val document = Json.parseToJsonElement(resource.readText()).jsonObject
+        val declared = document["info"]?.jsonObject?.get("version")?.jsonPrimitive?.content
+
+        assertEquals(EXTENSION_VERSION, declared)
     }
 }

@@ -1,5 +1,6 @@
 package com.burprest.routes
 
+import com.burprest.EXTENSION_VERSION
 import com.burprest.models.ApiResponse
 import com.burprest.models.HealthResponse
 import com.burprest.models.VersionResponse
@@ -34,7 +35,7 @@ class HealthRoutesTest {
             assertEquals("true", body["success"]?.jsonPrimitive?.content)
             val data = body["data"]?.jsonObject
             assertEquals("ok", data?.get("status")?.jsonPrimitive?.content)
-            assertEquals("0.1.0", data?.get("version")?.jsonPrimitive?.content)
+            assertEquals(EXTENSION_VERSION, data?.get("version")?.jsonPrimitive?.content)
         }
     }
 
@@ -51,7 +52,7 @@ class HealthRoutesTest {
             assertEquals(HttpStatusCode.OK, status)
             val body = Json.parseToJsonElement(bodyAsText()).jsonObject
             val data = body["data"]?.jsonObject
-            assertEquals("0.1.0", data?.get("version")?.jsonPrimitive?.content)
+            assertEquals(EXTENSION_VERSION, data?.get("version")?.jsonPrimitive?.content)
             assertEquals("burp-rest-extension", data?.get("name")?.jsonPrimitive?.content)
         }
     }

@@ -1,5 +1,7 @@
 package com.burprest.routes
 
+import com.burprest.EXTENSION_NAME
+import com.burprest.EXTENSION_VERSION
 import com.burprest.models.ApiResponse
 import com.burprest.models.HealthResponse
 import com.burprest.models.VersionResponse
@@ -21,7 +23,7 @@ fun Route.healthRoutes(startTime: Long, burpVersion: String? = null) {
             ApiResponse.ok(
                 HealthResponse(
                     status = "ok",
-                    version = "0.1.0",
+                    version = EXTENSION_VERSION,
                     uptime = uptime,
                     burpVersion = burpVersion,
                 )
@@ -33,8 +35,8 @@ fun Route.healthRoutes(startTime: Long, burpVersion: String? = null) {
         call.respond(
             ApiResponse.ok(
                 VersionResponse(
-                    version = "0.1.0",
-                    name = "burp-rest-extension",
+                    version = EXTENSION_VERSION,
+                    name = EXTENSION_NAME,
                     burpVersion = burpVersion,
                 )
             )

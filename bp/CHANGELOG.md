@@ -2,7 +2,7 @@
 
 All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [2.0.0] - 2026-09-04
 
 ### Security
 - **Redaction is now structural.** Nested credential fields, `{name,value}` header records, header
@@ -38,7 +38,6 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
   prefer the `*ctl` convention). `bp` stays the primary command and distribution name (ADR-0012).
   Both console scripts point at `bp.cli:cli_main`, and `--help`/usage output reflects whichever name
   you invoked.
-
 - **Executable contracts and quality gates.** `/docs` is served from a validated
   `src/main/resources/openapi.json` covering every implemented operation, `quality/confirmed-defects.yaml`
   records the repaired defect set with its regression evidence, and CI adds Detekt, JaCoCo coverage
