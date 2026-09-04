@@ -32,7 +32,7 @@ No release number is invented by this decision. Source revision, build provenanc
 ## Consequences
 
 - Route, DTO, OpenAPI, CLI, and output changes land with RED-first contract tests.
-- Mocked Montoya and temporary-storage tests remain the pull-request acceptance boundary; no running Burp instance is required in CI.
+- Mocked Montoya and temporary-storage tests remain a necessary pull-request boundary. [ADR-0014](0014-state-preserving-reportable-operations.md) supersedes their use as the sole release authority: affected Montoya integration claims require comparable proof against a real supported Burp build.
 - ADR-0004's unshipped async CLI design remains historical rather than an executable contract.
 - ADR-0006 remains the methodology decision, but its references to `docs/bdd-clean/` and exit 69 are superseded by this ADR and the executable gates.
 - Unsupported operations are noisier for callers, but they can no longer be mistaken for completed work.

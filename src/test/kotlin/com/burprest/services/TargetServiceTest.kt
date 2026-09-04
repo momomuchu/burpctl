@@ -1,7 +1,11 @@
 package com.burprest.services
 
 import burp.api.montoya.MontoyaApi
+import burp.api.montoya.http.message.HttpRequestResponse
+import burp.api.montoya.http.message.requests.HttpRequest
+import burp.api.montoya.http.message.requests.MalformedRequestException
 import burp.api.montoya.scope.Scope
+import burp.api.montoya.sitemap.SiteMap
 import com.burprest.models.AddScopeRequest
 import com.burprest.models.SetScopeRequest
 import com.burprest.server.InvalidParamException
@@ -14,6 +18,29 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TargetServiceTest {
+
+    @Test
+    fun `sitemap skips one malformed stored request without losing valid rows`() {
+        val api = mockk<MontoyaApi>()
+        val siteMap = mockk<SiteMap>()
+        val malformedEntry = mockk<HttpRequestResponse>()
+        val malformedRequest = mockk<HttpRequest>()
+        val validEntry = mockk<HttpRequestResponse>()
+        val validRequest = mockk<HttpRequest>()
+        every { api.siteMap() } returns siteMap
+        every { siteMap.requestResponses() } returns listOf(malformedEntry, validEntry)
+        every { malformedEntry.request() } returns malformedRequest
+        every { malformedRequest.url() } throws MalformedRequestException("stored bytes are malformed")
+        every { validEntry.request() } returns validRequest
+        every { validRequest.url() } returns "https://example.test/valid"
+        every { validRequest.method() } returns "GET"
+        every { validEntry.response() } returns null
+
+        val result = TargetService(api).getSitemap()
+
+        assertEquals(1, result.total)
+        assertEquals("https://example.test/valid", result.entries.single().url)
+    }
 
     @Test
     fun `scope listing and replacement are unsupported before Montoya effects`() {

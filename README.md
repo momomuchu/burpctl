@@ -10,10 +10,17 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](bp/)
 [![Burp Suite](https://img.shields.io/badge/Burp%20Suite-Pro%20%2F%20Community-orange.svg)](https://portswigger.net/burp)
 
-> **Drive Burp Suite from the command line.** Mark any byte range, fuzz it fast, and get clean
-> parsable output — *through Burp's HTTP stack and project context.*
+> **Drive Burp Suite from the command line.** Mark captured request positions, fuzz through Burp,
+> and get compact successful JSON/NDJSON output.
 >
 > A scriptable **Burp Suite CLI** and **Intruder alternative** for bug-bounty hunters and pentesters.
+>
+> **v2.0.0 live-status notice:** a 2026-09-04 campaign against Burp Suite Professional 2026.3.3
+> confirmed 37 defects. In particular, populated WebSocket listing and real Scanner task lifecycle are
+> unusable, user-configuration import reloads the extension and erases its in-memory registries, and
+> invalid output selections may be rejected only after effects. See
+> [`quality/confirmed-defects.yaml`](quality/confirmed-defects.yaml) and do not treat a working-tree fix
+> as verified until its live reproduction passes after redeployment.
 
 <!-- DEMO: once recorded (see docs/media/README.md), drop the GIF here:
      ![burpctl demo — proxy to multi-position fuzz to anomaly, in one command](docs/media/demo.gif) -->
@@ -37,13 +44,13 @@ It's two pieces:
 
 ## Features
 
-- 💥 **Flexible client-side fuzzing** — mark *any* byte range (`header:`, `cookie:`, `body:`, `query:`, `path:`, raw `offset:`), multiple positions at once, and all four attack types (sniper, battering-ram, pitchfork, cluster-bomb) with built-in anomaly detection. Not throttled on Community.
-- 🎯 **Truthful Burp control surface** — proxy history, Repeater, Scanner, target/scope, decoder, Collaborator, sitemap, and sessions; operations absent from pinned Montoya return typed `UNSUPPORTED`, never successful no-ops.
-- 🔎 **Security checks** — built-in probes for auth-bypass, IDOR, CORS, and security headers; exit code `5` only on confirmed classifier findings, while anomalies remain triage observations.
-- 📒 **Run Ledger** — every bp-to-extension operation is recorded locally with **sha256 fingerprints only** (never raw bodies), and **secret redaction is on by default**; it is not a curl/xh/browser traffic log.
-- 🧰 **Works on Community too** — only `collaborator` and `scan` start need Pro (they exit `4` with a clear message); everything else runs on Community.
-- 🔩 **Scriptable & automation-friendly** — `--format json` emits NDJSON (one record per line); stable exit codes; no interactive prompts. That also makes it easy to drive from scripts or AI agents.
-- ✅ **Spec-driven & tested** — extensive hermetic Python and Kotlin regression suites, strict typing/linting, OpenAPI validation, package smoke tests, and CI on every push.
+- **Flexible client-side fuzzing** — selectors for `header:`, `cookie:`, `body:`, `query:`, `path:`, and raw `offset:`, plus sniper, battering-ram, pitchfork, and cluster-bomb expansion. v2.0.0 has confirmed request/payload preservation limits (D38–D45), so consult the live ledger before relying on byte identity.
+- **Bounded Burp control surface** — proxy history, Repeater, Scanner, target/scope, decoder, Collaborator, sitemap, and sessions; operations absent from pinned Montoya are intended to return typed `UNSUPPORTED`. The v2.0.0 exceptions and unusable live paths are recorded under D23, D48, D52, and D55.
+- **Security checks** — built-in probes for auth-bypass, IDOR, CORS, and security headers; exit code `5` is intended only for confirmed classifier findings. v2.0.0 still marks an identical public auth representation vulnerable (D58), uses exit 0 for structured inconclusive results (D60), and has no per-probe timeout (D61). Without a server-held marker, `check auth` cannot distinguish a cookie-only bypass where FULL, COOKIES_ONLY, and NONE all return the same representation from an intentionally public route; that case is not confirmed. A bounded no-response result also cannot distinguish a slow target from connection refusal or resolution failure because pinned Montoya exposes only the same absent-response signal.
+- **Run Ledger** — each bp-to-extension REST call is recorded locally with **sha256 fingerprints only** (never raw bodies), and **secret redaction is on by default**; it is not a curl/xh/browser traffic log. A REST row can be `status=ok` even when later rendering exits 2, so `exit_code` and an authoritative post-state still matter (D24).
+- **Works on Community too** — only `collaborator` and `scan` start need Pro (they exit `4` with a clear message); everything else runs on Community.
+- **Scriptable successful output** — `--format json` emits compact JSON/NDJSON and exit codes identify stable categories. v2.0.0 local validation/parser errors are still human/Rich text even in JSON/agent mode (D22).
+- **Spec-driven & tested** — hermetic Python/Kotlin suites, strict typing/linting, OpenAPI validation, package smoke tests, and CI on every push. ADR-0014 additionally requires real-Burp release proof for affected Montoya integration claims.
 
 ## How it compares
 
@@ -92,8 +99,10 @@ bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=ssrf.txt \
 bp check idor 'https://target/api/user?id=1' --param id --own 1 --target 2   # exits 5 if vulnerable
 ```
 
-> **Output:** default is a human `table`; add `--format json` (NDJSON), `raw`, or `quiet` for scripts and agents.
-> Global flags (`--url` / `--format` / `--fields`) work in either position. `burpctl` is a drop-in alias for `bp`.
+> **Output:** default is a human `table`; add `--format json` (JSON/NDJSON), `raw`, or `quiet`.
+> Global flags (`--url` / `--format` / `--fields`) work in either position, but in v2.0.0
+> output/field incompatibility is discovered after execution on several effectful commands (D24).
+> `burpctl` is a drop-in alias for `bp`.
 
 👉 **Full command reference: [`bp/README.md`](bp/README.md).**
 
@@ -105,8 +114,8 @@ bp check idor 'https://target/api/user?id=1' --param id --own 1 --target 2   # e
 | `src/main/kotlin/com/burprest/` | The Burp REST extension (Kotlin / Ktor / Montoya) |
 | [`docs/`](docs/) | Source-grounded contracts: [SPEC](docs/SPEC.md) · [CLI grammar](docs/CLI.md) · [OUTPUT](docs/OUTPUT.md) · [ALGORITHMS](docs/ALGORITHMS.md) · [ADRs](docs/adr/) |
 
-The REST surface is **13 route groups / 69 endpoints**, all source-verified in `docs/SPEC.md`; every
-response is `{success, data, error}`.
+The REST surface is **13 route groups / 69 endpoints**, source-inventoried in `docs/SPEC.md`. Most
+responses use `{success, data, error}`; v2.0.0 media-type failures can return a bare HTTP 415 (D19).
 
 ## Build & test
 
@@ -124,10 +133,12 @@ throttle, because `bp` fires each request through Burp's Repeater.
 
 **How is this different from ffuf?**
 `ffuf` is a great standalone fuzzer, but it runs *outside* Burp — it doesn't use Burp's HTTP stack,
-upstream configuration, or project context. `bp` drives Burp itself. A replay preserves the captured
-request's cookies and headers; Burp target scope is classification metadata, not a forwarding block.
-Use `ffuf` for raw speed on unauthenticated endpoints; use `bp` when you want Burp's configured HTTP
-stack and captured request as the experiment base.
+upstream configuration, or project context. `bp` drives Burp itself. Ordinary replay starts from a
+captured request, but v2.0.0 fuzz reconstruction is not a byte-faithful replay: live evidence found
+injected browser defaults and a collapsed duplicate Cookie header (D38–D39). Burp target scope is
+classification metadata, not a forwarding block. Use `ffuf` for raw speed on unauthenticated
+endpoints; use `bp` when you want Burp's configured HTTP stack and can accommodate the documented
+bridge limits.
 
 **Do I need Burp Suite Professional?**
 No, for almost everything. Only Collaborator (out-of-band payloads) and starting an active scan
@@ -135,8 +146,9 @@ require Pro. Proxy history, Repeater, fuzzing, scope, decoder, sitemap, and the 
 checks all work on Community.
 
 **Can I drive it from a script or an AI agent?**
-Yes — `--format json` emits NDJSON (one record per line), exit codes are stable and documented, and
-there are no interactive prompts. That makes it easy to wire into CI, shell pipelines, or an agent.
+Successful `--format json` output is compact JSON/NDJSON and exit codes are documented. In v2.0.0,
+local validation/parser failures are not JSON in agent mode (D22), and output selection can occur after
+an effect (D24); automation must account for those published limitations until live-verified fixes ship.
 
 **Is `bp` the same as `burpctl`?**
 Yes. `bp` is the primary command (short, one token); `burpctl` is an installed alias — identical

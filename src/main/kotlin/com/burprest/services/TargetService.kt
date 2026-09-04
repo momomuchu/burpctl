@@ -1,6 +1,7 @@
 package com.burprest.services
 
 import burp.api.montoya.MontoyaApi
+import burp.api.montoya.http.message.requests.MalformedRequestException
 import burp.api.montoya.sitemap.SiteMapFilter
 import com.burprest.models.*
 import com.burprest.server.InvalidParamException
@@ -21,16 +22,22 @@ class TargetService(private val api: MontoyaApi) {
             api.siteMap().requestResponses()
         }
 
-        return SitemapResponse(
-            entries = entries.map {
+        val projected = entries.mapNotNull { entry ->
+            try {
                 SitemapEntry(
-                    url = it.request().url(),
-                    method = it.request().method(),
-                    statusCode = it.response()?.statusCode()?.toInt(),
-                    mimeType = it.response()?.statedMimeType()?.name,
+                    url = entry.request().url(),
+                    method = entry.request().method(),
+                    statusCode = entry.response()?.statusCode()?.toInt(),
+                    mimeType = entry.response()?.statedMimeType()?.name,
                 )
-            },
-            total = entries.size,
+            } catch (_: MalformedRequestException) {
+                // One corrupt stored request must not make every unrelated sitemap row unreadable.
+                null
+            }
+        }
+        return SitemapResponse(
+            entries = projected,
+            total = projected.size,
         )
     }
 

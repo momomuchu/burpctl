@@ -4,11 +4,15 @@ import kotlinx.serialization.Serializable
 
 // --- /scan/auth-bypass ---
 
+const val DEFAULT_PROBE_TIMEOUT_MS = 5_000L
+
 @Serializable
 data class AuthBypassRequest(
     val endpoints: List<String>,
     val baseUrl: String,
     val method: String = "GET",
+    val protectedContentMarker: String? = null,
+    val probeTimeoutMs: Long = DEFAULT_PROBE_TIMEOUT_MS,
 )
 
 @Serializable
@@ -30,6 +34,7 @@ data class AuthBypassEndpointResult(
     val vulnerable: Boolean,
     val inconclusive: Boolean = false,
     val errors: List<String> = emptyList(),
+    val note: String? = null,
 )
 
 @Serializable
@@ -51,6 +56,7 @@ data class IdorRequest(
     val method: String = "GET",
     val body: String? = null,
     val extraHeaders: Map<String, String>? = null,
+    val probeTimeoutMs: Long = DEFAULT_PROBE_TIMEOUT_MS,
 )
 
 @Serializable
@@ -85,6 +91,7 @@ data class HeadersBypassRequest(
     val method: String = "GET",
     val body: String? = null,
     val protectedContentMarker: String? = null,
+    val probeTimeoutMs: Long = DEFAULT_PROBE_TIMEOUT_MS,
 )
 
 @Serializable
@@ -114,6 +121,7 @@ data class HeadersBypassResponse(
 data class CorsRequest(
     val url: String,
     val method: String = "GET",
+    val probeTimeoutMs: Long = DEFAULT_PROBE_TIMEOUT_MS,
 )
 
 @Serializable
@@ -141,6 +149,8 @@ data class EndpointsScanRequest(
     val host: String,
     val tests: List<String> = listOf("auth-bypass", "method-switch"),
     val limit: Int = 100,
+    val protectedContentMarker: String? = null,
+    val probeTimeoutMs: Long = DEFAULT_PROBE_TIMEOUT_MS,
 )
 
 @Serializable

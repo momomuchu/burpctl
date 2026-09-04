@@ -212,6 +212,15 @@ def test_query_no_fragment_unchanged() -> None:
     assert req[p.start : p.end] == b"world"
 
 
+def test_path_last_segment_strips_fragment() -> None:
+    """Fragments are not part of an HTTP path segment, just as they are not query data."""
+    req = b"GET /one/two#browser-only HTTP/1.1\r\nHost: example.com\r\n\r\n"
+
+    p = resolve_pos(req, "path:2")
+
+    assert req[p.start : p.end] == b"two"
+
+
 # --- [00] JSON key unescape: body:FIELD must match the logical (unescaped) key name ---
 
 

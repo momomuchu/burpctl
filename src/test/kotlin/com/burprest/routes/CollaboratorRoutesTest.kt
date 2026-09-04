@@ -86,6 +86,7 @@ class CollaboratorRoutesTest {
             val body = bodyAsText()
             assertEquals(HttpStatusCode.NotFound, status)
             assertEquals("NOT_FOUND", errorCode(body))
+            assertEquals("Collaborator payload not found", errorMessage(body))
             assertFalse(body.contains("PRO_REQUIRED"), body)
             assertFalse(body.contains("CollaboratorPayloadNotFoundException"), body)
         }
@@ -150,4 +151,7 @@ class CollaboratorRoutesTest {
 
     private fun errorCode(body: String): String? =
         Json.parseToJsonElement(body).jsonObject["error"]?.jsonObject?.get("code")?.jsonPrimitive?.content
+
+    private fun errorMessage(body: String): String? =
+        Json.parseToJsonElement(body).jsonObject["error"]?.jsonObject?.get("message")?.jsonPrimitive?.content
 }

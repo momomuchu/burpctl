@@ -69,6 +69,7 @@ data class CookieEntry(
     val value: String,
     val path: String = "/",
     val secure: Boolean = false,
+    val httpOnly: Boolean = false,
     val expiresAt: Long? = null,
     val hostOnly: Boolean = true,
 )

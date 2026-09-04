@@ -1,13 +1,18 @@
 package com.burprest.services
 
 import burp.api.montoya.MontoyaApi
+import burp.api.montoya.core.ByteArray as BurpByteArray
 import burp.api.montoya.http.message.requests.HttpRequest
+import burp.api.montoya.http.message.requests.MalformedRequestException
 import com.burprest.db.HistoryDao
 import com.burprest.db.SitemapDao
 import com.burprest.models.*
+import com.burprest.server.InvalidParamException
 import com.burprest.server.NoResponseException
+import com.burprest.server.validateParameter
 import java.net.URI
 import java.net.URISyntaxException
+import java.util.Base64
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -16,6 +21,7 @@ class RepeaterService(
     private val historyDao: HistoryDao? = null,
     private val sitemapDao: SitemapDao? = null,
     private val requestFactory: (String) -> HttpRequest = { HttpRequest.httpRequestFromUrl(it) },
+    internal val bodyFactory: (kotlin.ByteArray) -> BurpByteArray = BurpByteArray::byteArray,
 ) {
 
     fun send(request: SendRequest): SendResponse = sendPrepared(resolveRequest(request))
@@ -47,8 +53,14 @@ class RepeaterService(
             buildRequest(data)
         } ?: getHistoryRequest(requireNotNull(request.requestId)).also(::validateHttpRequest)
 
-        api.repeater().sendToRepeater(httpRequest, request.name ?: "REST API Tab")
-        return CreateTabResponse(name = request.name ?: "REST API Tab", created = true)
+        // An explicit name has to be a usable label. A blank one used to be accepted verbatim and
+        // produced an unidentifiable tab, so absence takes the default while blank is rejected.
+        val name = request.name?.let {
+            validateParameter(it, "name", "must not be blank", String::isNotBlank)
+        } ?: DEFAULT_TAB_NAME
+
+        api.repeater().sendToRepeater(httpRequest, name)
+        return CreateTabResponse(name = name, created = true)
     }
 
     private fun sendPrepared(httpRequest: HttpRequest): SendResponse {
@@ -66,7 +78,12 @@ class RepeaterService(
 
         val requestHeaders = httpRequest.headers().map { HttpHeader(it.name(), it.value()) }
         val responseHeaders = response.headers().map { HttpHeader(it.name(), it.value()) }
-        val requestBody = httpRequest.body().let { if (it.length() > 0) httpRequest.bodyToString() else null }
+        val requestBodyBytes = httpRequest.body()
+        val requestBody = if (requestBodyBytes.length() > 0) httpRequest.bodyToString() else null
+        val requestBodyBase64 = requestBodyBytes
+            .takeIf { it.length() > 0 }
+            ?.getBytes()
+            ?.let { Base64.getEncoder().encodeToString(it) }
         val responseBody = response.body().let { if (it.length() > 0) response.bodyToString() else null }
         val responseData = HttpResponseData(
             statusCode = response.statusCode().toInt(),
@@ -90,6 +107,7 @@ class RepeaterService(
                 url = httpRequest.url(),
                 headers = requestHeaders,
                 body = requestBody,
+                bodyBase64 = requestBodyBase64,
             ),
             response = responseData,
             durationMs = duration,
@@ -203,7 +221,7 @@ class RepeaterService(
 
         modifications.method?.let { request = request.withMethod(it) }
         modifications.path?.let { request = request.withPath(it) }
-        modifications.body?.let { request = request.withBody(it) }
+        modifications.body?.let { request = request.withBody(bodyFactory(it.encodeToByteArray())) }
         modifications.headers?.forEach { (name, value) ->
             request = request.withRemovedHeader(name).withAddedHeader(name, value)
         }
@@ -215,13 +233,27 @@ class RepeaterService(
         // Keep validation here as well as in resolveRequest because this helper is used directly by
         // sibling services and tests.
         validateRequestData(data)
+        val body = requestBodyBytes(data)
         var request = requestFactory(data.url).withMethod(data.method)
 
-        data.headers.forEach { header ->
-            request = request.withRemovedHeader(header.name).withAddedHeader(header.name, header.value)
+        // The URL factory synthesizes browser headers that were never in the caller's request. Clear
+        // that inherited list once, then append the caller list without replacement so ordering and
+        // repeated names (notably Cookie) survive intact.
+        val generatedHeaders = request.headers().orEmpty()
+        if (generatedHeaders.isNotEmpty()) {
+            request = request.withRemovedHeaders(generatedHeaders)
         }
-        data.body?.let { request = request.withBody(it) }
+        data.headers.forEach { header ->
+            request = request.withAddedHeader(header.name, header.value)
+        }
+        body?.let { request = request.withBody(bodyFactory(it)) }
         return request
+    }
+
+    private fun requestBodyBytes(data: HttpRequestData): kotlin.ByteArray? = try {
+        data.bodyBytes()
+    } catch (cause: IllegalArgumentException) {
+        throw InvalidParamException("request.bodyBase64 must be valid Base64", cause)
     }
 
     private fun getHistoryRequest(id: Int): HttpRequest {
@@ -240,10 +272,14 @@ class RepeaterService(
     }
 
     private fun validateHttpRequest(request: HttpRequest) {
-        validateMethod(request.method(), "request.method")
-        validateUrl(request.url(), "request.url")
-        request.headers().forEachIndexed { index, header ->
-            validateHeader(header.name(), header.value(), "request.headers[$index]")
+        try {
+            validateMethod(request.method(), "request.method")
+            validateUrl(request.url(), "request.url")
+            request.headers().forEachIndexed { index, header ->
+                validateHeader(header.name(), header.value(), "request.headers[$index]")
+            }
+        } catch (cause: MalformedRequestException) {
+            throw InvalidParamException("requestId refers to a malformed proxy history request", cause)
         }
     }
 
@@ -320,6 +356,7 @@ class RepeaterService(
         TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos)
 
     private companion object {
+        const val DEFAULT_TAB_NAME = "REST API Tab"
         val SUPPORTED_SCHEMES = setOf("http", "https")
         val TOKEN_PUNCTUATION = setOf('!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~')
     }

@@ -20,7 +20,7 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import EXIT_GENERIC, EXIT_USAGE, State, emit_error, emit_warning
+from bp.cliutil import EXIT_GENERIC, EXIT_USAGE, State, emit_error, emit_warning, preflight_output
 from bp.config import ConfigError, load as load_config, redact_data
 from bp.ledger import Ledger, QueryFilters
 from bp.output import render
@@ -109,6 +109,7 @@ def log_cmd(
     traffic log: curl, xh, browser, and other non-bp traffic never writes it. The `target` field is
     the Burp REST listener host, not the target application's host.
     """
+    preflight_output(ctx)
     conf = _require_ledger(ctx)
     if conf is None:
         raise typer.Exit(EXIT_GENERIC)
@@ -146,7 +147,7 @@ def log_cmd(
     data: list[dict[str, Any]] = [r.as_dict() for r in rows]
     display_data = redact_data(data) if conf.redact else data
     try:
-        out = render(display_data, fmt, fields=fields)
+        out = render(display_data, fmt, fields=fields, command_path=ctx.command_path)
     except (TypeError, ValueError) as exc:
         emit_error(fmt, "USAGE_ERROR", str(exc), redact_secrets=conf.redact)
         raise typer.Exit(EXIT_USAGE) from None
@@ -168,6 +169,7 @@ def tag_cmd(
 
     Exits 1 if the ledger is disabled or the opId is not found (the tag was not applied).
     """
+    preflight_output(ctx)
     conf = _require_ledger(ctx)
     if conf is None:
         raise typer.Exit(EXIT_GENERIC)
@@ -181,7 +183,7 @@ def tag_cmd(
     else:
         render_data = data
     try:
-        out = render(render_data, fmt, fields=fields)
+        out = render(render_data, fmt, fields=fields, command_path=ctx.command_path)
     except (TypeError, ValueError) as exc:
         emit_error(fmt, "USAGE_ERROR", str(exc), redact_secrets=conf.redact)
         raise typer.Exit(EXIT_USAGE) from None

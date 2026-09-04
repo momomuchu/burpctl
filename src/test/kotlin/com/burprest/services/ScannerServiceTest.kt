@@ -12,7 +12,9 @@ import burp.api.montoya.scanner.Scanner
 import burp.api.montoya.scanner.audit.Audit
 import burp.api.montoya.scanner.audit.issues.AuditIssue
 import burp.api.montoya.scanner.audit.issues.AuditIssueConfidence
+import burp.api.montoya.scanner.audit.issues.AuditIssueDefinition
 import burp.api.montoya.scanner.audit.issues.AuditIssueSeverity
+import burp.api.montoya.sitemap.SiteMap
 import com.burprest.models.ScanConfig
 import com.burprest.models.ScanRequest
 import com.burprest.server.InvalidParamException
@@ -24,6 +26,7 @@ import io.mockk.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class ScannerServiceTest {
@@ -191,6 +194,41 @@ class ScannerServiceTest {
     }
 
     @Test
+    fun `status preserves readable fields and marks a throwing counter unavailable`() {
+        val fixture = fixture()
+        val crawl = mockk<Crawl>()
+        every { fixture.scanner.startCrawl(fixture.crawlConfiguration) } returns crawl
+        every { crawl.statusMessage() } returns "Running"
+        every { crawl.requestCount() } throws IllegalStateException("counter unavailable")
+        every { crawl.errorCount() } returns 2
+        val started = fixture.service.crawl(ScanRequest("https://example.com/"))
+
+        val status = fixture.service.status(started.scanId)
+
+        assertEquals("Running", status.status)
+        assertNull(status.requestCount)
+        assertEquals(2, status.errorCount)
+        assertEquals(0, status.issueCount)
+    }
+
+    @Test
+    fun `status represents an absent Montoya status message as null`() {
+        val fixture = fixture()
+        val crawl = mockk<Crawl>()
+        every { fixture.scanner.startCrawl(fixture.crawlConfiguration) } returns crawl
+        every { crawl.statusMessage() } returns null
+        every { crawl.requestCount() } returns 1
+        every { crawl.errorCount() } returns 0
+        val started = fixture.service.crawl(ScanRequest("https://example.com/"))
+
+        val status = fixture.service.status(started.scanId)
+
+        assertNull(status.status)
+        assertNull(status.statusMessage)
+        assertEquals(1, status.requestCount)
+    }
+
+    @Test
     fun `audit is seeded with the supplied URL request`() {
         val fixture = fixture()
         val audit = mockk<Audit>()
@@ -249,7 +287,59 @@ class ScannerServiceTest {
         assertEquals(1, status.errorCount)
         assertEquals(1, status.issueCount)
         assertEquals(1, issues.total)
-        assertEquals("Example issue", issues.issues.single().name)
+        assertEquals("Example issue", assertNotNull(issues.issues).single().name)
+    }
+
+    @Test
+    fun `issues represents an absent Montoya issue list as unavailable`() {
+        val fixture = fixture()
+        val audit = mockk<Audit>()
+        every { fixture.scanner.startAudit(fixture.auditConfiguration) } returns audit
+        every { audit.addRequest(fixture.seedRequest) } just Runs
+        every { audit.issues() } returns null
+        val started = fixture.service.audit(ScanRequest("https://example.com/"))
+
+        val issues = fixture.service.issues(started.scanId)
+
+        assertNull(issues.issues)
+        assertNull(issues.total)
+    }
+
+    @Test
+    fun `issues accessor failure is explicit absence instead of a whole-route failure`() {
+        val fixture = fixture()
+        val audit = mockk<Audit>()
+        every { fixture.scanner.startAudit(fixture.auditConfiguration) } returns audit
+        every { audit.addRequest(fixture.seedRequest) } just Runs
+        every { audit.issues() } throws IllegalStateException("temporarily unavailable")
+        val started = fixture.service.audit(ScanRequest("https://example.com/"))
+
+        val response = fixture.service.issues(started.scanId)
+
+        assertNull(response.issues)
+        assertNull(response.total)
+    }
+
+    @Test
+    fun `issue definitions preserve nullable background and remediation`() {
+        val fixture = fixture()
+        val siteMap = mockk<SiteMap>()
+        val issue = mockk<AuditIssue>()
+        val definition = mockk<AuditIssueDefinition>()
+        every { fixture.api.siteMap() } returns siteMap
+        every { siteMap.issues() } returns listOf(issue)
+        every { issue.definition() } returns definition
+        every { definition.typeIndex() } returns 42
+        every { definition.name() } returns "Custom issue"
+        every { definition.background() } returns null
+        every { definition.remediation() } returns null
+
+        val response = fixture.service.issueDefinitions()
+        val projected = response.definitions.single()
+
+        assertEquals("Custom issue", projected.name)
+        assertNull(projected.description)
+        assertNull(projected.remediation)
     }
 
     @Test
@@ -267,7 +357,7 @@ class ScannerServiceTest {
     }
 
     @Test
-    fun `task read failures are operational errors rather than fabricated status`() {
+    fun `task read failures are represented as unavailable status fields`() {
         val fixture = fixture()
         val crawl = mockk<Crawl>()
         every { fixture.scanner.startCrawl(fixture.crawlConfiguration) } returns crawl
@@ -275,7 +365,10 @@ class ScannerServiceTest {
 
         val started = fixture.service.crawl(ScanRequest("https://example.com/"))
 
-        assertFailsWith<ServiceUnavailableException> { fixture.service.status(started.scanId) }
+        val status = fixture.service.status(started.scanId)
+
+        assertNull(status.status)
+        assertNull(status.statusMessage)
     }
 
     @Test
@@ -294,6 +387,28 @@ class ScannerServiceTest {
         verify(exactly = 1) { crawl.delete() }
         assertEquals("stopped", stopped.status)
         assertEquals(4, stopped.requestCount)
+        assertFailsWith<NotFoundException> { fixture.service.status(started.scanId) }
+    }
+
+    @Test
+    fun `stop deletes an audit even when task statistics are unavailable`() {
+        val fixture = fixture()
+        val audit = mockk<Audit>()
+        every { fixture.scanner.startAudit(fixture.auditConfiguration) } returns audit
+        every { audit.addRequest(fixture.seedRequest) } just Runs
+        every { audit.requestCount() } throws IllegalStateException("counter unavailable")
+        every { audit.errorCount() } throws IllegalStateException("counter unavailable")
+        every { audit.issues() } returns null
+        every { audit.delete() } just Runs
+        val started = fixture.service.audit(ScanRequest("https://example.com/"))
+
+        val stopped = fixture.service.stop(started.scanId)
+
+        verify(exactly = 1) { audit.delete() }
+        assertEquals("stopped", stopped.status)
+        assertNull(stopped.requestCount)
+        assertNull(stopped.errorCount)
+        assertNull(stopped.issueCount)
         assertFailsWith<NotFoundException> { fixture.service.status(started.scanId) }
     }
 

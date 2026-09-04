@@ -6,10 +6,304 @@ human view; ``quiet`` = the single most essential value; ``raw`` = the value as-
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json as _json
-from typing import Any
+from http import HTTPStatus
+from typing import Any, Literal, overload
+from urllib.parse import urlsplit
 
 FORMATS = ("json", "table", "raw", "quiet")
+
+_COLLAB_PAYLOAD_FIELDS = ("id", "payload", "interactionId")
+_COLLAB_INTERACTION_FIELDS = (
+    "id",
+    "interactionId",
+    "type",
+    "clientIp",
+    "timestamp",
+    "details",
+    "clientPort",
+)
+
+# Commands whose single essential value is explicitly defined by OUTPUT.md §1.5. A command outside
+# this set emits no quiet stdout rather than inferring a meaning from response key order.
+_QUIET_ESSENTIAL_COMMANDS = frozenset(
+    {
+        "health",
+        "proxy",
+        "req",
+        "fuzz",
+        "send",
+        "collab new",
+        "collab poll",
+        "scan issues",
+        "scope check",
+        "history list",
+        "history get",
+        "log",
+        "tag",
+        "check auth",
+        "check idor",
+        "check headers",
+        "check cors",
+        "check endpoints",
+    }
+)
+
+# Static command contracts let the execution chokepoint reject output mistakes before invoking a
+# command callback.  A response-derived schema is too late for mutating calls: the target may already
+# have changed, a one-use poll may already have been consumed, or an opaque task id may already be
+# lost.  Catalogs intentionally include both full JSON fields and safe table projections where those
+# views differ.
+_COMMAND_FIELDS: dict[str, tuple[str, ...]] = {
+    # Synthetic command path used by direct cliutil.run regression tests.
+    "test": ("present", "password", "nested", "status"),
+    "health": ("status", "version", "uptime", "burpVersion"),
+    "version": ("version", "name", "burpVersion"),
+    "proxy": ("id", "method", "url", "status"),
+    "log": (
+        "id",
+        "ts",
+        "command",
+        "burp_op",
+        "target",
+        "program",
+        "tag",
+        "status",
+        "exit_code",
+        "req_sha256",
+        "resp_sha256",
+        "resp_status",
+        "resp_len",
+        "duration_ms",
+        "error_code",
+        "req_ref",
+        "resp_ref",
+    ),
+    "tag": ("id", "tag", "status"),
+    "fuzz": (
+        "index",
+        "payloads",
+        "status",
+        "length",
+        "duration_ms",
+        "anomalous",
+        "baseline",
+        "error",
+        "error_code",
+    ),
+    "req": (
+        "id",
+        "request",
+        "response",
+        "timestamp",
+        "listenerInterface",
+        "clientIp",
+        "listenerPort",
+        "method",
+        "url",
+        "status",
+    ),
+    "ws": (
+        "id",
+        "url",
+        "direction",
+        "payload",
+        "timestamp",
+        "webSocketId",
+        "payloadBase64",
+        "editedPayloadBase64",
+        "time",
+        "listenerPort",
+    ),
+    "intercept": ("enabled",),
+    "send": ("request", "response", "durationMs", "hasResponse", "persistence"),
+    "tab": ("name", "created"),
+    "collab new": ("payloads", *_COLLAB_PAYLOAD_FIELDS),
+    "collab poll": ("found", "interactions", "queriedPayloadId", *_COLLAB_INTERACTION_FIELDS),
+    "scan crawl": ("scanId", "status"),
+    "scan audit": ("scanId", "status"),
+    "scan all": ("scanId", "status"),
+    "scan status": (
+        "scanId",
+        "status",
+        "crawlProgress",
+        "auditProgress",
+        "issueCount",
+        "statusMessage",
+        "requestCount",
+        "errorCount",
+    ),
+    "scan issues": (
+        "scanId",
+        "issues",
+        "total",
+        "name",
+        "url",
+        "severity",
+        "confidence",
+        "detail",
+        "remediation",
+    ),
+    "scan defs": ("definitions", "total"),
+    "scope show": ("include", "exclude", "includes", "excludes"),
+    "scope set": ("include", "exclude", "includes", "excludes"),
+    "scope add": ("url", "inScope"),
+    "scope remove": ("url", "inScope"),
+    "scope check": ("url", "inScope"),
+    "sitemap": ("entries", "total", "url", "method", "statusCode", "mimeType"),
+    "encode": ("result", "encoding"),
+    "decode": ("result", "encoding", "final", "steps"),
+    "hash": ("result", "algorithm"),
+    "config get project": ("config", "excludedPaths"),
+    "config get user": ("config", "excludedPaths"),
+    "config set project": ("applied", "config", "excludedPaths", "warning"),
+    "config set user": ("applied", "config", "excludedPaths", "warning"),
+    "ext": ("extensions", "total", "scope"),
+    "session set": ("name", "cookieCount", "headerCount", "cookies", "headers", "origin"),
+    "session get": ("name", "cookieCount", "headerCount", "cookies", "headers", "origin"),
+    "session clear": ("name", "cookieCount", "headerCount", "cookies", "headers", "origin"),
+    "session send": (
+        "durationMs",
+        "hasResponse",
+        "persistence",
+        "statusCode",
+        "headers",
+        "body",
+    ),
+    "session cookies": ("cookies", "total"),
+    "diff": (
+        "statusMatch",
+        "statusA",
+        "statusB",
+        "lengthA",
+        "lengthB",
+        "lengthDiff",
+        "headerDiffs",
+        "bodyDiff",
+    ),
+    "endpoints": (
+        "endpoints",
+        "total",
+        "bundlesDiscovered",
+        "bundlesAttempted",
+        "bundlesFetched",
+        "bundlesFailed",
+        "failures",
+    ),
+    "history list": ("id", "method", "url", "statusCode"),
+    "history get": (
+        "id",
+        "source",
+        "method",
+        "url",
+        "host",
+        "reqHeaders",
+        "reqBody",
+        "statusCode",
+        "resHeaders",
+        "resBody",
+        "durationMs",
+        "timestamp",
+    ),
+    "history sitemap": ("entries", "total"),
+    "history replay": ("original", "replayed"),
+    "history clear": ("cleared",),
+}
+
+# These commands have a documented, unambiguous single-entry HTTP byte representation.  Every other
+# run()-based command is structured, so raw must fail before its callback runs.
+_RAW_HTTP_COMMANDS = frozenset({"req", "send", "history get", "history replay"})
+
+# Security checks are target-effecting, so each command needs its exact top-level response catalog;
+# a family-wide union would merely move invalid-field detection back after the probes.
+_COMMAND_FIELDS.update(
+    {
+        "check auth": (
+            "results",
+            "totalScanned",
+            "vulnerableCount",
+            "inconclusiveCount",
+            "verdict",
+        ),
+        "check idor": (
+            "baseline",
+            "results",
+            "ignoredOwnValues",
+            "vulnerableCount",
+            "inconclusiveCount",
+            "verdict",
+        ),
+        "check headers": (
+            "baseline",
+            "results",
+            "anomalousCount",
+            "vulnerableCount",
+            "inconclusiveCount",
+            "verdict",
+        ),
+        "check cors": ("results", "vulnerableCount", "inconclusiveCount", "verdict"),
+        "check endpoints": (
+            "scanned",
+            "findings",
+            "durationMs",
+            "source",
+            "sourceCounts",
+            "errors",
+            "inconclusiveCount",
+            "verdict",
+        ),
+    }
+)
+
+
+def _command_name(command_path: str) -> str:
+    """Drop the executable name from Click's command path."""
+    return " ".join(command_path.split()[1:])
+
+
+def validate_output_options(command_path: str, fmt: str, fields: list[str] | None) -> None:
+    """Validate format/field compatibility without observing a command response."""
+    if fmt not in FORMATS:
+        raise ValueError(f"unknown format {fmt!r} (want one of {FORMATS})")
+    if fields is not None and fmt == "raw":
+        raise ValueError("--fields is not valid with --format raw")
+    if fields is not None and fmt == "quiet":
+        raise ValueError("--fields is not valid with --format quiet")
+
+    command = _command_name(command_path)
+    if fmt == "raw" and command not in _RAW_HTTP_COMMANDS:
+        raise ValueError(
+            "raw requires an unstructured value, not a dict or list; "
+            "use --format json for structured records"
+        )
+
+    if fields is None or (len(fields) == 1 and fields[0].lower() in {"all", "*"}):
+        return
+    if command == "collab new":
+        wrapper = {"payloads"}
+        leaves = {field.lower() for field in _COLLAB_PAYLOAD_FIELDS}
+        requested = {field.lower() for field in fields}
+        if requested & wrapper and requested & leaves:
+            raise ValueError("collaborator payload wrapper and record fields cannot be mixed")
+    if command == "collab poll":
+        wrapper = {"found", "interactions", "queriedpayloadid"}
+        leaves = {field.lower() for field in _COLLAB_INTERACTION_FIELDS}
+        requested = {field.lower() for field in fields}
+        if requested & wrapper and requested & leaves:
+            raise ValueError("collaborator poll wrapper and interaction fields cannot be mixed")
+    catalog = _COMMAND_FIELDS.get(command)
+    if catalog is None:
+        # A new command must declare its output contract before it can safely honor --fields.  Failing
+        # closed here prevents a future effectful command from reintroducing post-effect validation.
+        raise ValueError(f"--fields is unavailable: no output contract for command {command!r}")
+    canonical = {field.lower(): field for field in catalog}
+    unknown = [field for field in fields if field.lower() not in canonical]
+    if unknown:
+        valid = ", ".join(sorted(catalog)) or "(none)"
+        raise ValueError(f"unknown field(s): {', '.join(unknown)}; valid: {valid}")
+
 
 # Keys tried, in order, when --quiet must pick the one essential value of a record.
 # "verdict" leads so that bp check * --format quiet emits 'vulnerable'/'clean' first
@@ -17,7 +311,218 @@ FORMATS = ("json", "table", "raw", "quiet")
 _ESSENTIAL = ("verdict", "status", "statusCode", "id", "attackId", "payload", "result", "value")
 
 
-def render(data: Any, fmt: str = "table", *, fields: list[str] | None = None) -> str:
+def _collaborator_records(data: Any, command: str) -> Any:
+    if not isinstance(data, dict):
+        return data
+    key = "payloads" if command == "collab new" else "interactions"
+    records = data.get(key)
+    if not isinstance(records, list):
+        return data
+    fields = _COLLAB_PAYLOAD_FIELDS if command == "collab new" else _COLLAB_INTERACTION_FIELDS
+    normalized: list[Any] = []
+    for record in records:
+        if not isinstance(record, dict):
+            normalized.append(record)
+            continue
+        item = dict(record)
+        if command == "collab poll" and "interactionId" not in item and "id" in item:
+            item["interactionId"] = item["id"]
+        for field in fields:
+            item.setdefault(field, None)
+        normalized.append(item)
+    return normalized
+
+
+def _field_data(data: Any, command: str, fields: list[str] | None) -> Any:
+    if not fields or (len(fields) == 1 and fields[0].lower() in {"all", "*"}):
+        return data
+    requested = {field.lower() for field in fields}
+    if command == "collab new" and requested <= {field.lower() for field in _COLLAB_PAYLOAD_FIELDS}:
+        return _collaborator_records(data, command)
+    if command == "collab poll" and requested <= {
+        field.lower() for field in _COLLAB_INTERACTION_FIELDS
+    }:
+        return _collaborator_records(data, command)
+    return data
+
+
+def _body_bytes(record: dict[str, Any], text_key: str, base64_key: str) -> bytes:
+    encoded = record.get(base64_key)
+    if encoded is not None:
+        if not isinstance(encoded, str):
+            raise TypeError(f"{base64_key} must be text or null")
+        try:
+            return base64.b64decode(encoded, validate=True)
+        except (binascii.Error, ValueError):
+            raise ValueError(f"{base64_key} is not valid base64") from None
+    body = record.get(text_key)
+    if body is None:
+        return b""
+    if not isinstance(body, str):
+        raise TypeError(f"{text_key} must be text or null")
+    return body.encode("utf-8")
+
+
+def _header_lines(headers: Any) -> tuple[list[bytes], set[str]]:
+    if headers is None:
+        return [], set()
+    if not isinstance(headers, list):
+        raise TypeError("HTTP headers must be a list")
+    lines: list[bytes] = []
+    names: set[str] = set()
+    for header in headers:
+        if not isinstance(header, dict):
+            raise TypeError("each HTTP header must be an object")
+        name = header.get("name")
+        value = header.get("value")
+        if not isinstance(name, str) or not isinstance(value, str):
+            raise TypeError("HTTP header names and values must be text")
+        if any(character in name + value for character in "\r\n\0"):
+            raise ValueError("HTTP header contains CR, LF, or NUL")
+        lines.append(f"{name}: {value}".encode("utf-8"))
+        names.add(name.lower())
+    return lines, names
+
+
+def _raw_request(record: dict[str, Any]) -> bytes:
+    method = record.get("method")
+    url = record.get("url")
+    if not isinstance(method, str) or not isinstance(url, str):
+        raise TypeError("raw HTTP request requires text method and url")
+    parts = urlsplit(url)
+    if not parts.scheme or not parts.netloc:
+        raise ValueError("raw HTTP request requires an absolute URL")
+    target = parts.path or "/"
+    if parts.query:
+        target = f"{target}?{parts.query}"
+    lines = [f"{method} {target} HTTP/1.1".encode("utf-8")]
+    headers, names = _header_lines(record.get("headers"))
+    if "host" not in names:
+        lines.append(f"Host: {parts.netloc}".encode("utf-8"))
+    lines.extend(headers)
+    return b"\r\n".join(lines) + b"\r\n\r\n" + _body_bytes(record, "body", "bodyBase64")
+
+
+def _raw_response(record: dict[str, Any]) -> bytes:
+    status = record.get("statusCode")
+    if not isinstance(status, int) or isinstance(status, bool):
+        raise TypeError("raw HTTP response requires an integer statusCode")
+    try:
+        phrase = HTTPStatus(status).phrase
+    except ValueError:
+        phrase = ""
+    status_line = f"HTTP/1.1 {status}{f' {phrase}' if phrase else ''}".encode("ascii")
+    headers, _names = _header_lines(record.get("headers"))
+    return (
+        b"\r\n".join([status_line, *headers])
+        + b"\r\n\r\n"
+        + _body_bytes(record, "body", "bodyBase64")
+    )
+
+
+def _history_http(record: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    request = {
+        "method": record.get("method"),
+        "url": record.get("url"),
+        "headers": record.get("reqHeaders"),
+        "body": record.get("reqBody"),
+    }
+    response: dict[str, Any] | None = None
+    if record.get("statusCode") is not None:
+        response = {
+            "statusCode": record.get("statusCode"),
+            "headers": record.get("resHeaders"),
+            "body": record.get("resBody"),
+        }
+    return request, response
+
+
+def _join_http(request: dict[str, Any] | None, response: dict[str, Any] | None) -> bytes:
+    parts: list[bytes] = []
+    if request is not None:
+        parts.append(_raw_request(request))
+    if response is not None:
+        parts.append(_raw_response(response))
+    return b"\r\n\x1e\r\n".join(parts)
+
+
+def _render_raw_http(data: Any, command: str) -> bytes:
+    if not isinstance(data, dict):
+        raise TypeError("raw HTTP output requires one record")
+    if command == "send":
+        response = data.get("response")
+        if not isinstance(response, dict):
+            raise TypeError("send result has no response record")
+        return _raw_response(response)
+    if command == "req":
+        request = data.get("request")
+        response = data.get("response")
+        if not isinstance(request, dict):
+            raise TypeError("proxy entry has no request record")
+        if response is not None and not isinstance(response, dict):
+            raise TypeError("proxy entry response must be an object or null")
+        return _join_http(request, response)
+    if command == "history replay":
+        data = data.get("replayed")
+        if not isinstance(data, dict):
+            raise TypeError("history replay result has no replayed record")
+    request, response = _history_http(data)
+    return _join_http(request, response)
+
+
+@overload
+def render(
+    data: Any,
+    fmt: Literal["raw"],
+    *,
+    fields: list[str] | None = None,
+    command_path: str,
+) -> bytes: ...
+
+
+@overload
+def render(
+    data: Any,
+    fmt: Literal["json", "table", "quiet"] = "table",
+    *,
+    fields: list[str] | None = None,
+    command_path: str | None = None,
+) -> str: ...
+
+
+@overload
+def render(
+    data: Any,
+    fmt: str,
+    *,
+    fields: list[str] | None = None,
+    command_path: None = None,
+) -> str: ...
+
+
+@overload
+def render(
+    data: Any,
+    fmt: str,
+    *,
+    fields: list[str] | None = None,
+    command_path: str | None = None,
+) -> str | bytes: ...
+
+
+def render(
+    data: Any,
+    fmt: str = "table",
+    *,
+    fields: list[str] | None = None,
+    command_path: str | None = None,
+) -> str | bytes:
+    command = _command_name(command_path) if command_path else ""
+    data = _field_data(data, command, fields)
+    if fmt == "raw" and command in _RAW_HTTP_COMMANDS:
+        if fields is not None:
+            raise ValueError("--fields is not valid with --format raw")
+        return _render_raw_http(data, command)
     if fmt == "raw" and isinstance(data, list):
         # Preserve the established list diagnostic while refusing every
         # structured value (dict is handled below) instead of JSON-masquerading.
@@ -41,7 +546,7 @@ def render(data: Any, fmt: str = "table", *, fields: list[str] | None = None) ->
     if fmt == "table":
         return _render_table(data, fields)
     if fmt == "quiet":
-        return _render_quiet(data)
+        return _render_quiet(data, command)
     if fmt == "raw":
         return _render_raw(data)
     raise ValueError(f"unknown format {fmt!r} (want one of {FORMATS})")
@@ -215,7 +720,48 @@ def _render_table(data: Any, fields: list[str] | None) -> str:
     return str(data)
 
 
-def _render_quiet(data: Any) -> str:
+def _render_quiet(data: Any, command: str = "") -> str:
+    if command and command not in _QUIET_ESSENTIAL_COMMANDS:
+        return ""
+    if command in {"proxy", "req", "history list", "history get", "log", "tag"}:
+        records = data if isinstance(data, list) else [data]
+        return "\n".join(
+            _scalar_text(record.get("id")) for record in records if isinstance(record, dict)
+        )
+    if command == "scope check" and isinstance(data, dict):
+        in_scope = data.get("inScope")
+        if isinstance(in_scope, bool):
+            return "in-scope" if in_scope else "out-of-scope"
+    if command == "collab new":
+        records = _collaborator_records(data, command)
+        if isinstance(records, list):
+            return "\n".join(
+                _scalar_text(record.get("payload"))
+                for record in records
+                if isinstance(record, dict)
+            )
+    if command == "collab poll":
+        records = _collaborator_records(data, command)
+        if isinstance(records, list):
+            if not records:
+                return "none"
+            return "\n".join(
+                _scalar_text(record.get("interactionId"))
+                for record in records
+                if isinstance(record, dict)
+            )
+    if command == "scan issues" and isinstance(data, dict):
+        issues = data.get("issues")
+        if issues is None:
+            return ""
+        if isinstance(issues, list):
+            return "\n".join(
+                _scalar_text(issue.get("severity")) for issue in issues if isinstance(issue, dict)
+            )
+    if command == "send" and isinstance(data, dict):
+        response = data.get("response")
+        if isinstance(response, dict):
+            return _scalar_text(response.get("statusCode"))
     if isinstance(data, list):
         joined = "\n".join(_essential(r) for r in data)
         # [06] when every essential value is empty the join produces only '\n'
@@ -226,17 +772,26 @@ def _render_quiet(data: Any) -> str:
     return _essential(data)
 
 
+def _scalar_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (dict, list)):
+        return _json.dumps(value, separators=(",", ":"))
+    return str(value)
+
+
 def _essential(record: Any) -> str:
     if record is None:
         return ""
     if isinstance(record, dict):
         for key in _ESSENTIAL:
             if key in record:
-                v = record[key]
-                return "" if v is None else str(v)
+                return _scalar_text(record[key])
         first = next(iter(record.values()), None)
-        return "" if first is None else str(first)
-    return str(record)
+        return _scalar_text(first)
+    return _scalar_text(record)
 
 
 def _render_raw(data: Any) -> str:

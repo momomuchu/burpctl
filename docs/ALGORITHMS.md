@@ -4,6 +4,15 @@
 > Reference: `CLI.md` (`--pos` grammar), `SPEC.md §6.4` (Intruder models).
 > Actual REST model: `PayloadPosition{start:Int, end:Int, name:String}` (all required),
 > `CreateAttackRequest{positions:[…], payloads:Map<name,[String]>, attackType:String}`.
+>
+> **v2.0.0 live qualification (2026-09-04):** A1/A2 describe the intended expansion model, not a
+> claim of end-to-end byte fidelity. Against real Burp 2026.3.3, the structured bridge added twelve
+> browser headers (D38), collapsed an unrelated duplicate Cookie field (D39), and corrupted a
+> multibyte body (D40). Extra named lists were silently ignored in sniper/battering-ram (D41), payload
+> files could not represent empty/space/embedded-LF values (D43), NUL bodies were rejected (D44), and
+> a captured fragment-bearing URL could not be normalized (D45). Unequal pitchfork lists stopping at
+> the shortest list is intentional and remains the contract (D42 rejected). No repair is treated as
+> verified until these live reproductions pass after redeployment.
 
 ---
 
@@ -115,13 +124,31 @@ applySubs(base, subs: [{start, end, payload}]) -> bytes:
 
 | `type` | Sets | Generation | # requests |
 |---|---|---|---|
-| `sniper` | 1 set `S` | for each position `p_k`, for each `v∈S`: subs=`[{p_k,v}]` (others keep original) | `n × |S|` |
-| `battering-ram` | 1 set `S` | for each `v∈S`: subs=`[{p_k,v} ∀k]` (same payload everywhere) | `|S|` |
+| `sniper` | either one shared `S`, or one named `s_k` per position | shared form: for each `p_k`, each `v∈S`; named form: for each `p_k`, each `v∈s_k`; only one position changes per shot | shared: `n × |S|`; named: `Σ|s_k|` |
+| `battering-ram` | exactly 1 shared set `S` | for each `v∈S`: subs=`[{p_k,v} ∀k]` (same payload everywhere); more than one supplied list is rejected before any send | `|S|` |
 | `pitchfork` | `s_k`/position | `m=min(|s_k|)`; for `i∈0..m-1`: subs=`[{p_k, s_k[i]} ∀k]` | `m` |
 | `cluster-bomb` | `s_k`/position | for each tuple ∈ `product(s_1,…,s_n)`: subs=`[{p_k, tuple[k]} ∀k]` | `∏|s_k|` |
 
-**Firing + baseline + anomaly:**
-1. Materialize, convert through the structured REST bridge, and validate every `ConcreteRequest`;
+The named sniper form is additive: existing one-set callers retain the shared-set behavior. For two
+positions with list lengths 2 and 3, named sniper emits **5** shots, pitchfork emits **2**, and
+cluster-bomb emits **6**; battering-ram rejects the two-list plan because it has exactly one shared set.
+
+**Payload-file representations (2.1.0 contract; live verification pending):**
+
+- A file without a magic header retains the legacy line-oriented behavior: each nonblank line is one
+  payload, an optional CR before LF is removed, and empty/whitespace-only lines are skipped. This form
+  cannot represent an empty, whitespace-only, or embedded-line-break payload.
+- A byte-safe file starts with the exact first line `#!bp-payloads-json-v1`, then a UTF-8 JSON array.
+  Each array element is either a JSON string (encoded to UTF-8, so `""`, `" "`, `"A\\nB"`, and
+  `"\\u0000"` are distinct payloads) or exactly `{ "b64": "..." }` for arbitrary bytes. Invalid JSON,
+  a non-array document, malformed Base64, or any other element shape is a usage error before sending.
+- The magic-gated form is additive; existing legacy payload files keep their prior nonblank-line
+  behavior. This documents the repair for D43/D44 without pretending the v2.0.0 live reproduction has
+  already passed.
+
+**Firing + baseline + anomaly (intended contract; v2.0.0 deviations above):**
+1. Expand, convert through the structured REST bridge, and validate every `ConcreteRequest` without
+   retaining the whole prepared corpus;
    an empty/invalid plan returns a usage error before any target send (and an empty selector list
    before any REST call).
 2. Fire the unmodified `base` once and emit that attempted control first as

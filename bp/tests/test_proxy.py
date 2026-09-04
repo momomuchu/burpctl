@@ -8,10 +8,12 @@ from typing import Any
 
 import pytest
 from pydantic import ValidationError
+from typer.testing import CliRunner
 
-from bp.cli import _proxy_rows
-from bp.commands.proxynav import _proxy_entry_display
-from bp.models import ProxyEntry, ProxyHistory
+from bp.cli import _proxy_rows, app
+from bp.client import BurpClient
+from bp.commands.proxynav import _proxy_entry_display, _websocket_rows
+from bp.models import HttpRequestData, ProxyEntry, ProxyHistory, WebSocketEntry
 
 
 def test_proxy_entry_model_is_nested() -> None:
@@ -24,6 +26,79 @@ def test_proxy_entry_model_is_nested() -> None:
     )
     assert pe.request is not None and pe.request.method == "GET"
     assert pe.response is not None and pe.response.statusCode == 404
+
+
+def test_http_request_model_preserves_all_three_body_states() -> None:
+    absent = HttpRequestData.model_validate({"method": "GET", "url": "https://t"})
+    explicit_empty = HttpRequestData.model_validate(
+        {"method": "POST", "url": "https://t", "bodyBase64": ""}
+    )
+    binary = HttpRequestData.model_validate(
+        {"method": "POST", "url": "https://t", "body": "fallback", "bodyBase64": "/w=="}
+    )
+
+    assert absent.body is None and absent.bodyBase64 is None
+    assert explicit_empty.bodyBase64 == ""
+    assert explicit_empty.model_dump()["bodyBase64"] == ""
+    assert binary.body == "fallback" and binary.bodyBase64 == "/w=="
+
+
+def test_websocket_nullable_server_fields_validate() -> None:
+    entry = WebSocketEntry.model_validate(
+        {
+            "id": 1,
+            "webSocketId": 1,
+            "url": None,
+            "direction": None,
+            "payload": None,
+            "payloadBase64": None,
+            "editedPayloadBase64": None,
+        }
+    )
+    assert entry.url is None
+    assert entry.direction is None
+    assert entry.payload is None
+    assert entry.payloadBase64 is None
+    assert entry.editedPayloadBase64 is None
+
+
+def test_websocket_rows_preserve_null_projections() -> None:
+    rows = _websocket_rows(
+        {
+            "total": 1,
+            "entries": [
+                {
+                    "id": 1,
+                    "webSocketId": 9,
+                    "url": None,
+                    "direction": None,
+                    "payload": None,
+                    "payloadBase64": None,
+                    "editedPayloadBase64": None,
+                }
+            ],
+        }
+    )
+    assert len(rows) == 1
+    assert rows[0]["webSocketId"] == 9
+    assert rows[0]["url"] is None
+    assert rows[0]["payloadBase64"] is None
+
+
+def test_req_raw_cli_writes_http_bytes(monkeypatch: pytest.MonkeyPatch) -> None:
+    data = {
+        "id": 1,
+        "request": {"method": "GET", "url": "https://example.test/a", "headers": []},
+        "response": {"statusCode": 200, "headers": [], "body": "ok"},
+    }
+
+    monkeypatch.setenv("BP_NO_LEDGER", "1")
+    monkeypatch.setattr(BurpClient, "get", lambda _self, _path, **_params: data)
+    result = CliRunner().invoke(app, ["--format", "raw", "req", "1"])
+
+    assert result.exit_code == 0, result.stderr
+    assert result.stdout_bytes.startswith(b"GET /a HTTP/1.1\r\nHost: example.test\r\n\r\n")
+    assert result.stdout_bytes.endswith(b"HTTP/1.1 200 OK\r\n\r\nok")
 
 
 def test_proxy_rows_flattens_nested_entry() -> None:

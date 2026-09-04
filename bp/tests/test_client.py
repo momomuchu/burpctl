@@ -50,6 +50,71 @@ def test_error_envelope_raises_burp_error() -> None:
     assert ei.value.code == "INVALID_REQUEST"
 
 
+def test_unknown_new_wire_field_reports_stale_extension() -> None:
+    """C24: strict old-server rejection names stale extension, not user request syntax."""
+
+    def handler(_req: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            400,
+            json={
+                "success": False,
+                "data": None,
+                "error": {"code": "INVALID_REQUEST", "message": "invalid request body"},
+            },
+        )
+
+    with pytest.raises(BurpError) as exc_info:
+        _client(handler).post(
+            "/scan/headers",
+            {"url": "https://t", "probeTimeoutMs": 5_000},
+        )
+
+    message = exc_info.value.message.lower()
+    assert "extension" in message and "older" in message
+    assert "rebuild" in message and "reload" in message
+    assert "probetimeoutms" in message
+
+
+def test_unknown_protected_content_marker_reports_stale_extension() -> None:
+    """The optional 2.1 auth marker gets the same narrow old-extension compatibility hint."""
+
+    def handler(_req: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            400,
+            json={
+                "success": False,
+                "data": None,
+                "error": {"code": "INVALID_REQUEST", "message": "invalid request body"},
+            },
+        )
+
+    with pytest.raises(BurpError) as exc_info:
+        _client(handler).post(
+            "/scan/auth-bypass",
+            {"baseUrl": "https://t", "endpoints": ["/"], "protectedContentMarker": "private"},
+        )
+
+    message = exc_info.value.message.lower()
+    assert "extension" in message and "older" in message
+    assert "protectedcontentmarker" in message
+
+
+def test_generic_invalid_body_without_new_field_is_unchanged() -> None:
+    def handler(_req: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            400,
+            json={
+                "success": False,
+                "data": None,
+                "error": {"code": "INVALID_REQUEST", "message": "invalid request body"},
+            },
+        )
+
+    with pytest.raises(BurpError) as exc_info:
+        _client(handler).post("/anything", {"ordinary": "field"})
+    assert exc_info.value.message == "invalid request body"
+
+
 def test_connection_refused_raises_unreachable() -> None:
     def handler(_req: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("refused")

@@ -44,9 +44,6 @@ class IntruderServiceTest {
         val service = IntruderService(api, repeater)
         val base = validPlan()
         val invalid = listOf(
-            base.copy(attackType = "battering-ram"),
-            base.copy(attackType = "pitchfork"),
-            base.copy(attackType = "cluster-bomb"),
             base.copy(attackType = "unknown"),
             base.copy(options = AttackOptions(followRedirects = false)),
             base.copy(options = AttackOptions(maxRetries = 1)),
@@ -621,7 +618,8 @@ class IntruderServiceTest {
     )
 
     private fun rawBytes(request: HttpRequestData): ByteArray {
-        val target = java.net.URI(request.url).rawPath.ifEmpty { "/" }
+        val uri = java.net.URI(request.url)
+        val target = uri.rawPath.ifEmpty { "/" } + (uri.rawQuery?.let { "?$it" } ?: "")
         val lines = buildList {
             add("${request.method} $target HTTP/1.1")
             if (request.headers.none { it.name.equals("Host", ignoreCase = true) }) {
@@ -629,7 +627,8 @@ class IntruderServiceTest {
             }
             request.headers.forEach { add("${it.name}: ${it.value}") }
         }
-        return (lines.joinToString("\r\n") + "\r\n\r\n" + (request.body ?: "")).toByteArray(UTF_8)
+        return (lines.joinToString("\r\n") + "\r\n\r\n").toByteArray(UTF_8) +
+            (request.bodyBytes() ?: byteArrayOf())
     }
 
     private fun success(

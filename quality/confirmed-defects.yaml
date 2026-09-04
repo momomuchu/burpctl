@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scope": "Confirmed defects in /Users/maache/burpctl at baseline 663bb56; not a claim that unknown defects cannot exist.",
+  "scope": "D01-D18 record the behavior-hardening pass at baseline 663bb56. D19-D61 record the live v2.0.0 campaign against Burp Suite Professional 2026.3.3 on 2026-09-04. D62-D70 record corrective defects R1-R9 found during adversarial review of the v2.1.0 fix tree. D71-D73 record defects in the live acceptance and quality-ledger gates discovered while replaying that tree. This is not a claim that unknown defects cannot exist.",
   "defects": [
     {
       "id": "D01",
@@ -13,7 +13,8 @@
         "docs/SPEC.md"
       ],
       "compatibility": "Preserve routes and ApiResponse; tighten invalid-input acceptance.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D02",
@@ -28,7 +29,8 @@
         "docs/STATE-AND-CONFIG.md"
       ],
       "compatibility": "Keep --no-redact as the explicit opt-out.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D03",
@@ -45,7 +47,8 @@
         "docs/OUTPUT.md"
       ],
       "compatibility": "Structured data is no longer mislabeled as raw; runtime exits remain 0-5.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D04",
@@ -59,7 +62,8 @@
         "docs/STATE-AND-CONFIG.md"
       ],
       "compatibility": "Honor the already documented precedence order.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D05",
@@ -75,7 +79,8 @@
         "docs/OUTPUT.md"
       ],
       "compatibility": "Keep the existing SQLite schema and hash-only policy where possible.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D06",
@@ -93,7 +98,8 @@
         "docs/OUTPUT.md"
       ],
       "compatibility": "Preserve four client-side attack modes and structured REST bridge limits.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D07",
@@ -107,7 +113,8 @@
         "docs/SPEC.md"
       ],
       "compatibility": "Preserve and migrate existing H2 schema/session keys without destructive reset.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D08",
@@ -120,7 +127,8 @@
         "docs/SPEC.md"
       ],
       "compatibility": "Preserve send response fields and add truthful persistence metadata.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D09",
@@ -134,7 +142,8 @@
         "docs/STATE-AND-CONFIG.md"
       ],
       "compatibility": "Add optional origin binding while keeping the singleton session API.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D10",
@@ -147,7 +156,8 @@
         "docs/SPEC.md"
       ],
       "compatibility": "Keep existing utility routes and add fetch accounting.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D11",
@@ -160,7 +170,8 @@
         "docs/SPEC.md"
       ],
       "compatibility": "Preserve absolute proxy IDs; add evidence fields and reject no-op controls.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D12",
@@ -174,7 +185,8 @@
         "docs/CLI.md"
       ],
       "compatibility": "Keep route paths; unsupported operations return 501 and existing progress becomes nullable.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D13",
@@ -189,7 +201,8 @@
         "docs/OUTPUT.md"
       ],
       "compatibility": "CLI exit 5 follows confirmed vulnerable fields, never arbitrary deltas.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D14",
@@ -203,7 +216,8 @@
         "docs/ALGORITHMS.md"
       ],
       "compatibility": "Retain routes; unsupported matrix modes direct callers to client-side bp fuzz.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D15",
@@ -216,7 +230,8 @@
         "docs/SPEC.md"
       ],
       "compatibility": "Keep add/remove/check; listing/replacement return unsupported.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D16",
@@ -230,7 +245,8 @@
         "docs/CLI.md"
       ],
       "compatibility": "Preserve routes while correcting DTOs from string maps to JSON objects.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D17",
@@ -244,7 +260,8 @@
         "docs/SPEC.md"
       ],
       "compatibility": "Keep state in memory and do not persist the Collaborator secret.",
-      "status": "verified"
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
     },
     {
       "id": "D18",
@@ -252,6 +269,7 @@
       "slice": "contracts-ci",
       "tests": [
         "bp/tests/test_quality_ledger.py",
+        "bp/tests/test_release_identity.py",
         "src/test/kotlin/com/burprest/routes/HealthRoutesTest.kt"
       ],
       "contracts": [
@@ -261,10 +279,1564 @@
         "docs/CLI.md",
         "docs/OUTPUT.md",
         "docs/STATE-AND-CONFIG.md",
+        "docs/PROOF-CEILINGS.md",
         "docs/adr/INDEX.md"
       ],
-      "compatibility": "Do not invent or publish a release version; add source/build/schema provenance.",
-      "status": "verified"
+      "compatibility": "Current source declares 2.1.0 across six active identities. Build-time release-identity coverage checks five and misses bp/uv.lock; runtime CLI/JAR equality remains a required operator check, not a universal handshake, with only narrow probeTimeoutMs/bodyBase64 mismatch hints.",
+      "status": "fixed",
+      "fixEvidence": "Original evidence retained by this row consists of its listed executable regression and contract references; commit 8a166e9 recorded D01-D18 as each having RED-first regression coverage and aggregate gates. The correction is not said to have regressed. This row has no durable structured receipt establishing any of the newer promotion criteria: a live pass against a redeployed binary, an assertion-reaching causal RED transcript, or a passing non-author adversarial review. It is demoted because the row cannot satisfy the now-enforced uniform verified standard, not because the original standard was illegitimate."
+    },
+    {
+      "id": "D19",
+      "invariant": "Every REST failure, including content negotiation and an empty JSON body, has a typed JSON ApiResponse envelope.",
+      "slice": "server-boundary",
+      "tests": [
+        "src/test/kotlin/com/burprest/server/StatusPagesTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Keep HTTP 415 where appropriate; add the same public JSON failure envelope used by other errors.",
+      "status": "fixed",
+      "fixEvidence": "The cause-neutral typed-415 correction and its three-arm regression passed the independent Kotlin local gate (388 tests, zero failures). On 2026-09-04, VERIFY-D19 passed against the freshly redeployed v2.1.0 JAR with SHA-256 15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27: all three responses were HTTP 415 JSON envelopes with success=false and code UNSUPPORTED_MEDIA_TYPE. This establishes the redeployed-binary criterion. An assertion-reaching causal RED observed during this fix and non-author adversarial review are not recorded, so the status remains fixed rather than verified.",
+      "reproduction": [
+        "curl -sS -i --max-time 10 -X POST --data-binary '{\"data\":\"x\",\"encoding\":\"base64\"}' http://127.0.0.1:8089/decoder/encode",
+        "curl -sS -i --max-time 10 -X POST -H 'Content-Type: text/plain' --data-binary '{\"data\":\"x\",\"encoding\":\"base64\"}' http://127.0.0.1:8089/decoder/encode",
+        "curl -sS -i --max-time 10 -X POST -H 'Content-Type: application/json' --data-binary '' http://127.0.0.1:8089/decoder/encode"
+      ],
+      "observed": "Each arm returned HTTP 415 with Content-Length: 0, no application/json content type, and no error body.",
+      "expected": "HTTP 415 with success:false and a stable typed error code in an ApiResponse JSON body.",
+      "severity": "medium",
+      "discoveringLane": "META",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/meta.md",
+        "relatedArtifacts": ["/tmp/burpctl-live/verify/acceptance-20260904T101852Z.md"],
+        "cases": ["ERR-09", "ERR-10", "ERR-11", "VERIFY-D19"]
+      }
+    },
+    {
+      "id": "D20",
+      "invariant": "Malformed /history numeric query values are rejected rather than replaced by defaults or treated as an absent filter.",
+      "slice": "server-boundary",
+      "tests": [
+        "src/test/kotlin/com/burprest/routes/HistoryFilterTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Preserve valid pagination and status filtering; tighten malformed numeric inputs to HTTP 400.",
+      "status": "fixed",
+      "fixEvidence": "Strict parsing for supplied history integers and the named regression coverage passed the independent Kotlin local gate (388 tests, zero failures). On 2026-09-04, VERIFY-D20 passed against the freshly redeployed v2.1.0 JAR with SHA-256 15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27: page=abc, pageSize=abc, and statusCode=abc each returned HTTP 400, success=false, and code INVALID_PARAM. This establishes the redeployed-binary criterion. An assertion-reaching causal RED observed during this fix and non-author adversarial review are not recorded, so the status remains fixed rather than verified.",
+      "reproduction": [
+        "curl -sS -i 'http://127.0.0.1:8089/history?host=meta-no-entry.invalid&page=abc&pageSize=1'",
+        "curl -sS -i 'http://127.0.0.1:8089/history?host=meta-no-entry.invalid&page=0&pageSize=abc'",
+        "curl -sS -i 'http://127.0.0.1:8089/history?host=meta-no-entry.invalid&statusCode=abc&pageSize=1'"
+      ],
+      "observed": "All three returned HTTP 200 success:true; page became 0, pageSize became 50, and malformed statusCode was omitted.",
+      "expected": "A typed HTTP 400 response for each malformed supplied integer, consistent with negative/range validation and /proxy/history.",
+      "severity": "medium",
+      "discoveringLane": "META and PROXY",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/meta.md",
+        "relatedArtifacts": ["/tmp/burpctl-live/artifacts/proxy.md", "/tmp/burpctl-live/verify/acceptance-20260904T101852Z.md"],
+        "cases": ["ERR-19", "ERR-20", "ERR-21", "HPAGE-04", "HPAGE-05", "HPAGE-10", "HPAGE-11", "HPAGE-12", "VERIFY-D20"]
+      }
+    },
+    {
+      "id": "D21",
+      "invariant": "History timestamp validation does not disclose parser implementation details or echo a potentially secret query value.",
+      "slice": "server-boundary",
+      "tests": [
+        "src/test/kotlin/com/burprest/routes/HistoryFilterTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Keep typed HTTP 400 behavior while replacing exception-derived text with a fixed authored message.",
+      "status": "fixed",
+      "fixEvidence": "Authored cause-neutral timestamp validation and its leak regressions passed the independent Kotlin local gate (388 tests, zero failures). On 2026-09-04, VERIFY-D21 passed against the freshly redeployed v2.1.0 JAR with SHA-256 15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27: both responses used fixed ISO-8601 INVALID_PARAM messages and contained neither supplied markers nor Java/parser internals. This establishes the redeployed-binary criterion. An assertion-reaching causal RED observed during this fix and non-author adversarial review are not recorded, so the status remains fixed rather than verified.",
+      "reproduction": [
+        "curl -sS -i 'http://127.0.0.1:8089/history?since=META_QUERY_SECRET_7Q'",
+        "curl -sS -i 'http://127.0.0.1:8089/history?until=META_QUERY_SECRET_8R'"
+      ],
+      "observed": "The HTTP 400 message contained java.time.format.DateTimeParseException and the exact supplied marker.",
+      "expected": "A fixed validation message naming only the parameter and accepted ISO-8601 requirement.",
+      "severity": "medium",
+      "discoveringLane": "META",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/meta.md",
+        "relatedArtifacts": ["/tmp/burpctl-live/verify/acceptance-20260904T101852Z.md"],
+        "cases": ["ERR-27", "ERR-28", "VERIFY-D21"]
+      }
+    },
+    {
+      "id": "D22",
+      "invariant": "BP_AGENT=1 and explicit JSON mode render local validation and parser failures as one JSON error record on stderr.",
+      "slice": "python-output",
+      "tests": [
+        "bp/tests/test_cliutil.py",
+        "bp/tests/test_cli_global_opts.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "Keep local-usage exit 2 and empty stdout; change only the error representation selected for machine mode.",
+      "status": "fixed",
+      "fixEvidence": "On 2026-09-04, VERIFY-D22 passed against the freshly redeployed v2.1.0 CLI/extension pair whose JAR SHA-256 was 15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27: all three local usage errors exited 2, left stdout byte-empty, and emitted exactly one JSON stderr object with error.code=USAGE_ERROR. This establishes the redeployed-binary criterion and shows the shipped behavior is corrected. An assertion-reaching causal RED observed during this fix and non-author adversarial review are not recorded, so the record is fixed rather than verified.",
+      "reproduction": [
+        "BP_LEDGER_PATH=/tmp/burpctl-live/ledger-meta.db BP_AGENT=1 bp encode test --enc rot13",
+        "BP_LEDGER_PATH=/tmp/burpctl-live/ledger-meta.db BP_AGENT=1 bp encode --enc base64",
+        "BP_LEDGER_PATH=/tmp/burpctl-live/ledger-meta.db bp health --format json --bogus"
+      ],
+      "observed": "Each command exited 2 with empty stdout but emitted plain or Rich-formatted human text, which was not JSON parseable.",
+      "expected": "Exactly one typed JSON error object on stderr in either machine-mode activation path.",
+      "severity": "medium",
+      "discoveringLane": "META",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/meta.md",
+        "relatedArtifacts": ["/tmp/burpctl-live/verify/acceptance-20260904T101852Z.md"],
+        "cases": ["AGT-04", "AGT-05", "AGT-06", "VERIFY-D22"]
+      }
+    },
+    {
+      "id": "D23",
+      "invariant": "One absent optional WebSocket value cannot fail the complete WebSocket history listing.",
+      "slice": "montoya-controls",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/ProxyServiceTest.kt",
+        "bp/tests/test_proxy.py"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/CLI.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "Retain WebSocketEntry fields and make response-derived values nullable when Montoya has no value.",
+      "status": "fixed",
+      "fixEvidence": "Nullable WebSocket platform projections and CLI-model coverage are present, and the Kotlin regressions passed the independent 388-test gate with zero failures. On 2026-09-04, VERIFY-D23 passed against the freshly redeployed v2.1.0 JAR with SHA-256 15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27: REST and CLI each returned all 12,675 rows, optional-null rows were readable, and the CLI NDJSON parsed completely. This establishes the redeployed-binary criterion. An assertion-reaching causal RED observed during this fix and non-author adversarial review are not recorded, so the status remains fixed rather than verified.",
+      "reproduction": [
+        "curl -sS -i http://127.0.0.1:8089/proxy/websocket/history",
+        "BP_LEDGER_PATH=/tmp/burpctl-live/ledger-proxy.db bp --format json ws"
+      ],
+      "observed": "A populated real Burp WebSocket history returned HTTP 500 INTERNAL_ERROR in every bp output mode. The fix lane localized the trigger to an absent edited-payload platform value being dereferenced.",
+      "expected": "HTTP 200 with all history rows; absent response-side values are encoded as null on the affected row.",
+      "severity": "high",
+      "discoveringLane": "PROXY",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/proxy.md",
+        "relatedArtifacts": ["/tmp/burpctl-live/verify/acceptance-20260904T101852Z.md"],
+        "cases": ["WS-01", "WS-02", "WS-03", "WS-04", "WS-05", "WS-06", "WS-07", "VERIFY-D23"]
+      }
+    },
+    {
+      "id": "D24",
+      "invariant": "All output-mode and field selections are validated before any target, Burp-state, one-use poll, configuration, or scanner-task effect.",
+      "slice": "python-output",
+      "tests": [
+        "bp/tests/test_cliutil.py",
+        "bp/tests/test_output.py",
+        "bp/tests/test_collaborator.py",
+        "bp/tests/test_config_commands.py",
+        "bp/tests/test_fuzz.py",
+        "bp/tests/test_history.py",
+        "bp/tests/test_proxy.py",
+        "bp/tests/test_scanner.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/OUTPUT.md",
+        "docs/PROOF-CEILINGS.md",
+        "docs/adr/0014-state-preserving-reportable-operations.md"
+      ],
+      "compatibility": "Reject an incompatible output request before dispatch; never retry or conceal an already-completed effect.",
+      "status": "fixed",
+      "fixEvidence": "The Python lane routed log and tag through the shared static output preflight, closing the paths that had bypassed the REST-command guard, and added a request-free matrix covering all ten proved-live effect sites. The complete Python suite passed 706 tests with 2 skipped while network access was denied, establishing that the local suite has no hidden live dependency. No live replay against the redeployed binary is recorded, so the record is fixed rather than verified.",
+      "verificationNotes": "D24 is not blocked on Collaborator. Collaborator is only two of the ten proved-live effect sites; its provider arm is authorized as of 2026-09-04, while the non-Collaborator arms remain independently reproducible on the allowed loopback destinations. VERIFY-D24 later observed bp --format raw send exit 0 with byte-empty stderr, an isolated ledger delta of +1, target HTTP 200, and new Burp history row 401 for http://127.0.0.1:9921/echo?marker=raw-send-effect-9Q. That is correct behavior, not a D24 PASS or FAIL: bp/src/bp/output.py:172 includes send among the four supported raw-HTTP commands, its preflight at line 231 admits those commands, and bp/tests/test_output.py:148-153 asserts response-only raw send rendering. The legitimate supported effect does not test D24's ordering invariant. D24's original confirmed defect remains established on its other documented incompatible-output and unknown-field effect sites; the record is now fixed on the Python lane's local preflight evidence but has no redeployed-binary replay. Its scanner-audit worst case has a three-link recovery dependency: rendering discards the task id; no service/REST enumeration exposes the handle while ScannerService's private registry survives; after reload loses that registry, pinned Montoya has no task-list primitive, so the handle cannot be rediscovered. Deferred scanner enumeration is therefore the only product recovery path while the private registry still exists, not merely a convenience feature.",
+      "reproduction": [
+        "bp --format raw intercept off",
+        "bp --format raw send 8575 --path '/echo?marker=raw-send-effect-9Q'",
+        "bp --format raw history replay 47",
+        "bp --format raw tab 8575 --name tab-raw-effect",
+        "bp --format raw collab new",
+        "bp --format raw collab poll nc3380tmec9rintnd8vosc3tpkvdj2",
+        "bp --format json --fields definitely_unknown config set project --json \"$(< /tmp/burpctl-live/project-one-key-derived.json)\"",
+        "bp --format raw scan audit http://127.0.0.1:9921/ok"
+      ],
+      "observed": "Mutations or destructive reads completed before bp exited 2 during rendering. Sites proved live were proxy intercept, Repeater send, history replay, Repeater tab creation, Collaborator generation and polling, project config import, scope add/remove, and fuzz. Worst case: scanner audit returned REST 200 and created a real task, but raw rendering discarded its id. ScannerService still held the task handle in its private in-memory ConcurrentHashMap, so recovery was mechanically possible while that registry survived; the product omitted a service/REST enumeration method. After extension reload or other registry loss, pinned Montoya exposes no task-list primitive, so a lost handle cannot be rediscovered.",
+      "expected": "Known format/field incompatibilities fail locally with exit 2 before the REST call or target send; if an effect cannot be represented truthfully, the operation refuses rather than acts.",
+      "severity": "critical",
+      "discoveringLane": "PROXY, COLLAB, FUZZ, TARGET, and SCAN",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/proxy.md",
+        "relatedArtifacts": [
+          "/tmp/burpctl-live/artifacts/collab.md",
+          "/tmp/burpctl-live/artifacts/fuzz.md",
+          "/tmp/burpctl-live/artifacts/target.md",
+          "/tmp/burpctl-live/artifacts/scan.md",
+          "/tmp/burpctl-live/verify/acceptance-20260904T101852Z.md"
+        ],
+        "cases": ["INT-12", "SND-22", "SND-23", "TAB-10", "TAB-11", "HRPL-05", "HRPL-06", "G11", "G15", "G16", "G17", "P32", "P33", "P34", "P35", "FZ-F02-RAW", "FZ-F06-FIELDS-UNKNOWN", "CONFIG-SET-RAW", "CONFIG-SET-FIELD-UNKNOWN", "A-RAW-EFFECT", "VERIFY-D24 (supported D27 arm; no D24 verdict)"]
+      }
+    },
+    {
+      "id": "D25",
+      "invariant": "The CLI exposes every documented /history list filter that the server accepts.",
+      "slice": "python-history",
+      "tests": [
+        "bp/tests/test_history.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Add source, search, since, until, and page-size without changing existing host, method, status, or page options.",
+      "status": "confirmed",
+      "reproduction": [
+        "bp --format json history list --source repeater",
+        "bp --format json history list --search marker-9Q",
+        "bp --format json history list --since 2000-01-01T00:00:00Z",
+        "bp --format json history list --until 2999-01-01T00:00:00Z",
+        "bp --format json history list --page-size 1"
+      ],
+      "observed": "Every option was rejected locally as unknown with exit 2 and zero REST ledger rows.",
+      "expected": "Each documented filter is accepted, validated, encoded to GET /history, and reflected in the result.",
+      "severity": "medium",
+      "discoveringLane": "PROXY",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/proxy.md",
+        "cases": ["HCLI-01", "HCLI-02", "HCLI-03", "HCLI-04", "HCLI-05"]
+      }
+    },
+    {
+      "id": "D26",
+      "invariant": "Repeater tab names reject blank labels before a tab is created.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/RepeaterServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Continue allowing an omitted name to select the documented default; reject an explicitly blank name.",
+      "status": "fixed",
+      "fixEvidence": "Explicitly blank tab names are rejected before the UI effect; the regression passed the independent Kotlin local gate (388 tests, zero failures), with no rebuilt-JAR live replay.",
+      "reproduction": [
+        "bp --format json tab 8575 --name ''"
+      ],
+      "observed": "The command exited 0 with {\"name\":\"\",\"created\":true}; a blank-labelled Repeater tab was created.",
+      "expected": "A typed validation failure and no tab creation.",
+      "severity": "low",
+      "discoveringLane": "PROXY",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/proxy.md",
+        "cases": ["TAB-05"]
+      }
+    },
+    {
+      "id": "D27",
+      "invariant": "Commands documented to return one raw HTTP artifact can emit that artifact in raw mode.",
+      "slice": "python-output",
+      "tests": [
+        "bp/tests/test_history.py",
+        "bp/tests/test_proxy.py",
+        "bp/tests/test_output.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "Define the exact request/response framing for one entry; continue rejecting ambiguous multi-record raw output.",
+      "status": "confirmed",
+      "fixEvidence": "Partial implementation evidence only: raw rendering exists for the recorded single-entry reproductions, and the frozen-tree R-wave Python gate passed 684 tests. A separate low-severity response-schema omission remains: request objects expose bodyBase64, but response objects expose only Montoya bodyToString(). The live byte sequence 41 c3 a9 80 ff 00 42 mapped bijectively to U+0041/U+00C3/U+00A9/U+0080/U+00FF/U+0000/U+0042 with no replacement, so bytes are recoverable by Latin-1 re-encoding; the problem is that this round-trip is undocumented/non-obvious and natural UTF-8 re-encoding is wrong, not evidence corruption. H2 history and /history/{id}/replay also remain text-only, so arbitrary request bytes do not survive persistence/replay. No rebuilt-pair replay exists.",
+      "reproduction": [
+        "bp --format raw req 8571",
+        "bp --format raw history get 47"
+      ],
+      "observed": "Both received structured dictionaries and exited 2 with 'raw requires an unstructured value'; the same representation failure occurred after send and history replay effects.",
+      "expected": "The documented raw request/response bytes for a single entry, or a corrected explicit contract that does not promise those bytes.",
+      "severity": "medium",
+      "discoveringLane": "PROXY",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/proxy.md",
+        "cases": ["REQ-04", "SND-22", "HGET-03", "HRPL-05"]
+      }
+    },
+    {
+      "id": "D28",
+      "invariant": "Session header values containing CR, LF, or NUL are rejected locally before REST network access.",
+      "slice": "python-session",
+      "tests": [
+        "bp/tests/test_behavior_hardening.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "Keep extension-side and target-side rejection as defense in depth while adding local validation.",
+      "status": "confirmed",
+      "reproduction": [
+        "BP_LEDGER_PATH=/tmp/burpctl-live/ledger-session.db bp --format json session set --json '{\"cookies\":{},\"headers\":{\"X-Test\":\"left\\rright\"},\"name\":\"invalid-cr\",\"origin\":\"http://127.0.0.1:9921\"}'"
+      ],
+      "observed": "The command exited 1 with HTTP 400 INVALID_REQUEST and no target request, but the ledger proved a POST /session/set REST call. LF and NUL behaved identically.",
+      "expected": "Local usage exit 2 with no REST call and no state or target effect.",
+      "severity": "low",
+      "discoveringLane": "SESSION",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/session.md",
+        "cases": ["SET-07-CR", "SET-07-LF", "SET-07-NUL", "SET-07-LEDGER"]
+      }
+    },
+    {
+      "id": "D29",
+      "invariant": "The user-facing session clear operation removes every credential source that later session sends can apply.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/SessionServiceTest.kt",
+        "bp/tests/test_behavior_hardening.py"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/CLI.md",
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "This intentionally changes observable session-clear semantics in 2.1.0: configured credentials and the captured cookie jar are cleared together.",
+      "status": "fixed",
+      "fixEvidence": "Session clear now removes configured credentials and the observed jar; cookie-jar epochs reject late capture from pre-clear in-flight sends. The old implementation produced the causal RED 'expected 0, got 1'; the independent Kotlin gate passed 388 tests with zero failures. That evidence did not cover the later split between credential snapshot and epoch capture or the clearCookieJar entry point; D63 and D70 record those R-wave corrections separately. No live 2.1.0 replay exists.",
+      "reproduction": [
+        "bp --format json session send http://127.0.0.1:9921/setcookie",
+        "bp --format json session cookies",
+        "bp --format json session clear",
+        "bp --format json session cookies"
+      ],
+      "observed": "The jar contained two cookies before clear and still returned total:2 afterward. The configured session fields were cleared; no bp command could clear the jar.",
+      "expected": "After bp session clear, session get and session cookies both show no retained credentials.",
+      "severity": "medium",
+      "discoveringLane": "SESSION",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/session.md",
+        "cases": ["COOKIE-01", "CLEAR-01", "CLEAR-03-JAR", "CLEAR-04-AUTH"]
+      }
+    },
+    {
+      "id": "D30",
+      "invariant": "Cookie-jar output preserves and exposes the HttpOnly attribute supplied by Set-Cookie.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/SessionServiceTest.kt",
+        "bp/tests/test_behavior_hardening.py"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "Add a nullable/boolean httpOnly field without changing existing cookie fields.",
+      "status": "fixed",
+      "fixEvidence": "Cookie-jar DTO/parsing now retains HttpOnly and its positive/negative controls passed the independent Kotlin local gate (388 tests, zero failures); no live replay against a rebuilt JAR exists.",
+      "reproduction": [
+        "bp --format json session send http://127.0.0.1:9921/setcookie",
+        "bp --no-redact --format json session cookies"
+      ],
+      "observed": "The fixture sent sid with HttpOnly, but the returned cookie record exposed domain, name, value, path, secure, expiry, and hostOnly with no httpOnly field.",
+      "expected": "The sid record reports httpOnly:true while a non-HttpOnly control reports false.",
+      "severity": "low",
+      "discoveringLane": "SESSION",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/session.md",
+        "cases": ["COOKIE-03", "COOKIE-04-HTTPONLY"]
+      }
+    },
+    {
+      "id": "D31",
+      "invariant": "Default cookie redaction masks secret values without masking the safe domain, name, and path metadata needed to identify a cookie.",
+      "slice": "python-output",
+      "tests": [
+        "bp/tests/test_output.py"
+      ],
+      "contracts": [
+        "docs/OUTPUT.md",
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "Keep cookie values redacted by default and retain --no-redact as the explicit value opt-out.",
+      "status": "confirmed",
+      "reproduction": [
+        "bp --format json session cookies"
+      ],
+      "observed": "domain, name, path, and value were all rendered as ***, forcing --no-redact to inspect non-secret identity/path metadata.",
+      "expected": "Only the cookie value and any genuinely sensitive value fields are masked; safe metadata remains visible.",
+      "severity": "low",
+      "discoveringLane": "SESSION",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/session.md",
+        "cases": ["COOKIE-02"]
+      }
+    },
+    {
+      "id": "D32",
+      "invariant": "Session-set help documents every security-relevant accepted field, including origin binding.",
+      "slice": "python-session",
+      "tests": [
+        "bp/tests/test_cli_conformance.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "Document the existing origin field and preserve cookies, headers, and name.",
+      "status": "confirmed",
+      "reproduction": [
+        "BP_LEDGER_PATH=/tmp/burpctl-live/ledger-session.db NO_COLOR=1 TERM=dumb bp session set --help"
+      ],
+      "observed": "The help and example listed cookies, headers, and name only; the live extension accepted and enforced origin.",
+      "expected": "The request shape, option help, and example include origin and explain its binding semantics.",
+      "severity": "low",
+      "discoveringLane": "SESSION",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/session.md",
+        "cases": ["DOC-01"]
+      }
+    },
+    {
+      "id": "D33",
+      "invariant": "Quiet output emits the documented command-specific essential value and never leaks a Python container/boolean representation.",
+      "slice": "python-output",
+      "tests": [
+        "bp/tests/test_collaborator.py",
+        "bp/tests/test_config_commands.py",
+        "bp/tests/test_output.py"
+      ],
+      "contracts": [
+        "docs/OUTPUT.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Keep response objects and operation exits; define stable quiet projections for each command family.",
+      "status": "fixed",
+      "fixEvidence": "The Python lane completed documented quiet essentials for proxy, req, history, log, and scanner issues in addition to the already-handled Collaborator, scope-check, config, extension, and scalar projections. It also removed invented scope add/remove values: the CLI had emitted values it never observed, a truthfulness failure rather than merely formatting. The complete Python suite passed 706 tests with 2 skipped while network access was denied. No live replay against the redeployed binary is recorded, so the record is fixed rather than verified.",
+      "verificationNotes": "The Collaborator provider is required for the collab new/poll arms and is authorized as of 2026-09-04. That authorization permits contact with PortSwigger's public Collaborator server only; it does not permit any other external destination. D33 has no remaining Collaborator-authorization blocker.",
+      "reproduction": [
+        "bp --format quiet collab new",
+        "bp --format quiet collab poll hpake6m9o9o6tur1vbxfdd4is9yzmo",
+        "bp --format quiet scope check http://127.0.0.1:9921/bp-quiet-out-4f1c9e",
+        "bp --format quiet config get project",
+        "bp --format quiet ext"
+      ],
+      "observed": "Collaborator new printed a Python list/dict repr; empty and positive polls printed False/True, with the positive poll consuming detail. Scope check printed its URL rather than in-scope/out-of-scope. Config and extension commands printed full Python nested dict/list representations.",
+      "expected": "A documented stable essential scalar for each command: Collaborator host/id-or-none, scope classification, and an intentionally defined value or empty output for config/extension operations.",
+      "severity": "high",
+      "discoveringLane": "COLLAB and TARGET",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/collab.md",
+        "relatedArtifacts": ["/tmp/burpctl-live/artifacts/target.md"],
+        "cases": ["G12", "P10", "P34", "P35", "SCOPE-CHECK-QUIET-OUT", "CONFIG-PROJECT-QUIET", "CONFIG-USER-QUIET", "CONFIG-SET-QUIET", "EXT-QUIET"]
+      }
+    },
+    {
+      "id": "D34",
+      "invariant": "Collaborator field selection addresses documented payload and interaction records, not only their response wrappers.",
+      "slice": "python-output",
+      "tests": [
+        "bp/tests/test_collaborator.py"
+      ],
+      "contracts": [
+        "docs/OUTPUT.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Expose leaf fields while preserving access to wrapper metadata where it remains useful.",
+      "status": "fixed",
+      "fixEvidence": "Collaborator leaf catalogs and unwrapping were already implemented; the Python lane completed regression coverage for the full documented poll projection. The complete Python suite passed 706 tests with 2 skipped while network access was denied. No live replay against the redeployed binary is recorded, so the record is fixed rather than verified.",
+      "verificationNotes": "D34 requires the Collaborator provider and that provider is authorized as of 2026-09-04. The authorization permits contact with PortSwigger's public Collaborator server only; it does not permit any other external destination. D34 has no remaining Collaborator-authorization blocker.",
+      "reproduction": [
+        "bp --format json --fields payload collab new",
+        "bp --format json --fields interactionId,type,clientIp,timestamp collab poll kbz07xsjd98ohkskc5ulr92qohu8ix"
+      ],
+      "observed": "Both exited 2: generation allowed only payloads, and poll allowed only found, interactions, queriedPayloadId. The first payload had already been generated and its id was lost.",
+      "expected": "The documented leaf fields are selectable and output is projected from each payload/interaction record; invalid fields are preflighted before one-use effects.",
+      "severity": "high",
+      "discoveringLane": "COLLAB",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/collab.md",
+        "cases": ["G15", "G16", "P14"]
+      }
+    },
+    {
+      "id": "D35",
+      "invariant": "An unknown Collaborator payload id returns the route's payload-specific NOT_FOUND message rather than the global missing-route message.",
+      "slice": "server-boundary",
+      "tests": [
+        "src/test/kotlin/com/burprest/routes/CollaboratorRoutesTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Keep HTTP 404 and NOT_FOUND; restore the more specific public message.",
+      "status": "fixed",
+      "fixEvidence": "The scoped payload lookup now preserves the authored payload-specific NOT_FOUND response; its route regression passed the independent Kotlin local gate (388 tests, zero failures), but no rebuilt 2.1.0 JAR live replay is established.",
+      "reproduction": [
+        "curl --silent --show-error --include http://127.0.0.1:8089/collaborator/poll/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bp --format json collab poll aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "observed": "Both returned NOT_FOUND with message 'route not found', indistinguishable from an unregistered route.",
+      "expected": "NOT_FOUND with the authored payload-specific message 'Collaborator payload not found'.",
+      "severity": "medium",
+      "discoveringLane": "COLLAB",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/collab.md",
+        "cases": ["P03"]
+      }
+    },
+    {
+      "id": "D36",
+      "invariant": "Candidate findings are checked against the product's own command contract rather than names invented by a test brief.",
+      "slice": "campaign-adjudication",
+      "tests": [
+        "bp/tests/test_cli_conformance.py"
+      ],
+      "contracts": [
+        "docs/CLI.md"
+      ],
+      "compatibility": "No product change: retain collab new as the single generation spelling.",
+      "status": "rejected",
+      "reproduction": [
+        "bp --format json collab generate"
+      ],
+      "observed": "Typer returned 'No such command generate' with exit 2.",
+      "expected": "The claim is rejected because it contradicts the product's own contract: bp/src/bp/commands/collaborator.py:19 defines new and docs/CLI.md:91 documents bp collab new; no collab generate command exists. The test brief invented generate, and an invalid brief is not a product defect.",
+      "severity": null,
+      "discoveringLane": "COLLAB",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/collab.md",
+        "cases": ["G18"],
+        "contractRefs": [
+          "bp/src/bp/commands/collaborator.py:19 — @sub.command(\"new\")",
+          "docs/CLI.md:91 — | `bp collab new [--count N]` | `POST /collaborator/generate[/batch]` | collaborator (Pro) |"
+        ]
+      }
+    },
+    {
+      "id": "D37",
+      "invariant": "The documented Collaborator batch-count range is validated locally before REST access.",
+      "slice": "python-collaborator",
+      "tests": [
+        "bp/tests/test_collaborator.py"
+      ],
+      "contracts": [
+        "docs/CLI.md"
+      ],
+      "compatibility": "Keep accepted counts 1 through 100 and reject larger values with local usage exit 2.",
+      "status": "confirmed",
+      "reproduction": [
+        "bp --format json collab new --count 101"
+      ],
+      "observed": "The invalid count reached POST /collaborator/generate/batch and returned HTTP 400 INVALID_REQUEST as runtime exit 1.",
+      "expected": "Local usage exit 2 with no REST call.",
+      "severity": "low",
+      "discoveringLane": "COLLAB",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/collab.md",
+        "cases": ["G09"]
+      }
+    },
+    {
+      "id": "D38",
+      "invariant": "Structured fuzz sends preserve all untouched request headers and do not inject browser defaults.",
+      "slice": "python-fuzz",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/RepeaterRequestConstructionTest.kt",
+        "bp/tests/test_fuzz.py",
+        "bp/tests/test_wire.py"
+      ],
+      "contracts": [
+        "docs/ALGORITHMS.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Preserve the structured REST bridge while carrying only the captured headers plus intentional substitutions and framing updates.",
+      "status": "fixed",
+      "fixEvidence": "The shared Kotlin request-construction path now strips factory-injected browser headers while preserving caller headers. Its regression passed the independent 388-test, zero-failure gate; no rebuilt 2.1.0 JAR has been deployed or live replayed.",
+      "reproduction": [
+        "bp --format json fuzz 8582 --pos query:q --payloads q=/tmp/burpctl-live/fuzz-work/payloads/two.txt --type sniper"
+      ],
+      "observed": "Every baseline and payload request acquired twelve unsolicited browser headers, including Sec-Ch-Ua, User-Agent, Accept, Fetch metadata, and compression preferences.",
+      "expected": "Untouched captured headers remain byte-equivalent except for explicitly documented framing reconstruction.",
+      "severity": "high",
+      "discoveringLane": "FUZZ",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
+        "cases": ["B01"]
+      }
+    },
+    {
+      "id": "D39",
+      "invariant": "Fuzzing one cookie preserves duplicate Cookie header structure and every unrelated cookie.",
+      "slice": "python-fuzz",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/RepeaterRequestConstructionTest.kt",
+        "bp/tests/test_pos.py",
+        "bp/tests/test_wire.py"
+      ],
+      "contracts": [
+        "docs/ALGORITHMS.md"
+      ],
+      "compatibility": "Retain later-header selector support without collapsing an earlier Cookie field.",
+      "status": "fixed",
+      "fixEvidence": "The shared Kotlin request-construction path now preserves duplicate Cookie ordering and untouched cookies. Its regression passed the independent 388-test, zero-failure gate; no rebuilt 2.1.0 JAR has been deployed or live replayed.",
+      "reproduction": [
+        "bp --format json fuzz 8590 --pos cookie:later --payloads later=/tmp/burpctl-live/fuzz-work/payloads/one.txt --type sniper"
+      ],
+      "observed": "The captured first=one Cookie header disappeared in both baseline and treatment; only the later Cookie header remained.",
+      "expected": "The earlier Cookie header and its unrelated cookie remain, while only later's value changes in the selected header.",
+      "severity": "high",
+      "discoveringLane": "FUZZ",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
+        "cases": ["S02-LATECOOKIE"]
+      }
+    },
+    {
+      "id": "D40",
+      "invariant": "A Unicode body payload reaches the target as the intended UTF-8 bytes.",
+      "slice": "python-fuzz",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/RepeaterRequestConstructionTest.kt",
+        "src/test/kotlin/com/burprest/services/IntruderBinaryBodyTest.kt",
+        "bp/tests/test_fuzz.py",
+        "bp/tests/test_wire.py"
+      ],
+      "contracts": [
+        "docs/ALGORITHMS.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Keep textual structured sends while encoding body text as UTF-8 rather than narrowing code points.",
+      "status": "fixed",
+      "fixEvidence": "Text bodies now cross the Kotlin/Montoya boundary as UTF-8 bytes, while request bodyBase64 is the authoritative arbitrary-byte projection. Follow-up causal REDs were observed for K20 (expected q=mutated, got null), K21 (createAttack discarded bodyBase64 and emptied the body position), and K22 (an arbitrary binary body blocked a query-only attack). The regressions passed the independent 388-test, zero-failure gate. That evidence did not cover SessionService's direct withBody(String) path or transmitted-body persistence; D64 records the later assertion-reaching R3 correction. No rebuilt 2.1.0 JAR has been deployed or live replayed.",
+      "reproduction": [
+        "bp --format json fuzz 8603 --pos body:f --payloads f=/tmp/burpctl-live/fuzz-work/payloads/unicode.txt --type sniper"
+      ],
+      "observed": "The intended 25-byte UTF-8 body reached the fixture as 19 bytes with replacement characters and NUL; Content-Length was 19 while stdout still reported the intended payload.",
+      "expected": "The fixture receives the exact 25 intended UTF-8 bytes and matching Content-Length.",
+      "severity": "high",
+      "discoveringLane": "FUZZ",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
+        "cases": ["P03-UNICODE"]
+      }
+    },
+    {
+      "id": "D41",
+      "invariant": "Every supplied per-position payload list is either consumed according to the selected attack grammar or rejected before sending.",
+      "slice": "python-fuzz",
+      "tests": [
+        "bp/tests/test_fuzz.py",
+        "bp/tests/test_runner.py"
+      ],
+      "contracts": [
+        "docs/ALGORITHMS.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Do not silently ignore named payload lists; retain the four attack names and documented expansion semantics.",
+      "status": "confirmed",
+      "reproduction": [
+        "bp --format json fuzz 8584 --pos query:a --pos query:b --payloads a=/tmp/burpctl-live/fuzz-work/payloads/two.txt --payloads b=/tmp/burpctl-live/fuzz-work/payloads/three.txt --type sniper",
+        "bp --format json fuzz 8629 --pos query:a --pos query:b --payloads a=/tmp/burpctl-live/fuzz-work/payloads/two.txt --payloads b=/tmp/burpctl-live/fuzz-work/payloads/three.txt --type battering-ram"
+      ],
+      "observed": "Sniper reused only list a for both positions and ignored list b; battering-ram likewise ignored list b without rejecting the ambiguous plan.",
+      "expected": "The named-list contract is applied explicitly, or extra lists produce local usage exit 2 and zero target sends.",
+      "severity": "high",
+      "discoveringLane": "FUZZ",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
+        "cases": ["A01-SNIPER", "A02B-RAM-EXTRA"]
+      }
+    },
+    {
+      "id": "D42",
+      "invariant": "Campaign expectations do not override a documented and tested attack-generation rule.",
+      "slice": "campaign-adjudication",
+      "tests": [
+        "bp/tests/test_fuzz.py"
+      ],
+      "contracts": [
+        "docs/ALGORITHMS.md"
+      ],
+      "compatibility": "No product change: pitchfork remains lockstep to the shortest supplied list.",
+      "status": "rejected",
+      "reproduction": [
+        "bp --format json fuzz 8586 --pos query:a --pos query:b --payloads a=/tmp/burpctl-live/fuzz-work/payloads/two.txt --payloads b=/tmp/burpctl-live/fuzz-work/payloads/three.txt --type pitchfork"
+      ],
+      "observed": "The command sent (A1,B1) and (A2,B2), then stopped before unmatched B3.",
+      "expected": "This claim is rejected because it contradicts the product's own contract: docs/ALGORITHMS.md:129 defines m=min(|s_k|), and bp/tests/test_fuzz.py:86 locks shortest-list pitchfork pairing. The brief's required mismatch error was not a product contract, so the invalid brief is not a defect.",
+      "severity": null,
+      "discoveringLane": "FUZZ",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
+        "cases": ["A03-PITCH-MISMATCH"],
+        "contractRefs": [
+          "docs/ALGORITHMS.md:129 — | `pitchfork` | `s_k`/position | `m=min(|s_k|)`; for `i∈0..m-1` ... | `m` |",
+          "bp/tests/test_fuzz.py:86-89 — test_pitchfork_lockstep_pairs_min_length; assert len(reqs) == 2  # min(3, 2)"
+        ]
+      }
+    },
+    {
+      "id": "D43",
+      "invariant": "The payload-file contract can represent every admitted textual payload, including empty, single-space, and embedded-LF values.",
+      "slice": "python-fuzz",
+      "tests": [
+        "bp/tests/test_fuzz.py"
+      ],
+      "contracts": [
+        "docs/ALGORITHMS.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Define an unambiguous file representation rather than silently stripping or splitting values.",
+      "status": "confirmed",
+      "reproduction": [
+        "bp --format json fuzz 8601 --pos query:q --payloads q=/tmp/burpctl-live/fuzz-work/payloads/empty-line.txt --type sniper",
+        "bp --format json fuzz 8602 --pos query:q --payloads q=/tmp/burpctl-live/fuzz-work/payloads/single-space.txt --type sniper",
+        "bp --format json fuzz 8606 --pos body:f --payloads f=/tmp/burpctl-live/fuzz-work/payloads/lf.txt --type sniper"
+      ],
+      "observed": "Empty and single-space lines were removed and yielded zero-shot usage errors; A followed by LF followed by B became two payloads rather than one embedded-LF payload.",
+      "expected": "Each intended value has a documented byte-faithful representation or the CLI explicitly refuses an unsupported representation before effects.",
+      "severity": "medium",
+      "discoveringLane": "FUZZ",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
+        "cases": ["P01 empty-string payload", "P02 single-space payload", "P06 embedded LF payload"]
+      }
+    },
+    {
+      "id": "D44",
+      "invariant": "A NUL in a body-position payload is either carried through the structured textual body contract or explicitly documented as unsupported.",
+      "slice": "python-fuzz",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/IntruderBinaryBodyTest.kt",
+        "bp/tests/test_fuzz.py",
+        "bp/tests/test_wire.py"
+      ],
+      "contracts": [
+        "docs/ALGORITHMS.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Keep non-text raw framing out of scope, but do not reject valid JSON string transport without a documented boundary.",
+      "status": "confirmed",
+      "fixEvidence": "Partial implementation evidence: bodyBase64 provides an exact-byte Kotlin bridge and its regressions passed the independent Kotlin gate; the CLI treatment path has local tests included in the frozen-tree R-wave Python gate of 684 passed. The 2.1.0 pair has not been rebuilt/redeployed or live replayed.",
+      "reproduction": [
+        "bp --format json fuzz 8607 --pos body:f --payloads f=/tmp/burpctl-live/fuzz-work/payloads/nul.txt --type sniper"
+      ],
+      "observed": "The CLI exited 2 before the baseline with 'NUL request bodies cannot cross the structured REST bridge'; zero sends occurred.",
+      "expected": "Body placement supports the NUL payload through JSON escaping, or the documented input contract states and enforces the limitation before plan construction.",
+      "severity": "medium",
+      "discoveringLane": "FUZZ",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
+        "cases": ["P07 embedded NUL payload"]
+      }
+    },
+    {
+      "id": "D45",
+      "invariant": "A captured request URL containing a fragment can be normalized into a legal HTTP request target before fuzzing.",
+      "slice": "python-fuzz",
+      "tests": [
+        "bp/tests/test_pos.py",
+        "bp/tests/test_wire.py"
+      ],
+      "contracts": [
+        "docs/ALGORITHMS.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Strip the non-wire fragment while preserving scheme, authority, path, and query.",
+      "status": "confirmed",
+      "reproduction": [
+        "bp --format json fuzz 8594 --pos query:q --payloads q=/tmp/burpctl-live/fuzz-work/payloads/qnew.txt --type sniper"
+      ],
+      "observed": "The captured URL retained #frag and the CLI exited 2 before baseline with 'HTTP request targets cannot contain URL fragments'.",
+      "expected": "The fragment is removed during reconstruction and the legal path/query is fuzzed.",
+      "severity": "medium",
+      "discoveringLane": "FUZZ",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
+        "cases": ["S06-QUERY-FRAG"]
+      }
+    },
+    {
+      "id": "D46",
+      "invariant": "A target transport failure during fuzzing maps to the published transport exit category.",
+      "slice": "python-fuzz",
+      "tests": [
+        "bp/tests/test_runner.py",
+        "bp/tests/test_client.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "Keep the baseline error evidence row and terminal stopping; map NO_RESPONSE to exit 3.",
+      "status": "fixed",
+      "fixEvidence": "NO_RESPONSE already mapped to transport exit 3, but a mid-campaign NO_RESPONSE was not terminal and allowed later shots to continue. The Python lane corrected terminal stopping as well as retaining the published exit category. The complete Python suite passed 706 tests with 2 skipped while network access was denied. No live replay against the redeployed binary is recorded, so the record is fixed rather than verified.",
+      "verificationNotes": "D46 has no Collaborator content or provider dependency. Its live discriminator is a target transport failure against a closed loopback port, so Collaborator authorization is irrelevant and no Collaborator cap applies.",
+      "reproduction": [
+        "bp --format json fuzz 8617 --pos query:q --payloads q=/tmp/burpctl-live/fuzz-work/payloads/five.txt --type sniper"
+      ],
+      "observed": "The closed-service baseline produced one NO_RESPONSE evidence row, stopped all payload shots, and exited 1 with FUZZ_PARTIAL_FAILURE.",
+      "expected": "The same bounded evidence and stopping behavior with transport exit 3.",
+      "severity": "medium",
+      "discoveringLane": "FUZZ",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
+        "cases": ["L06 systemic send failure closed port"]
+      }
+    },
+    {
+      "id": "D47",
+      "invariant": "A deliberate command-naming decision is not relabeled as a missing feature by a test brief.",
+      "slice": "campaign-adjudication",
+      "tests": [
+        "bp/tests/test_cli_conformance.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/adr/0004-fuzz-async-lifecycle.md"
+      ],
+      "compatibility": "No product change: bp fuzz remains the sole user-facing Intruder verb.",
+      "status": "rejected",
+      "reproduction": [
+        "bp --format json intruder --help"
+      ],
+      "observed": "Typer returned 'No such command intruder' with exit 2.",
+      "expected": "The claim is rejected because it contradicts the product's own contract: docs/CLI.md:108 says 'bp fuzz ... never bp intruder', and ADR-0004 explicitly rejects a separate namespace. The invalid brief is not a product defect.",
+      "severity": null,
+      "discoveringLane": "FUZZ",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
+        "cases": ["I00 CLI intruder help (json)", "I00 CLI intruder help (table)", "I00 CLI intruder help (raw)", "I00 CLI intruder help (quiet)", "I00 CLI intruder fields"],
+        "contractRefs": [
+          "docs/CLI.md:108 — **`bp fuzz`** = the single Intruder verb (never `bp intruder`).",
+          "docs/adr/0004-fuzz-async-lifecycle.md:54 — | Separate `bp intruder` namespace | `bp fuzz` is clearer and shorter. `intruder` is an implementation detail; `fuzz` is the user's intent. |"
+        ]
+      }
+    },
+    {
+      "id": "D48",
+      "invariant": "Unsupported server-side Intruder matrix modes return the stable UNSUPPORTED capability classification.",
+      "slice": "kotlin-intruder",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/IntruderServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/ALGORITHMS.md"
+      ],
+      "compatibility": "Keep HTTP rejection and zero sends; change INVALID_REQUEST to UNSUPPORTED and the corresponding status if the global contract requires 501.",
+      "status": "fixed",
+      "fixEvidence": "Server-side matrix modes now fail with the typed UNSUPPORTED classification before sends; the Kotlin contract regression passed the independent 388-test, zero-failure gate. No rebuilt-JAR live replay exists.",
+      "reproduction": [
+        "curl -sS --fail-with-body -X POST -H 'Content-Type: application/json' --data-binary '@/tmp/burpctl-live/fuzz-work/rest-I13 unsupported battering-ram.json' http://127.0.0.1:8089/intruder/attack/create"
+      ],
+      "observed": "Battering-ram, pitchfork, and cluster-bomb each performed zero sends and gave the correct guidance, but returned HTTP 400 INVALID_REQUEST.",
+      "expected": "HTTP 501 UNSUPPORTED for each unavailable matrix mode, directing callers to bp fuzz.",
+      "severity": "low",
+      "discoveringLane": "FUZZ",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
+        "cases": ["I13 unsupported battering-ram", "I13 unsupported pitchfork", "I13 unsupported cluster-bomb"]
+      }
+    },
+    {
+      "id": "D49",
+      "invariant": "Burp configuration imports reject a wrong-typed value without coercion or resetting sibling state.",
+      "slice": "montoya-controls",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/ConfigServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "Preserve exact valid round trips; fail invalid documents rather than applying Burp's coercion/default behavior.",
+      "status": "fixed",
+      "fixEvidence": "Project import now compares requested shapes with the authoritative export and fails closed before Montoya mutation for wrong types, empty-array uncertainty, null-shaped values, and integer/fractional mismatches, preserving distinct rejection reasons. The original wrong-type import produced the causal RED 'expected InvalidParamException; import completed'; the independent Kotlin gate passed 388 tests with zero failures. No live 2.1.0 replay exists.",
+      "reproduction": [
+        "bp --format json config set project --json \"$(< /tmp/burpctl-live/project-wrong-type-derived.json)\"",
+        "bp --format json config get project"
+      ],
+      "observed": "Changing target.scope.advanced_mode from false to a string exited 0, coerced it to true, and reset target.scope.include from 31 entries to an empty list.",
+      "expected": "Typed rejection before import, with the prior project configuration unchanged.",
+      "severity": "high",
+      "discoveringLane": "TARGET",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/target.md",
+        "cases": ["CONFIG-WRONG-TYPE-IMPORT"]
+      }
+    },
+    {
+      "id": "D50",
+      "invariant": "A Burp configuration import cannot report success while silently discarding an unknown requested key.",
+      "slice": "montoya-controls",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/ConfigServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "Either reject unknown nested configuration keys or return explicit per-key application evidence; never claim an exact import.",
+      "status": "fixed",
+      "fixEvidence": "Unknown requested keys now fail closed before Montoya mutation; validation also rejects uncheckable empty-array, null-shaped, and fractional-integer structures without collapsing their distinct reasons. The causal RED was 'expected typed rejection; import completed'; the independent Kotlin gate passed 388 tests with zero failures. No live 2.1.0 replay exists.",
+      "reproduction": [
+        "bp --format json config set project --json \"$(< /tmp/burpctl-live/project-unknown-derived.json)\""
+      ],
+      "observed": "An exact export plus unknown top-level key burpctl_live_unknown_4f1c9e exited 0; authoritative re-export was unchanged and the response did not say the key was ignored.",
+      "expected": "Typed rejection or a truthful partial-application result naming the ignored key.",
+      "severity": "medium",
+      "discoveringLane": "TARGET",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/target.md",
+        "cases": ["CONFIG-UNKNOWN-IMPORT"]
+      }
+    },
+    {
+      "id": "D51",
+      "invariant": "Every URL accepted for scope mutation can be checked through the advertised authoritative read path.",
+      "slice": "montoya-controls",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/TargetServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/CLI.md",
+        "docs/PROOF-CEILINGS.md"
+      ],
+      "compatibility": "Keep the unavoidable pinned Ktor/Netty request-line ceiling distinct from K35: scope mutation must not accept a URL that the only advertised GET check transport cannot carry, or an equivalent body-carried check must be exposed.",
+      "status": "confirmed",
+      "reproduction": [
+        "See /tmp/burpctl-live/artifacts/target-cases.ndjson cases SCOPE-V-LONG-ADD, SCOPE-V-LONG-CHECK-AFTER-ADD, SCOPE-V-LONG-REMOVE, and SCOPE-V-LONG-CHECK-AFTER-REMOVE for the exact 8,291-character command."
+      ],
+      "observed": "POST add returned inScope:true and POST remove returned inScope:false for the exact 8,291-character URL; GET check returned a bare non-JSON HTTP 400 before route dispatch both times, so the final independently read scope state remains unknown. The experiment did not measure a threshold. RestServer leaves Ktor/Netty defaults unchanged, and the pinned decoder's maxInitialLineLength is 4096 bytes for the entire request line; usable URL length is smaller and representation-dependent.",
+      "expected": "The unavoidable decoder/request-line ceiling may reject an overlong GET before Ktor can emit a typed route error. The fixable K35 contradiction is separate: scope mutation must not create state that the advertised authoritative GET check cannot interrogate, unless an equivalent body-carried check is exposed.",
+      "severity": "medium",
+      "discoveringLane": "TARGET",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/target.md",
+        "cases": ["SCOPE-V-LONG-ADD", "SCOPE-V-LONG-CHECK-AFTER-ADD", "SCOPE-V-LONG-REMOVE", "SCOPE-V-LONG-CHECK-AFTER-REMOVE"]
+      }
+    },
+    {
+      "id": "D52",
+      "invariant": "CLI help does not describe complete scope listing or replacement as usable when the live operations always return UNSUPPORTED.",
+      "slice": "contracts-ci",
+      "tests": [
+        "bp/tests/test_cli_conformance.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Keep the discoverable show/set names but state the 501 boundary before users compose commands around them.",
+      "status": "confirmed",
+      "reproduction": [
+        "bp scope show --help",
+        "bp --format json scope show",
+        "bp scope set --help",
+        "bp --format json scope set --confirm --include http://127.0.0.1:9921/bp-target-set-4f1c9e"
+      ],
+      "observed": "Help promised a tracked listing/replacement while every runtime call returned HTTP 501 UNSUPPORTED; set produced no mutation.",
+      "expected": "Help identifies both commands as unavailable with pinned Montoya 2025.3 and does not imply a later successful operation.",
+      "severity": "low",
+      "discoveringLane": "TARGET",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/target.md",
+        "cases": ["SCOPE-SHOW-JSON", "SCOPE-SET-JSON"]
+      }
+    },
+    {
+      "id": "D53",
+      "invariant": "A documented configuration import never silently destroys the caller's live extension-owned state; if its in-flight reload prevents a truthful response, it refuses before acting.",
+      "slice": "montoya-controls",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/ConfigServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/STATE-AND-CONFIG.md",
+        "docs/adr/0014-state-preserving-reportable-operations.md"
+      ],
+      "compatibility": "Exclude the extension-inventory path that can reload the serving extension, report that exclusion explicitly, and continue importing unrelated user options and project-only configuration where completion remains truthful.",
+      "status": "fixed",
+      "verificationNotes": "D53 is blocked in this campaign by its required bp config set user reproduction, not by Collaborator authorization. User-config import may reload the serving extension mid-request and erase in-memory state, so the campaign forbids it. The concurrent Collaborator lane's lost registry was evidence of that reload's collateral damage only.",
+      "fixEvidence": "User import now removes user_options.extender.extensions before Montoya import and reports that excluded path, preserving unrelated user options without reloading this extension; the regression passed the independent Kotlin 388-test, zero-failure gate. A v2.1.0 JAR has since been redeployed, but D53 did not run in acceptance. Its reproduction requires bp config set user, the user-configuration import path that can reload the extension mid-request and destroy extension-owned in-memory state; that operation is forbidden in this campaign for exactly that reason. Collaborator was collateral damage in the original observation, not a dependency or authorization blocker.",
+      "reproduction": [
+        "bp --format json config set user --json \"$(< /tmp/burpctl-live/config-backup-user.json)\"",
+        "bp --format json health"
+      ],
+      "observed": "Exact user imports reinitialized the extension twice, around 06:24:56.8 and 06:39:34.8 CEST. The second sequence included CONNECTION_REFUSED at 06:39:36.9 and recovered uptime:47 at 06:40:21.8. Project-only imports at 06:42 did not reset uptime. A concurrent Collaborator lane lost its complete in-memory payload registry, including an untouched control and a pending interaction. The live client sends PUT /config/user (the campaign brief called it POST).",
+      "expected": "Before importing, exclude the extension-inventory path that can reload the serving extension and report the exclusion without echoing its private values; no extension-owned registry or responder is destroyed, while unrelated user options may still be applied and answered truthfully.",
+      "severity": "critical",
+      "discoveringLane": "TARGET, with collateral observed by COLLAB and SCAN",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/target.md",
+        "relatedArtifacts": ["/tmp/burpctl-live/artifacts/collab.md", "/tmp/burpctl-live/artifacts/scan.md"],
+        "cases": ["CONFIG-IMPORT-USER-ROUNDTRIP", "HEALTH-AFTER-USER-IMPORT", "FINAL-RESTORE-USER", "P29", "P30"]
+      }
+    },
+    {
+      "id": "D54",
+      "invariant": "Scanner candidate findings are compared with the shipped command map rather than command names invented by a test brief.",
+      "slice": "campaign-adjudication",
+      "tests": [
+        "bp/tests/test_cli_conformance.py"
+      ],
+      "contracts": [
+        "docs/CLI.md"
+      ],
+      "compatibility": "No product change: retain crawl, audit, all, status, issues, and defs; unsupported lifecycle routes remain explicit server capabilities, not promised CLI commands.",
+      "status": "rejected",
+      "reproduction": [
+        "bp --format json scan start http://127.0.0.1:9921/ok",
+        "bp --format json scan stop 8d05c57c",
+        "bp --format json scan pause 24edf8bf",
+        "bp --format json scan resume 24edf8bf",
+        "bp --format json scan crawl-and-audit http://127.0.0.1:9921/ok"
+      ],
+      "observed": "Each invented spelling failed locally as an unknown command.",
+      "expected": "The claim is rejected because it contradicts the product's own contract: bp/src/bp/commands/scanner.py and docs/CLI.md define exactly crawl, audit, all, status, issues, and defs, with all mapping to /scanner/crawl-and-audit. The brief—not the product—promised start/stop/pause/resume/crawl-and-audit spellings, so the invalid brief is not a defect.",
+      "severity": null,
+      "discoveringLane": "SCAN",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/scan.md",
+        "cases": ["START-MISSING-JSON", "STOP-CLI-JSON", "U-PAUSE-JSON", "U-RESUME-JSON", "U-CANONICAL-NAME"],
+        "contractRefs": [
+          "bp/src/bp/commands/scanner.py:21 — @sub.command(\"crawl\")",
+          "bp/src/bp/commands/scanner.py:34 — @sub.command(\"audit\")",
+          "bp/src/bp/commands/scanner.py:44 — @sub.command(\"all\")",
+          "bp/src/bp/commands/scanner.py:53 — @sub.command(\"status\")",
+          "bp/src/bp/commands/scanner.py:65 — @sub.command(\"issues\")",
+          "bp/src/bp/commands/scanner.py:80 — @sub.command(\"defs\")",
+          "docs/CLI.md:93-94 — `bp scan crawl|audit|all <url>` and `bp scan status|issues <scanId>` · `bp scan defs`"
+        ]
+      }
+    },
+    {
+      "id": "D55",
+      "invariant": "A scanner task that can be created can be observed and stopped through real Burp without a state-dependent accessor failure.",
+      "slice": "montoya-controls",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/ScannerServiceTest.kt",
+        "bp/tests/test_scanner.py"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/CLI.md",
+        "docs/PROOF-CEILINGS.md",
+        "docs/adr/0014-state-preserving-reportable-operations.md"
+      ],
+      "compatibility": "Keep task IDs and public routes; make unavailable individual counters nullable and perform stop/delete without requiring every counter. Treat absent service/REST enumeration of the surviving in-memory registry as an implementation omission, distinct from Montoya's post-registry-loss recovery ceiling.",
+      "status": "fixed",
+      "fixEvidence": "Status/stop now degrade unavailable task projections to null and delete without a prerequisite count read; issue definitions preserve nullable metadata. K23's causal unit RED came only from an explicitly throwing Audit.issues() accessor, so that part is defensive hardening and is not claimed as the live cause; K24 observed nullable-metadata RED. The independent Kotlin gate passed 388 tests with zero failures. The related service/REST task-list omission remains while the private registry survives, and no rebuilt-JAR live replay exists.",
+      "reproduction": [
+        "bp --format json scan audit http://127.0.0.1:9921/ok",
+        "bp --format json scan status de0c89ff",
+        "bp --format json scan issues de0c89ff",
+        "curl -sS -i -X POST http://127.0.0.1:8089/scanner/432dd1ef/stop",
+        "curl -sS -i http://127.0.0.1:8089/scanner/3af1ad65/status",
+        "curl -sS -i http://127.0.0.1:8089/scanner/3af1ad65/issues",
+        "curl -sS -i -X POST http://127.0.0.1:8089/scanner/3af1ad65/stop"
+      ],
+      "observed": "Every known live audit/crawl status and issues query returned HTTP 503, and audit stop returned HTTP 503 before deleting because task projections were unavailable. Source isolation narrowed the issues failure to audit.issues().map, but the live evidence did not distinguish issues() throwing from returning null. The campaign ended with six task states unknown: five IDs were recorded (de0c89ff, 24edf8bf, 06f399c8, 432dd1ef, and 3af1ad65) and one ID was hidden by rendering at 06:43:37. Those are six UNKNOWN STATES, not six lost IDs. ScannerService's private ConcurrentHashMap retained all live handles and was mechanically enumerable while it survived, although no service/REST list method exposed it. Only after a map entry or the registry is lost—for example on extension reload—does Montoya's lack of a task-list primitive make recovery impossible. At 06:50, lsof showed only LISTEN sockets and Burp used 0.7% CPU; that proves no then-current fixture traffic, not completion, stopping, deletion, pause, or queue state.",
+      "expected": "For a known task ID, status and issues return authoritative fields with unavailable counters/progress as null, and stop deletes/cancels without a failing pre-delete projection read. While the private in-memory map survives its entries are mechanically enumerable, even though no service/REST list method currently exposes them; only loss of the handle/map entry creates the narrower Montoya recovery ceiling.",
+      "severity": "high",
+      "discoveringLane": "SCAN",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/scan.md",
+        "cases": ["A-STATUS-IMMEDIATE", "A-STATUS-3S", "A-ISSUES", "A-HTTPS-STOP", "ST-LIVE-JSON"]
+      }
+    },
+    {
+      "id": "D56",
+      "invariant": "A sitemap defect is not assigned until the same authoritative store is shown populated and unreadable.",
+      "slice": "campaign-adjudication",
+      "tests": [
+        "bp/tests/test_scanner.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/SPEC.md"
+      ],
+      "compatibility": "No fix is selected until bp sitemap and bp history sitemap are disambiguated against their respective Burp and H2 stores.",
+      "status": "unconfirmed",
+      "reproduction": [
+        "bp --format json sitemap http://127.0.0.1:9921",
+        "bp --format json history sitemap --host 127.0.0.1"
+      ],
+      "observed": "The campaign reported empty sitemap results while proxy history contained two controlled requests. The artifact did not establish that the exact store read by bp sitemap (Burp target sitemap) was populated; extension H2 had deliberately been cleared, so an empty bp history sitemap was correct. K25 separately observed causal REDs for malformed stored request paths in sitemap, proxy listing/direct read, and Repeater, then hardened those paths; that distinct correction does not establish D56's missing populated-store precondition.",
+      "expected": "Disambiguate the two commands and first establish a controlled entry in Burp's target sitemap before treating an empty bp sitemap response as a contradiction.",
+      "severity": null,
+      "discoveringLane": "SCAN",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/scan.md",
+        "cases": ["SM-PROXY-SEED", "SM-PROXY-ORACLE", "SM-FINAL"]
+      }
+    },
+    {
+      "id": "D57",
+      "invariant": "A test brief does not turn an option from a sibling sitemap command into a requirement.",
+      "slice": "campaign-adjudication",
+      "tests": [
+        "bp/tests/test_cli_conformance.py"
+      ],
+      "contracts": [
+        "docs/CLI.md"
+      ],
+      "compatibility": "No product change: bp sitemap keeps a positional prefix; bp history sitemap keeps --host.",
+      "status": "rejected",
+      "reproduction": [
+        "bp --format json sitemap --host 127.0.0.1"
+      ],
+      "observed": "The command rejected --host locally as an unknown option.",
+      "expected": "The claim is rejected because it contradicts the product's own contract: docs/CLI.md:97 documents bp sitemap [prefix], while bp history sitemap alone defines --host. The brief conflated sibling commands, and an invalid brief is not a product defect.",
+      "severity": null,
+      "discoveringLane": "SCAN",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/scan.md",
+        "cases": ["SM-HOST"],
+        "contractRefs": [
+          "docs/CLI.md:97 — | `bp sitemap [prefix]` | `GET /target/sitemap` | target |",
+          "bp/src/bp/commands/history.py:186-193 — @sub.command(name=\"sitemap\") defines host as typer.Option(None, \"--host\", help=\"Filter sitemap by host.\")"
+        ]
+      }
+    },
+    {
+      "id": "D58",
+      "invariant": "check auth reports a protected read only when NONE returns a substantive 2xx representation containing a configured server-held marker that the acting request did not supply; without that oracle, identical/equal-status credential arms are inconclusive and an intentionally public representation is never a bypass finding.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/SecurityScanServiceTest.kt",
+        "src/test/kotlin/com/burprest/routes/OpenApiContractTest.kt",
+        "bp/tests/test_securityscan.py"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/CLI.md",
+        "docs/OUTPUT.md",
+        "docs/PROOF-CEILINGS.md"
+      ],
+      "compatibility": "Retain FULL/NONE and descriptive COOKIE_ONLY context, but make a configured server-held marker the primary proof. Marker-backed positives do not require FULL/NONE equality or a denying COOKIE_ONLY arm; every no-marker tuple remains inconclusive rather than clean or vulnerable.",
+      "status": "fixed",
+      "fixEvidence": "Marker-backed NONE proof is now primary and equality never gates a positive; COOKIE_ONLY is descriptive degeneracy context. Causal REDs covered both old arm-only errors: public-plus-denying-cookie false positive ('Expected value to be false') and cookie-sufficient all-success false negative ('Expected value to be true'); unequal marker-bearing FULL/NONE representations also failed before equality ceased to gate proof, and identical public FULL/NONE produced the K27 unwanted finding. K30 recovered the boundary RED 'expected [X-Tenant, X-Version, Authorization], got []': SecurityScanService now preserves all captured headers into SessionService, whose per-mode logic strips credentials while retaining context. The auth-bypass OpenAPI schema also had an observed RED (expected endpoints/baseUrl/method/probeTimeoutMs, got probeTimeoutMs only). The independent Kotlin gate passed 388 tests with zero failures. That earlier evidence did not cover the residual decision-order defect or actor-supplied marker provenance at all three classifiers; D62 and D69 record the later R-wave corrections. No rebuilt 2.1.0 live replay exists.",
+      "reproduction": [
+        "bp --format json session set --json '{\"cookies\":{\"session\":\"good\"},\"headers\":{},\"name\":\"check-auth-fixture\"}'",
+        "bp --format json session get",
+        "bp --format json check auth http://127.0.0.1:9921 --endpoint /ok"
+      ],
+      "observed": "FULL, COOKIES_ONLY, and NONE returned the same public HTTP 200/27-byte representation, yet the result was vulnerable:true with vulnerableCount:1 and exit 5. The failure reproduced after the session was authoritatively rechecked following the final reload.",
+      "expected": "Without a marker, the observed public equality is inconclusive—not clean and not vulnerable—because response equality proves no protected read. The old three-arm oracle was not logically unsatisfiable; it was blind in three categories: COOKIE_ONLY collapses onto NONE for header/API-key or captured-jar-only auth; COOKIE_ONLY is distinct but cannot deny for configured-cookie-only or OR-cookie auth; or the effective factor is unchanged in all arms for ambient, mTLS, or query auth. Only insufficient-alone configured cookies can supply the old denying arm, and even 2xx/2xx/401-or-403 is ambiguous with a public endpoint plus a denying cookie. With a configured server-held marker, a substantive NONE 2xx containing it proves the read regardless of FULL/NONE equality or COOKIE_ONLY degeneracy.",
+      "severity": "high",
+      "discoveringLane": "CHECK",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/check.md",
+        "cases": ["a-ok-json", "postreload-a-ok"]
+      }
+    },
+    {
+      "id": "D59",
+      "invariant": "Every check command's quiet output emits the promised one-word verdict rather than an unrelated wrapper field or Python representation.",
+      "slice": "python-output",
+      "tests": [
+        "bp/tests/test_securityscan.py",
+        "bp/tests/test_output.py"
+      ],
+      "contracts": [
+        "docs/OUTPUT.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Keep finding exit 5 and clean/inconclusive categories; change only the command projection used for quiet stdout.",
+      "status": "confirmed",
+      "reproduction": [
+        "bp --format quiet check auth http://127.0.0.1:9921 --endpoint /auth/data",
+        "bp --format quiet check headers http://127.0.0.1:9921/admin --marker PROTECTED-MARKER-7Q",
+        "bp --format quiet check cors http://127.0.0.1:9921/cors",
+        "bp --format quiet check endpoints 127.0.0.1 --test auth-bypass --limit 1"
+      ],
+      "observed": "Auth printed a Python results-list repr, headers a Python baseline-dict repr, CORS a Python results-list repr, and endpoints the integer 1. IDOR alone printed the intended verdict.",
+      "expected": "Exactly one of vulnerable, clean, or inconclusive on stdout as determined by the command's authoritative counters/state.",
+      "severity": "medium",
+      "discoveringLane": "CHECK",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/check.md",
+        "cases": ["fmt-auth-quiet", "fmt-headers-quiet", "fmt-cors-quiet", "fmt-endpoints-quiet", "fmt-idor-quiet"]
+      }
+    },
+    {
+      "id": "D60",
+      "invariant": "A structured inconclusive security-check result cannot use the published success/clean exit code.",
+      "slice": "python-output",
+      "tests": [
+        "bp/tests/test_securityscan.py",
+        "bp/tests/test_cliutil.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "Keep exit 5 exclusive to confirmed findings; when no finding exists, inconclusiveCount > 0 maps to runtime exit 1 and a clean result remains 0.",
+      "status": "confirmed",
+      "reproduction": [
+        "bp --format json check headers http://127.0.0.1:9921/status/408"
+      ],
+      "observed": "The result carried baseline.inconclusive:true, an authored transient-408 reason, and inconclusiveCount:1, but exited 0. The same false-clean exit occurred for transient/non-2xx controls and target transport failures across headers, auth, IDOR, CORS, and endpoints.",
+      "expected": "If a confirmed finding exists, exit 5; otherwise, inconclusiveCount > 0 exits 1; only a clean result exits 0. Structured evidence remains available.",
+      "severity": "high",
+      "discoveringLane": "CHECK",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/check.md",
+        "cases": ["fmt-inconclusive-json", "a-404-json", "a-500-json", "i-own-non2xx", "inc-c-408", "inspect-e-500-json"]
+      }
+    },
+    {
+      "id": "D61",
+      "invariant": "Each security-check probe has a bounded response budget, and an absent response becomes cause-neutral inconclusive evidence rather than a conclusive authentication finding solely because the aggregate REST deadline has not expired.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/SecurityScanServiceTest.kt",
+        "src/test/kotlin/com/burprest/routes/OpenApiContractTest.kt",
+        "bp/tests/test_securityscan.py"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/CLI.md",
+        "docs/PROOF-CEILINGS.md"
+      ],
+      "compatibility": "Keep the aggregate client deadline as a final guard; bound each probe and report an absent response as inconclusive without diagnosing whether the budget elapsed or DNS/connect failed quickly.",
+      "status": "fixed",
+      "fixEvidence": "Montoya withResponseTimeout(long) is now applied through the SessionService boundary and absence is reported with the configured budget; bounds and dependent-probe stopping have local Kotlin/Python coverage, and the five security-check request schemas are contract-tested. That scope did not establish correctness of the four unrelated scanner/session request schemas corrected later in D68. The independent Kotlin gate passed 388 tests with zero failures. The acceptance case still does not prove the DEFAULT budget or actual per-arm request count/identity, and no rebuilt 2.1.0 JAR has been live replayed.",
+      "reproduction": [
+        "bp --format quiet check auth http://127.0.0.1:9921 --endpoint /slow"
+      ],
+      "observed": "All three 1.5-second public responses completed and were classified vulnerable with exit 5; check headers ran all 16 slow probes in 25.943 seconds as conclusive. Only seven repeated auth endpoints crossed the 30-second REST-client deadline and produced transport exit 3.",
+      "expected": "A probe that produces no response within the configured N ms response budget is inconclusive and cannot increment vulnerableCount or produce clean exit. The wording is deliberately 'probe produced no response within the configured N ms response budget', never 'timeout': Montoya exposes withResponseTimeout(long) but no typed timeout signal, so elapsed budget, fast DNS failure, and connection refusal are indistinguishable. D61's acceptance case does not establish the default budget or actual per-arm request count/identity.",
+      "severity": "high",
+      "discoveringLane": "CHECK",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/artifacts/check.md",
+        "cases": ["inc-a-slow", "inc-h-slow", "inc-slow-timeout"]
+      }
+    },
+    {
+      "id": "D62",
+      "invariant": "An auth-bypass classifier reports a substantive unauthenticated 2xx response containing a configured server-held marker as a protected read before considering whether the authenticated and unauthenticated bodies are equal.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/SecurityScanServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/OUTPUT.md",
+        "docs/PROOF-CEILINGS.md"
+      ],
+      "compatibility": "Keep no-marker and failed-probe outcomes inconclusive; change only the precedence of established marker proof over candidate response equality.",
+      "status": "fixed",
+      "fixEvidence": "R1 reached and failed its assertion before the fix, then passed after it; the exact assertion output and artifact path were not supplied. SecurityScanService.decideAuthBypass now evaluates the inconclusive guard, protectedReadObserved, candidateEquality, and unprovenSubstantiveRead in that order. The frozen-tree R-wave gate completed with Kotlin clean test detekt --rerun-tasks BUILD SUCCESSFUL (8 tasks executed), Python 684 passed, and an identical source digest before and after; nothing was cached, Detekt was clean tree-wide, and its baseline was not regenerated. A live replay against the redeployed binary and non-author adversarial review are not yet established.",
+      "reproduction": [
+        "Not established: no exact live reproduction command was supplied for R1."
+      ],
+      "observed": "Before the fix, candidate body equality was evaluated before the marker result, so a genuine marker-backed protected read was reported as inconclusive.",
+      "expected": "After probe validity is established, a substantive NONE 2xx representation containing a server-held marker not supplied by the actor is a protected read regardless of FULL/NONE body equality.",
+      "severity": "high",
+      "discoveringLane": "Adversarial review (R1)",
+      "evidence": {
+        "artifact": "Not established: no artifact path was supplied for R1.",
+        "cases": ["R1"]
+      }
+    },
+    {
+      "id": "D63",
+      "invariant": "One authenticated send captures configured credentials and the cookie-jar epoch atomically with respect to a completed session clear, so a pre-clear request cannot restore authentication afterward.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/SessionServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "Preserve the credential snapshot and late-response epoch guard while imposing the single nested lock order sessionMutationLock then cookieMutationLock.",
+      "status": "fixed",
+      "fixEvidence": "R2's historical-shape mutation reached its assertion and failed twice, deterministically: org.opentest4j.AssertionFailedError: an epoch newer than the credential snapshot let a cleared send restore credentials ==> expected: <0> but was: <1>. It passed after both the configured credential snapshot and cookieJarEpoch were captured inside one synchronized(sessionMutationLock) block, with nested order sessionMutationLock -> cookieMutationLock. The frozen-tree R-wave gate completed with Kotlin clean test detekt --rerun-tasks BUILD SUCCESSFUL (8 tasks executed), Python 684 passed, and an identical source digest before and after; nothing was cached, Detekt was clean tree-wide, and its baseline was not regenerated. A live replay against the redeployed binary and non-author adversarial review are not yet established.",
+      "reproduction": [
+        "Not established: no exact live reproduction command was supplied for R2; the supplied discriminator is the deterministic historical-shape interleaving in SessionServiceTest."
+      ],
+      "observed": "Configured credentials were snapshotted under sessionMutationLock, but cookieJarEpoch was read after releasing it. A clear could complete between those reads, pairing old credentials with the new epoch; the late Set-Cookie then passed the epoch check and restored authentication.",
+      "expected": "A send captures credentials and epoch in one session-lock critical section, and any nested cookie lock follows sessionMutationLock -> cookieMutationLock, so a clear cannot split the snapshot.",
+      "severity": "medium",
+      "discoveringLane": "Adversarial review (R2)",
+      "evidence": {
+        "artifact": "Not established: no artifact path was supplied for R2.",
+        "cases": ["R2"]
+      }
+    },
+    {
+      "id": "D64",
+      "invariant": "SessionService hands Montoya the exact UTF-8 bytes of a textual request body and persists the body reconstructed from the prepared HttpRequest that was actually sent.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/SessionServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "Keep the textual session-send request model; make its Kotlin-to-Montoya boundary UTF-8 byte-faithful and make history describe transmitted rather than pre-construction state.",
+      "status": "fixed",
+      "fixEvidence": "R3 reached its assertion before the fix and failed: org.opentest4j.AssertionFailedError: SessionService must hand Montoya the exact UTF-8 request bytes. Array sizes differ. Expected size is 25, actual size is 19. The observed narrowed bytes included é as 0xE9, αβγ as B1 B2 B3, and 😀 as 3D 00. It passed after request.withBody(bodyFactory(body.encodeToByteArray())) was used and persistence reconstructed the body from the prepared HttpRequest. The frozen-tree R-wave gate completed with Kotlin clean test detekt --rerun-tasks BUILD SUCCESSFUL (8 tasks executed), Python 684 passed, and an identical source digest before and after; nothing was cached, Detekt was clean tree-wide, and its baseline was not regenerated. A live replay against the redeployed binary and non-author adversarial review are not yet established.",
+      "reproduction": [
+        "Not established: no exact live reproduction command was supplied for R3; the supplied discriminator uses café, αβγ, and 😀 in SessionServiceTest."
+      ],
+      "observed": "withBody(String) narrowed UTF-16 code units at the SessionService boundary while persistence stored the uncorrupted source string, so recorded history disagreed with the corrupted request sent to Montoya.",
+      "expected": "Montoya receives the exact UTF-8 bytes, and persisted history is reconstructed from that prepared transmitted request.",
+      "severity": "high",
+      "discoveringLane": "Adversarial review (R3)",
+      "evidence": {
+        "artifact": "Not established: no artifact path was supplied for R3.",
+        "cases": ["R3"]
+      }
+    },
+    {
+      "id": "D65",
+      "invariant": "A nullable bodyBase64 field with value null is treated as absence, so a bodyless or text-body request can still be fuzzed and rendered as raw HTTP.",
+      "slice": "python-fuzz",
+      "tests": [
+        "bp/tests/test_runner.py",
+        "bp/tests/test_output.py"
+      ],
+      "contracts": [
+        "docs/ALGORITHMS.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "Keep non-null bodyBase64 authoritative, including the empty string as exact empty bytes; only null follows the absent-field/text fallback path.",
+      "status": "fixed",
+      "fixEvidence": "R4 reached and failed its assertions in runner.py and output.py before the fix, then passed after explicit null was handled as field absence; exact RED output and artifact path were not supplied. The frozen-tree R-wave gate completed with Kotlin clean test detekt --rerun-tasks BUILD SUCCESSFUL (8 tasks executed), Python 684 passed, and an identical source digest before and after; nothing was cached, Detekt was clean tree-wide, and its baseline was not regenerated. A live replay against the redeployed binary and non-author adversarial review are not yet established.",
+      "reproduction": [
+        "Not established: no exact live reproduction command was supplied for R4."
+      ],
+      "observed": "runner.py and output.py interpreted an emitted bodyBase64:null as though an exact base64 body were present, breaking fuzz request reconstruction and raw rendering for requests without a binary-body value.",
+      "expected": "A non-null bodyBase64 value wins; null behaves like an omitted bodyBase64 field and falls back to the nullable text body without manufacturing bytes.",
+      "severity": "medium",
+      "discoveringLane": "Adversarial review (R4)",
+      "evidence": {
+        "artifact": "Not established: no artifact path was supplied for R4.",
+        "cases": ["R4"]
+      }
+    },
+    {
+      "id": "D66",
+      "invariant": "Once Burp has applied a configuration import, failure of the secondary post-import export cannot turn that completed primary effect into a caller-visible failure that invites a retry.",
+      "slice": "montoya-controls",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/ConfigServiceTest.kt",
+        "src/test/kotlin/com/burprest/routes/OpenApiContractTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/STATE-AND-CONFIG.md",
+        "docs/adr/0014-state-preserving-reportable-operations.md"
+      ],
+      "compatibility": "Preserve pre-import failures as failures; after the primary import returns, report applied=true, nullable unobserved config, and a cause-neutral do-not-retry warning if export fails.",
+      "status": "fixed",
+      "fixEvidence": "R5 reached and failed its assertion before the fix, then passed after ConfigService.reportAppliedImport separated the completed primary effect from its secondary observation; exact RED output and artifact path were not supplied. The result mirrors RepeaterService.persist and ADR-0014 by returning applied=true with a warning not to retry when post-import export fails. The frozen-tree R-wave gate completed with Kotlin clean test detekt --rerun-tasks BUILD SUCCESSFUL (8 tasks executed), Python 684 passed, and an identical source digest before and after; nothing was cached, Detekt was clean tree-wide, and its baseline was not regenerated. A live replay against the redeployed binary and non-author adversarial review are not yet established.",
+      "reproduction": [
+        "Not established: no exact live reproduction command was supplied for R5."
+      ],
+      "observed": "Burp completed the requested import, but a subsequent export exception made ConfigService report the operation as failed, so a caller could retry an already-applied mutation.",
+      "expected": "A completed import returns applied=true; if authoritative post-state cannot be exported, config is unobserved and the warning says not to retry without exposing exception-derived detail.",
+      "severity": "medium",
+      "discoveringLane": "Adversarial review (R5)",
+      "evidence": {
+        "artifact": "Not established: no artifact path was supplied for R5.",
+        "cases": ["R5"]
+      }
+    },
+    {
+      "id": "D67",
+      "invariant": "A live check-auth test names only the outcome it actually constrains and accepts each published clean, inconclusive, and confirmed-finding exit when the corresponding output is present.",
+      "slice": "contracts-ci",
+      "tests": [
+        "bp/tests/test_securityscan.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "Keep the live check and published exit meanings; replace only a test name and acceptance oracle that claimed a mandatory finding while accepting a clean result and excluding inconclusive.",
+      "status": "fixed",
+      "fixEvidence": "R6 reached and failed its assertion before the fix, then passed after the dishonest live response test was corrected; exact RED output and artifact path were not supplied. The former test was named test_check_auth_exits_5_when_findings_live but accepted either 0 or 5. It is now test_check_auth_live_has_a_valid_scan_outcome, accepts the published 0, 1, or 5 outcomes, and requires structured result evidence when exit 1 is attributed to inconclusive. The frozen-tree R-wave gate completed with Kotlin clean test detekt --rerun-tasks BUILD SUCCESSFUL (8 tasks executed), Python 684 passed, and an identical source digest before and after; nothing was cached, Detekt was clean tree-wide, and its baseline was not regenerated. A live replay against the redeployed binary and non-author adversarial review are not yet established.",
+      "reproduction": [
+        "Not established: no exact standalone reproduction command or artifact was supplied for R6; the historical and corrected test oracles are in bp/tests/test_securityscan.py."
+      ],
+      "observed": "The historical test name claimed that the live command exited 5 when findings were present, but its assertion accepted either exit 0 or 5 and did not admit the published inconclusive exit 1. It therefore could pass without proving its named finding outcome.",
+      "expected": "The live test is scoped to a valid scan outcome: exit 0, 1, or 5, with an inconclusive exit required to retain a structured result and identify inconclusive output rather than an arbitrary runtime failure.",
+      "severity": "low",
+      "discoveringLane": "Adversarial review (R6)",
+      "evidence": {
+        "artifact": "Not established: no artifact path was supplied for R6.",
+        "cases": ["R6"]
+      }
+    },
+    {
+      "id": "D68",
+      "invariant": "Every one of the 69 executable operations and every shared response component truthfully models the implementation: parameters, request bodies, success/unsupported responses, wrapper-to-data joins, required fields, types, formats, nullability, defaults, references, and additional-properties policy.",
+      "slice": "contracts-ci",
+      "tests": [
+        "src/test/kotlin/com/burprest/routes/OpenApiContractTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Keep version 2.1.0 and all 69 operations; align the contract to the implemented server, with explicit reasoned exemptions only for GET /docs serving a raw resource and ConfigUpdateRequest.config decoding as JsonElement by design.",
+      "status": "fixed",
+      "fixEvidence": "Before any schema edit, the generalized model-derived check found 294 operation-level violations across 67 of 69 operations plus 4 shared ApiResponse component violations: 221 route-response, 52 request-schema, 21 parameter, and 4 shared-envelope. Seven tests produced four assertion-reaching failures and zero exception failures. The sealed RED console was /Users/maache/.claude/jobs/4b54f579/tmp/K3-red-scratch/red-console.txt with SHA-256 b2daa634076e354b9f20ae7f2ab5730b761dfa099f9e006439060020fbd70358; because that job-temp file may disappear, these counts and digest are retained here. After the fix, all 69 operations are mechanically checked, 144 components were rebuilt, wrapper-to-data joins are recursively verified through refs, and required fields, types, formats, nullability, defaults, and additionalProperties are covered. The owned test has zero vacuous assertions and six explicit non-emptiness guards. Compile, its 7-of-7 suite, and global Detekt passed atomically with no suppression or baseline change. No server-wrong case was found: every mismatch was in the contract. No live replay or non-author review receipt is recorded, so the status remains fixed.",
+      "reproduction": [
+        "Not established: the exact generalized seven-test command was not supplied for R7; the assertion-reaching RED console path, digest, and inventory are preserved in fixEvidence."
+      ],
+      "observed": "The pre-fix contract had 294 operation violations across 67 of 69 operations and 4 shared ApiResponse component violations. All 61 successful envelope responses referenced the wrong data model, so the wrapper-to-data join was universally broken. Five always-unsupported operations advertised impossible HTTP 200 responses although implementation always throws and returns 501. Other mismatches included integer path parameters declared as strings, request schemas referencing response models such as HttpRequestData instead of HttpRequestDataInput, omitted GET /target/sitemap?url=, and pervasive missing format, default, and minimum constraints. The earlier four-route hand fix covered only about six percent of the actual surface; only the generalized check exposed the remaining ninety-four percent.",
+      "expected": "A model-derived, non-vacuous check covers all 69 operations and recursively validates each route's parameters, requests, actual success/unsupported responses, ApiResponse data model, refs, required fields, types, formats, nullability, defaults, and additionalProperties. Exemptions are explicit and reasoned; the contract never advertises an outcome the implementation cannot produce.",
+      "severity": "medium",
+      "discoveringLane": "Adversarial review (R7)",
+      "evidence": {
+        "artifact": "/Users/maache/.claude/jobs/4b54f579/tmp/K3-red-scratch/red-console.txt (job-temporary; SHA-256 b2daa634076e354b9f20ae7f2ab5730b761dfa099f9e006439060020fbd70358)",
+        "cases": ["R7 generalized OpenAPI model-derived RED: 7 tests, 4 assertion failures, 0 exception failures"]
+      }
+    },
+    {
+      "id": "D69",
+      "invariant": "A configured protected-content marker corroborates a read only when the acting principal did not itself supply that marker in the request URL, body, header name, header value, or injected bypass header.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/SecurityScanServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/OUTPUT.md",
+        "docs/PROOF-CEILINGS.md"
+      ],
+      "compatibility": "Retain marker-backed proof for server-held values and response anomaly reporting; actor-supplied marker reflection becomes inconclusive rather than vulnerable or clean.",
+      "status": "fixed",
+      "fixEvidence": "R8 produced assertion-reaching REDs at SecurityScanServiceTest.kt:1627, :2484, and :2676; 89 of 92 cases passed in that pre-fix run. It passed after provenance rejection was applied to headersBypass, authBypass, and scanEndpoints. The frozen-tree R-wave gate completed with Kotlin clean test detekt --rerun-tasks BUILD SUCCESSFUL (8 tasks executed), Python 684 passed, and an identical source digest before and after; nothing was cached, Detekt was clean tree-wide, and its baseline was not regenerated. A live replay against the redeployed binary and non-author adversarial review are not yet established.",
+      "reproduction": [
+        "Not established: no exact live reproduction command was supplied for R8; the supplied discriminator configures marker=127.0.0.1 and observes headersBypass inject X-Forwarded-For: 127.0.0.1."
+      ],
+      "observed": "Marker provenance was unchecked. headersBypass could inject X-Forwarded-For: 127.0.0.1, observe its reflection, certify it as a protected read, and fabricate vulnerable output with exit 5; equivalent self-supply paths existed in authBypass and scanEndpoints.",
+      "expected": "If the marker appears in any material supplied by the acting request, its appearance in the response proves only possible reflection and remains inconclusive; only a marker absent from actor-supplied material can corroborate a protected read.",
+      "severity": "high",
+      "discoveringLane": "Adversarial review (R8)",
+      "evidence": {
+        "artifact": "Not established: no artifact path was supplied for R8.",
+        "cases": ["R8 headersBypass", "R8 authBypass", "R8 scanEndpoints"]
+      }
+    },
+    {
+      "id": "D70",
+      "invariant": "Every cookie-jar clearing entry point serializes with authenticated-send credential/epoch capture under the same lock order, so a completed clear cannot be undone by an older in-flight response.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/SessionServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "Keep clearCookieJar limited to observed cookies while giving it the same sessionMutationLock -> cookieMutationLock synchronization discipline as full session clear.",
+      "status": "fixed",
+      "fixEvidence": "R9 reached and failed its assertion before the fix, then passed after clearCookieJar() acquired sessionMutationLock before cookieMutationLock; exact RED output and artifact path were not supplied. This closes the equivalent interleaving left at the second clear entry point after R2. The frozen-tree R-wave gate completed with Kotlin clean test detekt --rerun-tasks BUILD SUCCESSFUL (8 tasks executed), Python 684 passed, and an identical source digest before and after; nothing was cached, Detekt was clean tree-wide, and its baseline was not regenerated. A live replay against the redeployed binary and non-author adversarial review are not yet established.",
+      "reproduction": [
+        "Not established: no exact live reproduction command was supplied for R9; the supplied discriminator is the clearCookieJar historical-shape interleaving in SessionServiceTest."
+      ],
+      "observed": "After the full session-clear path was synchronized, clearCookieJar still exposed the equivalent split-snapshot interleaving at a second entry point and an older send could restore a late cookie after the clear returned.",
+      "expected": "clearCookieJar uses the same sessionMutationLock -> cookieMutationLock order, leaves configured session credentials unchanged, and rejects late cookie capture from an older send.",
+      "severity": "medium",
+      "discoveringLane": "Adversarial review (R9)",
+      "evidence": {
+        "artifact": "Not established: no artifact path was supplied for R9.",
+        "cases": ["R9"]
+      }
+    },
+    {
+      "id": "D71",
+      "invariant": "A live acceptance preflight cannot finish without an explicit non-success disposition when its version pin is stale and zero cases execute.",
+      "slice": "contracts-ci",
+      "tests": [
+        "bp/tests/test_release_identity.py"
+      ],
+      "contracts": [
+        "quality/README.md"
+      ],
+      "compatibility": "Keep strict extension/CLI version matching and the explicit expected-version override; make zero executed cases a loud, machine-visible failed run rather than an easy-to-miss preflight-only outcome.",
+      "status": "confirmed",
+      "verificationNotes": "No in-repository regression currently exercises the external /tmp acceptance harness's zero-case reporting. bp/tests/test_release_identity.py checks published product identities only; it is relevant contract coverage, not proof that D71 is fixed.",
+      "reproduction": [
+        "/usr/bin/python3 /tmp/burpctl-live/verify/run.py --execute"
+      ],
+      "observed": "On 2026-09-04 the manifest default remained 2.0.0 while /health reported 2.1.0. The first preflight emitted FATAL: /health version is '2.1.0', expected '2.0.0', executed zero cases, and did not present an explicit zero-case acceptance summary. The valid run required --expected-version 2.1.0.",
+      "expected": "A stale pin still blocks execution, but the harness reports a failed zero-case run prominently and machine-readably, including executed=0 and the stale expected/actual versions; the checked-in default is synchronized with the release under test.",
+      "severity": "medium",
+      "discoveringLane": "Acceptance harness review",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/verify/acceptance-20260904T101852Z.md",
+        "cases": ["STALE-MANIFEST-PREFLIGHT"]
+      }
+    },
+    {
+      "id": "D72",
+      "invariant": "Each live acceptance oracle is derived from the current product contract, so a superseded expectation cannot manufacture a product failure before containment policy runs.",
+      "slice": "contracts-ci",
+      "tests": [
+        "bp/tests/test_cliutil.py",
+        "bp/tests/test_output.py"
+      ],
+      "contracts": [
+        "docs/OUTPUT.md",
+        "quality/README.md"
+      ],
+      "compatibility": "Preserve fail-closed containment when resource custody is genuinely unknown; repair the upstream oracle and consider isolation only for cases whose state and resources can be proved independent.",
+      "status": "confirmed",
+      "verificationNotes": "The listed product output tests establish that raw send is currently supported, but they do not exercise or repair the external /tmp acceptance oracle. No durable in-repository harness regression is recorded for D72. D71 and D72 are separate records in one causal chain: stale release/contract inputs reached the harness, a stale exit-code oracle manufactured a false product failure, and correct containment then forfeited 37 downstream verifications.",
+      "reproduction": [
+        "/usr/bin/python3 /tmp/burpctl-live/verify/run.py --execute --expected-version 2.1.0",
+        "BP_LEDGER_PATH=/tmp/burpctl-live/verify/ledger-verify.db bp --format raw send 8575 --path '/echo?marker=raw-send-effect-9Q'"
+      ],
+      "observed": "The causal chain was: current product source implemented raw send (bp/src/bp/output.py:172 and :231, locked by bp/tests/test_output.py:148-153); when the oracle was authored and run, docs/OUTPUT.md:11 and docs/CLI.md:10 still described that projection as unimplemented; VERIFY-D24 encoded the stale contract as expected exit 2; the live treatment correctly exited 0, added one isolated ledger row, reached 127.0.0.1:9921, and created Burp history row 401; the harness mislabeled that supported effect as a D24 failure and unknown custody; correct fail-closed containment then stopped the run, so 37 downstream D25-D61 cases received no live verdict. The abort was correct for the state the oracle reported; the stale document-to-oracle chain was the upstream defect.",
+      "expected": "Acceptance cases are derived from and pinned to the executable current contract. VERIFY-D24 uses a genuinely incompatible current format/field arm to test ordering and never treats a supported raw-send effect as a product failure. Correct containment remains mandatory. The observed 1-to-37 fan-out cost is a harness property to consider when deciding whether provably independent cases can continue, not evidence that this shared-state abort was wrong.",
+      "severity": "high",
+      "discoveringLane": "Acceptance harness review",
+      "evidence": {
+        "artifact": "/tmp/burpctl-live/verify/acceptance-20260904T101852Z.md",
+        "cases": ["VERIFY-D24", "VERIFY-D25-D61 COULD-NOT-RUN"]
+      }
+    },
+    {
+      "id": "D73",
+      "invariant": "A ledger record can hold verified status only when machine-validated structured receipts establish a redeployed-binary live pass, an assertion-reaching causal RED, and a content-bound passing adversarial-review artifact with distinct attested author/reviewer lanes at the repository's explicit identity-proof ceiling.",
+      "slice": "contracts-ci",
+      "tests": [
+        "bp/tests/test_quality_ledger.py"
+      ],
+      "contracts": [
+        "quality/README.md"
+      ],
+      "compatibility": "Apply one verified meaning to every evidence set; preserve historical fix evidence when a row is demoted for missing modern receipts, and exclude rejected/unconfirmed non-defects from the all-established-defects release gate.",
+      "status": "fixed",
+      "fixEvidence": "The repaired validator requires exact nested receipt shapes; explicit live and post-fix pass outcomes; an assertion-failed pre-fix outcome; JSON receipt artifacts under quality/evidence/ whose embedded defect id, criterion kind, and evidence payload exactly match the ledger fields; matching SHA-256 bytes; timezone-bearing live, RED, and review times; a causal test that is one of the record's executable regression references; and substantive case, oracle, failure, RED-command, and GREEN-command text. Non-author review evidence at future promotion would record distinct attested author/reviewer lanes, exact implementation/review commits, and the correction's implementation paths; Git must verify that the implementation commit changes every declared implementation path and listed regression with exact current bytes, ancestry from implementation to review, and a receipt-only review commit that changes and contains the exact current receipt bytes while changing no correction or regression path. Only contracts-ci records may declare a test-only correction whose implementation paths are listed regressions. Git binds content and history here but, in this single-committer repository, does not cryptographically establish lane identity; non-authorship is explicitly attested and the lane identifiers must differ. A criterion must be checked for satisfiability against the actual repository before adoption: a gate that can never fire is as useless as one that always passes and harder to notice. Mandatory signatures and distinct commit-author emails were rejected because either would make verified unreachable in this repository. D01-D18 were demoted instead of grandfathered because their rows lack all three durable receipts. The exact mutation RED and restored GREEN are recorded in verificationNotes.",
+      "verificationNotes": "Discrimination run against the final receipt-, commit-, source-, and attestation-bound validator: D19 was temporarily changed from fixed to verified with no verificationEvidence, then `python -m pytest bp/tests/test_quality_ledger.py` exited 1. Verbatim decisive failure: `E       AssertionError: D19: verified requires verificationEvidence`; summary: `2 failed, 8 passed in 0.22s` (the second failure was the independently enforced README count drift). A finally block then reported `RESTORE=byte-for-byte original ledger restored`. A subsequent restored focused gate passed all 10 tests. No separate durable output artifact was created within this lane's write set. A fresh read-only judge returned ACCEPT at the explicit content-bound-attestation ceiling under reference J-QLEDGER-20260904-01; it confirmed that identity authenticity remains unproved and actual role separation remains a procedural obligation.",
+      "reproduction": [
+        "Temporarily change D19 status from fixed to verified without adding verificationEvidence; run python -m pytest bp/tests/test_quality_ledger.py; restore D19 immediately.",
+        "python -m pytest bp/tests/test_quality_ledger.py"
+      ],
+      "observed": "Before the repair, status was the only verified signal the structure test consumed; none of the three documented promotion receipts was required, so changing an eligible record's status string to verified did not trigger a missing-evidence failure. BURPCTL_REQUIRE_ALL_VERIFIED also counted terminal rejected and unconfirmed candidates as incomplete even though those dispositions cannot become verified.",
+      "expected": "Any verified row without all three substantive, hash-bound, repository-resident structured receipts fails the ordinary ledger gate. Rejected and unconfirmed non-defects remain terminal dispositions and are not demanded to become verified by BURPCTL_REQUIRE_ALL_VERIFIED=1.",
+      "severity": "critical",
+      "discoveringLane": "Independent ledger contract review",
+      "evidence": {
+        "artifact": "bp/tests/test_quality_ledger.py",
+        "cases": ["PROMOTION-WITHOUT-RECEIPTS-RED", "RESTORED-LEDGER-GREEN", "J-QLEDGER-20260904-01 ACCEPT at content-bound-attestation ceiling"]
+      }
     }
   ]
 }

@@ -1,12 +1,21 @@
 """RED tests for A2 — the client-side fuzz engine (docs/ALGORITHMS.md §A2)."""
 
+from pathlib import Path
+
 import pytest
 
-from bp.fuzz import ConcreteRequest, Sub, apply_subs, expand
+from bp.fuzz import ConcreteRequest, Sub, apply_subs, expand, load_payload_file
 from bp.pos import Position, PosError, resolve_pos
 
 # base with two single-char query values to fuzz; '_' marks each position.
 BASE: bytes = b"GET /?u=_&p=_ HTTP/1.1\r\nHost: h\r\n\r\n"
+
+
+class _UnderreportedPayloads(list[bytes]):
+    """A mutable/custom Sequence whose reported size does not match its iterator."""
+
+    def __len__(self) -> int:
+        return 1
 
 
 def _positions() -> tuple[Position, Position]:
@@ -47,6 +56,23 @@ def test_sniper_one_position_at_a_time() -> None:
     assert b"u=x" in r0.raw and b"p=_" in r0.raw
 
 
+def test_sniper_uses_each_supplied_position_payload_list() -> None:
+    """A named list per position must not be accepted and then silently discarded."""
+    pu, pp = _positions()
+
+    reqs = expand(BASE, [pu, pp], [[b"A1", b"A2"], [b"B1", b"B2", b"B3"]], "sniper")
+
+    assert len(reqs) == 5
+    assert [(request.position_index, request.payloads) for request in reqs] == [
+        (0, (b"A1",)),
+        (0, (b"A2",)),
+        (1, (b"B1",)),
+        (1, (b"B2",)),
+        (1, (b"B3",)),
+    ]
+    assert reqs[-1].raw == b"GET /?u=_&p=B3 HTTP/1.1\r\nHost: h\r\n\r\n"
+
+
 def test_battering_ram_same_payload_all_positions() -> None:
     pu, pp = _positions()
     reqs = expand(BASE, [pu, pp], [[b"a", b"b", b"c"]], "battering-ram")
@@ -54,6 +80,14 @@ def test_battering_ram_same_payload_all_positions() -> None:
     r = reqs[0]
     assert r.payloads == (b"a",)
     assert b"u=a" in r.raw and b"p=a" in r.raw
+
+
+def test_battering_ram_rejects_an_extra_payload_list() -> None:
+    """A second set is ambiguous for a shared-set algorithm and must not be ignored."""
+    pu, pp = _positions()
+
+    with pytest.raises(ValueError, match=r"battering-ram requires 1 payload list.*got 2"):
+        expand(BASE, [pu, pp], [[b"A"], [b"B"]], "battering-ram")
 
 
 def test_pitchfork_lockstep_pairs_min_length() -> None:
@@ -300,6 +334,21 @@ def test_expand_accepts_exact_limit_without_materializing_requests() -> None:
     assert len(plan) == 10_000
 
 
+def test_sniper_per_position_lists_still_enforce_the_global_cap() -> None:
+    pu, pp = _positions()
+
+    with pytest.raises(ValueError, match="10,000"):
+        expand(BASE, [pu, pp], [[b"a"] * 5_001, [b"b"] * 5_000], "sniper")
+
+
+def test_custom_sequence_cannot_underreport_past_the_global_cap() -> None:
+    position = resolve_pos(BASE, "query:u")
+    payloads = _UnderreportedPayloads([b"x"] * 10_001)
+
+    with pytest.raises(ValueError, match="10,000"):
+        expand(BASE, [position], [payloads], "sniper")
+
+
 def test_expand_rejects_overlapping_plan_even_for_sniper() -> None:
     p = resolve_pos(BASE, "query:u")
     with pytest.raises(PosError) as exc_info:
@@ -342,7 +391,7 @@ def test_body_replacement_content_length_uses_utf8_byte_count() -> None:
     assert b"Content-Length: 4\r\n" in out
 
 
-def test_body_nul_replacement_still_repairs_content_length_before_bridge_rejects_it() -> None:
+def test_body_nul_replacement_repairs_content_length() -> None:
     base = b"POST / HTTP/1.1\r\nHost: example.test\r\nContent-Length: 1\r\n\r\nx"
     pos = Position(len(base) - 1, len(base), "offset:body")
 
@@ -350,6 +399,58 @@ def test_body_nul_replacement_still_repairs_content_length_before_bridge_rejects
 
     assert out.endswith(b"a\x00b")
     assert b"Content-Length: 3\r\n" in out
+
+
+@pytest.mark.parametrize(
+    ("element", "expected"),
+    [
+        ('""', b""),
+        ('" "', b" "),
+        ('"A\\nB"', b"A\nB"),
+        ('"caf\\u00e9 \\u03b1\\u03b2\\u03b3 \\ud83d\\ude00"', "café αβγ 😀".encode()),
+        ('"\\u0000"', b"\x00"),
+        ('{"b64":"/wBhCg=="}', b"\xff\x00a\n"),
+    ],
+)
+def test_versioned_payload_file_represents_exact_bytes(
+    tmp_path: Path, element: str, expected: bytes
+) -> None:
+    payload_file = tmp_path / "payloads.txt"
+    payload_file.write_bytes(b"#!bp-payloads-json-v1\n[" + element.encode("ascii") + b"]")
+
+    assert load_payload_file(payload_file) == [expected]
+
+
+def test_legacy_payload_file_behavior_is_unchanged(tmp_path: Path) -> None:
+    payload_file = tmp_path / "legacy.txt"
+    payload_file.write_bytes(b"A\n\n   \nB\r\n")
+
+    assert load_payload_file(payload_file) == [b"A", b"B"]
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (b"#!bp-payloads-json-v1\nnot-json", "valid UTF-8 JSON"),
+        (b"#!bp-payloads-json-v1\n{}", "JSON array"),
+        (b"#!bp-payloads-json-v1\n[7]", r"payload\[0\]"),
+        (b'#!bp-payloads-json-v1\n[{"b64":"***"}]', r"payload\[0\].*base64"),
+        (b'#!bp-payloads-json-v1\n[{"b64":"YR=="}]', r"payload\[0\].*base64"),
+        (
+            b'#!bp-payloads-json-v1\n[{"b64":"YQ==","b\\u00364":"Yg=="}]',
+            r"payload\[0\].*duplicate.*b64",
+        ),
+        (b'#!bp-payloads-json-v1\n[{"b64":"YQ==","extra":1}]', r"payload\[0\]"),
+    ],
+)
+def test_versioned_payload_file_rejects_malformed_content(
+    tmp_path: Path, content: bytes, message: str
+) -> None:
+    payload_file = tmp_path / "bad.txt"
+    payload_file.write_bytes(content)
+
+    with pytest.raises(ValueError, match=message):
+        load_payload_file(payload_file)
 
 
 def test_apply_subs_rejects_negative_and_reversed_positions() -> None:

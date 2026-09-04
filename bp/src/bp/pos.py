@@ -144,7 +144,9 @@ def _resolve_path(raw: bytes, arg: str, selector: str) -> Position:
     t_start, t_end = request_target_span(raw)
     target = raw[t_start:t_end]
     q = target.find(b"?")
-    path = target[: q if q != -1 else len(target)]
+    frag = target.find(b"#")
+    delimiters = [offset for offset in (q, frag) if offset != -1]
+    path = target[: min(delimiters) if delimiters else len(target)]
     seg_no = 0
     i = 0
     n = len(path)

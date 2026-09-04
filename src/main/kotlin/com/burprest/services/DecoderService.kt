@@ -38,7 +38,7 @@ class DecoderService {
             "hex" -> {
                 require(request.data.length % 2 == 0) { "Hex input must have an even number of characters" }
                 val bytes = request.data.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
-                decodeUtf8OrThrow(bytes, "hex")
+                decodeUtf8OrThrow(bytes)
             }
             "html" -> request.data
                 .replace("&amp;", "&")
@@ -183,14 +183,14 @@ class DecoderService {
             throw IllegalArgumentException("Invalid base64 input")
         }
         // [16] Reject non-UTF-8 decoded bytes rather than silently substituting U+FFFD.
-        return decodeUtf8OrThrow(bytes, "base64")
+        return decodeUtf8OrThrow(bytes)
     }
 
     /**
      * Decodes [bytes] as UTF-8. Throws [IllegalArgumentException] if the bytes are not valid
      * UTF-8, so callers never receive silently-corrupted text with U+FFFD replacement chars.
      */
-    private fun decodeUtf8OrThrow(bytes: ByteArray, encodingLabel: String): String {
+    private fun decodeUtf8OrThrow(bytes: ByteArray): String {
         val decoder = Charsets.UTF_8.newDecoder()
             .onMalformedInput(CodingErrorAction.REPORT)
             .onUnmappableCharacter(CodingErrorAction.REPORT)

@@ -101,47 +101,47 @@ class ScannerService(
 
     fun status(scanId: String): ScanStatusResponse {
         val scan = requireScan(scanId)
-        return try {
-            val statusMessage = scan.task.statusMessage()
-            val issueCount = when (scan) {
-                is ScanState.AuditState -> scan.audit.issues().size
-                is ScanState.CrawlState -> 0
-            }
-            ScanStatusResponse(
-                scanId = scanId,
-                status = statusMessage,
-                statusMessage = statusMessage,
-                crawlProgress = null,
-                auditProgress = null,
-                requestCount = scan.task.requestCount(),
-                errorCount = scan.task.errorCount(),
-                issueCount = issueCount,
-            )
-        } catch (cause: Exception) {
-            throw ServiceUnavailableException("scanner task status is unavailable", cause)
+        // A live task may temporarily reject individual projections. Keep the task addressable and
+        // report only values Montoya actually supplied instead of failing the entire status read.
+        val statusMessage = taskValueOrNull { scan.task.statusMessage() }
+        val issueCount = when (scan) {
+            is ScanState.AuditState -> taskValueOrNull { scan.audit.issues()?.size }
+            is ScanState.CrawlState -> 0
         }
+        return ScanStatusResponse(
+            scanId = scanId,
+            status = statusMessage,
+            statusMessage = statusMessage,
+            crawlProgress = null,
+            auditProgress = null,
+            requestCount = taskValueOrNull { scan.task.requestCount() },
+            errorCount = taskValueOrNull { scan.task.errorCount() },
+            issueCount = issueCount,
+        )
     }
 
     fun issues(scanId: String): ScanIssuesResponse {
         val scan = requireScan(scanId)
+        val auditIssues = when (scan) {
+            is ScanState.AuditState -> taskValueOrNull { scan.audit.issues() }
+            is ScanState.CrawlState -> emptyList()
+        } ?: return ScanIssuesResponse(scanId = scanId, issues = null, total = null)
+
         return try {
-            val auditIssues = when (scan) {
-                is ScanState.AuditState -> scan.audit.issues()
-                is ScanState.CrawlState -> emptyList()
+            val entries = auditIssues.map {
+                ScanIssue(
+                    name = it.name(),
+                    url = it.baseUrl(),
+                    severity = it.severity().name,
+                    confidence = it.confidence().name,
+                    detail = it.detail(),
+                    remediation = it.remediation(),
+                )
             }
             ScanIssuesResponse(
                 scanId = scanId,
-                issues = auditIssues.map {
-                    ScanIssue(
-                        name = it.name(),
-                        url = it.baseUrl(),
-                        severity = it.severity().name,
-                        confidence = it.confidence().name,
-                        detail = it.detail(),
-                        remediation = it.remediation(),
-                    )
-                },
-                total = auditIssues.size,
+                issues = entries,
+                total = entries.size,
             )
         } catch (cause: Exception) {
             throw ServiceUnavailableException("scanner task issues are unavailable", cause)
@@ -158,18 +158,16 @@ class ScannerService(
 
     fun stop(scanId: String): ScanStatusResponse {
         val scan = requireScan(scanId)
-        val counts = try {
-            TaskCounts(
-                requests = scan.task.requestCount(),
-                errors = scan.task.errorCount(),
-                issues = when (scan) {
-                    is ScanState.AuditState -> scan.audit.issues().size
-                    is ScanState.CrawlState -> 0
-                },
-            )
-        } catch (cause: Exception) {
-            throw ServiceUnavailableException("scanner task counts are unavailable", cause)
-        }
+        // Deletion is the requested effect; task statistics are only best-effort context. Reading a
+        // counter used to abort before delete and strand a real task when Montoya rejected projection.
+        val counts = TaskCounts(
+            requests = taskValueOrNull { scan.task.requestCount() },
+            errors = taskValueOrNull { scan.task.errorCount() },
+            issues = when (scan) {
+                is ScanState.AuditState -> taskValueOrNull { scan.audit.issues()?.size }
+                is ScanState.CrawlState -> 0
+            },
+        )
         try {
             scan.task.delete()
         } catch (cause: Exception) {
@@ -190,7 +188,13 @@ class ScannerService(
         )
     }
 
-    private data class TaskCounts(val requests: Int, val errors: Int, val issues: Int)
+    private data class TaskCounts(val requests: Int?, val errors: Int?, val issues: Int?)
+
+    private inline fun <T> taskValueOrNull(read: () -> T): T? = try {
+        read()
+    } catch (_: Exception) {
+        null
+    }
 
     fun issueDefinitions(): IssueDefinitionsResponse {
         val definitions = try {

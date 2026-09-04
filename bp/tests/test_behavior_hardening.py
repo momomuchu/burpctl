@@ -522,6 +522,27 @@ def test_explicit_format_beats_bp_agent(monkeypatch: pytest.MonkeyPatch) -> None
     assert observed == ["table"]
 
 
+@pytest.mark.parametrize("control", ["\r", "\n", "\x00"])
+def test_session_set_rejects_header_controls_before_rest(
+    monkeypatch: pytest.MonkeyPatch, control: str
+) -> None:
+    """C20: malformed session header values fail locally; this is not a target-injection claim."""
+    called = False
+
+    def forbidden_run(_ctx: typer.Context, _fn: Any) -> None:
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr("bp.commands.session.run", forbidden_run)
+    body = json.dumps({"cookies": {}, "headers": {"X-Test": f"left{control}right"}})
+    result = CliRunner().invoke(app, ["--format", "json", "session", "set", "--json", body])
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    assert called is False, "invalid header value must not reach cliutil.run or REST"
+    assert json.loads(result.stderr)["error"]["code"] == "USAGE_ERROR"
+
+
 def test_short_help_is_supported() -> None:
     result = CliRunner().invoke(app, ["-h"])
     assert result.exit_code == 0
@@ -570,3 +591,33 @@ def test_tag_honors_json_renderer_and_fields(
     )
     assert result.exit_code == 0, result.stderr
     assert json.loads(result.stdout) == {"tag": "reviewed", "id": actual_id}
+
+
+def test_tag_quiet_emits_ledger_id(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """D33: the actual local command routes quiet through its documented id projection."""
+    db_path = tmp_path / "ledger.db"
+    with Ledger(db_path=db_path) as ledger:
+        actual_id = ledger.record(OpRecord(status="ok"))
+    monkeypatch.setenv("BP_LEDGER_PATH", str(db_path))
+
+    result = CliRunner().invoke(app, ["--format", "quiet", "tag", actual_id, "reviewed"])
+
+    assert result.exit_code == 0, result.stderr
+    assert result.stdout == f"{actual_id}\n"
+
+
+def test_tag_rejects_incompatible_output_before_ledger_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """D24: local commands also validate output before their state-changing operation."""
+    db_path = tmp_path / "ledger.db"
+    with Ledger(db_path=db_path) as ledger:
+        actual_id = ledger.record(OpRecord(status="ok"))
+    monkeypatch.setenv("BP_LEDGER_PATH", str(db_path))
+
+    result = CliRunner().invoke(app, ["--format", "raw", "tag", actual_id, "must-not-apply"])
+
+    assert result.exit_code == 2, result.output
+    with Ledger(db_path=db_path) as ledger:
+        row = next(item for item in ledger.query() if item.id == actual_id)
+    assert row.tag is None, "invalid output must not mutate the local ledger"

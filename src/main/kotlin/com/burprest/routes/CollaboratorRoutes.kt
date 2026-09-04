@@ -6,6 +6,7 @@ import com.burprest.services.CollaboratorPayloadNotFoundException
 import com.burprest.services.CollaboratorProviderException
 import com.burprest.services.CollaboratorService
 import com.burprest.services.CollaboratorUnavailableException
+import com.burprest.server.NotFoundException
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -58,10 +59,9 @@ fun Route.collaboratorRoutes(service: CollaboratorService) {
             try {
                 call.respond(ApiResponse.ok(service.pollById(id)))
             } catch (_: CollaboratorPayloadNotFoundException) {
-                call.respond(
-                    HttpStatusCode.NotFound,
-                    ApiResponse.error<Unit>("NOT_FOUND", "Collaborator payload not found"),
-                )
+                // A status-page 404 handler can overwrite a route-authored 404 body. Raising the shared
+                // typed exception preserves the payload-specific message through that final boundary.
+                throw NotFoundException("Collaborator payload not found")
             } catch (_: CollaboratorUnavailableException) {
                 call.respondCollaboratorUnavailable()
             } catch (_: CollaboratorProviderException) {

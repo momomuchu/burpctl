@@ -6,6 +6,7 @@ import burp.api.montoya.http.Http
 import burp.api.montoya.http.message.HttpHeader as BurpHeader
 import burp.api.montoya.http.message.HttpRequestResponse
 import burp.api.montoya.http.message.requests.HttpRequest
+import burp.api.montoya.http.message.requests.MalformedRequestException
 import burp.api.montoya.http.message.responses.HttpResponse
 import burp.api.montoya.logging.Logging
 import burp.api.montoya.proxy.Proxy
@@ -20,6 +21,7 @@ import com.burprest.models.HttpRequestData
 import com.burprest.models.PersistenceStatus
 import com.burprest.models.RequestModifications
 import com.burprest.models.SendRequest
+import com.burprest.server.InvalidParamException
 import com.burprest.server.NoResponseException
 import io.mockk.*
 import kotlin.test.Test
@@ -124,10 +126,16 @@ class RepeaterServiceTest {
         )
         every { http.sendRequest(request) } returns mockExchange(statusCode = 202)
         val builtUrls = mutableListOf<String>()
-        val service = RepeaterService(api, requestFactory = { url ->
-            builtUrls += url
-            request
-        })
+        val burpBody = mockk<BurpByteArray>()
+        every { request.withBody(burpBody) } returns request
+        val service = RepeaterService(
+            api,
+            requestFactory = { url ->
+                builtUrls += url
+                request
+            },
+            bodyFactory = { burpBody },
+        )
 
         val result = service.send(
             SendRequest(
@@ -469,6 +477,38 @@ class RepeaterServiceTest {
     }
 
     @Test
+    fun `malformed history request is rejected before send or UI effects`() {
+        val malformed = mockk<HttpRequest>()
+        every { malformed.method() } throws MalformedRequestException("stored bytes are malformed")
+        every { proxy.history() } returns listOf(mockHistoryEntry(malformed))
+        val service = RepeaterService(api)
+
+        assertFailsWith<InvalidParamException> {
+            service.send(SendRequest(requestId = 0))
+        }
+        assertFailsWith<InvalidParamException> {
+            service.createTab(CreateTabRequest(requestId = 0))
+        }
+
+        verify(exactly = 0) { http.sendRequest(any<HttpRequest>()) }
+        verify { repeater wasNot Called }
+    }
+
+    @Test
+    fun `create tab rejects a blank name before any UI effect`() {
+        every { proxy.history() } returns listOf(mockHistoryEntry(mockRequest()))
+        val service = RepeaterService(api)
+
+        listOf("", " ", "\t").forEach { blank ->
+            assertFailsWith<InvalidParamException> {
+                service.createTab(CreateTabRequest(requestId = 0, name = blank))
+            }
+        }
+
+        verify { repeater wasNot Called }
+    }
+
+    @Test
     fun `create tab validates a fetched history request without UI effects`() {
         val invalidHistorical = mockRequest(method = "\t")
         every { proxy.history() } returns listOf(mockHistoryEntry(invalidHistorical))
@@ -536,6 +576,7 @@ class RepeaterServiceTest {
         every { request.withPath(any()) } returns request
         every { request.withBody(any<String>()) } returns request
         every { request.withRemovedHeader(any<String>()) } returns request
+        every { request.withRemovedHeaders(any<List<BurpHeader>>()) } returns request
         every { request.withAddedHeader(any<String>(), any()) } returns request
     }
 
@@ -558,6 +599,7 @@ class RepeaterServiceTest {
         every { request.headers() } returns burpHeaders
         every { request.body() } returns requestBody
         every { requestBody.length() } returns (body?.length ?: 0)
+        every { requestBody.getBytes() } returns (body?.encodeToByteArray() ?: byteArrayOf())
         every { request.bodyToString() } returns (body ?: "")
         return request
     }

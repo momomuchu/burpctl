@@ -42,11 +42,7 @@ scope = typer.Typer(
 
 @scope.command("show")
 def scope_show(ctx: typer.Context) -> None:
-    """Show scope entries changed through this extension process.
-
-    NOTE: this is not a complete Burp UI scope listing. Use
-    'bp scope check <url>' for the authoritative Burp-engine verdict.
-    """
+    """Unavailable: Montoya cannot list project scope rules (always HTTP 501)."""
     run(ctx, lambda c: c.get("/target/scope"))
 
 
@@ -68,10 +64,9 @@ def scope_set(
         ),
     ] = False,
 ) -> None:
-    """Replace entries tracked by this extension process, then add them to Burp.
+    """Unavailable: Montoya cannot replace/list project scope rules (always HTTP 501).
 
-    Earlier entries added through Burp or this extension remain active in the Burp engine because
-    Montoya does not expose a scope-list or remove-rule API. Use 'bp scope add' for one new entry.
+    Use 'bp scope add', 'remove', and 'check' for the supported per-URL operations.
     """
     if not confirm:
         typer.echo(

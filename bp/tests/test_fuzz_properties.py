@@ -1,9 +1,17 @@
-"""Deterministic property-style checks for fuzz expansion and byte substitution."""
+"""Property checks for fuzz expansion, payload loading, and byte substitution."""
 
+import base64
+import json
 import random
+import tempfile
+from pathlib import Path
 
-from bp.fuzz import Sub, apply_subs, expand
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
+from bp.fuzz import Sub, apply_subs, expand, load_payload_file
 from bp.pos import Position, resolve_pos
+from bp.wire import to_send_request
 
 
 def test_randomized_non_overlapping_substitutions_preserve_unaffected_bytes() -> None:
@@ -58,6 +66,12 @@ def test_randomized_attack_cardinality_and_restartability() -> None:
             assert len(first) == count
             assert second == first
 
+        per_position_sniper = expand(base, positions, payload_lists, "sniper")
+        assert len(per_position_sniper) == sum(sizes)
+        assert [request.position_index for request in per_position_sniper] == [
+            index for index, size in enumerate(sizes) for _ in range(size)
+        ]
+
 
 def test_boundary_insertions_are_deterministic_and_adjacent() -> None:
     base = b"middle"
@@ -67,3 +81,41 @@ def test_boundary_insertions_are_deterministic_and_adjacent() -> None:
     ]
 
     assert apply_subs(base, subs) == b"<middle>"
+
+
+@given(st.binary(max_size=512))
+@settings(max_examples=200)
+def test_any_body_bytes_survive_the_python_rest_intent(payload: bytes) -> None:
+    """F3/F5/F6: the REST intent must carry exact bytes; target arrival is a separate live oracle."""
+    base = b"POST /echo HTTP/1.1\r\nHost: h\r\nContent-Length: 1\r\n\r\nx"
+    fuzzed = apply_subs(
+        base,
+        [Sub(Position(len(base) - 1, len(base), "offset:body"), payload)],
+    )
+
+    request = to_send_request(fuzzed, "https", "h")
+
+    assert "body" not in request
+    assert base64.b64decode(request["bodyBase64"], validate=True) == payload
+    content_lengths = [
+        header["value"]
+        for header in request["headers"]
+        if header["name"].lower() == "content-length"
+    ]
+    assert content_lengths == [str(len(payload))]
+
+
+@given(st.binary(max_size=512))
+@settings(max_examples=200)
+def test_any_bytes_round_trip_from_payload_file_to_wire_intent(payload: bytes) -> None:
+    base = b"POST /echo HTTP/1.1\r\nHost: h\r\nContent-Length: 1\r\n\r\nx"
+    position = Position(len(base) - 1, len(base), "offset:body")
+    encoded = json.dumps([{"b64": base64.b64encode(payload).decode("ascii")}]).encode()
+    with tempfile.TemporaryDirectory() as directory:
+        path = Path(directory) / "payloads.txt"
+        path.write_bytes(b"#!bp-payloads-json-v1\n" + encoded)
+        loaded = load_payload_file(path)
+
+    request = to_send_request(expand(base, [position], [loaded], "sniper")[0].raw, "https", "h")
+
+    assert base64.b64decode(request["bodyBase64"], validate=True) == payload

@@ -2,6 +2,79 @@
 
 All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.1.0] - 2026-09-04
+
+This is a **minor**, not patch, release. Two planned compatibility corrections are intentionally
+observable: `bp session clear` will also clear the captured cookie jar, and several
+`WebSocketEntry` response fields will become nullable because real Burp can omit them. Neither change
+is claimed live-verified until the v2.0.0 reproductions pass against a rebuilt and reloaded extension.
+
+### Security
+
+- **Operations must preserve and report live state.** ADR-0014 now requires output/field preflight
+  before effects and refusal when an operation cannot truthfully report its own completion. The live
+  v2.0.0 campaign proved why: `config set user` reloaded the serving extension during import and
+  erased in-memory registries, while a scanner audit was created and its id discarded by a later raw
+  rendering error.
+- **Real Burp is part of the release proof for Montoya behavior.** Hermetic suites, Detekt, and
+  coverage were green before live calls found WebSocket listing and Scanner lifecycle unusable. A mock
+  still tests pure logic, but cannot verify what a nullable/throwing third-party accessor does in the
+  supported Burp build.
+
+### Fixed
+
+- **Public pages no longer satisfy the auth-bypass rule (implementation landed; live verification
+  pending).** Three identical FULL, COOKIES_ONLY, and NONE representations now establish no
+  credential-sensitive boundary. A finding remains possible when FULL and NONE contain the same
+  substantive protected bytes while the independent cookie-only control is denied (D58).
+- **Real-Burp request construction (implementation landed; live verification pending).** Constructed
+  requests now strip factory-injected browser headers, preserve duplicate `Cookie` fields and
+  untouched cookies in order, and pass text bodies to Montoya as UTF-8 bytes (D38–D40).
+
+> **Landing/redeployment placeholder — not release claims yet.** The 2026-09-04 campaign confirmed
+> 37 defects in shipped v2.0.0. Move an item out of this placeholder only after its implementation is
+> present and retain the qualification “not live-verified” until the exact reproduction passes on the
+> rebuilt extension/CLI. No D19–D61 record is `verified` at the time this entry was written.
+
+- [ ] Reject incompatible `--format`/`--fields` before intercept, Repeater, history replay, tab,
+  Collaborator, config, scope, fuzz, or Scanner effects; never orphan a task/payload or consume an
+  interaction without its result (D24).
+- [ ] Keep populated WebSocket history readable when edited payload or other response-side Montoya
+  values are absent (D23).
+- [ ] Make Scanner status, issues, and audit stop usable when individual Montoya counters throw; keep
+  unavailable values nullable and stop without a failing pre-delete count read (D55). The six tasks
+  listed in D55 remain **unknown**, not presumed stopped.
+- [ ] Refuse user-configuration import while it can reload the serving extension and destroy live
+  registries (D53).
+- [ ] Return typed JSON for bare-415 cases, validate `/history` numbers, and remove raw timestamp/parser
+  details from errors (D19–D21).
+- [ ] Complete the shipped CLI/output contract: JSON local errors, history list filters, single-entry
+  raw behavior, stable quiet/field projections, local input validation, and truthful scope help
+  (D22, D25, D27–D28, D31–D35, D37, D52).
+- [ ] Finish the remaining fuzz contracts for named lists, versioned payload files, NUL/fragment
+  normalization, transport exits, and unsupported matrix classification (D41, D43–D46, D48).
+- [ ] Reject invalid/unknown nested Burp configuration changes rather than coercing or silently
+  discarding them; reject blank Repeater tab names (D26, D49–D50).
+- [ ] Complete check output and timeout handling: emit one-word quiet verdicts for every check, give
+  inconclusive results a nonzero non-finding exit, and land the configurable per-probe budget without
+  a shared worker-pool bottleneck (D59–D61). The value and option name remain deliberately unspecified.
+- [ ] Re-run the unresolved target-sitemap observation against a proved-populated Burp target sitemap;
+  it remains `unconfirmed`, not a fix claim (D56).
+
+### Changed
+
+- **`session clear` broadens its boundary (planned; live verification pending).** In v2.0.0 it clears
+  configured cookies, headers, and origin but leaves automatically captured response cookies active.
+  The 2.1.0 contract clears both credential stores in one user-facing clear operation (D29).
+- **`WebSocketEntry` accepts absent response-side values (planned; live verification pending).** `url`,
+  `direction`, legacy `payload`, and `payloadBase64` become nullable instead of letting one missing Java
+  platform value fail the complete listing (D23). Consumers must accept `null`; this schema change is
+  one reason the release is 2.1.0.
+- **Campaign counts distinguish reality from brief assumptions.** All 37 product defects were live
+  confirmed in v2.0.0; the current ledger state is 33 `confirmed`, four `fixed` but not live-reverified,
+  one `unconfirmed`, and five `rejected` candidates. The rejected commands/expectations were never product
+  contracts and are not counted as defects.
+
 ## [2.0.0] - 2026-09-04
 
 ### Security

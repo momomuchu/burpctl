@@ -87,6 +87,89 @@ def test_raw_with_fields_raises_value_error() -> None:
         render({"a": 1}, "raw", fields=["a"])
 
 
+def _history_record() -> dict[str, object]:
+    return {
+        "id": 7,
+        "source": "repeater",
+        "method": "POST",
+        "url": "https://example.test/a?q=1",
+        "host": "example.test",
+        "reqHeaders": [{"name": "Host", "value": "example.test"}],
+        "reqBody": "hello",
+        "statusCode": 201,
+        "resHeaders": [{"name": "Content-Type", "value": "text/plain"}],
+        "resBody": "world",
+        "durationMs": 1,
+        "timestamp": "2026-01-01T00:00:00Z",
+    }
+
+
+def test_raw_proxy_request_emits_http_request_and_response() -> None:
+    """K33 ceiling: response `body` is a text projection, not verbatim binary-byte proof."""
+    data = {
+        "id": 3,
+        "request": {
+            "method": "GET",
+            "url": "https://example.test/a?q=1",
+            "headers": [{"name": "Host", "value": "example.test"}],
+            "body": None,
+            "bodyBase64": None,
+        },
+        "response": {
+            "statusCode": 200,
+            "headers": [{"name": "Content-Type", "value": "text/plain"}],
+            "body": "ok",
+        },
+    }
+
+    out = render(data, "raw", command_path="bp req")
+
+    assert out.startswith(b"GET /a?q=1 HTTP/1.1\r\nHost: example.test\r\n\r\n")
+    assert b"\x1e\r\nHTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nok" in out
+
+
+def test_raw_proxy_request_null_body_base64_falls_back_to_text() -> None:
+    data = {
+        "id": 4,
+        "request": {
+            "method": "POST",
+            "url": "https://example.test/a",
+            "headers": [],
+            "body": "café",
+            "bodyBase64": None,
+        },
+        "response": None,
+    }
+
+    assert render(data, "raw", command_path="bp req").endswith(b"\r\n\r\ncaf\xc3\xa9")
+
+
+def test_raw_send_emits_response_only() -> None:
+    data = {
+        "request": {"method": "GET", "url": "https://example.test/", "headers": []},
+        "response": {"statusCode": 204, "headers": [], "body": None},
+    }
+    assert render(data, "raw", command_path="bp send") == b"HTTP/1.1 204 No Content\r\n\r\n"
+
+
+def test_raw_history_get_emits_stored_request_and_response() -> None:
+    out = render(_history_record(), "raw", command_path="bp history get")
+    assert out.startswith(b"POST /a?q=1 HTTP/1.1")
+    assert b"\r\n\r\nhello\r\n\x1e\r\nHTTP/1.1 201 Created" in out
+    assert out.endswith(b"\r\n\r\nworld")
+
+
+def test_raw_history_replay_emits_replayed_request_and_response() -> None:
+    record = _history_record()
+    out = render(
+        {"original": {**record, "statusCode": 418}, "replayed": record},
+        "raw",
+        command_path="bp history replay",
+    )
+    assert b"HTTP/1.1 201 Created" in out
+    assert b"418" not in out
+
+
 # ---------------------------------------------------------------------------
 # [07] — quiet format with --fields is a usage error (silently ignored before fix)
 # ---------------------------------------------------------------------------
@@ -148,6 +231,138 @@ def test_quiet_picks_essential_value() -> None:
 
 def test_quiet_list_one_per_line() -> None:
     assert render([{"id": 1}, {"id": 2}], "quiet") == "1\n2"
+
+
+@pytest.mark.parametrize(
+    ("command_path", "data", "expected"),
+    [
+        (
+            "bp collab new",
+            {"payloads": [{"payload": "abc.oastify.com", "interactionId": "abc"}]},
+            "abc.oastify.com",
+        ),
+        ("bp collab poll", {"found": False, "interactions": []}, "none"),
+        (
+            "bp collab poll",
+            {"found": True, "interactions": [{"id": "interaction-7"}]},
+            "interaction-7",
+        ),
+        ("bp scope check", {"url": "https://t", "inScope": True}, "in-scope"),
+        ("bp scope check", {"url": "https://t", "inScope": False}, "out-of-scope"),
+        ("bp scope add", {"url": "https://t", "inScope": True}, ""),
+        ("bp scope remove", {"url": "https://t", "inScope": False}, ""),
+        ("bp config get project", {"config": {"nested": True}}, ""),
+        ("bp config get user", {"config": {"nested": True}}, ""),
+        ("bp config set user", {"config": {"nested": True}}, ""),
+        ("bp ext", {"extensions": [{"name": "burp-rest"}], "total": 1}, ""),
+        (
+            "bp scan issues",
+            {"scanId": "scan-7", "issues": [{"severity": "HIGH", "name": "SQLi"}], "total": 1},
+            "HIGH",
+        ),
+        ("bp scan issues", {"scanId": "scan-8", "issues": None, "total": None}, ""),
+        ("bp proxy", [{"id": 7, "status": 500}], "7"),
+        ("bp req", {"id": 8, "status": 404}, "8"),
+        ("bp history list", [{"id": 9, "statusCode": 201}], "9"),
+        ("bp history get", {"id": 10, "statusCode": 202}, "10"),
+        ("bp log", [{"id": "op-11", "status": "ok"}], "op-11"),
+        ("bp tag", {"id": "op-12", "tag": "reviewed", "status": "tagged"}, "op-12"),
+    ],
+)
+def test_command_specific_quiet_contract(command_path: str, data: object, expected: str) -> None:
+    """C3: quiet emits the command's stable scalar, never a wrapper or Python repr."""
+    assert render(data, "quiet", command_path=command_path) == expected
+
+
+@pytest.mark.parametrize(
+    "command_path",
+    [
+        "bp version",
+        "bp ws",
+        "bp intercept",
+        "bp tab",
+        "bp scan crawl",
+        "bp scan audit",
+        "bp scan all",
+        "bp scan status",
+        "bp scan defs",
+        "bp scope show",
+        "bp scope set",
+        "bp scope add",
+        "bp scope remove",
+        "bp sitemap",
+        "bp encode",
+        "bp decode",
+        "bp hash",
+        "bp config get project",
+        "bp config get user",
+        "bp config set project",
+        "bp config set user",
+        "bp ext",
+        "bp session set",
+        "bp session get",
+        "bp session clear",
+        "bp session send",
+        "bp session cookies",
+        "bp diff",
+        "bp endpoints",
+        "bp history sitemap",
+        "bp history replay",
+        "bp history clear",
+    ],
+)
+def test_quiet_without_documented_essential_never_invents_one(command_path: str) -> None:
+    """D33 gap: undefined quiet contracts are silent rather than heuristic assertions."""
+    data = {"status": "invented-status", "enabled": True, "nested": [{"value": 7}]}
+
+    assert render(data, "quiet", command_path=command_path) == ""
+
+
+def test_quiet_generic_nested_value_is_json_not_python_repr() -> None:
+    assert render({"wrapper": {"enabled": True}}, "quiet") == '{"enabled":true}'
+
+
+def test_quiet_generic_boolean_is_lowercase() -> None:
+    assert render({"enabled": True}, "quiet") == "true"
+
+
+def test_collaborator_generation_fields_address_payload_records() -> None:
+    data = {
+        "payloads": [
+            {"id": "a", "payload": "a.oastify.com", "interactionId": "a"},
+            {"id": "b", "payload": "b.oastify.com", "interactionId": "b"},
+        ]
+    }
+    assert render(
+        data,
+        "json",
+        fields=["payload", "id"],
+        command_path="bp collab new",
+    ) == ('{"payload":"a.oastify.com","id":"a"}\n{"payload":"b.oastify.com","id":"b"}')
+
+
+def test_collaborator_poll_fields_address_interaction_records() -> None:
+    data = {
+        "found": True,
+        "interactions": [
+            {
+                "id": "i-7",
+                "type": "DNS",
+                "clientIp": "127.0.0.1",
+                "timestamp": "2026-09-04T00:00:00Z",
+            }
+        ],
+        "queriedPayloadId": "p-7",
+    }
+    assert (
+        render(
+            data,
+            "json",
+            fields=["interactionId", "type", "clientIp", "timestamp"],
+            command_path="bp collab poll",
+        )
+        == '{"interactionId":"i-7","type":"DNS","clientIp":"127.0.0.1","timestamp":"2026-09-04T00:00:00Z"}'
+    )
 
 
 def test_fields_selects_and_orders() -> None:

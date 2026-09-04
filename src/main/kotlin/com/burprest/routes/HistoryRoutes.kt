@@ -4,42 +4,50 @@ import com.burprest.db.HistoryDao
 import com.burprest.db.HistoryFilter
 import com.burprest.db.SitemapDao
 import com.burprest.models.*
+import com.burprest.server.InvalidParamException
+import com.burprest.server.intParameter
+import com.burprest.server.optionalIntParameter
 import com.burprest.services.RepeaterService
+import io.ktor.http.Parameters
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
+/**
+ * Build a [HistoryFilter] from raw query parameters, rejecting every malformed value.
+ *
+ * Malformed input must never be treated as absence: a mistyped `page`/`pageSize`/`statusCode` used
+ * to be silently coerced to a default, so the caller received HTTP 200 for a filter the server had
+ * quietly discarded. Timestamps are validated for shape only — the failure message is authored here
+ * and never carries the parser's identity or the supplied value back to the client.
+ */
+internal fun historyFilterFrom(params: Parameters): HistoryFilter = HistoryFilter(
+    host = params["host"],
+    method = params["method"],
+    statusCode = optionalIntParameter(params["statusCode"], "statusCode"),
+    source = params["source"],
+    search = params["search"],
+    since = isoInstantParameter(params["since"], "since"),
+    until = isoInstantParameter(params["until"], "until"),
+    // Validate before the values reach the SQL LIMIT/OFFSET — a negative page produced a negative
+    // OFFSET and H2 leaked a raw SQLException (with schema internals) to the client.
+    page = intParameter(params["page"], "page", default = 0, range = 0..Int.MAX_VALUE),
+    pageSize = intParameter(params["pageSize"], "pageSize", default = 50, range = 1..1000),
+)
+
+/**
+ * Validate an optional ISO-8601 instant. Stored timestamps are compared lexicographically, so the
+ * validated text is returned unchanged; only its shape is checked.
+ */
+private fun isoInstantParameter(value: String?, name: String): String? = value?.also {
+    runCatching { java.time.Instant.parse(it) }
+        .onFailure { throw InvalidParamException("$name must be an ISO-8601 instant") }
+}
+
 fun Route.historyRoutes(historyDao: HistoryDao, sitemapDao: SitemapDao, repeaterService: RepeaterService) {
     route("/history") {
         get {
-            val params = call.request.queryParameters
-            val page = params["page"]?.toIntOrNull() ?: 0
-            val pageSize = params["pageSize"]?.toIntOrNull() ?: 50
-            // Validate before the values reach the SQL LIMIT/OFFSET — a negative page produced a
-            // negative OFFSET and H2 leaked a raw SQLException (with schema internals) to the client.
-            if (page < 0) throw IllegalArgumentException("page must be >= 0")
-            if (pageSize !in 1..1000) throw IllegalArgumentException("pageSize must be between 1 and 1000")
-            // since/until are compared lexicographically against ISO-8601 timestamps; reject a
-            // malformed value rather than silently returning wrong results.
-            val since = params["since"]?.also {
-                runCatching { java.time.Instant.parse(it) }
-                    .onFailure { throw IllegalArgumentException("since must be ISO-8601, got '$it'") }
-            }
-            val until = params["until"]?.also {
-                runCatching { java.time.Instant.parse(it) }
-                    .onFailure { throw IllegalArgumentException("until must be ISO-8601, got '$it'") }
-            }
-            val filter = HistoryFilter(
-                host = params["host"],
-                method = params["method"],
-                statusCode = params["statusCode"]?.toIntOrNull(),
-                source = params["source"],
-                search = params["search"],
-                since = since,
-                until = until,
-                page = page,
-                pageSize = pageSize,
-            )
+            val filter = historyFilterFrom(call.request.queryParameters)
             val entries = historyDao.search(filter)
             val total = historyDao.count(filter)
             call.respond(

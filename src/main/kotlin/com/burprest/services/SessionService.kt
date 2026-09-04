@@ -1,7 +1,11 @@
 package com.burprest.services
 
 import burp.api.montoya.MontoyaApi
+import burp.api.montoya.core.ByteArray as BurpByteArray
+import burp.api.montoya.http.RequestOptions
+import burp.api.montoya.http.message.HttpRequestResponse
 import burp.api.montoya.http.message.requests.HttpRequest
+import burp.api.montoya.http.message.responses.HttpResponse
 import com.burprest.db.HistoryDao
 import com.burprest.db.SessionDao
 import com.burprest.models.AuthenticatedRequest
@@ -32,14 +36,94 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal enum class CredentialMode { FULL, COOKIES_ONLY, NONE }
 
-class SessionService(
+/** A bounded Montoya send returned no response; this does not identify why no response arrived. */
+internal class BoundedSendNoResponseException(
+    val timeoutMs: Long,
+) : RuntimeException("send produced no response with a ${timeoutMs}ms response budget")
+
+internal fun interface BoundedRequestSender {
+    fun send(request: HttpRequest, responseTimeoutMs: Long): HttpRequestResponse
+}
+
+internal data class SessionRequestCookie(
+    val name: String,
+    val value: String,
+)
+
+internal data class ObservedAuthenticatedSend(
+    val response: AuthenticatedResponse,
+    val requestMaterial: SessionRequestMaterialSnapshot,
+)
+
+internal sealed interface SessionRequestMaterialSnapshot {
+    data object NotConfigured : SessionRequestMaterialSnapshot
+
+    data class Available(
+        val headers: List<HttpHeader>,
+        /** Convenience decomposition; [cookieHeaderValue] is authoritative for what was serialized. */
+        val cookies: List<SessionRequestCookie>,
+        /** Exact serialized Cookie header value, or null when no Cookie header exists. */
+        val cookieHeaderValue: String?,
+    ) : SessionRequestMaterialSnapshot
+
+    data object Unavailable : SessionRequestMaterialSnapshot
+}
+
+internal enum class SessionSynchronizationPoint {
+    SET_SESSION,
+    CLEAR_SESSION,
+    CLEAR_SESSION_COOKIE_JAR,
+    COOKIE_JAR_READ,
+    CLEAR_COOKIE_JAR,
+    CLEAR_COOKIE_JAR_COOKIE_JAR,
+    BATCH_SEND,
+    CREDENTIAL_HEADER_NAMES,
+    REQUEST_MATERIAL_SNAPSHOT,
+    SESSION_SNAPSHOT,
+    COOKIE_EPOCH,
+    AUTHENTICATED_SEND_SNAPSHOT,
+    RESPONSE_COOKIE_COMPARE_CAPTURE,
+}
+
+internal fun interface SessionSynchronizationObserver {
+    fun observe(
+        point: SessionSynchronizationPoint,
+        sessionLockHeld: Boolean,
+        cookieLockHeld: Boolean,
+    )
+}
+
+internal data class SessionServiceCollaborators(
+    val clock: () -> Long = System::currentTimeMillis,
+    val requestFactory: (String) -> HttpRequest = { HttpRequest.httpRequestFromUrl(it) },
+    val bodyFactory: (kotlin.ByteArray) -> BurpByteArray = BurpByteArray::byteArray,
+    val boundedRequestSender: BoundedRequestSender? = null,
+    val synchronizationObserver: SessionSynchronizationObserver =
+        SessionSynchronizationObserver { _, _, _ -> },
+)
+
+class SessionService internal constructor(
     private val api: MontoyaApi,
-    private val historyDao: HistoryDao? = null,
-    private val sitemapDao: com.burprest.db.SitemapDao? = null,
-    private val sessionDao: SessionDao? = null,
-    private val clock: () -> Long = System::currentTimeMillis,
-    private val requestFactory: (String) -> HttpRequest = { HttpRequest.httpRequestFromUrl(it) },
+    private val historyDao: HistoryDao?,
+    private val sitemapDao: com.burprest.db.SitemapDao?,
+    private val sessionDao: SessionDao?,
+    collaborators: SessionServiceCollaborators,
 ) {
+    constructor(
+        api: MontoyaApi,
+        historyDao: HistoryDao? = null,
+        sitemapDao: com.burprest.db.SitemapDao? = null,
+        sessionDao: SessionDao? = null,
+        clock: () -> Long = System::currentTimeMillis,
+        requestFactory: (String) -> HttpRequest = { HttpRequest.httpRequestFromUrl(it) },
+    ) : this(
+        api,
+        historyDao,
+        sitemapDao,
+        sessionDao,
+        SessionServiceCollaborators(clock = clock, requestFactory = requestFactory),
+    )
+
     private data class Origin(
         val scheme: String,
         val host: String,
@@ -70,9 +154,28 @@ class SessionService(
         val cookies: Map<String, String>,
         val headers: Map<String, String>,
         val origin: Origin?,
+        val configured: Boolean,
     ) {
         fun hasCredentials(): Boolean = cookies.isNotEmpty() || headers.isNotEmpty()
     }
+
+    private data class AuthenticatedSendSnapshot(
+        val session: SessionSnapshot,
+        val cookieCaptureEpoch: Long,
+    )
+
+    private data class SendContext(
+        val request: AuthenticatedRequest,
+        val target: Target,
+        val authSnapshot: SessionSnapshot?,
+        val credentialMode: CredentialMode,
+        val orderedHeaders: List<HttpHeader>,
+        val credentialHeaderNames: Set<String>,
+        val captureResponseCookies: Boolean,
+        val persistObservation: Boolean = true,
+        val responseTimeoutMs: Long? = null,
+        val cookieCaptureEpoch: Long? = null,
+    )
 
     private data class StoredCookie(
         val domain: String,
@@ -80,6 +183,7 @@ class SessionService(
         val value: String,
         val path: String,
         val secure: Boolean,
+        val httpOnly: Boolean,
         val expiresAt: Long?,
         val hostOnly: Boolean,
         val creationIndex: Long,
@@ -90,7 +194,19 @@ class SessionService(
     private val sessionMutationLock = Any()
     private val cookieMutationLock = Any()
     private val cookieSequence = AtomicLong()
+    private val cookieJarEpoch = AtomicLong()
     private val cookieJar = AtomicReference<List<StoredCookie>>(emptyList())
+    private val clock = collaborators.clock
+    private val requestFactory = collaborators.requestFactory
+    private val bodyFactory = collaborators.bodyFactory
+    private val synchronizationObserver = collaborators.synchronizationObserver
+    private val boundedRequestSender = collaborators.boundedRequestSender
+        ?: BoundedRequestSender { request, timeoutMs ->
+            api.http().sendRequest(
+                request,
+                RequestOptions.requestOptions().withResponseTimeout(timeoutMs),
+            )
+        }
     private val session = AtomicReference(loadSession())
 
     fun setSession(request: SetSessionRequest): SessionInfo {
@@ -101,12 +217,14 @@ class SessionService(
         val requestedOrigin = request.origin?.let(::parseOrigin)
 
         return synchronized(sessionMutationLock) {
+            observeSynchronization(SessionSynchronizationPoint.SET_SESSION)
             val current = session.get()
             val next = SessionSnapshot(
                 name = request.name ?: current.name,
                 cookies = cookies,
                 headers = headers,
                 origin = requestedOrigin,
+                configured = true,
             )
             persist(next)
             session.set(next)
@@ -116,9 +234,59 @@ class SessionService(
 
     fun getSession(): SessionInfo = session.get().toInfo()
 
+    /** True only when COOKIES_ONLY sends a configured credential that NONE sends omit. */
+    internal fun cookieOnlyDiffersFromNone(): Boolean = session.get().cookies.isNotEmpty()
+
+    /**
+     * Returns one atomic, read-only snapshot of the credentials this service would attach to [url].
+     * An empty configured snapshot is distinct from the default unconfigured session.
+     */
+    internal fun snapshotSessionRequestMaterial(url: String): SessionRequestMaterialSnapshot = try {
+        val target = parseTarget(url)
+        synchronized(sessionMutationLock) {
+            val configured = session.get()
+            synchronized(cookieMutationLock) {
+                observeSynchronization(SessionSynchronizationPoint.REQUEST_MATERIAL_SNAPSHOT)
+                val boundElsewhere = configured.hasCredentials() &&
+                    configured.origin?.let { it != target.origin } == true
+                val effectiveHeaders = if (boundElsewhere) emptyList() else effectiveSessionHeaders(configured)
+                val configuredCookieHeader = effectiveHeaders
+                    .lastOrNull { it.name.equals("Cookie", ignoreCase = true) }
+                    ?.value
+                val headers = effectiveHeaders.filterNot { it.name.equals("Cookie", ignoreCase = true) }
+                val cookies = if (boundElsewhere || configuredCookieHeader != null) {
+                    emptyList()
+                } else {
+                    requestCookies(configured, target)
+                }
+                if (!configured.configured && headers.isEmpty() && cookies.isEmpty()) {
+                    SessionRequestMaterialSnapshot.NotConfigured
+                } else {
+                    SessionRequestMaterialSnapshot.Available(
+                        headers = headers,
+                        cookies = cookies,
+                        cookieHeaderValue = configuredCookieHeader
+                            ?: cookies.takeIf { it.isNotEmpty() }
+                                ?.joinToString("; ") { "${it.name}=${it.value}" },
+                    )
+                }
+            }
+        }
+    } catch (_: Exception) {
+        SessionRequestMaterialSnapshot.Unavailable
+    }
+
     fun clearSession(): SessionInfo = synchronized(sessionMutationLock) {
+        observeSynchronization(SessionSynchronizationPoint.CLEAR_SESSION)
         val next = emptySession()
         sessionDao?.clear()
+        // Captured cookies remain credentials even though they are stored separately. Leaving them
+        // active after "clear" allowed a later send to authenticate with state the caller had erased.
+        synchronized(cookieMutationLock) {
+            observeSynchronization(SessionSynchronizationPoint.CLEAR_SESSION_COOKIE_JAR)
+            cookieJarEpoch.incrementAndGet()
+            cookieJar.set(emptyList())
+        }
         session.set(next)
         next.toInfo()
     }
@@ -130,15 +298,18 @@ class SessionService(
      */
     fun send(request: AuthenticatedRequest): AuthenticatedResponse {
         val target = validateRequest(request)
-        val snapshot = snapshotForAuthenticatedSend(target.origin, CredentialMode.FULL)
+        val snapshot = snapshotForCookieCapturingSend(target.origin)
         return execute(
-            request = request,
-            target = target,
-            authSnapshot = snapshot,
-            credentialMode = CredentialMode.FULL,
-            orderedHeaders = emptyList(),
-            credentialHeaderNames = snapshot.headers.keys.lowercaseNames(),
-            captureResponseCookies = true,
+            SendContext(
+                request = request,
+                target = target,
+                authSnapshot = snapshot.session,
+                credentialMode = CredentialMode.FULL,
+                orderedHeaders = emptyList(),
+                credentialHeaderNames = snapshot.session.headers.keys.lowercaseNames(),
+                captureResponseCookies = true,
+                cookieCaptureEpoch = snapshot.cookieCaptureEpoch,
+            )
         )
     }
 
@@ -150,13 +321,15 @@ class SessionService(
         val target = validateRequest(request)
         val credentialHeaderNames = snapshotCredentialHeaderNames()
         return execute(
-            request = request,
-            target = target,
-            authSnapshot = null,
-            credentialMode = CredentialMode.NONE,
-            orderedHeaders = emptyList(),
-            credentialHeaderNames = credentialHeaderNames,
-            captureResponseCookies = false,
+            SendContext(
+                request = request,
+                target = target,
+                authSnapshot = null,
+                credentialMode = CredentialMode.NONE,
+                orderedHeaders = emptyList(),
+                credentialHeaderNames = credentialHeaderNames,
+                captureResponseCookies = false,
+            )
         )
     }
 
@@ -169,7 +342,22 @@ class SessionService(
         headers: List<HttpHeader>,
         credentialMode: CredentialMode,
         persistObservation: Boolean = true,
-    ): AuthenticatedResponse {
+        responseTimeoutMs: Long? = null,
+    ): AuthenticatedResponse = sendPreservingHeadersObserved(
+        request,
+        headers,
+        credentialMode,
+        persistObservation,
+        responseTimeoutMs,
+    ).response
+
+    internal fun sendPreservingHeadersObserved(
+        request: AuthenticatedRequest,
+        headers: List<HttpHeader>,
+        credentialMode: CredentialMode,
+        persistObservation: Boolean = true,
+        responseTimeoutMs: Long? = null,
+    ): ObservedAuthenticatedSend {
         val target = validateRequest(request)
         headers.forEach { validateHeader(it.name, it.value) }
         val snapshot = when (credentialMode) {
@@ -179,20 +367,24 @@ class SessionService(
         }
         val credentialHeaderNames = snapshot?.headers?.keys?.lowercaseNames()
             ?: snapshotCredentialHeaderNames()
-        return execute(
-            request = request,
-            target = target,
-            authSnapshot = snapshot,
-            credentialMode = credentialMode,
-            orderedHeaders = headers,
-            credentialHeaderNames = credentialHeaderNames,
-            captureResponseCookies = false,
-            persistObservation = persistObservation,
+        return executeObserved(
+            SendContext(
+                request = request,
+                target = target,
+                authSnapshot = snapshot,
+                credentialMode = credentialMode,
+                orderedHeaders = headers,
+                credentialHeaderNames = credentialHeaderNames,
+                captureResponseCookies = false,
+                persistObservation = persistObservation,
+                responseTimeoutMs = responseTimeoutMs,
+            )
         )
     }
 
     fun getCookieJar(): CookieJarResponse {
         val cookies = synchronized(cookieMutationLock) {
+            observeSynchronization(SessionSynchronizationPoint.COOKIE_JAR_READ)
             val now = clock()
             val current = cookieJar.get()
             val live = current.filterNot { it.isExpired(now) }
@@ -208,6 +400,7 @@ class SessionService(
                     value = cookie.value,
                     path = cookie.path,
                     secure = cookie.secure,
+                    httpOnly = cookie.httpOnly,
                     expiresAt = cookie.expiresAt,
                     hostOnly = cookie.hostOnly,
                 )
@@ -216,7 +409,14 @@ class SessionService(
     }
 
     fun clearCookieJar(): CookieJarResponse {
-        synchronized(cookieMutationLock) { cookieJar.set(emptyList()) }
+        synchronized(sessionMutationLock) {
+            observeSynchronization(SessionSynchronizationPoint.CLEAR_COOKIE_JAR)
+            synchronized(cookieMutationLock) {
+                observeSynchronization(SessionSynchronizationPoint.CLEAR_COOKIE_JAR_COOKIE_JAR)
+                cookieJarEpoch.incrementAndGet()
+                cookieJar.set(emptyList())
+            }
+        }
         return CookieJarResponse(cookies = emptyList(), total = 0)
     }
 
@@ -233,6 +433,7 @@ class SessionService(
         // Hold the mutation monitor from origin preflight through the sequential sends. This prevents a
         // concurrent replacement from making a later batch item fail only after earlier target effects.
         return synchronized(sessionMutationLock) {
+            observeSynchronization(SessionSynchronizationPoint.BATCH_SEND)
             preflightBatchOrigins(targets)
             val start = clock()
             val results = batch.requests.map(::send)
@@ -254,6 +455,7 @@ class SessionService(
             cookies = cookies,
             headers = headers,
             origin = persisted.boundOrigin?.let(::parseOrigin),
+            configured = true,
         )
     }
 
@@ -262,6 +464,7 @@ class SessionService(
         cookies = emptyMap(),
         headers = emptyMap(),
         origin = null,
+        configured = false,
     )
 
     private fun persist(snapshot: SessionSnapshot) {
@@ -292,13 +495,39 @@ class SessionService(
     }
 
     private fun snapshotCredentialHeaderNames(): Set<String> = synchronized(sessionMutationLock) {
+        // One immutable AtomicReference read is safe without this monitor today. Keep the monitor so
+        // future composite credential reads share the session mutation boundary instead of racing it.
+        observeSynchronization(SessionSynchronizationPoint.CREDENTIAL_HEADER_NAMES)
         session.get().headers.keys.lowercaseNames()
     }
+
+    private fun snapshotForCookieCapturingSend(targetOrigin: Origin): AuthenticatedSendSnapshot =
+        synchronized(sessionMutationLock) {
+            val snapshot = snapshotForAuthenticatedSendLocked(targetOrigin, CredentialMode.FULL)
+            observeSynchronization(SessionSynchronizationPoint.SESSION_SNAPSHOT)
+            // clearSession holds this outer lock while it advances the epoch under the jar lock, so
+            // these two values are necessarily both pre-clear or both post-clear, never one of each.
+            // AtomicLong makes this read safe, and the outer session lock excludes every
+            // current epoch writer. Retain the jar lock to preserve the hierarchy for future writers.
+            val captureEpoch = synchronized(cookieMutationLock) {
+                observeSynchronization(SessionSynchronizationPoint.COOKIE_EPOCH)
+                cookieJarEpoch.get()
+            }
+            AuthenticatedSendSnapshot(snapshot, captureEpoch)
+        }
 
     private fun snapshotForAuthenticatedSend(
         targetOrigin: Origin,
         credentialMode: CredentialMode,
     ): SessionSnapshot = synchronized(sessionMutationLock) {
+        observeSynchronization(SessionSynchronizationPoint.AUTHENTICATED_SEND_SNAPSHOT)
+        snapshotForAuthenticatedSendLocked(targetOrigin, credentialMode)
+    }
+
+    private fun snapshotForAuthenticatedSendLocked(
+        targetOrigin: Origin,
+        credentialMode: CredentialMode,
+    ): SessionSnapshot {
         // This is the sole session-state read performed for this send.
         val current = session.get()
         val hasApplicableCredentials = when (credentialMode) {
@@ -306,102 +535,40 @@ class SessionService(
             CredentialMode.COOKIES_ONLY -> current.cookies.isNotEmpty()
             CredentialMode.NONE -> false
         }
-        if (!hasApplicableCredentials) return@synchronized current
+        if (!hasApplicableCredentials) return current
 
         val bound = current.origin
-        if (bound != null) {
+        return if (bound != null) {
             require(bound == targetOrigin) {
                 "Session credentials are bound to ${bound.externalForm()}, not ${targetOrigin.externalForm()}"
             }
-            return@synchronized current
+            current
+        } else {
+            val boundSnapshot = current.copy(origin = targetOrigin)
+            persist(boundSnapshot)
+            session.set(boundSnapshot)
+            boundSnapshot
         }
-
-        val boundSnapshot = current.copy(origin = targetOrigin)
-        persist(boundSnapshot)
-        session.set(boundSnapshot)
-        boundSnapshot
     }
 
-    private fun execute(
-        request: AuthenticatedRequest,
-        target: Target,
-        authSnapshot: SessionSnapshot?,
-        credentialMode: CredentialMode,
-        orderedHeaders: List<HttpHeader>,
-        credentialHeaderNames: Set<String>,
-        captureResponseCookies: Boolean,
-        persistObservation: Boolean = true,
-    ): AuthenticatedResponse {
-        var httpRequest = requestFactory(request.url).withMethod(request.method)
+    private fun execute(context: SendContext): AuthenticatedResponse = executeObserved(context).response
 
-        if (authSnapshot != null) {
-            val jarCookies = if (credentialMode == CredentialMode.FULL) matchingCookies(target) else emptyList()
-            val configuredNames = authSnapshot.cookies.keys
-            val cookiePairs = buildList {
-                jarCookies
-                    .filterNot { it.name in configuredNames }
-                    .forEach { add("${it.name}=${it.value}") }
-                authSnapshot.cookies.forEach { (name, value) -> add("$name=$value") }
-            }
-            if (cookiePairs.isNotEmpty()) {
-                httpRequest = httpRequest
-                    .withRemovedHeader("Cookie")
-                    .withAddedHeader("Cookie", cookiePairs.joinToString("; "))
-            }
-
-            if (credentialMode == CredentialMode.FULL) {
-                authSnapshot.headers.forEach { (name, value) ->
-                    httpRequest = httpRequest.withRemovedHeader(name).withAddedHeader(name, value)
-                }
-            }
-        } else {
-            // Defend against any Cookie header a request implementation might synthesize.
-            httpRequest = httpRequest.withRemovedHeader("Cookie")
-        }
-
-        // Raw scan requests regenerate standard credentials above. Preserve only their ordered,
-        // noncredential source headers, including duplicates, after applying the session snapshot.
-        val prohibitedPreservedHeaders = CREDENTIAL_HEADER_NAMES + credentialHeaderNames
-        val preservedHeaders = orderedHeaders.filterNot { header ->
-            header.name.lowercase(Locale.ROOT) in prohibitedPreservedHeaders
-        }
-        preservedHeaders
-            .map { it.name.lowercase(Locale.ROOT) }
-            .distinct()
-            .forEach { name -> httpRequest = httpRequest.withRemovedHeader(name) }
-        preservedHeaders.forEach { header ->
-            httpRequest = httpRequest.withAddedHeader(header.name, header.value)
-        }
-
-        request.extraHeaders.orEmpty().forEach { (name, value) ->
-            httpRequest = httpRequest.withRemovedHeader(name).withAddedHeader(name, value)
-        }
-        when (credentialMode) {
-            CredentialMode.NONE -> (UNAUTHENTICATED_HEADER_DENYLIST + credentialHeaderNames).forEach { name ->
-                httpRequest = httpRequest.withRemovedHeader(name)
-            }
-            CredentialMode.COOKIES_ONLY -> (AUTHORIZATION_HEADER_DENYLIST + credentialHeaderNames).forEach { name ->
-                httpRequest = httpRequest.withRemovedHeader(name)
-            }
-            CredentialMode.FULL -> Unit
-        }
-        request.body?.let { httpRequest = httpRequest.withBody(it) }
-
+    private fun executeObserved(context: SendContext): ObservedAuthenticatedSend {
+        val httpRequest = prepareHttpRequest(context)
         val start = clock()
-        val exchange = api.http().sendRequest(httpRequest)
+        val exchange = context.responseTimeoutMs?.let { timeoutMs ->
+            boundedRequestSender.send(httpRequest, timeoutMs)
+        } ?: api.http().sendRequest(httpRequest)
         val duration = elapsedSince(start)
-        if (!exchange.hasResponse()) {
-            throw NoResponseException("target send completed without an upstream response")
-        }
-        val response = exchange.response()
-            ?: throw NoResponseException("target send completed without an upstream response")
+        val response = requireResponse(exchange, context.responseTimeoutMs)
         val requestHeaders = httpRequest.headers().map { HttpHeader(it.name(), it.value()) }
+        val requestBody = httpRequest.body().toUtf8TextOrNull()
         val responseHeaders = response.headers().map { HttpHeader(it.name(), it.value()) }
-        val responseBody = if (response.body().length() > 0) response.bodyToString() else null
+        val responseBody = response.body().toUtf8TextOrNull()
 
-        val persistence = if (persistObservation) {
+        val persistence = if (context.persistObservation) {
             recordObservation(
-                request = request,
+                request = context.request.copy(body = requestBody),
                 requestHeaders = requestHeaders,
                 statusCode = response.statusCode().toInt(),
                 responseHeaders = responseHeaders,
@@ -412,17 +579,112 @@ class SessionService(
             SessionPersistence.notConfigured()
         }
 
-        if (captureResponseCookies) captureCookies(target, responseHeaders)
+        if (context.captureResponseCookies) {
+            // Any explicit jar clear invalidates older sends, even when configured session state is
+            // unchanged. The epoch check and capture share the jar lock, so neither can cross clear.
+            synchronized(cookieMutationLock) {
+                observeSynchronization(SessionSynchronizationPoint.RESPONSE_COOKIE_COMPARE_CAPTURE)
+                if (context.cookieCaptureEpoch == cookieJarEpoch.get()) {
+                    captureCookiesLocked(context.target, responseHeaders)
+                }
+            }
+        }
 
-        return AuthenticatedResponse(
-            statusCode = response.statusCode().toInt(),
-            headers = responseHeaders,
-            body = responseBody,
-            durationMs = duration,
-            hasResponse = true,
-            persistence = persistence,
+        return ObservedAuthenticatedSend(
+            response = AuthenticatedResponse(
+                statusCode = response.statusCode().toInt(),
+                headers = responseHeaders,
+                body = responseBody,
+                durationMs = duration,
+                hasResponse = true,
+                persistence = persistence,
+            ),
+            requestMaterial = observedRequestMaterial(requestHeaders),
         )
     }
+
+    private fun prepareHttpRequest(context: SendContext): HttpRequest {
+        var request = requestFactory(context.request.url).withMethod(context.request.method)
+        request = applyAuthentication(request, context)
+        request = applyPreservedHeaders(request, context)
+        context.request.extraHeaders.orEmpty().forEach { (name, value) ->
+            request = request.withRemovedHeader(name).withAddedHeader(name, value)
+        }
+        disallowedHeaders(context).forEach { name -> request = request.withRemovedHeader(name) }
+        context.request.body?.let { request = request.withBody(bodyFactory(it.encodeToByteArray())) }
+        return request
+    }
+
+    private fun observedRequestMaterial(headers: List<HttpHeader>): SessionRequestMaterialSnapshot.Available {
+        val cookieHeaderValue = headers
+            .lastOrNull { it.name.equals("Cookie", ignoreCase = true) }
+            ?.value
+        val cookies = cookieHeaderValue
+            ?.split(';')
+            .orEmpty()
+            .mapNotNull { segment ->
+                val pair = segment.trim()
+                val separator = pair.indexOf('=')
+                if (separator <= 0) null else SessionRequestCookie(
+                    pair.substring(0, separator).trim(),
+                    pair.substring(separator + 1).trim(),
+                )
+            }
+        return SessionRequestMaterialSnapshot.Available(
+            headers = headers.filterNot { it.name.equals("Cookie", ignoreCase = true) },
+            cookies = cookies,
+            cookieHeaderValue = cookieHeaderValue,
+        )
+    }
+
+    private fun applyAuthentication(request: HttpRequest, context: SendContext): HttpRequest {
+        val snapshot = context.authSnapshot ?: return request.withRemovedHeader("Cookie")
+        var authenticated = request
+        val cookies = if (context.credentialMode == CredentialMode.FULL) {
+            requestCookies(snapshot, context.target)
+        } else {
+            snapshot.cookies.map { (name, value) -> SessionRequestCookie(name, value) }
+        }
+        if (cookies.isNotEmpty()) {
+            authenticated = authenticated
+                .withRemovedHeader("Cookie")
+                .withAddedHeader("Cookie", cookies.joinToString("; ") { "${it.name}=${it.value}" })
+        }
+        if (context.credentialMode == CredentialMode.FULL) {
+            effectiveSessionHeaders(snapshot).forEach { header ->
+                authenticated = authenticated.withRemovedHeader(header.name).withAddedHeader(header.name, header.value)
+            }
+        }
+        return authenticated
+    }
+
+    private fun applyPreservedHeaders(request: HttpRequest, context: SendContext): HttpRequest {
+        var prepared = request
+        // Raw scan requests regenerate standard credentials above. Preserve only their ordered,
+        // noncredential source headers, including duplicates, after applying the session snapshot.
+        val prohibited = CREDENTIAL_HEADER_NAMES + context.credentialHeaderNames
+        val preserved = context.orderedHeaders.filterNot { it.name.lowercase(Locale.ROOT) in prohibited }
+        preserved.map { it.name.lowercase(Locale.ROOT) }.distinct().forEach { name ->
+            prepared = prepared.withRemovedHeader(name)
+        }
+        preserved.forEach { header -> prepared = prepared.withAddedHeader(header.name, header.value) }
+        return prepared
+    }
+
+    private fun disallowedHeaders(context: SendContext): Collection<String> = when (context.credentialMode) {
+        CredentialMode.NONE -> UNAUTHENTICATED_HEADER_DENYLIST + context.credentialHeaderNames
+        CredentialMode.COOKIES_ONLY -> AUTHORIZATION_HEADER_DENYLIST + context.credentialHeaderNames
+        CredentialMode.FULL -> emptySet()
+    }
+
+    private fun requireResponse(exchange: HttpRequestResponse, timeoutMs: Long?): HttpResponse {
+        if (!exchange.hasResponse()) throw noResponseFailure(timeoutMs)
+        return exchange.response() ?: throw noResponseFailure(timeoutMs)
+    }
+
+    private fun noResponseFailure(timeoutMs: Long?): RuntimeException =
+        timeoutMs?.let(::BoundedSendNoResponseException)
+            ?: NoResponseException("target send completed without an upstream response")
 
     private fun recordObservation(
         request: AuthenticatedRequest,
@@ -633,7 +895,7 @@ class SessionService(
         return ascii.lowercase(Locale.ROOT)
     }
 
-    private fun captureCookies(target: Target, headers: List<HttpHeader>) {
+    private fun captureCookiesLocked(target: Target, headers: List<HttpHeader>) {
         val setCookieValues = headers
             .asSequence()
             .filter { it.name.equals("Set-Cookie", ignoreCase = true) }
@@ -641,15 +903,13 @@ class SessionService(
             .toList()
         if (setCookieValues.isEmpty()) return
 
-        synchronized(cookieMutationLock) {
-            val now = clock()
-            val mutable = LinkedHashMap<CookieKey, StoredCookie>()
-            cookieJar.get().filterNot { it.isExpired(now) }.forEach { cookie ->
-                mutable[CookieKey(cookie.name, cookie.domain, cookie.path)] = cookie
-            }
-            setCookieValues.forEach { value -> applySetCookie(value, target, now, mutable) }
-            cookieJar.set(mutable.values.toList())
+        val now = clock()
+        val mutable = LinkedHashMap<CookieKey, StoredCookie>()
+        cookieJar.get().filterNot { it.isExpired(now) }.forEach { cookie ->
+            mutable[CookieKey(cookie.name, cookie.domain, cookie.path)] = cookie
         }
+        setCookieValues.forEach { value -> applySetCookie(value, target, now, mutable) }
+        cookieJar.set(mutable.values.toList())
     }
 
     private fun applySetCookie(
@@ -670,6 +930,7 @@ class SessionService(
         var hostOnly = true
         var path = defaultCookiePath(target.requestPath)
         var secure = false
+        var httpOnly = false
         var expiresAt: Long? = null
         var validMaxAge: Long? = null
         var invalid = false
@@ -703,6 +964,7 @@ class SessionService(
                 }
                 "path" -> if (attributeValue.startsWith('/')) path = attributeValue
                 "secure" -> secure = true
+                "httponly" -> httpOnly = true
                 "max-age" -> attributeValue.toLongOrNull()?.let { validMaxAge = it }
                 "expires" -> parseCookieDate(attributeValue)?.let { expiresAt = it }
             }
@@ -725,10 +987,31 @@ class SessionService(
             value = value,
             path = path,
             secure = secure,
+            httpOnly = httpOnly,
             expiresAt = expiresAt,
             hostOnly = hostOnly,
             creationIndex = prior?.creationIndex ?: cookieSequence.getAndIncrement(),
         )
+    }
+
+    private fun effectiveSessionHeaders(snapshot: SessionSnapshot): List<HttpHeader> {
+        val byLowercaseName = LinkedHashMap<String, HttpHeader>()
+        snapshot.headers.forEach { (name, value) ->
+            val lowercaseName = name.lowercase(Locale.ROOT)
+            byLowercaseName.remove(lowercaseName)
+            byLowercaseName[lowercaseName] = HttpHeader(name, value)
+        }
+        return byLowercaseName.values.toList()
+    }
+
+    private fun requestCookies(snapshot: SessionSnapshot, target: Target): List<SessionRequestCookie> {
+        val configuredNames = snapshot.cookies.keys
+        return buildList {
+            matchingCookies(target).filterNot { it.name in configuredNames }.forEach { cookie ->
+                add(SessionRequestCookie(cookie.name, cookie.value))
+            }
+            snapshot.cookies.forEach { (name, value) -> add(SessionRequestCookie(name, value)) }
+        }
     }
 
     private fun matchingCookies(target: Target): List<StoredCookie> {
@@ -777,6 +1060,18 @@ class SessionService(
     }
 
     private fun elapsedSince(start: Long): Long = (clock() - start).coerceAtLeast(0)
+
+    /** Text-only contract: valid UTF-8 is exact; invalid byte sequences become replacement characters. */
+    private fun BurpByteArray.toUtf8TextOrNull(): String? =
+        if (length() > 0) getBytes().decodeToString() else null
+
+    private fun observeSynchronization(point: SessionSynchronizationPoint) {
+        synchronizationObserver.observe(
+            point,
+            Thread.holdsLock(sessionMutationLock),
+            Thread.holdsLock(cookieMutationLock),
+        )
+    }
 
     private fun SessionSnapshot.toInfo() = SessionInfo(
         name = name,

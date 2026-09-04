@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
+import json
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
+from itertools import islice
+from pathlib import Path
 from typing import overload
 
 from bp.pos import Position, PosError
@@ -11,8 +16,78 @@ from bp.rawhttp import body_start, parse_request
 
 ATTACK_TYPES = ("sniper", "battering-ram", "pitchfork", "cluster-bomb")
 MAX_FUZZ_SHOTS = 10_000
+PAYLOAD_FILE_MAGIC = b"#!bp-payloads-json-v1"
 # Compatibility/readability aliases for callers that describe requests rather than shots.
 MAX_FUZZ_REQUESTS = MAX_FUZZ_SHOTS
+
+
+@dataclass(frozen=True)
+class _JsonObject:
+    """JSON object that retains member order and duplicates until schema validation."""
+
+    pairs: tuple[tuple[str, object], ...]
+
+
+def _retain_object_pairs(pairs: list[tuple[str, object]]) -> _JsonObject:
+    return _JsonObject(tuple(pairs))
+
+
+def load_payload_file(path: str | Path) -> list[bytes]:
+    """Load legacy line payloads or the explicit byte-safe JSON v1 representation.
+
+    Legacy files deliberately retain the shipped nonblank-line behavior.  The magic-gated format is
+    unambiguous and can represent empty/whitespace/LF text plus arbitrary bytes as ``{"b64": ...}``.
+    """
+    data = Path(path).read_bytes()
+    first_line, separator, versioned_body = data.partition(b"\n")
+    if first_line.endswith(b"\r"):
+        first_line = first_line[:-1]
+    if first_line != PAYLOAD_FILE_MAGIC:
+        return [line.rstrip(b"\r") for line in data.split(b"\n") if line.strip()]
+
+    if not separator:
+        versioned_body = b""
+    try:
+        document = json.loads(
+            versioned_body.decode("utf-8"), object_pairs_hook=_retain_object_pairs
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"versioned payload file must contain valid UTF-8 JSON: {exc}") from None
+    if not isinstance(document, list):
+        raise ValueError("versioned payload file must contain a JSON array")
+
+    payloads: list[bytes] = []
+    for index, element in enumerate(document):
+        if isinstance(element, str):
+            try:
+                payloads.append(element.encode("utf-8"))
+            except UnicodeEncodeError as exc:
+                raise ValueError(f"payload[{index}] is not valid Unicode text: {exc}") from None
+            continue
+        if isinstance(element, _JsonObject):
+            names = [name for name, _ in element.pairs]
+            duplicate = next((name for name in names if names.count(name) > 1), None)
+            if duplicate is not None:
+                raise ValueError(f"payload[{index}] has duplicate JSON member {duplicate!r}")
+            if len(element.pairs) != 1 or element.pairs[0][0] != "b64":
+                raise ValueError(
+                    f"payload[{index}] must be a JSON string or an object containing only 'b64'"
+                )
+            encoded = element.pairs[0][1]
+            if not isinstance(encoded, str):
+                raise ValueError(f"payload[{index}].b64 must be a base64 string")
+            try:
+                decoded = base64.b64decode(encoded, validate=True)
+                if base64.b64encode(decoded).decode("ascii") != encoded:
+                    raise ValueError("non-canonical encoding")
+            except (binascii.Error, ValueError) as exc:
+                raise ValueError(f"payload[{index}].b64 is not valid base64: {exc}") from None
+            payloads.append(decoded)
+            continue
+        raise ValueError(
+            f"payload[{index}] must be a JSON string or an object containing only 'b64'"
+        )
+    return payloads
 
 
 @dataclass(frozen=True)
@@ -121,11 +196,18 @@ def _validate_layout(
         raise ValueError(f"unknown attack type {attack_type!r} (want one of {ATTACK_TYPES})")
     if not positions:
         raise ValueError("fuzz requires at least one --pos position")
-    expected = 1 if attack_type in ("sniper", "battering-ram") else len(positions)
-    if len(payload_lists) != expected:
-        raise ValueError(
-            f"{attack_type} requires {expected} payload list(s), got {len(payload_lists)}"
-        )
+    if attack_type == "sniper":
+        expected = f"1 or {len(positions)}"
+        if len(payload_lists) not in {1, len(positions)}:
+            raise ValueError(
+                f"sniper requires {expected} payload list(s), got {len(payload_lists)}"
+            )
+    else:
+        required = 1 if attack_type == "battering-ram" else len(positions)
+        if len(payload_lists) != required:
+            raise ValueError(
+                f"{attack_type} requires {required} payload list(s), got {len(payload_lists)}"
+            )
     return tuple(len(payloads) for payloads in payload_lists)
 
 
@@ -140,6 +222,30 @@ def _bounded_product(factors: Sequence[int], limit: int) -> int:
     return total
 
 
+def _bounded_payload_snapshot(
+    positions: Sequence[Position],
+    payload_lists: Sequence[Sequence[bytes]],
+    attack_type: str,
+    limit: int,
+) -> tuple[tuple[bytes, ...], ...]:
+    """Freeze only enough input to prove that a plan is within ``limit``.
+
+    Neither the outer nor inner ``Sequence.__len__`` is trusted: a custom or concurrently mutated
+    sequence must not advertise a safe cardinality and later drive more target sends.
+    """
+    if limit < 0:
+        raise ValueError("fuzz shot limit must be non-negative")
+    if attack_type not in ATTACK_TYPES:
+        raise ValueError(f"unknown attack type {attack_type!r} (want one of {ATTACK_TYPES})")
+    if not positions:
+        raise ValueError("fuzz requires at least one --pos position")
+
+    max_lists = 1 if attack_type == "battering-ram" else len(positions)
+    outer = tuple(islice(iter(payload_lists), max_lists + 1))
+    _validate_layout(positions, outer, attack_type)
+    return tuple(tuple(islice(iter(payloads), limit + 1)) for payloads in outer)
+
+
 def plan_cardinality(
     positions: Sequence[Position],
     payload_lists: Sequence[Sequence[bytes]],
@@ -148,11 +254,13 @@ def plan_cardinality(
     limit: int = MAX_FUZZ_SHOTS,
 ) -> int:
     """Return the exact shot count, failing before multiplication can exceed ``limit``."""
-    if limit < 0:
-        raise ValueError("fuzz shot limit must be non-negative")
-    sizes = _validate_layout(positions, payload_lists, attack_type)
+    frozen = _bounded_payload_snapshot(positions, payload_lists, attack_type, limit)
+    sizes = tuple(len(payloads) for payloads in frozen)
     if attack_type == "sniper":
-        count = _bounded_product((len(positions), sizes[0]), limit)
+        if len(sizes) == 1:
+            count = _bounded_product((len(positions), sizes[0]), limit)
+        else:
+            count = sum(sizes)
     elif attack_type == "battering-ram":
         count = sizes[0]
     elif attack_type == "pitchfork":
@@ -180,37 +288,24 @@ class FuzzPlan(Sequence[ConcreteRequest]):
         self._positions = tuple(positions)
         self._attack_type = attack_type
         _validate_positions(base, self._positions)
+        # Snapshot before deriving cardinality.  The cap is a send-safety boundary, so it must not
+        # trust a custom/mutable Sequence's ``__len__`` and then iterate a larger corpus later.
+        frozen = _bounded_payload_snapshot(self._positions, payload_lists, attack_type, limit)
         count = plan_cardinality(
             self._positions,
-            payload_lists,
+            frozen,
             attack_type,
             limit=limit,
         )
         if count == 0:
             raise ValueError("fuzz requires at least one concrete request")
 
-        # Snapshot only after the cardinality guard.  This makes the two passes deterministic even
-        # if a caller mutates its input lists while the baseline is in flight, without ever retaining
-        # expanded requests or structured request dictionaries.
-        frozen: tuple[tuple[bytes, ...], ...]
-        if attack_type in ("sniper", "battering-ram"):
-            frozen = (tuple(payload_lists[0]),)
-        elif attack_type == "pitchfork":
-            frozen = tuple(
-                tuple(payloads[index] for index in range(count)) for payloads in payload_lists
-            )
-        else:
-            frozen = tuple(tuple(payloads) for payloads in payload_lists)
+        if attack_type == "pitchfork":
+            frozen = tuple(payloads[:count] for payloads in frozen)
         for payloads in frozen:
             for payload in payloads:
                 if not isinstance(payload, bytes):
                     raise TypeError("fuzz payloads must be bytes")
-                try:
-                    payload.decode("utf-8")
-                except UnicodeDecodeError as exc:
-                    raise ValueError(
-                        f"fuzz payload cannot cross the structured REST bridge as UTF-8: {exc}"
-                    ) from None
         self._payload_lists: tuple[tuple[bytes, ...], ...] = frozen
         self._count = count
 
@@ -219,8 +314,9 @@ class FuzzPlan(Sequence[ConcreteRequest]):
 
     def __iter__(self) -> Iterator[ConcreteRequest]:
         if self._attack_type == "sniper":
-            payloads = self._payload_lists[0]
+            shared = len(self._payload_lists) == 1
             for index, position in enumerate(self._positions):
+                payloads = self._payload_lists[0] if shared else self._payload_lists[index]
                 for payload in payloads:
                     yield ConcreteRequest(
                         apply_subs(self._base, [Sub(position, payload)]),

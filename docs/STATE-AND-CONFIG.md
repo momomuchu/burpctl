@@ -2,16 +2,20 @@
 
 # Current state and configuration contract
 
-This section supersedes stale implementation descriptions later in this historical document.
+This section supersedes stale implementation descriptions later in this historical document. It records v2.0.0 as exercised against Burp Suite Professional 2026.3.3 on 2026-09-04; D-numbers refer to `quality/confirmed-defects.yaml`. A working-tree fix is not live behavior until its original reproduction passes after redeployment.
 
 - Python configuration precedence is explicit flag > environment > `~/.bp/config` > default. The path is resolved at invocation time so isolated `HOME` values work.
 - REST base URLs must be valid HTTP(S) origins without userinfo, query, fragment, or a non-root path. `enforce_scope`, booleans, throttle, and anomaly percentage are validated.
-- The Python Run Ledger is SQLite under `~/.bp/`, owner-only, and stores fingerprints/metadata—not raw target request or response bodies. Complete encoded query identity affects the fingerprint but raw query/userinfo does not enter text columns. Command outcome starts failed and becomes success only after invocation and rendering finish.
+- The Python Run Ledger is SQLite under `~/.bp/`, owner-only, and stores fingerprints/metadata—not raw target request or response bodies. Complete encoded query identity affects the fingerprint but raw query/userinfo does not enter text columns. In v2.0.0 the REST exchange can be stored as `status=ok` before output rendering later sets `exit_code=2`; therefore ledger status alone is not proof that the caller received the result (D24).
 - Extension request/session/sitemap persistence is H2/MVStore under `~/.burp-rest/`, not SQLite. Its directory/files are tightened to owner-only modes where the filesystem supports them; unsafe symlink paths are rejected.
-- H2 operations use scoped connections and transactions. History+sitemap record/clear and complete session persistence do not expose partial commits.
-- The configured singleton session is an immutable snapshot bound to one origin; it is not a named multi-principal session store. Observed response cookies are a separate jar with a separate clear operation.
+- H2 operations use scoped connections and transactions. History+sitemap record/clear and complete configured-session persistence do not expose partial commits in the exercised paths.
+- The configured singleton session is an immutable snapshot bound to one origin; it is not a named multi-principal session store. Captured response cookies are a separate in-memory jar. In v2.0.0, `bp session clear` clears only configured cookies/headers/origin and leaves that jar active, with no CLI jar-clear command (D29). The 2.1.0 contract deliberately changes this observable behavior: session clear also clears the captured jar, but this remains unverified until live replay.
+- Captured-cookie output omits the `HttpOnly` attribute (D30), and default redaction masks safe domain/name/path metadata together with the secret value (D31).
+- Burp project/user configuration exports are nested JSON, but v2.0.0 import does not establish exact schema acceptance: a wrong-typed project value was coerced while sibling scope state reset (D49), and an unknown key was silently ignored under a success response (D50).
+- `PUT /config/user` is not a safe state operation in v2.0.0. Exact exported-document imports reloaded the serving extension twice, reset uptime, and destroyed extension-owned in-memory registries; project-only imports did not reset uptime in the observed sequence (D53). Because the reload occurs while the import request is in flight, ADR-0014 requires refusal unless a future authority can preserve state and report completion truthfully.
+- Scanner task handles are extension-owned in-memory state, while the underlying work is owned by Burp. v2.0.0 status/issues and audit stop can fail on real task accessors (D55), and no endpoint enumerates tasks. Six task states remain `unknown`; an extension reload, low CPU, or absence of fixture traffic does not prove that a task stopped or was deleted.
 
-See [ADR-0013](adr/0013-truthful-executable-contracts.md).
+See [ADR-0013](adr/0013-truthful-executable-contracts.md) and [ADR-0014](adr/0014-state-preserving-reportable-operations.md).
 
 ---
 

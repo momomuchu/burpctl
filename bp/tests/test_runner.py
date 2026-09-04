@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from bp.cli import _fuzz_exit, _fuzz_rows
-from bp.client import BurpClient
+from bp.client import BurpClient, BurpError
 from bp.pos import Position, PosError
 from bp.runner import _payload_lists, run_fuzz
 
@@ -30,6 +30,7 @@ def _mock_client(sends: list[str] | None = None, calls: list[str] | None = None)
                             "url": base_url,
                             "headers": [{"name": "Host", "value": "t.example.com"}],
                             "body": None,
+                            "bodyBase64": None,
                         },
                     },
                     "error": None,
@@ -120,6 +121,7 @@ def test_anomalous_only_retains_fresh_baseline() -> None:
 
 
 def test_response_lengths_are_utf8_bytes() -> None:
+    """K33 current ceiling: lengths cover Kotlin's text projection, not original response bytes."""
     sends = 0
 
     def handler(req: httpx.Request) -> httpx.Response:
@@ -256,6 +258,112 @@ def test_terminal_send_error_stops_remaining_payloads() -> None:
 
     assert sends == len(results) == 2
     assert results[-1].error_code == "CONNECTION_REFUSED"
+
+
+def test_no_response_is_terminal_and_preserves_transport_exit(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """D46: a target NO_RESPONSE row stops the campaign and exits as transport failure."""
+    sends = 0
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        nonlocal sends
+        if req.url.path.startswith("/proxy/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {
+                        "request": {
+                            "method": "GET",
+                            "url": "https://t.example.com/s?u=base",
+                            "headers": [],
+                            "body": None,
+                        }
+                    },
+                    "error": None,
+                },
+            )
+        sends += 1
+        if sends == 2:
+            return httpx.Response(
+                502,
+                json={
+                    "success": False,
+                    "data": None,
+                    "error": {"code": "NO_RESPONSE", "message": "target returned no response"},
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {"response": {"statusCode": 200, "body": "ok"}},
+                "error": None,
+            },
+        )
+
+    client = BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
+    results = run_fuzz(
+        client,
+        5,
+        ["query:u"],
+        {"u": [b"one", b"two", b"three"]},
+        "sniper",
+    )
+
+    rows = [result.__dict__ for result in results]
+    assert sends == len(results) == 2, "NO_RESPONSE must stop all remaining payload shots"
+    assert results[-1].error_code == "NO_RESPONSE"
+    assert _fuzz_exit(rows) == 3
+    assert "attempted-shot rows remain on stdout" in capsys.readouterr().err
+
+
+def test_no_response_baseline_keeps_one_row_and_sends_no_payloads() -> None:
+    """D46 reproduction: a failed fresh control is retained and no payload campaign begins."""
+    sends = 0
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        nonlocal sends
+        if req.url.path.startswith("/proxy/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {
+                        "request": {
+                            "method": "GET",
+                            "url": "https://closed.example/s?q=base",
+                            "headers": [],
+                            "body": None,
+                        }
+                    },
+                    "error": None,
+                },
+            )
+        sends += 1
+        return httpx.Response(
+            502,
+            json={
+                "success": False,
+                "data": None,
+                "error": {"code": "NO_RESPONSE", "message": "target returned no response"},
+            },
+        )
+
+    client = BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
+    results = run_fuzz(client, 5, ["query:q"], {"q": [b"one", b"two"]}, "sniper")
+
+    assert sends == 1
+    assert len(results) == 1
+    assert results[0].baseline is True
+    assert results[0].payloads == ()
+    assert results[0].error_code == "NO_RESPONSE"
+    assert _fuzz_exit([results[0].__dict__]) == 3
 
 
 def test_fuzz_error_exit_preserves_connection_category(capsys: pytest.CaptureFixture[str]) -> None:
@@ -556,6 +664,124 @@ def test_send_noninteger_statuscode_returns_clean_error_row() -> None:
     assert (
         results[0].error == "INVALID_RESPONSE: repeater/send reply has a non-integer 'statusCode'"
     )
+
+
+def test_base_raw_falls_back_to_text_when_body_base64_is_null() -> None:
+    """Nullable default emission must not erase a valid text body."""
+    from bp.runner import _base_raw
+
+    raw, _scheme, _host = _base_raw(
+        {
+            "request": {
+                "method": "POST",
+                "url": "https://example.test/upload",
+                "headers": [],
+                "body": "café",
+                "bodyBase64": None,
+            }
+        }
+    )
+
+    assert raw.endswith(b"\r\n\r\ncaf\xc3\xa9")
+
+
+# --- payload-map completeness and byte-safe display --------------------------
+
+
+def test_sniper_uses_every_named_position_payload_list() -> None:
+    positions = [Position(0, 1, "query:u"), Position(2, 3, "query:p")]
+
+    assert _payload_lists(
+        positions,
+        {"u": [b"A1", b"A2"], "p": [b"B1", b"B2", b"B3"]},
+        "sniper",
+    ) == [[b"A1", b"A2"], [b"B1", b"B2", b"B3"]]
+
+
+def test_battering_ram_rejects_multiple_payload_lists_before_any_send() -> None:
+    sends: list[str] = []
+
+    with pytest.raises(ValueError, match="exactly one"):
+        run_fuzz(
+            _mock_client(sends),
+            5,
+            ["query:u", "query:p"],
+            {"u": [b"A"], "p": [b"B"]},
+            "battering-ram",
+        )
+
+    assert sends == []
+
+
+def test_non_utf8_payload_has_explicit_base64_result_representation() -> None:
+    from bp.runner import _payload_for_output
+
+    assert _payload_for_output(b"\xff\x00") == {"b64": "/wA="}
+    assert _payload_for_output("�".encode()) == "�"
+
+
+def test_future_send_response_body_base64_is_counted_as_bytes() -> None:
+    """K33 future contract: current Kotlin HttpResponseData does not emit bodyBase64."""
+    from bp.runner import _send_request
+
+    class StubClient:
+        def post(self, _path: str, _body: object) -> dict[str, object]:
+            # Deliberately not a current extension payload. This locks the dormant Python consumer for
+            # the deferred K33 exact-response-byte capability; it is not end-to-end coverage.
+            return {
+                "response": {"statusCode": 200, "body": "wrong", "bodyBase64": "/wBhCg=="},
+                "durationMs": 7,
+            }
+
+    status, length, duration = _send_request(StubClient(), {})  # type: ignore[arg-type]
+    assert (status, length, duration) == (200, 4, 7)
+
+
+def test_future_send_response_explicit_empty_body_base64_wins_over_text() -> None:
+    """K33 future contract: exact empty bytes would outrank a text projection."""
+    from bp.runner import _send_request
+
+    class StubClient:
+        def post(self, _path: str, _body: object) -> dict[str, object]:
+            # Current HttpResponseData cannot return this field; see K33.
+            return {
+                "response": {"statusCode": 200, "body": "wrong", "bodyBase64": ""},
+                "durationMs": 1,
+            }
+
+    assert _send_request(StubClient(), {})[1] == 0  # type: ignore[arg-type]
+
+
+def test_future_send_response_rejects_malformed_body_base64() -> None:
+    """K33 future contract: reject malformed exact bytes if the field is implemented."""
+    from bp.runner import _send_request
+
+    class StubClient:
+        def post(self, _path: str, _body: object) -> dict[str, object]:
+            # Current HttpResponseData cannot return this field; see K33.
+            return {"response": {"statusCode": 200, "bodyBase64": "***"}}
+
+    with pytest.raises(BurpError, match="not valid base64"):
+        _send_request(StubClient(), {})  # type: ignore[arg-type]
+
+
+def test_base_raw_prefers_authoritative_body_base64_bytes() -> None:
+    from bp.runner import _base_raw
+
+    raw, _scheme, _host = _base_raw(
+        {
+            "request": {
+                "method": "POST",
+                "url": "https://example.test/upload",
+                "headers": [{"name": "Content-Length", "value": "1"}],
+                "body": "�",
+                "bodyBase64": "/w==",
+            }
+        }
+    )
+
+    assert raw.endswith(b"\r\n\r\n\xff")
+    assert b"\xef\xbf\xbd" not in raw
 
 
 # --- bounded and all-or-nothing preflight ------------------------------------

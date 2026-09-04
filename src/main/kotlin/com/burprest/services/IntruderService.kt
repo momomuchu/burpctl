@@ -18,6 +18,7 @@ import com.burprest.models.QuickFuzzResponse
 import com.burprest.models.SendRequest
 import com.burprest.models.SendResponse
 import com.burprest.server.NoResponseException
+import com.burprest.server.UnsupportedException
 import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
@@ -84,8 +85,13 @@ class IntruderService(private val api: MontoyaApi, private val repeaterService: 
     fun createAttack(request: CreateAttackRequest): CreateAttackResponse {
         val snapshot = snapshot(request)
         validateOptions(snapshot.options)
+        if (snapshot.attackType in CLIENT_SIDE_ATTACK_TYPES) {
+            throw UnsupportedException(
+                "server-side Intruder supports only sniper; use client-side bp fuzz for ${snapshot.attackType}",
+            )
+        }
         require(snapshot.attackType == SUPPORTED_ATTACK_TYPE) {
-            "server-side Intruder supports only sniper; use bp fuzz for battering-ram, pitchfork, or cluster-bomb"
+            "attackType must be sniper"
         }
         requireExactlyOneSource(snapshot.request, snapshot.requestId)
         require(snapshot.positions.isNotEmpty()) { "positions must not be empty" }
@@ -427,12 +433,16 @@ class IntruderService(private val api: MontoyaApi, private val repeaterService: 
         if (request != null) return request.deepCopy()
         val historical = resolveHistoryRequest(requireNotNull(requestId))
         return try {
+            val bodyBytes = historical.body()
+                .takeIf { it.length() > 0 }
+                ?.getBytes()
             HttpRequestData(
                 method = historical.method(),
                 url = historical.url(),
                 headers = historical.headers().map { HttpHeader(it.name(), it.value()) },
-                body = if (historical.body().length() > 0) historical.bodyToString() else null,
-            )
+            ).let { projected ->
+                bodyBytes?.let { projected.withProjectedBody(it) } ?: projected
+            }
         } catch (_: Exception) {
             throw IllegalArgumentException("requestId could not be read from proxy history")
         }
@@ -511,7 +521,16 @@ class IntruderService(private val api: MontoyaApi, private val repeaterService: 
             }
             encodeUtf8(header.value, "request header value")
         }
-        request.body?.let { encodeUtf8(it, "request body") }
+        val bodyBytes = try {
+            request.bodyBytes()
+        } catch (_: IllegalArgumentException) {
+            throw IllegalArgumentException("request bodyBase64 must be valid Base64")
+        }
+        if (request.bodyBase64 == null) {
+            request.body?.let { encodeUtf8(it, "request body") }
+        } else {
+            require(bodyBytes != null) { "request bodyBase64 must resolve to bytes" }
+        }
     }
 
     private fun buildCanonicalRaw(request: HttpRequestData): ByteArray {
@@ -530,7 +549,7 @@ class IntruderService(private val api: MontoyaApi, private val repeaterService: 
             headers.forEach { append(it.name).append(": ").append(it.value).append("\r\n") }
             append("\r\n")
         }
-        return encodeUtf8(head, "request headers") + encodeUtf8(request.body.orEmpty(), "request body")
+        return encodeUtf8(head, "request headers") + (request.bodyBytes() ?: byteArrayOf())
     }
 
     private fun applySubstitutions(base: ByteArray, substitutions: List<ByteSubstitution>): ByteArray {
@@ -613,13 +632,10 @@ class IntruderService(private val api: MontoyaApi, private val repeaterService: 
         }
         parseHttpUri(url)
         val bodyStart = headerEnd + separatorLength
-        val body = if (bodyStart < raw.size) {
-            decodeUtf8(raw.copyOfRange(bodyStart, raw.size), "request body")
-        } else {
-            null
-        }
-
-        return HttpRequestData(method = method, url = url, headers = headers, body = body).also(::validateStructuredRequest)
+        val bodyBytes = raw.copyOfRange(bodyStart, raw.size)
+        val projected = HttpRequestData(method = method, url = url, headers = headers)
+        return (if (bodyBytes.isEmpty()) projected else projected.withProjectedBody(bodyBytes))
+            .also(::validateStructuredRequest)
     }
 
     private fun findHeaderSeparator(raw: ByteArray): Pair<Int, Int>? {
@@ -635,7 +651,8 @@ class IntruderService(private val api: MontoyaApi, private val repeaterService: 
         val queryParamRegex = Regex("([?&])${Regex.escape(param)}=([^&#]*)")
         url = queryParamRegex.replace(url) { match -> "${match.groupValues[1]}$param=$payload" }
 
-        var body = baseRequest.body
+        var body = baseRequest.authoritativeTextBodyOrNull()
+        val originalBody = body
         if (body != null) {
             body = body.replace("{$param}", payload)
             val bodyParamRegex = Regex("(^|&)${Regex.escape(param)}=([^&]*)")
@@ -647,8 +664,27 @@ class IntruderService(private val api: MontoyaApi, private val repeaterService: 
         val headers = baseRequest.headers.map { header ->
             if (header.name.equals(param, ignoreCase = true)) HttpHeader(header.name, payload) else header
         }
-        return baseRequest.copy(url = url, body = body, headers = headers)
+        val substituted = baseRequest.copy(url = url, headers = headers)
+        return if (body != originalBody) substituted.withTextBody(body) else substituted
     }
+
+    private fun HttpRequestData.authoritativeTextBodyOrNull(): String? {
+        val bytes = try {
+            bodyBytes()
+        } catch (_: IllegalArgumentException) {
+            throw IllegalArgumentException("request bodyBase64 must be valid Base64")
+        }
+        return bytes?.let { raw ->
+            runCatching { decodeUtf8(raw, "request body") }.getOrNull()
+        }
+    }
+
+    private fun HttpRequestData.withProjectedBody(bytes: ByteArray): HttpRequestData =
+        try {
+            withTextBody(decodeUtf8(bytes, "request body"))
+        } catch (_: IllegalArgumentException) {
+            withBodyBytes(bytes)
+        }
 
     private fun successfulEntry(
         index: Int,
@@ -814,6 +850,7 @@ class IntruderService(private val api: MontoyaApi, private val repeaterService: 
 
     companion object {
         private const val SUPPORTED_ATTACK_TYPE = "sniper"
+        private val CLIENT_SIDE_ATTACK_TYPES = setOf("battering-ram", "pitchfork", "cluster-bomb")
         private const val MAX_SHOTS = 10_000
         private const val MAX_THROTTLE_MS = 60_000L
         private const val BODY_PREVIEW_CHARS = 200

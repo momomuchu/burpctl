@@ -11,8 +11,8 @@ from typing import Annotated, Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, run
-from bp.models import ProxyEntry
+from bp.cliutil import fail_usage, run
+from bp.models import ProxyEntry, WebSocketHistoryResponse
 
 
 # ---------------------------------------------------------------------------
@@ -56,16 +56,14 @@ def req(
 ) -> None:
     """Fetch a single proxy-history entry by its absolute index.
 
-    For table/quiet/raw output the entry is projected to the core safe fields
-    (id, method, url, status, and optional timestamp/listenerInterface),
-    suppressing request/response header and body blobs so that cookies, JWTs,
-    and any PII or credentials in the response body are never emitted to
-    stdout (AX-CAP-BODY).  Use --format json to get the full raw entry.
+    Table/quiet project the core safe fields (id, method, url, status, and optional
+    timestamp/listenerInterface). JSON returns the complete structured entry. Raw emits the captured
+    request and response as HTTP/1.1 bytes separated by an ASCII record-separator line.
     """
 
     def _do(c: Any) -> Any:
         entry = c.get(f"/proxy/history/{id}")
-        if ctx.obj.fmt == "json":
+        if ctx.obj.fmt in {"json", "raw"}:
             return entry
         return _proxy_entry_display(entry)
 
@@ -75,9 +73,14 @@ def req(
 # ---------------------------------------------------------------------------
 # bp ws   →   GET /proxy/websocket/history
 # ---------------------------------------------------------------------------
+def _websocket_rows(data: dict[str, Any]) -> list[dict[str, Any]]:
+    history = WebSocketHistoryResponse.model_validate(data)
+    return [entry.model_dump() for entry in history.entries]
+
+
 def ws(ctx: typer.Context) -> None:
-    """List captured WebSocket messages with original identity and time."""
-    run(ctx, lambda c: c.get("/proxy/websocket/history"))
+    """List captured WebSocket messages with original identity and nullable projections."""
+    run(ctx, lambda c: _websocket_rows(c.get("/proxy/websocket/history")))
 
 
 # ---------------------------------------------------------------------------
@@ -105,11 +108,7 @@ def intercept(
 ) -> None:
     """Control interception; unsupported actions fail with a typed runtime error."""
     if action not in _INTERCEPT_ACTIONS:
-        typer.echo(
-            f"error: intercept action must be one of {_INTERCEPT_ACTIONS!r}, got {action!r}",
-            err=True,
-        )
-        raise typer.Exit(EXIT_USAGE)
+        fail_usage(ctx, f"intercept action must be one of {_INTERCEPT_ACTIONS!r}, got {action!r}")
 
     if action in _UNSUPPORTED_ACTIONS:
         typer.echo(

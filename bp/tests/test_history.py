@@ -11,7 +11,9 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from typer.testing import CliRunner
 
+from bp.cli import app
 from bp.commands.history import _history_rows
 from bp.models import HistoryEntryResponse, HistoryPageResponse
 
@@ -41,6 +43,64 @@ PAGE_DICT: dict[str, Any] = {
     "page": 0,
     "pageSize": 50,
 }
+
+
+def test_history_list_forwards_all_server_filters(monkeypatch: pytest.MonkeyPatch) -> None:
+    """C6: every supported HistoryFilter member is reachable from CLI spelling."""
+    calls: list[tuple[str, dict[str, Any]]] = []
+
+    class StubClient:
+        def get(self, path: str, **params: Any) -> dict[str, Any]:
+            calls.append((path, params))
+            return {"entries": []}
+
+    def invoke(_ctx: Any, fn: Any) -> None:
+        fn(StubClient())
+
+    monkeypatch.setattr("bp.commands.history.run", invoke)
+    result = CliRunner().invoke(
+        app,
+        [
+            "history",
+            "list",
+            "--host",
+            "example.test",
+            "--method",
+            "POST",
+            "--status",
+            "201",
+            "--source",
+            "repeater",
+            "--search",
+            "marker",
+            "--since",
+            "2026-01-01T00:00:00Z",
+            "--until",
+            "2026-01-02T00:00:00Z",
+            "--page",
+            "2",
+            "--page-size",
+            "25",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stderr
+    assert calls == [
+        (
+            "/history",
+            {
+                "host": "example.test",
+                "method": "POST",
+                "statusCode": 201,
+                "source": "repeater",
+                "search": "marker",
+                "since": "2026-01-01T00:00:00Z",
+                "until": "2026-01-02T00:00:00Z",
+                "page": 2,
+                "pageSize": 25,
+            },
+        )
+    ]
 
 
 # ---------------------------------------------------------------------------

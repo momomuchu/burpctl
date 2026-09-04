@@ -47,6 +47,31 @@ def _operation_path(path: str) -> str:
     return clean_path
 
 
+def _compatibility_fields(value: Any) -> set[str]:
+    """Find fields introduced by this client that strict older extensions reject generically."""
+    introduced = {"probeTimeoutMs", "bodyBase64", "protectedContentMarker"}
+    found: set[str] = set()
+    if isinstance(value, dict):
+        found.update(key for key in value if key in introduced)
+        for item in value.values():
+            found.update(_compatibility_fields(item))
+    elif isinstance(value, list):
+        for item in value:
+            found.update(_compatibility_fields(item))
+    return found
+
+
+def _compatibility_message(code: str, message: str, request_json: Any) -> str:
+    fields = _compatibility_fields(request_json)
+    if code != "INVALID_REQUEST" or message != "invalid request body" or not fields:
+        return message
+    names = ", ".join(sorted(fields))
+    return (
+        f"the extension refused client field(s) {names}; the loaded extension is older than "
+        "this CLI contract — rebuild and reload the extension JAR"
+    )
+
+
 class BurpError(Exception):
     """REST API failure with stable code and optional response metadata.
 
@@ -196,7 +221,11 @@ class BurpClient:
             self._record(method, path, req_identity, resp, "error", code, start)
             raise BurpError(
                 code,
-                err.message if err else "unknown error",
+                _compatibility_message(
+                    code,
+                    err.message if err else "unknown error",
+                    json,
+                ),
                 status=resp.status_code,
                 op=operation,
             )

@@ -4,6 +4,7 @@ import com.burprest.models.ApiResponse
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.http.content.OutgoingContent
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -233,6 +234,37 @@ class ServerFoundationTest {
         val code: String,
         val message: String,
     )
+
+    @Test
+    fun `an unsupported request media type still answers with the typed envelope`() = testApplication {
+        application {
+            installStrictJson()
+            installErrorHandling { }
+            routing {
+                post("/payload") {
+                    call.respond(ApiResponse.ok(call.receive<StrictPayload>()))
+                }
+            }
+        }
+
+        // Content negotiation rejects these before the route runs; each used to answer a bodiless
+        // 415 that no client could parse as an error.
+        client.post("/payload") {
+            setBody(object : OutgoingContent.ByteArrayContent() {
+                override fun bytes(): ByteArray = """{"value":"x"}""".encodeToByteArray()
+            })
+        }.assertJsonError(HttpStatusCode.UnsupportedMediaType, "UNSUPPORTED_MEDIA_TYPE")
+
+        client.post("/payload") {
+            contentType(ContentType.Text.Plain)
+            setBody("""{"value":"x"}""")
+        }.assertJsonError(HttpStatusCode.UnsupportedMediaType, "UNSUPPORTED_MEDIA_TYPE")
+
+        client.post("/payload") {
+            contentType(ContentType.Application.Json)
+            setBody("")
+        }.assertJsonError(HttpStatusCode.UnsupportedMediaType, "UNSUPPORTED_MEDIA_TYPE")
+    }
 
     private suspend fun HttpResponse.assertJsonError(expectedStatus: HttpStatusCode, expectedCode: String) {
         assertEquals(expectedStatus, status)

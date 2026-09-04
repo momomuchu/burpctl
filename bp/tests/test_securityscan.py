@@ -12,11 +12,18 @@ These tests cover:
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
+import httpx
 import pytest
 
-from bp.commands.securityscan import _has_findings, _project_for_display
+from bp.commands.securityscan import (
+    _has_findings,
+    _project_for_display,
+    _scan_exit_code,
+)
+from bp.cliutil import EXIT_GENERIC, EXIT_VULN
 
 
 # ---------------------------------------------------------------------------
@@ -176,6 +183,28 @@ def test_check_commands_use_exit_on_not_holder_pattern() -> None:
                         f"{cmd.__name__} still contains a direct `raise typer.Exit(...)` — "
                         "the holder pattern must be replaced by exit_on= in run()"
                     )
+
+
+# ---------------------------------------------------------------------------
+# C3 — every check command must project the same verdict before rendering
+# ---------------------------------------------------------------------------
+
+
+def test_all_check_commands_apply_shared_output_projection() -> None:
+    import inspect
+
+    from bp.commands import securityscan
+
+    for command in (
+        securityscan.check_auth,
+        securityscan.check_idor,
+        securityscan.check_headers,
+        securityscan.check_cors,
+        securityscan.check_endpoints,
+    ):
+        source = inspect.getsource(command)
+        assert "_project_for_display" in source, f"{command.__name__} bypasses verdict projection"
+        assert "_scan_exit" in source, f"{command.__name__} bypasses shared exit precedence"
 
 
 # ---------------------------------------------------------------------------
@@ -352,23 +381,100 @@ def test_project_adds_verdict_clean_for_anomaly_only() -> None:
 
 
 def test_project_reports_inconclusive_instead_of_clean() -> None:
-    """A probe that never completed must not be summarized as clean."""
-    by_count: dict[str, Any] = {"vulnerableCount": 0, "inconclusiveCount": 1}
-    by_result: dict[str, Any] = {
-        "vulnerableCount": 0,
-        "results": [{"endpoint": "/a", "inconclusive": True}],
-    }
-    by_error: dict[str, Any] = {"findings": [], "errors": [{"endpoint": "/a"}], "scanned": 1}
-    by_baseline: dict[str, Any] = {"vulnerableCount": 0, "baseline": {"inconclusive": True}}
+    """Only the authoritative top-level count drives the inconclusive verdict."""
+    data: dict[str, Any] = {"vulnerableCount": 0, "inconclusiveCount": 1}
+    assert _project_for_display(data).get("verdict") == "inconclusive"
+    assert _has_findings(data) is False
 
-    for data in (by_count, by_result, by_error, by_baseline):
-        assert _project_for_display(data).get("verdict") == "inconclusive"
-        assert _has_findings(data) is False
+
+def test_project_does_not_infer_inconclusive_from_nested_shapes() -> None:
+    for data in (
+        {"vulnerableCount": 0, "results": [{"inconclusive": True}]},
+        {"findings": [], "errors": [{"endpoint": "/a"}]},
+        {"vulnerableCount": 0, "baseline": {"inconclusive": True}},
+    ):
+        assert _project_for_display(data).get("verdict") == "clean"
 
 
 def test_confirmed_finding_outranks_inconclusive_probes() -> None:
     data: dict[str, Any] = {"vulnerableCount": 1, "inconclusiveCount": 3}
     assert _project_for_display(data).get("verdict") == "vulnerable"
+
+
+def test_scan_exit_precedence_is_finding_then_inconclusive_then_clean() -> None:
+    """C8: mixed results stay exit 5; inconclusive-only uses existing runtime exit 1."""
+    assert _scan_exit_code({"vulnerableCount": 1, "inconclusiveCount": 2}) == EXIT_VULN
+    assert _scan_exit_code({"findings": [{"id": 1}], "inconclusiveCount": 2}) == EXIT_VULN
+    assert _scan_exit_code({"vulnerableCount": 0, "inconclusiveCount": 1}) == EXIT_GENERIC
+    assert _scan_exit_code({"findings": [], "inconclusiveCount": 0}) is None
+
+
+def test_scan_exit_does_not_infer_inconclusive_from_anomaly_count() -> None:
+    assert _scan_exit_code({"vulnerableCount": 0, "anomalousCount": 9}) is None
+
+
+def test_check_operation_deadline_is_derived_from_actual_probe_plan() -> None:
+    from bp.commands.securityscan import _operation_timeout_seconds
+
+    small_auth = _operation_timeout_seconds(3, 5_000, None)
+    headers = _operation_timeout_seconds(17, 5_000, None)
+    large_endpoints = _operation_timeout_seconds(8_000, 120_000, None)
+
+    assert 15 < small_auth < 30
+    assert headers > 85
+    assert large_endpoints > 8_000 * 120
+    assert small_auth < headers < large_endpoints
+
+
+def test_check_operation_deadline_override_is_exact() -> None:
+    from bp.commands.securityscan import _operation_timeout_seconds
+
+    assert _operation_timeout_seconds(8_000, 120_000, 1_234) == 1.234
+
+
+def test_headers_cli_sends_probe_budget_and_uses_deadline_override(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from typer.testing import CliRunner
+
+    from bp.cli import app
+
+    posted: list[dict[str, Any]] = []
+    deadlines: list[float | None] = []
+
+    class StubClient:
+        def post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
+            assert path == "/scan/headers"
+            posted.append(body)
+            return {"vulnerableCount": 0, "inconclusiveCount": 0, "results": []}
+
+    def fake_run(
+        _ctx: Any,
+        fn: Any,
+        *,
+        exit_on: Any = None,
+        timeout: float | None = None,
+    ) -> None:
+        deadlines.append(timeout)
+        fn(StubClient())
+
+    monkeypatch.setattr("bp.commands.securityscan.run", fake_run)
+    result = CliRunner().invoke(
+        app,
+        [
+            "check",
+            "headers",
+            "https://example.test",
+            "--probe-timeout-ms",
+            "1234",
+            "--deadline-ms",
+            "9000",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stderr
+    assert posted[0]["probeTimeoutMs"] == 1234
+    assert deadlines == [9.0]
 
 
 def test_project_adds_verdict_vulnerable_via_findings_list() -> None:
@@ -430,8 +536,8 @@ def test_project_clean_verdict_with_empty_findings() -> None:
 
 
 @pytest.mark.skipif(not _burp_up, reason="needs live Burp REST on :8089")
-def test_check_auth_exits_5_when_findings_live() -> None:
-    """[12] Live: bp check auth exits 5 if vulnerableCount > 0, 0 if no findings."""
+def test_check_auth_live_has_a_valid_scan_outcome() -> None:
+    """Live matched pair returns clean (0), inconclusive (1), or confirmed finding (5)."""
     import subprocess
     import sys
 
@@ -439,8 +545,146 @@ def test_check_auth_exits_5_when_findings_live() -> None:
         "import sys; sys.argv=['bp','check','auth','http://127.0.0.1:8089']; "
         "from bp.cli import cli_main; cli_main()"
     )
-    r = subprocess.run([sys.executable, "-c", entry], capture_output=True, text=True)
-    # Accept 0 (no findings) or 5 (findings present); anything else is a bug.
-    assert r.returncode in (0, 5), (
-        f"expected 0 or 5, got {r.returncode}\nstdout={r.stdout!r}\nstderr={r.stderr!r}"
+    result = subprocess.run([sys.executable, "-c", entry], capture_output=True, text=True)
+    assert result.returncode in (0, 1, 5), (
+        f"expected 0, 1, or 5, got {result.returncode}\n"
+        f"stdout={result.stdout!r}\nstderr={result.stderr!r}"
     )
+    if result.returncode == 1:
+        # Runtime exit 1 is valid here only for the structured inconclusive outcome. A stale-extension
+        # compatibility refusal deliberately remains a failing live gate until the JAR is hot-swapped.
+        assert "inconclusive" in result.stderr.lower(), result.stderr
+        assert result.stdout, "an inconclusive scan must retain its structured result"
+
+
+def _invoke_auth_check(
+    monkeypatch: pytest.MonkeyPatch,
+    response_data: dict[str, Any],
+    *auth_args: str,
+) -> tuple[Any, list[dict[str, Any]]]:
+    """Invoke the real CLI/client path while capturing the exact JSON transport receives."""
+    from typer.testing import CliRunner
+
+    from bp.cli import app
+    from bp.client import BurpClient
+
+    received: list[dict[str, Any]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "POST"
+        assert request.url.path == "/scan/auth-bypass"
+        request_data = json.loads(request.content)
+        assert isinstance(request_data, dict)
+        received.append(request_data)
+        return httpx.Response(
+            200,
+            json={"success": True, "data": response_data, "error": None},
+        )
+
+    def client_factory(
+        _base_url: str,
+        *,
+        ledger: Any = None,
+        redact: bool = True,
+        command: str | None = None,
+        timeout: float = 30.0,
+    ) -> BurpClient:
+        return BurpClient(
+            client=httpx.Client(
+                transport=httpx.MockTransport(handler),
+                base_url="http://mock-extension",
+                timeout=timeout,
+            ),
+            ledger=ledger,
+            redact=redact,
+            command=command,
+        )
+
+    monkeypatch.setattr("bp.cliutil.BurpClient", client_factory)
+    result = CliRunner().invoke(
+        app,
+        [
+            "--no-ledger",
+            "--format",
+            "quiet",
+            "check",
+            "auth",
+            "https://target.test",
+            *auth_args,
+        ],
+    )
+    return result, received
+
+
+@pytest.mark.parametrize(
+    ("auth_args", "expected_marker"),
+    [
+        pytest.param(("--marker", "/api/élèves"), "/api/élèves", id="present-lossless"),
+        pytest.param((), None, id="omitted"),
+    ],
+)
+def test_check_auth_marker_wire_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    auth_args: tuple[str, ...],
+    expected_marker: str | None,
+) -> None:
+    """The transport sees an exact optional marker, not a CLI-side projection or null default."""
+    result, received = _invoke_auth_check(
+        monkeypatch,
+        {"vulnerableCount": 0, "inconclusiveCount": 0, "results": []},
+        *auth_args,
+    )
+
+    assert result.exit_code == 0, result.stderr
+    assert len(received) == 1
+    if expected_marker is None:
+        assert "protectedContentMarker" not in received[0]
+    else:
+        assert received[0]["protectedContentMarker"] == expected_marker
+
+
+def test_check_auth_omitted_marker_preserves_inconclusive(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An omitted marker remains absent and does not turn server uncertainty into a clean exit."""
+    result, received = _invoke_auth_check(
+        monkeypatch,
+        {"vulnerableCount": 0, "inconclusiveCount": 1, "results": []},
+    )
+
+    assert "protectedContentMarker" not in received[0]
+    assert result.exit_code == EXIT_GENERIC
+    assert "inconclusive" in result.stderr.lower()
+
+
+def test_check_auth_marker_response_exit_codes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Marker-backed vulnerable, clean, and inconclusive responses remain three distinct outcomes."""
+    marker = "/api/élèves"
+    cases = [
+        ({"vulnerableCount": 1, "inconclusiveCount": 0, "results": []}, EXIT_VULN),
+        ({"vulnerableCount": 0, "inconclusiveCount": 0, "results": []}, 0),
+        ({"vulnerableCount": 0, "inconclusiveCount": 1, "results": []}, EXIT_GENERIC),
+    ]
+    observed: list[int] = []
+
+    for response_data, expected_exit in cases:
+        result, received = _invoke_auth_check(
+            monkeypatch,
+            response_data,
+            "--marker",
+            marker,
+        )
+        assert received == [
+            {
+                "endpoints": ["/api/admin"],
+                "baseUrl": "https://target.test",
+                "method": "GET",
+                "probeTimeoutMs": 5_000,
+                "protectedContentMarker": marker,
+            }
+        ]
+        assert result.exit_code == expected_exit, result.stderr
+        observed.append(result.exit_code)
+
+    assert observed == [EXIT_VULN, 0, EXIT_GENERIC]
+    assert len(set(observed)) == 3

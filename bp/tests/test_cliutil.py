@@ -6,6 +6,10 @@ must fail fast with a clean usage error (exit 2) instead of leaking a Python tra
 
 from __future__ import annotations
 
+import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -23,6 +27,45 @@ from bp.ledger import Ledger
 from bp.output import render
 
 runner = CliRunner()
+
+
+def _invoke_entrypoint(argv: list[str], *, agent: bool = False) -> subprocess.CompletedProcess[str]:
+    script = f"import sys; sys.argv={['bp', *argv]!r}; from bp.cli import cli_main; cli_main()"
+    env = os.environ.copy()
+    if agent:
+        env["BP_AGENT"] = "1"
+    else:
+        env.pop("BP_AGENT", None)
+    return subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+
+
+def _assert_json_usage_error(result: subprocess.CompletedProcess[str]) -> None:
+    assert result.returncode == 2
+    assert result.stdout == ""
+    lines = result.stderr.splitlines()
+    assert len(lines) == 1, result.stderr
+    error = json.loads(lines[0])["error"]
+    assert error["code"] == "USAGE_ERROR"
+    assert isinstance(error["message"], str) and error["message"]
+
+
+@pytest.mark.parametrize(
+    ("argv", "agent"),
+    [
+        (["encode", "test", "--enc", "rot13"], True),
+        (["encode", "--enc", "base64"], True),
+        (["health", "--format", "json", "--bogus"], False),
+    ],
+)
+def test_local_usage_errors_honor_json_agent_mode(argv: list[str], agent: bool) -> None:
+    """C2: parser and command validation failures use the same one-record JSON contract."""
+    _assert_json_usage_error(_invoke_entrypoint(argv, agent=agent))
 
 
 # ---------------------------------------------------------------------------
@@ -55,6 +98,133 @@ def test_invalid_format_is_usage_error_not_traceback() -> None:
     """
     result = runner.invoke(app, ["--format", "bogus", "health"])
     assert result.exit_code == 2
+
+
+@pytest.mark.parametrize(
+    ("fmt", "fields"),
+    [("raw", None), ("json", ["definitely_unknown"])],
+)
+def test_run_rejects_invalid_output_before_effect(fmt: str, fields: list[str] | None) -> None:
+    """C1: output usage errors are decided before the command callback can issue a request."""
+    from bp.cliutil import State
+
+    ctx = MagicMock(spec=typer.Context)
+    ctx.obj = State(
+        url="http://127.0.0.1:8089",
+        fmt=fmt,
+        fields=fields,
+        no_ledger=True,
+        no_redact=True,
+    )
+    ctx.command_path = "bp intercept"
+    effects = 0
+
+    def _effect(_client: BurpClient) -> dict[str, bool]:
+        nonlocal effects
+        effects += 1
+        return {"enabled": True}
+
+    with pytest.raises(typer.Exit) as exc_info:
+        run(ctx, _effect)
+
+    assert exc_info.value.exit_code == 2
+    assert effects == 0, "invalid output options must not execute the effect callback"
+
+
+@pytest.mark.parametrize(
+    ("command_path", "fields"),
+    [
+        ("bp collab new", ["payload", "wrapperTypo"]),
+        ("bp check auth", ["baseline"]),
+        ("bp config set project", ["unknown"]),
+        ("bp fuzz", ["notAField"]),
+        ("bp history replay", ["unknown"]),
+        ("bp scan audit", ["unknown"]),
+    ],
+)
+def test_effectful_field_catalogs_reject_before_callback(
+    command_path: str, fields: list[str]
+) -> None:
+    """C1: representative mutating/consuming families have static pre-effect field catalogs."""
+    from bp.cliutil import State
+
+    ctx = MagicMock(spec=typer.Context)
+    ctx.obj = State(None, "json", fields, no_ledger=True, no_redact=True)
+    ctx.command_path = command_path
+    called = False
+
+    def effect(_client: BurpClient) -> dict[str, object]:
+        nonlocal called
+        called = True
+        return {}
+
+    with pytest.raises(typer.Exit) as exc_info:
+        run(ctx, effect)
+    assert exc_info.value.exit_code == 2
+    assert called is False
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["--format", "raw", "intercept", "off"],
+        ["--format", "json", "--fields", "unknown", "send", "8575"],
+        ["--format", "json", "--fields", "unknown", "history", "replay", "47"],
+        ["--format", "raw", "tab", "8575"],
+        ["--format", "raw", "collab", "new"],
+        ["--format", "raw", "collab", "poll", "payload-id"],
+        [
+            "--format",
+            "json",
+            "--fields",
+            "definitely_unknown",
+            "config",
+            "set",
+            "project",
+            "--json",
+            "{}",
+        ],
+        ["--format", "raw", "scope", "add", "https://target.example"],
+        ["--format", "raw", "scan", "audit", "https://target.example"],
+        ["--format", "raw", "fuzz", "8617"],
+    ],
+)
+def test_effectful_cli_commands_preflight_output_before_request(
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+) -> None:
+    """D24: representative mutations, sends, polls, imports, and tasks share one preflight."""
+    calls: list[tuple[str, str]] = []
+
+    def forbidden_request(
+        self: BurpClient, method: str, path: str, **kwargs: Any
+    ) -> dict[str, Any]:
+        calls.append((method, path))
+        return {}
+
+    monkeypatch.setattr(BurpClient, "_request", forbidden_request)
+    monkeypatch.setenv("BP_NO_LEDGER", "1")
+
+    result = runner.invoke(app, argv)
+
+    assert result.exit_code == 2, result.output
+    assert calls == [], "invalid output must be rejected before any REST request"
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["--format", "json", "send", "1", "--set-header", "malformed"],
+        ["--format", "json", "send", "1", "--body", "@/definitely/missing/body"],
+    ],
+)
+def test_repeater_local_errors_honor_json_under_direct_runner(argv: list[str]) -> None:
+    """C2: direct app invocation retains the selected JSON format for repeater usage errors."""
+    result = runner.invoke(app, argv)
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    diagnostic = json.loads(result.stderr)
+    assert diagnostic["error"]["code"] == "USAGE_ERROR"
 
 
 def test_parse_header_splits_name_value() -> None:
@@ -104,6 +274,13 @@ def test_service_unavailable_maps_to_exit_generic() -> None:
     assert _EXIT_BY_CODE.get("PRO_REQUIRED") == EXIT_PRO, (
         f"[13] PRO_REQUIRED must still map to EXIT_PRO={EXIT_PRO}"
     )
+
+
+def test_no_response_maps_to_transport_exit() -> None:
+    """C7: a target send with no upstream response is a transport failure, not generic runtime."""
+    from bp.cliutil import EXIT_CONNECTION, exit_code_for_error_code
+
+    assert exit_code_for_error_code("NO_RESPONSE") == EXIT_CONNECTION
 
 
 # ---------------------------------------------------------------------------

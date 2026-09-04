@@ -8,7 +8,7 @@ package com.burprest
  * behavior does not match. `BuildIdentityTest` and `bp/tests/test_release_identity.py` fail if any
  * of those copies drift.
  */
-const val EXTENSION_VERSION: String = "2.0.0"
+const val EXTENSION_VERSION: String = "2.1.0"
 
 /** Product name reported by `/version`. */
 const val EXTENSION_NAME: String = "burp-rest-extension"

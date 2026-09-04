@@ -3,12 +3,14 @@ package com.burprest.services
 import burp.api.montoya.MontoyaApi
 import burp.api.montoya.core.ByteArray as BurpByteArray
 import burp.api.montoya.http.message.requests.HttpRequest
+import burp.api.montoya.http.message.requests.MalformedRequestException
 import burp.api.montoya.http.message.responses.HttpResponse
 import burp.api.montoya.proxy.Proxy
 import burp.api.montoya.proxy.ProxyHttpRequestResponse
 import burp.api.montoya.proxy.ProxyWebSocketMessage
 import com.burprest.server.InvalidParamException
 import com.burprest.server.NotFoundException
+import com.burprest.server.ServiceUnavailableException
 import com.burprest.server.UnsupportedException
 import io.mockk.*
 import java.time.ZoneOffset
@@ -18,6 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ProxyServiceTest {
@@ -59,6 +62,44 @@ class ProxyServiceTest {
         every { entry.listenerPort() } returns 8080
 
         return entry
+    }
+
+    @Test
+    fun `history skips one malformed stored request and preserves valid absolute IDs`() {
+        val malformedEntry = mockk<ProxyHttpRequestResponse>()
+        val malformedRequest = mockk<HttpRequest>()
+        val malformedBody = mockk<BurpByteArray>()
+        every { malformedEntry.finalRequest() } returns malformedRequest
+        every { malformedEntry.response() } returns null
+        every { malformedEntry.host() } returns "example.com"
+        every { malformedRequest.body() } returns malformedBody
+        every { malformedBody.length() } returns 0
+        every { malformedRequest.method() } throws MalformedRequestException("stored bytes are malformed")
+        every { proxy.history() } returns listOf(
+            malformedEntry,
+            mockEntry("https://example.com/valid"),
+        )
+
+        val result = service.getHistory()
+
+        assertEquals(1, result.total)
+        assertEquals(1, result.entries.single().id)
+        assertEquals("https://example.com/valid", result.entries.single().request.url)
+    }
+
+    @Test
+    fun `direct malformed history entry returns a typed operational failure`() {
+        val malformedEntry = mockk<ProxyHttpRequestResponse>()
+        val malformedRequest = mockk<HttpRequest>()
+        val body = mockk<BurpByteArray>()
+        every { proxy.history() } returns listOf(malformedEntry)
+        every { malformedEntry.finalRequest() } returns malformedRequest
+        every { malformedEntry.response() } returns null
+        every { malformedRequest.body() } returns body
+        every { body.length() } returns 0
+        every { malformedRequest.method() } throws MalformedRequestException("stored bytes are malformed")
+
+        assertFailsWith<ServiceUnavailableException> { service.getHistoryEntry(0) }
     }
 
     @Test
@@ -237,5 +278,57 @@ class ProxyServiceTest {
         assertEquals("legacy first", entry.payload)
         assertEquals(Base64.getEncoder().encodeToString(originalBytes), entry.payloadBase64)
         assertEquals(Base64.getEncoder().encodeToString(editedBytes), entry.editedPayloadBase64)
+    }
+
+    @Test
+    fun `websocket history preserves an unedited message with explicit edited payload absence`() {
+        val message = mockk<ProxyWebSocketMessage>()
+        val upgrade = mockk<HttpRequest>()
+        val payload = mockk<BurpByteArray>()
+        val capturedAt = ZonedDateTime.of(2026, 2, 3, 4, 5, 6, 0, ZoneOffset.UTC)
+
+        every { proxy.webSocketHistory() } returns listOf(message)
+        every { message.webSocketId() } returns 91
+        every { message.upgradeRequest() } returns upgrade
+        every { upgrade.url() } returns "wss://example.com/unedited"
+        every { message.direction() } returns burp.api.montoya.websocket.Direction.SERVER_TO_CLIENT
+        every { message.payload() } returns payload
+        every { payload.getBytes() } returns byteArrayOf(0x45)
+        every { payload.toString() } returns "legacy unedited"
+        every { message.editedPayload() } returns null
+        every { message.time() } returns capturedAt
+        every { message.listenerPort() } returns 9443
+
+        val result = service.getWebSocketHistory()
+
+        assertEquals(1, result.total)
+        assertEquals("legacy unedited", result.entries.single().payload)
+        assertNull(result.entries.single().editedPayloadBase64)
+    }
+
+    @Test
+    fun `websocket history keeps a row when Montoya platform references are absent`() {
+        val message = mockk<ProxyWebSocketMessage>()
+
+        every { proxy.webSocketHistory() } returns listOf(message)
+        every { message.webSocketId() } returns 92
+        every { message.upgradeRequest() } returns null
+        every { message.direction() } returns null
+        every { message.payload() } returns null
+        every { message.editedPayload() } returns null
+        every { message.time() } returns null
+        every { message.listenerPort() } returns 9443
+
+        val result = service.getWebSocketHistory()
+        val entry = result.entries.single()
+
+        assertEquals(1, result.total)
+        assertNull(entry.url)
+        assertNull(entry.direction)
+        assertNull(entry.payload)
+        assertNull(entry.payloadBase64)
+        assertNull(entry.editedPayloadBase64)
+        assertNull(entry.timestamp)
+        assertNull(entry.time)
     }
 }

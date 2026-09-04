@@ -14,10 +14,16 @@ from dataclasses import asdict
 from typing import Any
 
 import typer
+from typer import Abort, Exit as ClickExit
+
+# Typer 0.26 vendors Click and does not publicly re-export ClickException.  Keep this sole private
+# compatibility import at the entrypoint boundary; no command module may depend on typer._click.
+from typer._click import ClickException
 
 from bp import __version__
 from bp.client import BurpClient
-from bp.cliutil import EXIT_USAGE, State, exit_code_for_error_code, run
+from bp.cliutil import State, exit_code_for_error_code, fail_usage, run
+from bp.fuzz import load_payload_file
 from bp.models import ProxyEntry
 from bp.output import FORMATS
 from bp.runner import FuzzResult, run_fuzz
@@ -180,14 +186,13 @@ def fuzz(
     for spec in payloads:
         name, sep, path = spec.partition("=")
         if not sep:
-            typer.echo(f"error: --payloads must be NAME=FILE, got {spec!r}", err=True)
-            raise typer.Exit(EXIT_USAGE)
+            fail_usage(ctx, f"--payloads must be NAME=FILE, got {spec!r}")
         try:
-            with open(path, "rb") as fh:
-                payload_map[name] = [ln.rstrip(b"\r\n") for ln in fh if ln.strip()]
+            payload_map[name] = load_payload_file(path)
         except OSError as exc:
-            typer.echo(f"error: cannot read payload file {path}: {exc}", err=True)
-            raise typer.Exit(EXIT_USAGE) from None
+            fail_usage(ctx, f"cannot read payload file {path}: {exc}")
+        except ValueError as exc:
+            fail_usage(ctx, f"invalid payload file {path}: {exc}")
 
     def _do(client: BurpClient) -> Any:
         results = run_fuzz(client, request_id, pos, payload_map, attack_type)
@@ -277,6 +282,38 @@ def _hoist_global_opts(argv: list[str]) -> list[str]:
     return head + hoisted + rest
 
 
+def _json_error_mode(argv: list[str]) -> bool:
+    """Resolve error rendering before Click has successfully built a context.
+
+    An explicit format wins over BP_AGENT just as it does in ``main``.  This deliberately scans only
+    the three spellings the argv hoister supports and never interprets tokens after ``--``.
+    """
+    explicit: str | None = None
+    index = 0
+    while index < len(argv):
+        token = argv[index]
+        if token == "--":
+            break
+        if token == "--format" and index + 1 < len(argv):
+            explicit = argv[index + 1]
+            index += 2
+            continue
+        if token.startswith("--format="):
+            explicit = token.partition("=")[2]
+        index += 1
+    if explicit is not None:
+        return explicit == "json"
+    return os.environ.get("BP_AGENT") == "1"
+
+
+def _emit_click_error(exc: ClickException, *, json_mode: bool) -> None:
+    if json_mode:
+        detail = {"error": {"code": "USAGE_ERROR", "message": exc.format_message()}}
+        typer.echo(json.dumps(detail, separators=(",", ":")), err=True)
+    else:
+        exc.show(file=sys.stderr)
+
+
 def cli_main() -> None:
     """Console entrypoint (bp / burpctl). Applies ADR-0009 option hoisting, then dispatches.
 
@@ -285,4 +322,25 @@ def cli_main() -> None:
     ADR-0012: ``bp`` is primary, ``burpctl`` is the alias).
     """
     prog = os.path.basename(sys.argv[0]) or "bp"
-    app(args=_hoist_global_opts(sys.argv[1:]), prog_name=prog)
+    args = _hoist_global_opts(sys.argv[1:])
+    try:
+        result = app(args=args, prog_name=prog, standalone_mode=False)
+        if isinstance(result, int) and result != 0:
+            raise SystemExit(result)
+    except ClickException as exc:
+        _emit_click_error(exc, json_mode=_json_error_mode(args))
+        raise SystemExit(exc.exit_code) from None
+    except ClickExit as exc:
+        raise SystemExit(exc.exit_code) from None
+    except Abort:
+        if _json_error_mode(args):
+            typer.echo(
+                json.dumps(
+                    {"error": {"code": "USAGE_ERROR", "message": "Aborted"}},
+                    separators=(",", ":"),
+                ),
+                err=True,
+            )
+        else:
+            typer.echo("Aborted!", err=True)
+        raise SystemExit(1) from None

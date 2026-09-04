@@ -2,42 +2,44 @@
 
 # Current executable contract
 
-This section supersedes stale behavior descriptions later in this historical specification. The executable contract is tested against the Kotlin routes, DTOs, services, Python command adapters, and `src/main/resources/openapi.json`. See [ADR-0013](adr/0013-truthful-executable-contracts.md) and `quality/confirmed-defects.yaml`.
+This section supersedes stale behavior descriptions later in this historical specification. It records the shipped v2.0.0 behavior rechecked against a real Burp Suite Professional 2026.3.3 instance on 2026-09-04. Where the live campaign contradicted a prior contract claim, the limitation is named below and linked to `quality/confirmed-defects.yaml`; a fix is not current behavior until the original live reproduction passes after redeployment. See [ADR-0013](adr/0013-truthful-executable-contracts.md) and [ADR-0014](adr/0014-state-preserving-reportable-operations.md).
 
 ## Server boundary
 
-- All responses, including 404, 405, validation, unsupported, Pro-gated, storage, and internal failures, use `ApiResponse { success, data, error }` JSON.
-- JSON request bodies are strict: malformed syntax and unknown fields fail before service or target effects.
-- Request logs contain method and path only, never query strings, headers, or bodies.
-- Discoverable operations unavailable in Montoya 2025.3 return HTTP 501 `UNSUPPORTED`; they never return a successful no-op.
+- Most 404, 405, validation, unsupported, Pro-gated, storage, and internal failures use `ApiResponse { success, data, error }` JSON. In v2.0.0, unsupported/missing request media and an empty JSON body instead produce a bare HTTP 415 with no body (D19).
+- Outer REST request DTOs reject malformed syntax and unknown members. A nested Burp configuration document is a separate boundary: v2.0.0 allows Burp to coerce a wrong-typed value and reset siblings (D49), or silently ignore an unknown key while reporting success (D50).
+- Request logs contain method and path only, never query strings, headers, or bodies. Invalid `/history` timestamps nevertheless echo the raw query value and Java parser class in the response error (D21).
+- Discoverable operations unavailable in Montoya 2025.3 return HTTP 501 `UNSUPPORTED`; they never return a successful no-op. The v2.0.0 server-side Intruder matrix routes are an exception in classification only: they reject without sending, but use HTTP 400 `INVALID_REQUEST` (D48).
 - Extension state uses H2/MVStore under `~/.burp-rest/`, with owner-only permissions where supported. The Python Run Ledger remains SQLite under `~/.bp/` and stores fingerprints rather than raw request/response bodies.
 
-## Corrected operation behavior
+## Observed operation behavior
 
-- Proxy history filtering matches an exact normalized host and preserves absolute history indexes. Intercept state comes from Montoya. Forward/drop are unsupported. WebSocket history retains compatibility fields and adds stable socket identity, capture time, listener port, and Base64 byte fields.
-- Repeater send/tab enforce exactly one of inline request or proxy `requestId`; a batch is fully preflighted before its first send. A response-less exchange is `NO_RESPONSE`. Optional H2 recording cannot turn a completed target request into a retry-inducing failure.
-- Session replacement is atomic. Credentials bind to one normalized origin (legacy state binds at first use), and cross-origin credential sends fail before network access. Configured credentials and the observed cookie jar have distinct clear operations.
-- Client-side `bp fuzz` supports sniper, battering-ram, pitchfork, and cluster-bomb with byte offsets, a 10,000-shot cap, complete preflight, one fresh baseline, lazy execution, exact attempt rows, and terminal-failure stopping. The bounded server async API truthfully supports sniper only; other modes are `UNSUPPORTED` there.
-- Collaborator public/correlation IDs, timestamps, IP/port, and protocol details come from Montoya. Unknown IDs are `NOT_FOUND`; provider failure is not a clean empty poll.
-- Scanner audit is seeded with the supplied URL. Task status/counts and stop come from Montoya; unavailable progress is null. Pause/resume and linked crawl-and-audit are unsupported in Montoya 2025.3.
-- Header-check anomalies are observations. Only a denial-to-substantive-success result increments `vulnerableCount` or selects CLI exit 5. CORS probes exclude target-owned subdomains. Endpoint sweep reads extension-owned Repeater/session H2 history, not ordinary proxy listener history.
-- Target add/remove/check return the engine's resulting classification. Complete scope listing/replacement is unsupported because Montoya cannot enumerate or remove accumulated rules.
-- Project/user config endpoints export/import actual nested Burp JSON. `/extensions` explicitly reports only the current extension.
-- History routes remain mounted when H2 is unavailable and return `SERVICE_UNAVAILABLE`; history+sitemap clear is transactional; malformed filters fail rather than defaulting.
-- Utilities use RFC URI resolution, keep credentials same-origin, report bundle fetch failures, count UTF-8 bytes, and preserve duplicate-header differences.
+- Proxy history filtering matches an exact normalized host and preserves absolute history indexes. Intercept on/off state comes from Montoya; forward/drop are unsupported. A populated real WebSocket history is unreadable in v2.0.0: one absent edited-payload value fails the whole listing with HTTP 500 (D23). The 2.1.0 response contract makes `WebSocketEntry.url`, `direction`, legacy `payload`, and `payloadBase64` nullable, but that repair still requires live verification.
+- Repeater send enforces exactly one of inline request or proxy `requestId`, and batch input is preflighted. A response-less exchange is `NO_RESPONSE`. An explicitly blank Repeater tab name is accepted and creates `name:""` (D26).
+- Session replacement is atomic and credentials bind to one normalized origin. Invalid CR/LF/NUL header values are stopped by the extension before target traffic, but v2.0.0 sends them across the local REST boundary first (D28). The captured cookie jar is separate from configured session fields and survives `bp session clear`; v2.0.0 exposes no CLI operation to clear that jar (D29). Cookie output omits `HttpOnly` (D30).
+- Client-side `bp fuzz` names sniper, battering-ram, pitchfork, and cluster-bomb and emits one explicit baseline plus attempted-shot rows. Live v2.0.0 sends add browser-default headers (D38), collapse duplicate Cookie fields (D39), corrupt multibyte body payloads (D40), silently ignore extra named lists in sniper/battering-ram (D41), cannot represent several payload-file values (D43), rejects NUL bodies (D44), and cannot normalize a captured fragment-bearing URL (D45). Unequal pitchfork lists intentionally stop at the shortest list (D42 is rejected). A baseline `NO_RESPONSE` stops the campaign but exits 1 rather than transport exit 3 (D46).
+- Collaborator identities and interaction details come from Montoya while the extension registry survives. Unknown IDs return the generic global `route not found` text rather than the payload-specific message (D35). A user-configuration reload destroys the whole registry, including untouched controls (D53).
+- Scanner audit creates a task for the supplied URL, but real task status, issues, and audit stop fail with HTTP 503 in v2.0.0 (D55). Six task states remain unknown; no API enumerates scanner tasks. Pause/resume and linked crawl-and-audit are unsupported in Montoya 2025.3. No claim is made about the empty target-sitemap observation until the Burp target sitemap and extension H2 sitemap stores are disambiguated (D56).
+- `check auth` in v2.0.0 still marks three identical public HTTP 200 representations as vulnerable and exits 5 (D58). The 2.1.0 target rule compares FULL, COOKIES_ONLY, and NONE: three identical arms establish no credential-sensitive boundary. **Detection ceiling:** Without a server-held marker, `check auth` cannot distinguish a cookie-only bypass where FULL, COOKIES_ONLY, and NONE all return the same representation from an intentionally public route; that case is not confirmed. A FULL/NONE protected-byte match with an independently denied COOKIES_ONLY control remains confirmable.
+- Structured inconclusive check results use exit 0 in v2.0.0 across auth, headers, IDOR, CORS, and endpoints (D60), so the representation—not the exit alone—must be inspected. Check probes also have no per-probe timeout; a 1.5-second public response remained conclusive and became the same false auth finding, while only the aggregate 30-second client deadline stopped seven repeated endpoints (D61). The 2.1.0 target behavior is bounded but deliberately does not diagnose an absent response: the result is inconclusive and names the configured budget. Pinned Montoya signals a slow target, refused connection, and resolution failure identically as no response and exposes no public timeout-specific type, so the extension cannot truthfully distinguish them.
+- Header-check anomalies are observations. A fresh protected marker distinguished a real denial-to-substantive-success bypass from a decoy live: only the former incremented `vulnerableCount` and selected exit 5. CORS probes excluded target-owned subdomains in the live campaign. Endpoint sweep reads extension-owned Repeater/session H2 history, not ordinary proxy listener history.
+- Target add/remove/check return the engine's resulting classification for ordinary accepted URLs. Complete listing/replacement is unsupported; v2.0.0 help text incorrectly describes those commands as usable (D52). An accepted 8 KiB scope URL cannot be checked through the GET query path, so its final independent state is unknown (D51).
+- Project/user config endpoints export and import nested Burp JSON, but import is not an exact all-or-nothing contract in v2.0.0 (D49–D50). `PUT /config/user` also reloads the serving extension while the request is in flight, resets uptime, and destroys extension-owned in-memory state; project-only imports did not reset uptime in the observed sequence. Because the operation cannot report its own completion truthfully, ADR-0014 requires it to refuse (D53). `/extensions` reports only the current extension.
+- History routes remain mounted when H2 is unavailable and history+sitemap clear is transactional. Valid filters work, but malformed `page`, `pageSize`, and `statusCode` values are silently defaulted/omitted (D20), and invalid timestamp errors disclose parser details/input (D21).
+- Utilities use RFC URI resolution, keep credentials same-origin, report bundle fetch failures, count UTF-8 bytes, and preserve duplicate-header differences in the tested utility paths.
 
 ## Output and automation
 
-- `json` uses parseable compact JSON/NDJSON. Machine-mode failures emit one JSON error record on stderr.
-- Redaction is structural before serialization and covers nested credential fields, header records/maps, cookies, authorization schemes, URL userinfo, and sensitive query parameters. `--no-redact` is the explicit opt-out.
-- `raw` requires a genuine raw/scalar value; structured records do not masquerade as raw HTTP.
-- `--fields all` and `--fields '*'` select the full canonical record. Quiet security-check verdicts follow confirmed findings, not anomalies.
-- Config precedence is flag > environment > config file > default. REST URL, enum, boolean, throttle, and anomaly values are validated.
-- The Run Ledger fingerprints complete encoded GET query identity and pessimistically records failure until command execution and rendering succeed.
+- Successful JSON lists use compact NDJSON. Runtime/server failures use one JSON error record in JSON mode, but v2.0.0 local validation and Typer parser errors remain human/Rich text even under `BP_AGENT=1` or explicit JSON (D22).
+- Redaction is structural before serialization. In v2.0.0 cookie-jar redaction also hides safe domain/name/path metadata, so inspecting identity requires the unsafe `--no-redact` value opt-out (D31).
+- `raw` rejects structured values. Despite the historical single-entry raw design below, v2.0.0 does not reconstruct raw HTTP for `bp req`, `bp send`, `bp history get`, or `bp history replay`; those commands exit 2 after receiving a dictionary (D27).
+- Output compatibility is checked after command execution in v2.0.0. Invalid `raw` or `--fields` selections therefore can mutate intercept/scope/config, send/replay target traffic, create tabs/payloads/tasks, or consume a Collaborator interaction before exit 2 (D24). The Run Ledger records the REST call as successful and later stores exit 2; rendering success is not part of its operation-status field.
+- Quiet and field selection are command projections, not universally correct in v2.0.0: Collaborator quiet emits Python containers/booleans and can consume detail (D33), while Collaborator fields address wrappers rather than documented records (D34). Scope/config quiet output has the same Python-representation/wrong-essential-value class recorded under D33. Among security checks, only IDOR emits the promised one-word quiet verdict; auth, headers, CORS, and endpoints emit a wrapper value or Python representation (D59).
+- Config precedence is flag > environment > config file > default for the exercised Python settings.
 
 ## Acceptance status
 
-`docs/bdd/` is historical scenario material, not an executable gate. Current acceptance comes from the Kotlin tests, Python tests, OpenAPI validation, CLI route contracts, package builds, and the confirmed-defect ledger.
+`docs/bdd/` is historical scenario material, not an executable gate. Hermetic Kotlin/Python, OpenAPI, CLI-route, package, lint, and coverage gates all passed before the campaign, but mocks could not expose real Montoya null/throw behavior. For affected integration claims, comparable proof against a real supported Burp build is now a release gate; see ADR-0014. D19–D61 preserve 37 live-confirmed v2.0.0 defects; the current dispositions are 33 `confirmed`, four `fixed` but not live-reverified, one `unconfirmed` observation, and five `rejected` brief-derived candidates. No campaign defect is `verified`.
 
 ---
 
@@ -502,6 +504,13 @@ probes go through `SessionService.send()` +
 Burp HTTP engine. **An active session is
 required** for auth probes. Synchronous /
 blocking.
+
+> Without a server-held marker, `check auth` cannot distinguish a cookie-only bypass where FULL, COOKIES_ONLY, and NONE all return the same representation from an intentionally public route; that case is not confirmed.
+>
+> A bounded probe that returns no response is reported inconclusive with the budget it was given. The
+> extension cannot determine whether the target was slow, refused the connection, or failed to
+> resolve, because the pinned Montoya API signals all three as an absent response and exposes no
+> timeout-specific type.
 
 | Method | Path | Pro | Request model (Kotlin types) | Hunter usage |
 |---|---|---|---|---|

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import SplitResult, urlsplit
@@ -18,14 +19,14 @@ class _BridgeRequest:
     method: str
     url: str
     headers: list[dict[str, str]]
-    body: str | None
+    body_bytes: bytes | None
 
 
 def _contains_forbidden(value: str) -> bool:
     return any(character in value for character in _FORBIDDEN_STRUCTURED)
 
 
-def _url_parts(url: str) -> SplitResult:
+def _url_parts(url: str, *, allow_fragment: bool = False) -> SplitResult:
     if not isinstance(url, str):
         raise TypeError("request URL must be text")
     if _contains_forbidden(url):
@@ -43,7 +44,7 @@ def _url_parts(url: str) -> SplitResult:
         raise ValueError("request URL must contain an authority")
     if parts.username is not None or parts.password is not None:
         raise ValueError("request URL userinfo is not supported")
-    if parts.fragment:
+    if parts.fragment and not allow_fragment:
         raise ValueError("HTTP request targets cannot contain URL fragments")
     return parts
 
@@ -138,11 +139,12 @@ def _bridge_request(raw: bytes, scheme: str, authority: str) -> _BridgeRequest:
         raise ValueError("Host header is inconsistent with the structured request authority")
 
     if target.startswith("/"):
-        if "#" in target:
-            raise ValueError("HTTP origin-form request target cannot contain a fragment")
-        url = f"{scheme}://{host_value}{target}"
+        # A proxy capture can retain browser-only fragment metadata even though fragments never cross
+        # the HTTP wire.  Query/path selectors already exclude it, so replay must do the same.
+        wire_target = target.partition("#")[0]
+        url = f"{scheme}://{host_value}{wire_target}"
     elif target.lower().startswith(("http://", "https://")):
-        absolute = _url_parts(target)
+        absolute = _url_parts(target, allow_fragment=True)
         target_scheme = absolute.scheme.lower()
         if target_scheme != scheme:
             raise ValueError("absolute-form request target scheme is inconsistent")
@@ -150,33 +152,35 @@ def _bridge_request(raw: bytes, scheme: str, authority: str) -> _BridgeRequest:
             raise ValueError("absolute-form authority is inconsistent with Host")
         if not _authorities_match(absolute.netloc, authority, scheme):
             raise ValueError("absolute-form authority is inconsistent with the base request")
-        url = target
+        # Preserve the validated spelling byte-for-byte; rebuilding a SplitResult would erase a
+        # significant empty query delimiter (``/a?``) while removing the fragment.
+        url = target.partition("#")[0]
     else:
         raise ValueError("unsupported request target form for the structured REST bridge")
 
     body_bytes = raw[parsed.body_start :]
-    if b"\x00" in body_bytes:
-        raise ValueError("NUL request bodies cannot cross the structured REST bridge")
-    try:
-        body = body_bytes.decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise ValueError(f"request body cannot be preserved as UTF-8: {exc}") from None
     has_explicit_length = any(header.name.lower() == b"content-length" for header in parsed.headers)
-    structured_body = body if body_bytes or has_explicit_length else None
+    structured_body = body_bytes if body_bytes or has_explicit_length else None
     return _BridgeRequest(parsed, method, url, headers, structured_body)
 
 
-def build_raw(method: str, url: str, headers: list[tuple[str, str]], body: str | None) -> bytes:
+def build_raw(
+    method: str,
+    url: str,
+    headers: list[tuple[str, str]],
+    body: str | bytes | None,
+) -> bytes:
     """Build validated raw HTTP/1.1 bytes from structured request parts."""
     if not isinstance(method, str):
         raise TypeError("request method must be text")
     if _contains_forbidden(method):
         raise ValueError("request method contains CR, LF, or NUL injection")
-    parts = _url_parts(url)
+    parts = _url_parts(url, allow_fragment=True)
     scheme = parts.scheme.lower()
     authority = parts.netloc
+    fragmentless_url = url.partition("#")[0]
     target = parts.path or "/"
-    if parts.query:
+    if "?" in fragmentless_url:
         target = f"{target}?{parts.query}"
 
     checked_headers: list[tuple[str, str]] = []
@@ -199,14 +203,20 @@ def build_raw(method: str, url: str, headers: list[tuple[str, str]], body: str |
     if host_count > 1:
         raise ValueError("duplicate Host fields are ambiguous")
 
-    if body is not None and not isinstance(body, str):
-        raise TypeError("structured request body must be text or None")
+    if body is not None and not isinstance(body, (str, bytes)):
+        raise TypeError("structured request body must be text, bytes, or None")
     try:
-        body_bytes = (body or "").encode("utf-8")
+        body_bytes = body if isinstance(body, bytes) else (body or "").encode("utf-8")
+        effective_headers = checked_headers
+        has_explicit_length = any(name.lower() == "content-length" for name, _ in checked_headers)
+        if body is not None and not has_explicit_length:
+            # Preserve the structured model's empty-body state.  Without an explicit zero length,
+            # the raw separator alone is indistinguishable from a request with no body at all.
+            effective_headers = [*checked_headers, ("Content-Length", str(len(body_bytes)))]
         lines = [f"{method} {target} HTTP/1.1"]
         if host_count == 0:
             lines.append(f"Host: {authority}")
-        lines.extend(f"{name}: {value}" for name, value in checked_headers)
+        lines.extend(f"{name}: {value}" for name, value in effective_headers)
         raw = "\r\n".join(lines).encode("utf-8") + b"\r\n\r\n" + body_bytes
     except UnicodeEncodeError as exc:
         raise ValueError(
@@ -221,9 +231,14 @@ def build_raw(method: str, url: str, headers: list[tuple[str, str]], body: str |
 def to_send_request(raw: bytes, scheme: str, host: str) -> dict[str, Any]:
     """Parse raw bytes into a lossless, framing-safe ``/repeater/send`` request payload."""
     request = _bridge_request(raw, scheme, host)
-    return {
+    result: dict[str, Any] = {
         "method": request.method,
         "url": request.url,
         "headers": request.headers,
-        "body": request.body,
     }
+    if request.body_bytes is not None:
+        # The live bridge proved that Montoya's String overload narrows UTF-16 code units, turning
+        # 25 intended UTF-8 bytes into 19.  One base64 path preserves empty, Unicode, NUL, and
+        # arbitrary binary bodies without a text branch that can silently re-encode them.
+        result["bodyBase64"] = base64.b64encode(request.body_bytes).decode("ascii")
+    return result

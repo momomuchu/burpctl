@@ -3,21 +3,21 @@
 Commands (CLI.md):
   bp session set --json STR          load cookies+headers (POST /session/set, full replace)
   bp session get                     inspect the active session (GET /session/get)
-  bp session clear                   reset session cookies/headers (DELETE /session/clear)
+  bp session clear                   reset credentials, origin, and captured jar (DELETE /session/clear)
   bp session send <url>              send an authenticated request (POST /session/send)
   bp session cookies                 show the auto-captured cookie-jar (GET /session/cookie-jar)
 
 Request models (Kotlin source, SPEC §6.11):
   SetSessionRequest      { cookies:Map<String,String> (required), headers:Map?=null,
-                           name:String?=null }
+                           name:String?=null, origin:String?=null }
   AuthenticatedRequest   { method:String="GET", url:String (required), body:String?=null,
                            extraHeaders:Map<String,String>?=null }
 
 SPEC §6.11 caveats surfaced on stderr:
   - POST /session/set is a *full replace* — overwrites all existing cookies and headers.
   - extraHeaders in /session/send *override* session headers (not additive).
-  - The cookie-jar is in-memory only (not in DB); it survives 'clear' but is wiped on reload.
-  - DELETE /session/clear resets session cookies/headers but does NOT wipe the cookie-jar.
+  - The cookie-jar is in-memory only (not in DB); 'clear' and extension reload wipe it.
+  - DELETE /session/clear atomically resets cookies, headers, origin, and the cookie-jar.
   - The entire /session group is absent from the embedded /docs OpenAPI.
 """
 
@@ -28,7 +28,7 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, parse_headers, run
+from bp.cliutil import fail_usage, parse_headers, run
 
 # ---------------------------------------------------------------------------
 # Sub-application
@@ -53,31 +53,36 @@ def session_set(
         metavar="STR",
         help=(
             "JSON string for SetSessionRequest: "
-            '{"cookies":{...}, "headers":{...}, "name":"..."} '
-            "(cookies required; full replace of active session)."
+            '{"cookies":{...}, "headers":{...}, "name":"...", "origin":"https://target"} '
+            "(cookies required; origin binds credentials to one target origin; full replace)."
         ),
     ),
 ) -> None:
     """Load session cookies and headers (POST /session/set).
 
-    Sends SetSessionRequest { cookies:Map (required), headers:Map?=null, name:String?=null }.
+    Sends SetSessionRequest { cookies:Map (required), headers:Map?=null, name:String?=null,
+    origin:String?=null }. ``origin`` binds credentials to one exact target origin.
     This is a FULL REPLACE — all existing session cookies and headers are overwritten.
 
     Example:
-      bp session set --json '{"cookies":{"session":"abc123"},"headers":{"X-Role":"admin"}}'
+      bp session set --json '{"cookies":{"session":"abc123"},"headers":{"X-Role":"admin"},"origin":"https://example.com"}'
     """
     try:
         body: dict[str, Any] = _json.loads(json_str)
     except _json.JSONDecodeError as exc:
-        typer.echo(f"error: --json is not valid JSON: {exc}", err=True)
-        raise typer.Exit(EXIT_USAGE) from None
+        fail_usage(ctx, f"--json is not valid JSON: {exc}")
 
     if not isinstance(body, dict) or "cookies" not in body:
-        typer.echo(
-            'error: SetSessionRequest requires "cookies" key (Map<String,String>).',
-            err=True,
-        )
-        raise typer.Exit(EXIT_USAGE) from None
+        fail_usage(ctx, 'SetSessionRequest requires "cookies" key (Map<String,String>).')
+
+    headers = body.get("headers")
+    if isinstance(headers, dict):
+        for name, value in headers.items():
+            if isinstance(value, str) and any(control in value for control in ("\r", "\n", "\x00")):
+                fail_usage(
+                    ctx,
+                    f"session header {name!r} value contains forbidden CR, LF, or NUL",
+                )
 
     typer.echo(
         "note: /session/set is a full replace — existing session cookies and headers are overwritten.",
@@ -108,13 +113,12 @@ def session_get(ctx: typer.Context) -> None:
 
 @sub.command("clear")
 def session_clear(ctx: typer.Context) -> None:
-    """Reset session cookies and headers (DELETE /session/clear).
+    """Atomically clear session credentials, origin binding, and captured cookies.
 
-    NOTE: this does NOT wipe the auto-captured cookie-jar.
-    Use 'bp session cookies' to inspect the cookie-jar (wiped only on extension reload).
+    DELETE /session/clear resets configured cookies/headers/origin and the auto-captured cookie jar.
     """
     typer.echo(
-        "note: /session/clear resets session cookies/headers but leaves the cookie-jar intact.",
+        "note: /session/clear resets session cookies, headers, origin, and captured cookie-jar.",
         err=True,
     )
     run(ctx, lambda c: c._request("DELETE", "/session/clear"))
@@ -164,7 +168,7 @@ def session_send(
       bp session send https://example.com/api/admin --method POST --body '{}'
     """
     # Parse extra headers early (shared helper → consistent exit 2)
-    extra_headers = parse_headers(set_header)
+    extra_headers = parse_headers(set_header, ctx=ctx)
 
     def _do(c: Any) -> Any:
         payload: dict[str, Any] = {"method": method, "url": url}
@@ -188,10 +192,9 @@ def session_cookies(ctx: typer.Context) -> None:
 
     The cookie-jar collects Set-Cookie headers from responses automatically,
     organised by domain. It is distinct from the session cookies set via
-    'bp session set' and survives 'bp session clear'.
+    'bp session set'; 'bp session clear' empties both stores and the origin binding.
 
-    NOTE: the cookie-jar is in-memory only (not persisted to DB); it is wiped
-    when the extension is reloaded.
+    NOTE: the cookie-jar is in-memory only (not persisted to DB); extension reload also wipes it.
     """
     run(ctx, lambda c: c.get("/session/cookie-jar"))
 

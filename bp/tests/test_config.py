@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from bp.config import load, redact
+from bp.config import load, redact, redact_data
 
 
 # ---------------------------------------------------------------------------
@@ -68,6 +68,26 @@ class TestRedactCookieJsonEmbedded:
     appears as {"name":"Cookie","value":"session=SECRETSESSIONTOKEN"}.
     The value field must be masked; the key 'Cookie' may remain visible.
     """
+
+    def test_cookie_jar_redacts_only_value_and_keeps_safe_metadata(self) -> None:
+        cookie = {
+            "domain": "example.test",
+            "name": "sid",
+            "value": "SECRETSESSIONTOKEN",
+            "path": "/admin",
+            "secure": True,
+            "httpOnly": True,
+        }
+
+        result = redact_data({"cookies": [cookie]})
+        redacted = result["cookies"][0]
+
+        assert redacted["domain"] == "example.test"
+        assert redacted["name"] == "sid"
+        assert redacted["path"] == "/admin"
+        assert redacted["value"] == "***"
+        assert redacted["secure"] is True
+        assert redacted["httpOnly"] is True
 
     def test_cookie_json_value_masked(self) -> None:
         blob = '{"name":"Cookie","value":"session=SECRETSESSIONTOKEN"}'

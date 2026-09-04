@@ -23,15 +23,15 @@ data class ScanStartResponse(
 @Serializable
 data class ScanStatusResponse(
     val scanId: String,
-    /** Compatibility field containing Montoya's task status message. */
-    val status: String,
+    /** Compatibility field containing Montoya's task status message when it is readable. */
+    val status: String?,
     /** Montoya 2025.3 exposes counts but no percentage progress. */
     val crawlProgress: Int? = null,
     val auditProgress: Int? = null,
-    val issueCount: Int = 0,
-    val statusMessage: String = status,
-    val requestCount: Int = 0,
-    val errorCount: Int = 0,
+    val issueCount: Int? = null,
+    val statusMessage: String? = status,
+    val requestCount: Int? = null,
+    val errorCount: Int? = null,
 )
 
 @Serializable
@@ -47,16 +47,16 @@ data class ScanIssue(
 @Serializable
 data class ScanIssuesResponse(
     val scanId: String,
-    val issues: List<ScanIssue>,
-    val total: Int,
+    val issues: List<ScanIssue>?,
+    val total: Int?,
 )
 
 @Serializable
 data class IssueDefinition(
     val name: String,
     val typeIndex: Long,
-    val description: String,
-    val remediation: String,
+    val description: String?,
+    val remediation: String?,
 )
 
 @Serializable

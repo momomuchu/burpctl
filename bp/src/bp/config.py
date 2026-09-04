@@ -455,6 +455,34 @@ def _mask_sensitive_value(value: Any) -> Any:
     return REDACTED
 
 
+def _is_cookie_jar(value: Any) -> bool:
+    if not isinstance(value, list):
+        return False
+    required = {"domain", "name", "value", "path"}
+    return all(
+        isinstance(entry, Mapping) and required <= {_canonical_name(key) for key in entry}
+        for entry in value
+    )
+
+
+def _redact_cookie_jar(value: list[Any]) -> list[Any]:
+    """Mask CookieEntry.value while retaining domain/name/path and boolean metadata."""
+    result: list[Any] = []
+    for entry in value:
+        if not isinstance(entry, Mapping) or "value" not in entry:
+            result.append(redact_data(entry))
+            continue
+        copied = _copy_mapping(entry)
+        for key, item in entry.items():
+            copied[key] = (
+                _mask_sensitive_value(item)
+                if _canonical_name(key) == "value"
+                else redact_data(item)
+            )
+        result.append(copied)
+    return result
+
+
 def redact_data(value: Any) -> Any:
     """Return a recursively redacted copy while retaining structure and key order.
 
@@ -475,7 +503,10 @@ def redact_data(value: Any) -> Any:
         header_record = _is_sensitive_name(header_name)
 
         for key, item in value.items():
-            if header_record and key == value_key:
+            canonical = _canonical_name(key)
+            if canonical == "cookies" and _is_cookie_jar(item):
+                result[key] = _redact_cookie_jar(item)
+            elif header_record and key == value_key:
                 result[key] = _mask_sensitive_value(item)
             elif _is_sensitive_name(key):
                 result[key] = _mask_sensitive_value(item)

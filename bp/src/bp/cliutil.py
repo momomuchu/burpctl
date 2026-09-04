@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, NoReturn
 
 import typer
 from pydantic import ValidationError
@@ -15,7 +17,7 @@ from bp import config as _config
 from bp.client import BurpClient, BurpError
 from bp.config import ConfigError, redact, redact_data
 from bp.ledger import Ledger
-from bp.output import render
+from bp.output import render, validate_output_options
 from bp.pos import PosError
 
 EXIT_GENERIC = 1
@@ -27,6 +29,7 @@ EXIT_VULN = 5
 _EXIT_BY_CODE: dict[str, int] = {
     "CONNECTION_REFUSED": EXIT_CONNECTION,
     "TRANSPORT_ERROR": EXIT_CONNECTION,
+    "NO_RESPONSE": EXIT_CONNECTION,
     "PRO_REQUIRED": EXIT_PRO,
     "SERVICE_UNAVAILABLE": EXIT_GENERIC,
 }
@@ -74,6 +77,18 @@ def emit_error(
         typer.echo(f"error: {safe_message}", err=True)
 
 
+def fail_usage(ctx: typer.Context, message: str) -> "NoReturn":
+    """Emit one usage diagnostic in the invocation's selected format, then exit 2."""
+    state: State = ctx.obj
+    emit_error(
+        state.fmt,
+        "USAGE_ERROR",
+        message,
+        redact_secrets=not state.no_redact,
+    )
+    raise typer.Exit(EXIT_USAGE)
+
+
 def emit_warning(
     fmt: str,
     code: str,
@@ -94,15 +109,47 @@ def emit_warning(
         typer.echo(f"warning: {safe_message}", err=True)
 
 
+def _emit_response_warning(data: Any, state: State, *, redact_secrets: bool) -> None:
+    """Route a response's top-level warning to stderr before output can narrow it away."""
+    if not isinstance(data, dict):
+        return
+    warning = data.get("warning")
+    if isinstance(warning, str) and warning:
+        emit_warning(
+            state.fmt,
+            "OPERATION_WARNING",
+            warning,
+            redact_secrets=redact_secrets,
+        )
+
+
+def preflight_output(ctx: typer.Context) -> None:
+    """Resolve output compatibility before a command can observe or change external state."""
+    state: State = ctx.obj
+    try:
+        validate_output_options(ctx.command_path, state.fmt, state.fields)
+    except ValueError as exc:
+        emit_error(
+            state.fmt,
+            "USAGE_ERROR",
+            str(exc),
+            redact_secrets=not state.no_redact,
+        )
+        raise typer.Exit(EXIT_USAGE) from None
+
+
 def run(
     ctx: typer.Context,
     fn: Callable[[BurpClient], Any],
     *,
     exit_on: Callable[[Any], "int | None"] | None = None,
+    timeout: float | None = None,
 ) -> None:
     """Execute one command, structurally redact its result, render, and audit it."""
     state: State = ctx.obj
+    preflight_output(ctx)
     redact_secrets = not state.no_redact
+
     config_warnings: list[str] = []
     try:
         conf = _config.load(
@@ -131,12 +178,14 @@ def run(
                 ("LEDGER_UNAVAILABLE", "ledger unavailable, proceeding without it")
             )
 
-    client = BurpClient(
-        conf.burp_rest_url,
-        ledger=ledger,
-        redact=conf.redact,
-        command=ctx.command_path,
-    )
+    client_options: dict[str, Any] = {
+        "ledger": ledger,
+        "redact": conf.redact,
+        "command": ctx.command_path,
+    }
+    if timeout is not None:
+        client_options["timeout"] = timeout
+    client = BurpClient(conf.burp_rest_url, **client_options)
     # Failure is the initial audit state. Only a fully processed and emitted
     # result can change it to zero, so an unexpected exception never records
     # success merely because it missed a known except branch.
@@ -145,8 +194,14 @@ def run(
         try:
             with client:
                 data = fn(client)
+            _emit_response_warning(data, state, redact_secrets=conf.redact)
             render_data = redact_data(data) if conf.redact else data
-            out = render(render_data, state.fmt, fields=state.fields)
+            out = render(
+                render_data,
+                state.fmt,
+                fields=state.fields,
+                command_path=ctx.command_path,
+            )
         except BurpError as exc:
             exit_code = exit_code_for_error_code(exc.code)
             emit_error(
@@ -197,7 +252,11 @@ def run(
                 redact_secrets=conf.redact,
             )
         if out:
-            typer.echo(out)
+            if isinstance(out, bytes):
+                sys.stdout.buffer.write(out)
+                sys.stdout.buffer.flush()
+            else:
+                typer.echo(out)
         exit_code = desired_exit
     finally:
         if ledger is not None:
@@ -218,14 +277,42 @@ def parse_header(raw: str, flag: str = "--set-header") -> tuple[str, str]:
     return name.strip(), value.strip()
 
 
-def parse_headers(raws: list[str], flag: str = "--set-header") -> dict[str, str]:
+def _process_error_format() -> str:
+    explicit: str | None = None
+    index = 1
+    while index < len(sys.argv):
+        token = sys.argv[index]
+        if token == "--":
+            break
+        if token == "--format" and index + 1 < len(sys.argv):
+            explicit = sys.argv[index + 1]
+            index += 2
+            continue
+        if token.startswith("--format="):
+            explicit = token.partition("=")[2]
+        index += 1
+    if explicit is not None:
+        return explicit
+    return "json" if os.environ.get("BP_AGENT") == "1" else "table"
+
+
+def parse_headers(
+    raws: list[str], flag: str = "--set-header", ctx: typer.Context | None = None
+) -> dict[str, str]:
     """Parse repeatable header flags with a stable usage exit."""
     headers: dict[str, str] = {}
     for raw in raws:
         try:
             name, value = parse_header(raw, flag)
         except ValueError as exc:
-            typer.echo(f"error: {redact(str(exc))}", err=True)
+            if ctx is not None:
+                fail_usage(ctx, str(exc))
+            emit_error(
+                _process_error_format(),
+                "USAGE_ERROR",
+                str(exc),
+                redact_secrets=True,
+            )
             raise typer.Exit(EXIT_USAGE) from None
         headers[name] = value
     return headers

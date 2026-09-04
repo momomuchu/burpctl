@@ -114,11 +114,43 @@ def history_list(
         help="Filter by HTTP status code (Int).",
         metavar="N",
     ),
+    source: str | None = typer.Option(
+        None,
+        "--source",
+        help="Filter by exact history source (for example repeater or session).",
+        metavar="S",
+    ),
+    search: str | None = typer.Option(
+        None,
+        "--search",
+        help="Search request/response history content.",
+        metavar="TEXT",
+    ),
+    since: str | None = typer.Option(
+        None,
+        "--since",
+        help="ISO-8601 timestamp lower bound (inclusive).",
+        metavar="T",
+    ),
+    until: str | None = typer.Option(
+        None,
+        "--until",
+        help="ISO-8601 timestamp upper bound (inclusive).",
+        metavar="T",
+    ),
     page: int | None = typer.Option(
         None,
         "--page",
         help="Page number (0-based, server default 0).",
         metavar="P",
+    ),
+    page_size: int | None = typer.Option(
+        None,
+        "--page-size",
+        min=1,
+        max=1000,
+        help="Rows per page (server default 50, maximum 1000).",
+        metavar="N",
     ),
 ) -> None:
     """List paginated request history from the server DB (GET /history).
@@ -138,8 +170,18 @@ def history_list(
             params["method"] = method
         if status is not None:
             params["statusCode"] = status
+        if source is not None:
+            params["source"] = source
+        if search is not None:
+            params["search"] = search
+        if since is not None:
+            params["since"] = since
+        if until is not None:
+            params["until"] = until
         if page is not None:
             params["page"] = page
+        if page_size is not None:
+            params["pageSize"] = page_size
         page_data = c.get("/history", **params)
         return _history_rows(page_data.get("entries", []))
 
@@ -161,17 +203,16 @@ def history_get(
     Returns the full entry including request and response bodies.
     id must be a Long (DB primary key) — not the proxy history Int index.
 
-    For table/quiet/raw output the entry is projected to the core fields
-    (id, source, method, url, host, statusCode, durationMs, timestamp),
-    suppressing the raw header/body blobs.  Use --format json to get the
-    full record including reqHeaders, reqBody, resHeaders, resBody.
+    Table/quiet project the core fields (id, source, method, url, host, statusCode, durationMs,
+    timestamp). JSON returns the complete structured entry. Raw emits the stored request and response
+    as HTTP/1.1 bytes separated by an ASCII record-separator line.
 
     NOTE: returns 404 if the Burp extension DB failed to initialise.
     """
 
     def _do(c: Any) -> Any:
         entry = c.get(f"/history/{id}")
-        if ctx.obj.fmt == "json":
+        if ctx.obj.fmt in {"json", "raw"}:
             return entry
         return _history_entry_display(entry)
 
@@ -226,18 +267,16 @@ def history_replay(
     entry is NOT persisted with a real id (id=0, source='replay'); the
     RepeaterService may re-insert it as a separate row.
 
-    For table/quiet/raw output the response {original, replayed} is projected
-    to the core fields (id, source, method, url, host, statusCode, durationMs,
-    timestamp), suppressing raw header/body blobs so that cookies and API keys
-    embedded in header arrays are never emitted to stdout.  Use --format json
-    to get the full record including reqHeaders, reqBody, resHeaders, resBody.
+    Table/quiet project original and replayed entries to core fields. JSON returns both complete
+    structured entries. Raw emits the replayed request and response as HTTP/1.1 bytes separated by an
+    ASCII record-separator line.
 
     NOTE: returns 404 if the Burp extension DB failed to initialise.
     """
 
     def _do(c: Any) -> Any:
         response = c.post(f"/history/{id}/replay")
-        if ctx.obj.fmt == "json":
+        if ctx.obj.fmt in {"json", "raw"}:
             return response
         return _replay_display(response)
 

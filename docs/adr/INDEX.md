@@ -17,3 +17,4 @@ Decisions 0001–0006 locked 2026-06-16 by founder. Later ADRs carry their own d
 | [ADR-0010](0010-check-exit-on-findings.md) | Security checks exit nonzero on confirmed findings | [HIGH] |
 | [ADR-0012](0012-primary-name-bp.md) | Primary name reverts to `bp`; `burpctl` kept as alias — supersedes 0011 | [HIGH] |
 | [ADR-0013](0013-truthful-executable-contracts.md) | Truthful executable contracts and bounded unsupported behavior | [HIGH] |
+| [ADR-0014](0014-state-preserving-reportable-operations.md) | State-preserving, reportable operations and live Montoya release proof | [CRITICAL] |

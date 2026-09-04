@@ -20,7 +20,11 @@ sub = typer.Typer(no_args_is_help=True, help="Burp Collaborator OAST payloads (P
 def new(
     ctx: typer.Context,
     count: Optional[int] = typer.Option(
-        None, "--count", min=1, help="Number of payloads to generate (default 1)."
+        None,
+        "--count",
+        min=1,
+        max=100,
+        help="Number of payloads to generate (default 1, maximum 100).",
     ),
 ) -> None:
     """Generate one or more Burp Collaborator OAST payloads.

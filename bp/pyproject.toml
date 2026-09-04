@@ -1,6 +1,6 @@
 [project]
 name = "bp"
-version = "2.0.0"
+version = "2.1.0"
 description = "bp — drive Burp Suite from the command line (talks to the burp-rest-extension on :8089)"
 requires-python = ">=3.11"
 dependencies = [

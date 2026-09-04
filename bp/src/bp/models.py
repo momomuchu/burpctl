@@ -52,6 +52,7 @@ class HttpRequestData(_Wire):
     url: str
     headers: list[HttpHeader] = []
     body: str | None = None
+    bodyBase64: str | None = None
 
 
 class HttpResponseData(_Wire):
@@ -80,6 +81,26 @@ class ProxyEntry(_Wire):
 class ProxyHistory(_Wire):
     total: int
     entries: list[ProxyEntry]
+
+
+class WebSocketEntry(_Wire):
+    """Mirror the nullable WebSocket projections emitted for incomplete Montoya events."""
+
+    id: int
+    url: str | None
+    direction: str | None
+    payload: str | None
+    timestamp: str | None = None
+    webSocketId: int
+    payloadBase64: str | None = None
+    editedPayloadBase64: str | None = None
+    time: str | None = None
+    listenerPort: int | None = None
+
+
+class WebSocketHistoryResponse(_Wire):
+    total: int
+    entries: list[WebSocketEntry]
 
 
 class HistoryEntryResponse(_Wire):

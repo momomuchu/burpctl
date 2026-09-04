@@ -14,7 +14,7 @@ from typing import Any, Literal, cast, overload
 
 import typer
 
-from bp.cliutil import EXIT_VULN, parse_headers, run
+from bp.cliutil import EXIT_GENERIC, EXIT_VULN, emit_error, parse_headers, run
 
 
 # ---------------------------------------------------------------------------
@@ -113,28 +113,80 @@ def _has_findings(data: dict[str, Any]) -> bool:
 
 
 def _is_inconclusive(data: dict[str, Any]) -> bool:
-    """Return True when at least one probe did not complete well enough to judge.
+    """Use the server's authoritative top-level count; do not infer probe cardinality."""
+    count = data.get("inconclusiveCount", 0)
+    return isinstance(count, int) and not isinstance(count, bool) and count > 0
 
-    The extension marks a probe inconclusive when its treatment or control failed —
-    transport failure, throttling, a server error, or a missing authenticated baseline.
-    Such a scan proves nothing, so it must not be presented as a clean result.
-    """
-    if data.get("inconclusiveCount", 0) > 0:
-        return True
-    if len(data.get("errors", [])) > 0:
-        return True
-    for value in data.values():
-        if isinstance(value, list) and any(
-            isinstance(item, dict) and item.get("inconclusive") for item in value
-        ):
-            return True
-    if isinstance(data.get("baseline"), dict) and data["baseline"].get("inconclusive"):
-        return True
-    return False
+
+_DEFAULT_PROBE_TIMEOUT_MS = 5_000
+_MIN_PROBE_TIMEOUT_MS = 100
+_MAX_PROBE_TIMEOUT_MS = 120_000
+_MAX_CHECK_PROBES = 8_000
+_MAX_PROBE_BUDGET_MS = _MAX_CHECK_PROBES * _MAX_PROBE_TIMEOUT_MS
+_MAX_OPERATION_TIMEOUT_MS = _MAX_PROBE_BUDGET_MS + max(5_000, _MAX_PROBE_BUDGET_MS // 10) + 5_000
+
+
+def _operation_timeout_seconds(
+    probe_count: int,
+    probe_timeout_ms: int,
+    operation_timeout_ms: int | None,
+) -> float:
+    """Derive a whole-operation deadline from this invocation's maximum sequential probe plan."""
+    if operation_timeout_ms is not None:
+        return operation_timeout_ms / 1_000
+    # Python integers do not wrap.  An adaptive margin (at least five seconds) plus five seconds of
+    # fixed overhead admits server work, serialization, and REST transport without applying one
+    # enormous timeout to every check.
+    probe_budget_ms = max(probe_count, 0) * probe_timeout_ms
+    deadline_ms = probe_budget_ms + max(5_000, probe_budget_ms // 10) + 5_000
+    return min(deadline_ms, _MAX_OPERATION_TIMEOUT_MS) / 1_000
+
+
+def _timeout_options(
+    probe_count: int,
+    probe_timeout_ms: int,
+    operation_timeout_ms: int | None,
+) -> float:
+    # Typer validates normal CLI calls; this guard also protects direct Python callers and makes the
+    # domain independent of presentation-library behavior.
+    if not _MIN_PROBE_TIMEOUT_MS <= probe_timeout_ms <= _MAX_PROBE_TIMEOUT_MS:
+        raise ValueError(
+            f"probe timeout must be between {_MIN_PROBE_TIMEOUT_MS} and "
+            f"{_MAX_PROBE_TIMEOUT_MS} milliseconds"
+        )
+    if (
+        operation_timeout_ms is not None
+        and not 1 <= operation_timeout_ms <= _MAX_OPERATION_TIMEOUT_MS
+    ):
+        raise ValueError(
+            f"operation timeout must be between 1 and {_MAX_OPERATION_TIMEOUT_MS} milliseconds"
+        )
+    return _operation_timeout_seconds(probe_count, probe_timeout_ms, operation_timeout_ms)
+
+
+def _scan_exit_code(data: dict[str, Any]) -> int | None:
+    """Apply the stable finding > inconclusive > clean process-exit precedence."""
+    if _has_findings(data):
+        return EXIT_VULN
+    count = data.get("inconclusiveCount", 0)
+    if isinstance(count, int) and not isinstance(count, bool) and count > 0:
+        return EXIT_GENERIC
+    return None
+
+
+def _scan_exit(ctx: typer.Context, data: dict[str, Any]) -> int | None:
+    exit_code = _scan_exit_code(data)
+    if exit_code == EXIT_GENERIC:
+        emit_error(
+            ctx.obj.fmt,
+            "INCONCLUSIVE",
+            "one or more probes were inconclusive; no confirmed finding was reported",
+            redact_secrets=not ctx.obj.no_redact,
+        )
+    return exit_code
 
 
 # ---------------------------------------------------------------------------
-# Sub-typer
 # ---------------------------------------------------------------------------
 
 sub = typer.Typer(
@@ -161,23 +213,49 @@ def check_auth(
         help="Endpoint path(s) to probe for auth-bypass (repeatable).",
     ),
     method: str = typer.Option("GET", "--method", help="HTTP method for each probe."),
+    marker: str | None = typer.Option(
+        None,
+        "--marker",
+        metavar="TEXT",
+        help="Server-held content that the unauthenticated probe never supplies; required for a"
+        " confirmed protected-read verdict.",
+    ),
+    probe_timeout_ms: int = typer.Option(
+        _DEFAULT_PROBE_TIMEOUT_MS,
+        "--probe-timeout-ms",
+        min=_MIN_PROBE_TIMEOUT_MS,
+        max=_MAX_PROBE_TIMEOUT_MS,
+        help="Timeout for one target probe, in milliseconds (default 5000).",
+    ),
+    operation_timeout_ms: int | None = typer.Option(
+        None,
+        "--deadline-ms",
+        min=1,
+        max=_MAX_OPERATION_TIMEOUT_MS,
+        help="Override the derived deadline for the entire check command, in milliseconds.",
+    ),
 ) -> None:
-    """Triple-probe auth-bypass: with-auth / without-auth / cookie-only.
+    """Three-arm auth probe: FULL, NONE, and COOKIES_ONLY.
 
-    Sends AuthBypassRequest { endpoints, baseUrl, method } to POST /scan/auth-bypass.
-    A session must be active (bp session set …) for the authenticated leg to carry
-    credentials; without one the probe runs fully unauthenticated.
+    Without a server-held marker, `check auth` cannot distinguish a cookie-only bypass where FULL,
+    COOKIES_ONLY, and NONE all return the same representation from an intentionally public route;
+    that case is not confirmed. Pass ``--marker`` to require the substantive successful NONE response
+    to contain a server-held value that the probe never supplies.
     """
     body: dict[str, Any] = {
         "endpoints": endpoints,
         "baseUrl": url,
         "method": method,
+        "probeTimeoutMs": probe_timeout_ms,
     }
+    if marker is not None:
+        body["protectedContentMarker"] = marker
+    timeout = _timeout_options(len(endpoints) * 3, probe_timeout_ms, operation_timeout_ms)
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/auth-bypass", body)
+        return _project_for_display(client.post("/scan/auth-bypass", body))
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    run(ctx, _do, exit_on=lambda d: _scan_exit(ctx, d), timeout=timeout)
 
 
 # ---------------------------------------------------------------------------
@@ -211,6 +289,20 @@ def check_idor(
         "--header",
         help="Extra header as 'Name: Value' (repeatable).",
     ),
+    probe_timeout_ms: int = typer.Option(
+        _DEFAULT_PROBE_TIMEOUT_MS,
+        "--probe-timeout-ms",
+        min=_MIN_PROBE_TIMEOUT_MS,
+        max=_MAX_PROBE_TIMEOUT_MS,
+        help="Timeout for one target probe, in milliseconds (default 5000).",
+    ),
+    operation_timeout_ms: int | None = typer.Option(
+        None,
+        "--deadline-ms",
+        min=1,
+        max=_MAX_OPERATION_TIMEOUT_MS,
+        help="Override the derived deadline for the entire check command, in milliseconds.",
+    ),
 ) -> None:
     """Cross-account IDOR probe: flags a target when its full response body differs from the
     own-resource baseline (content-primary, with an empty-vs-non-empty guard) AND both return 2xx
@@ -220,7 +312,7 @@ def check_idor(
     extraHeaders? } to POST /scan/idor.
     """
     # Shared helper → consistent 'Name: Value' parsing and exit 2 (was a hardcoded literal here).
-    extra_headers: dict[str, str] | None = parse_headers(header, "--header") or None
+    extra_headers: dict[str, str] | None = parse_headers(header, "--header", ctx) or None
 
     req_body: dict[str, Any] = {
         "endpoint": url,
@@ -228,6 +320,7 @@ def check_idor(
         "ownValues": own,
         "targetValues": target,
         "method": method,
+        "probeTimeoutMs": probe_timeout_ms,
     }
     if body is not None:
         req_body["body"] = body
@@ -242,7 +335,8 @@ def check_idor(
             typer.echo(f"note: {note}", err=True)
         return projected
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    timeout = _timeout_options(1 + len(target), probe_timeout_ms, operation_timeout_ms)
+    run(ctx, _do, exit_on=lambda d: _scan_exit(ctx, d), timeout=timeout)
 
 
 # ---------------------------------------------------------------------------
@@ -265,6 +359,20 @@ def check_headers(
         help="Protected content that only an authorized response contains; required for a"
         " confirmed bypass verdict rather than an anomaly.",
     ),
+    probe_timeout_ms: int = typer.Option(
+        _DEFAULT_PROBE_TIMEOUT_MS,
+        "--probe-timeout-ms",
+        min=_MIN_PROBE_TIMEOUT_MS,
+        max=_MAX_PROBE_TIMEOUT_MS,
+        help="Timeout for one target probe, in milliseconds (default 5000).",
+    ),
+    operation_timeout_ms: int | None = typer.Option(
+        None,
+        "--deadline-ms",
+        min=1,
+        max=_MAX_OPERATION_TIMEOUT_MS,
+        help="Override the derived deadline for the entire check command, in milliseconds.",
+    ),
 ) -> None:
     """Probe IP-spoof and URL-override headers against a denial baseline.
 
@@ -276,6 +384,7 @@ def check_headers(
     req_body: dict[str, Any] = {
         "url": url,
         "method": method,
+        "probeTimeoutMs": probe_timeout_ms,
     }
     if body is not None:
         req_body["body"] = body
@@ -283,9 +392,10 @@ def check_headers(
         req_body["protectedContentMarker"] = marker
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/headers", req_body)
+        return _project_for_display(client.post("/scan/headers", req_body))
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    timeout = _timeout_options(17, probe_timeout_ms, operation_timeout_ms)
+    run(ctx, _do, exit_on=lambda d: _scan_exit(ctx, d), timeout=timeout)
 
 
 # ---------------------------------------------------------------------------
@@ -298,6 +408,20 @@ def check_cors(
     ctx: typer.Context,
     url: str = typer.Argument(..., metavar="URL", help="Target URL to test for exploitable CORS."),
     method: str = typer.Option("GET", "--method", help="HTTP method."),
+    probe_timeout_ms: int = typer.Option(
+        _DEFAULT_PROBE_TIMEOUT_MS,
+        "--probe-timeout-ms",
+        min=_MIN_PROBE_TIMEOUT_MS,
+        max=_MAX_PROBE_TIMEOUT_MS,
+        help="Timeout for one target probe, in milliseconds (default 5000).",
+    ),
+    operation_timeout_ms: int | None = typer.Option(
+        None,
+        "--deadline-ms",
+        min=1,
+        max=_MAX_OPERATION_TIMEOUT_MS,
+        help="Override the derived deadline for the entire check command, in milliseconds.",
+    ),
 ) -> None:
     """8 crafted origins → credentialed CORS-exploit probe.
 
@@ -308,12 +432,14 @@ def check_cors(
     req_body: dict[str, Any] = {
         "url": url,
         "method": method,
+        "probeTimeoutMs": probe_timeout_ms,
     }
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/cors", req_body)
+        return _project_for_display(client.post("/scan/cors", req_body))
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    timeout = _timeout_options(8, probe_timeout_ms, operation_timeout_ms)
+    run(ctx, _do, exit_on=lambda d: _scan_exit(ctx, d), timeout=timeout)
 
 
 # ---------------------------------------------------------------------------
@@ -337,7 +463,25 @@ def check_endpoints(
         help="Test type(s) to run per endpoint (repeatable). Default: auth-bypass method-switch.",
     ),
     limit: int = typer.Option(
-        100, "--limit", help="Maximum number of extension-history requests to scan."
+        100,
+        "--limit",
+        min=1,
+        max=1000,
+        help="Maximum number of extension-history requests to scan.",
+    ),
+    probe_timeout_ms: int = typer.Option(
+        _DEFAULT_PROBE_TIMEOUT_MS,
+        "--probe-timeout-ms",
+        min=_MIN_PROBE_TIMEOUT_MS,
+        max=_MAX_PROBE_TIMEOUT_MS,
+        help="Timeout for one target probe, in milliseconds (default 5000).",
+    ),
+    operation_timeout_ms: int | None = typer.Option(
+        None,
+        "--deadline-ms",
+        min=1,
+        max=_MAX_OPERATION_TIMEOUT_MS,
+        help="Override the derived deadline for the entire check command, in milliseconds.",
     ),
 ) -> None:
     """Scan requests recorded by extension-driven Repeater/session sends.
@@ -349,12 +493,15 @@ def check_endpoints(
         "host": host,
         "tests": tests,
         "limit": limit,
+        "probeTimeoutMs": probe_timeout_ms,
     }
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/endpoints", req_body)
+        return _project_for_display(client.post("/scan/endpoints", req_body))
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    probes_per_entry = sum({"auth-bypass": 2, "method-switch": 6}.get(test, 0) for test in tests)
+    timeout = _timeout_options(limit * probes_per_entry, probe_timeout_ms, operation_timeout_ms)
+    run(ctx, _do, exit_on=lambda d: _scan_exit(ctx, d), timeout=timeout)
 
 
 # ---------------------------------------------------------------------------

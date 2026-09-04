@@ -18,7 +18,7 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, parse_headers, run
+from bp.cliutil import fail_usage, parse_headers, run
 
 # ---------------------------------------------------------------------------
 # Sub-application
@@ -90,11 +90,10 @@ def send_cmd(
     try:
         resolved_body = _resolve_body(body)
     except ValueError as exc:
-        typer.echo(f"error: {exc}", err=True)
-        raise typer.Exit(EXIT_USAGE) from None
+        fail_usage(ctx, str(exc))
 
     # Parse headers early for the same reason (shared helper → consistent exit 2)
-    headers = parse_headers(set_header)
+    headers = parse_headers(set_header, ctx=ctx)
 
     def _do(client: Any) -> Any:
         # Build RequestModifications — only include non-None fields

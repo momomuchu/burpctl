@@ -200,6 +200,18 @@ fun Application.installErrorHandling(logError: (String) -> Unit) {
                 ApiResponse.error<Unit>("SERVICE_UNAVAILABLE", "service unavailable"),
             )
         }
+        // Content negotiation can produce 415 before any route runs when Content-Type is missing or
+        // unsupported, or when it cannot parse the body. This handler cannot establish which condition
+        // occurred, so every failure carries the same cause-neutral typed envelope instead of a bare status.
+        status(HttpStatusCode.UnsupportedMediaType) { call, _ ->
+            call.respond(
+                HttpStatusCode.UnsupportedMediaType,
+                ApiResponse.error<Unit>(
+                    "UNSUPPORTED_MEDIA_TYPE",
+                    "request Content-Type may be missing or unsupported, or the body may be unparseable",
+                ),
+            )
+        }
         status(HttpStatusCode.NotFound) { call, _ ->
             call.respond(
                 HttpStatusCode.NotFound,
