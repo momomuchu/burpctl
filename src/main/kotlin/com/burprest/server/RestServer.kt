@@ -16,19 +16,12 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.time.format.DateTimeFormatter
-
-/**
- * Thrown by service methods that require Burp Suite Professional when the running edition is
- * Community.  [installErrorHandling] maps this to HTTP 503 with code `PRO_REQUIRED` so the
- * Python client can distinguish a genuine Pro-gating failure (exit 4) from an ordinary
- * service/infra failure like a missing database (SERVICE_UNAVAILABLE → exit 1).
- */
-class ProRequiredException(message: String) : RuntimeException(message)
 
 class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
 
@@ -38,7 +31,7 @@ class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
     // Read the running Burp's version once via Montoya so /health and /version can report it
     // (the field was previously always null). Best-effort: null if Montoya changes the API.
     private val burpVersion: String? = try {
-        api.burpSuite().version().let { "${it.name()} ${it.major()}.${it.minor()}" }
+        api.burpSuite().version().toString()
     } catch (_: Throwable) {
         null
     }
@@ -85,14 +78,7 @@ class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
     }
 
     private fun Application.configurePlugins() {
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = false
-                isLenient = true
-                ignoreUnknownKeys = true
-                encodeDefaults = true
-            })
-        }
+        installStrictJson()
 
         install(CORS) {
             // Loopback-only API: restrict cross-origin to localhost so a random website's JS can't
@@ -113,19 +99,9 @@ class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
     }
 
     private fun Application.configureRouting() {
-        routing {
-            // Request logging interceptor
-            intercept(ApplicationCallPipeline.Monitoring) {
-                val start = System.currentTimeMillis()
-                proceed()
-                val duration = System.currentTimeMillis() - start
-                val method = call.request.local.method.value
-                val uri = call.request.local.uri
-                val status = call.response.status()?.value ?: 0
-                val ts = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
-                api.logging().logToOutput("[$ts] $method $uri $status ${duration}ms")
-            }
+        installRequestLogging { api.logging().logToOutput(it) }
 
+        routing {
             healthRoutes(startTime, burpVersion)
             proxyRoutes(proxyService)
             repeaterRoutes(repeaterService)
@@ -140,54 +116,77 @@ class RestServer(private val api: MontoyaApi, private val port: Int = 8089) {
             utilsRoutes(utilsService)
             if (historyDao != null && sitemapDao != null) {
                 historyRoutes(historyDao, sitemapDao, repeaterService)
+            } else {
+                unavailableHistoryRoutes()
             }
         }
     }
 }
 
+fun Application.installStrictJson() {
+    install(ContentNegotiation) {
+        json(Json {
+            prettyPrint = false
+            isLenient = false
+            ignoreUnknownKeys = false
+            encodeDefaults = true
+        })
+    }
+}
+
+/** Log only the request path. Query strings frequently contain credentials and other secrets. */
+fun Application.installRequestLogging(logOutput: (String) -> Unit) {
+    intercept(ApplicationCallPipeline.Monitoring) {
+        val start = System.currentTimeMillis()
+        try {
+            proceed()
+        } finally {
+            val duration = System.currentTimeMillis() - start
+            val method = call.request.local.method.value
+            val path = call.request.path()
+            val status = call.response.status()?.value ?: 0
+            val timestamp = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
+            logOutput("[$timestamp] $method $path $status ${duration}ms")
+        }
+    }
+}
+
 /**
- * Install the ktor StatusPages error handling. Extracted from [RestServer] so it can be unit-tested
- * with a throwing route. Author-controlled errors (IllegalArgumentException from route validation)
- * keep their own message because we wrote that text. [ProRequiredException] is handled before
- * [IllegalStateException]: the former signals a Pro-gate (code PRO_REQUIRED → Python exit 4) while
- * the latter signals a generic infra/service failure (code SERVICE_UNAVAILABLE → Python exit 1).
- * BadRequestException and SerializationException are sanitised: ktor / kotlinx.serialization
- * populate their messages with fully-qualified Kotlin class names ("Failed to convert request body
- * to class com.burprest.models.XxxRequest") so we log the raw detail to [logError] and send only a
- * generic message to the client. The catch-all maps any *unexpected* error the same way.
- * No stack trace or internal class name ever reaches the HTTP client.
+ * Install the shared HTTP error contract. Expected failures use typed [ApiException] values;
+ * parser, framework, and unexpected failures are logged in full but receive fixed public messages.
  */
 fun Application.installErrorHandling(logError: (String) -> Unit) {
     install(StatusPages) {
+        exception<ApiException> { call, cause ->
+            logError("[burp-rest] ${cause.code}: ${cause.clientMessage}${formatCause(cause.cause)}")
+            call.respond(
+                cause.status,
+                ApiResponse.error<Unit>(cause.code, cause.clientMessage),
+            )
+        }
         exception<io.ktor.server.plugins.BadRequestException> { call, cause ->
-            // Ktor's BadRequestException.message often contains the fully-qualified Kotlin class name
-            // ("Failed to convert request body to class com.burprest.models.XxxRequest").
-            // Sanitise it: log the raw detail to Burp's error output but send only a generic,
-            // resource-name-free message to the client.
             logError("[burp-rest] Bad request: ${cause.message}")
             call.respond(
                 HttpStatusCode.BadRequest,
-                ApiResponse.error<Unit>("INVALID_REQUEST", "invalid request body (see Burp extension Errors log)"),
+                ApiResponse.error<Unit>("INVALID_REQUEST", "invalid request body"),
             )
         }
         exception<kotlinx.serialization.SerializationException> { call, cause ->
-            // kotlinx.serialization messages can also reference internal class names — log and sanitise.
             logError("[burp-rest] Serialization error: ${cause.message}")
             call.respond(
                 HttpStatusCode.BadRequest,
-                ApiResponse.error<Unit>("INVALID_REQUEST", "invalid request body (see Burp extension Errors log)"),
+                ApiResponse.error<Unit>("INVALID_REQUEST", "invalid request body"),
             )
         }
+        // Compatibility for existing route/service validation. These messages are authored by the
+        // application; new code should prefer InvalidParamException for a stable error code.
         exception<IllegalArgumentException> { call, cause ->
             call.respond(
                 HttpStatusCode.BadRequest,
-                ApiResponse.error<Unit>("INVALID_REQUEST", cause.message ?: "Bad request"),
+                ApiResponse.error<Unit>("INVALID_REQUEST", cause.message ?: "invalid request"),
             )
         }
         exception<ProRequiredException> { call, cause ->
-            // [13] Pro-gated scanner surfaces (crawl/audit/crawl-and-audit on Community) throw
-            // ProRequiredException so the Python client receives code PRO_REQUIRED → exit 4.
-            // This is intentionally distinct from SERVICE_UNAVAILABLE (infra failure → exit 1).
             logError("[burp-rest] Pro-required: ${cause.message}")
             call.respond(
                 HttpStatusCode.ServiceUnavailable,
@@ -198,15 +197,30 @@ fun Application.installErrorHandling(logError: (String) -> Unit) {
             logError("[burp-rest] State error: ${cause.message}")
             call.respond(
                 HttpStatusCode.ServiceUnavailable,
-                ApiResponse.error<Unit>("SERVICE_UNAVAILABLE", cause.message ?: "Service unavailable"),
+                ApiResponse.error<Unit>("SERVICE_UNAVAILABLE", "service unavailable"),
+            )
+        }
+        status(HttpStatusCode.NotFound) { call, _ ->
+            call.respond(
+                HttpStatusCode.NotFound,
+                ApiResponse.error<Unit>("NOT_FOUND", "route not found"),
+            )
+        }
+        status(HttpStatusCode.MethodNotAllowed) { call, _ ->
+            call.respond(
+                HttpStatusCode.MethodNotAllowed,
+                ApiResponse.error<Unit>("METHOD_NOT_ALLOWED", "method not allowed"),
             )
         }
         exception<Throwable> { call, cause ->
             logError("[burp-rest] Error: ${cause::class.simpleName}: ${cause.message}\n${cause.stackTraceToString().take(2000)}")
             call.respond(
                 HttpStatusCode.InternalServerError,
-                ApiResponse.error<Unit>("INTERNAL_ERROR", "internal server error (see Burp extension Errors log)"),
+                ApiResponse.error<Unit>("INTERNAL_ERROR", "internal server error"),
             )
         }
     }
 }
+
+private fun formatCause(cause: Throwable?): String =
+    cause?.let { "; caused by ${it::class.simpleName}: ${it.message}" } ?: ""

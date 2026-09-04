@@ -1,37 +1,26 @@
-"""bp configuration loader (STATE-AND-CONFIG §2, ADR-0005/0007).
+"""Configuration loading and secret redaction for ``bp``.
 
-Precedence (highest wins): flag > env > ~/.bp/config > built-in default.
-
-Keys
-----
-burp_rest_url   http://127.0.0.1:8089
-enforce_scope   warn | block | off
-envelope        on | off
-redact          on | off
-ledger          on | off
-throttle_ms     int >= 0
-anomaly_pct     int 0-100
-
-Public API
-----------
-load(**flag_overrides) -> BpConfig
-redact(text)           -> str   (masks JWT/Authorization/Cookie values)
+Configuration precedence is flag > environment > ``~/.bp/config`` > built-in
+values. Structured command results are redacted recursively before rendering;
+``redact()`` remains a conservative text fallback for diagnostics and command
+text that have no reliable structure.
 """
 
 from __future__ import annotations
 
+import copy
+import json
 import os
 import re
 import sys
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
+from urllib.parse import unquote_plus, urlsplit, urlunsplit
 
-# ---------------------------------------------------------------------------
-# Defaults
-# ---------------------------------------------------------------------------
-
-# Single source of truth for the REST base URL (re-exported by bp.client).
 DEFAULT_BASE_URL = "http://127.0.0.1:8089"
+REDACTED = "***"
 
 _DEFAULTS: dict[str, str] = {
     "burp_rest_url": DEFAULT_BASE_URL,
@@ -43,50 +32,29 @@ _DEFAULTS: dict[str, str] = {
     "anomaly_pct": "5",
 }
 
-# Env-var name mapping  (config key -> env var name)
 _ENV_MAP: dict[str, str] = {
     "burp_rest_url": "BURP_REST_URL",
     "enforce_scope": "BP_ENFORCE_SCOPE",
     "envelope": "BP_ENVELOPE",
     "redact": "BP_REDACT",
-    "ledger": "BP_NO_LEDGER",       # inverted: BP_NO_LEDGER=1 -> ledger=off
+    "ledger": "BP_NO_LEDGER",
     "throttle_ms": "BP_THROTTLE_MS",
     "anomaly_pct": "BP_ANOMALY_PCT",
 }
 
-_DEFAULT_CONFIG_PATH = Path("~/.bp/config").expanduser()
+_TRUE_TOKENS = ("1", "true", "on", "yes")
+_FALSE_TOKENS = ("0", "false", "off", "no")
+_SCOPE_VALUES = ("warn", "block", "off")
 
 
-# ---------------------------------------------------------------------------
-# Config file parser  (KEY = value  or  KEY=value, shell-sourceable)
-# ---------------------------------------------------------------------------
+class ConfigError(ValueError):
+    """A selected configuration value or configuration input is invalid."""
 
-def _parse_config_file(path: Path) -> dict[str, str]:
-    """Parse a KEY=value (or KEY = value) file; skip comments and blanks."""
-    result: dict[str, str] = {}
-    try:
-        text = path.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        return result
-    for line in text.splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        if "=" not in stripped:
-            continue
-        key, _, val = stripped.partition("=")
-        result[key.strip().lower()] = val.strip()
-    return result
-
-
-# ---------------------------------------------------------------------------
-# BpConfig dataclass
-# ---------------------------------------------------------------------------
 
 @dataclass
 class BpConfig:
     burp_rest_url: str = DEFAULT_BASE_URL
-    enforce_scope: str = "warn"      # warn | block | off
+    enforce_scope: str = "warn"
     envelope: bool = False
     redact: bool = True
     ledger: bool = True
@@ -94,32 +62,79 @@ class BpConfig:
     anomaly_pct: int = 5
 
 
-_TRUE_TOKENS = ("1", "true", "on", "yes")
-_FALSE_TOKENS = ("0", "false", "off", "no")
+def _default_config_path() -> Path:
+    """Resolve HOME for every load, which keeps isolated invocations isolated."""
+    return Path("~/.bp/config").expanduser()
 
 
-def _parse_bool(val: str) -> bool | None:
-    """Return True/False for a recognised token, or None if *val* is not a valid boolean.
+def _parse_config_file(path: Path) -> dict[str, str]:
+    """Parse a simple KEY=value file, ignoring comments, blanks, and unknown lines."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return {}
+    except UnicodeDecodeError as exc:
+        raise ConfigError(f"config file {path} is not valid UTF-8") from exc
+    except OSError as exc:
+        raise ConfigError(f"cannot read config file {path}") from exc
 
-    A ``None`` result means "unrecognised" (typo, empty, junk) — callers fall back to the
-    next precedence layer rather than silently treating it as False, which previously turned
-    a security control (redact) off on ``BP_REDACT=`` or ``redact = ye``.
-    """
-    v = val.strip().lower()
-    if v in _TRUE_TOKENS:
+    result: dict[str, str] = {}
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        key, _, value = stripped.partition("=")
+        result[key.strip().lower()] = value.strip()
+    return result
+
+
+def _parse_bool(value: str) -> bool | None:
+    token = value.strip().lower()
+    if token in _TRUE_TOKENS:
         return True
-    if v in _FALSE_TOKENS:
+    if token in _FALSE_TOKENS:
         return False
     return None
 
 
-def _warn_invalid(source: str, val: str) -> None:
-    print(f"warning: invalid boolean for {source}={val!r}; keeping default", file=sys.stderr)
+def _warn_invalid(source: str, value: str, kind: str = "boolean") -> None:
+    safe_value = _redact_text_fallback(value)
+    print(
+        f"warning: invalid {kind} for {source}={safe_value!r}; keeping default",
+        file=sys.stderr,
+    )
 
 
-# ---------------------------------------------------------------------------
-# load()
-# ---------------------------------------------------------------------------
+def _validate_rest_url(value: str) -> str:
+    value = value.strip()
+    if any(char.isspace() or ord(char) < 0x20 for char in value):
+        raise ConfigError("burp_rest_url must be a valid http(s) REST URL")
+    try:
+        parsed = urlsplit(value)
+        # Accessing .port performs the URL parser's port validation.
+        _ = parsed.port
+    except ValueError as exc:
+        raise ConfigError("burp_rest_url must be a valid http(s) REST URL") from exc
+
+    if parsed.scheme.lower() not in {"http", "https"}:
+        raise ConfigError("burp_rest_url must use http or https")
+    if not parsed.hostname:
+        raise ConfigError("burp_rest_url must name a host")
+    if parsed.hostname != parsed.hostname.strip() or any(
+        char.isspace() for char in parsed.hostname
+    ):
+        raise ConfigError("burp_rest_url must name a valid host")
+    if parsed.username is not None or parsed.password is not None:
+        raise ConfigError("burp_rest_url must not contain URL userinfo")
+    if "?" in value:
+        raise ConfigError("burp_rest_url must not contain a query")
+    if "#" in value:
+        raise ConfigError("burp_rest_url must not contain a fragment")
+    if parsed.path not in {"", "/"}:
+        raise ConfigError("burp_rest_url must be a REST origin without a path")
+
+    return value
+
 
 def load(
     *,
@@ -131,158 +146,355 @@ def load(
     throttle_ms: int | None = None,
     anomaly_pct: int | None = None,
     config_path: Path | None = None,
+    warn: Callable[[str], None] | None = None,
 ) -> BpConfig:
-    """Build a BpConfig applying precedence: flag > env > file > default.
+    """Resolve and validate configuration using flag > env > file > default precedence."""
+    path = Path(config_path) if config_path is not None else _default_config_path()
+    file_values = _parse_config_file(path)
+    warn_invalid = (
+        _warn_invalid
+        if warn is None
+        else lambda source, value, kind="boolean": warn(
+            f"invalid {kind} for {source}={_redact_text_fallback(value)!r}; keeping default"
+        )
+    )
 
-    Pass keyword args for CLI flag overrides.  None means "not set by flag".
-    """
-    cfg_path = config_path or _DEFAULT_CONFIG_PATH
-    file_vals = _parse_config_file(cfg_path)
-
-    def _resolve_str(key: str, flag_val: str | None, env_key: str) -> str:
-        if flag_val is not None:
-            return flag_val
-        ev = os.environ.get(env_key)
-        if ev:  # an empty env var (BURP_REST_URL=) is treated as unset, not as an empty URL
-            return ev
-        if key in file_vals:
-            return file_vals[key]
+    def resolve_str(key: str, flag_value: str | None) -> str:
+        if flag_value is not None:
+            return flag_value.strip()
+        env_value = os.environ.get(_ENV_MAP[key])
+        if env_value is not None and env_value.strip():
+            return env_value.strip()
+        if key in file_values:
+            return file_values[key]
         return _DEFAULTS[key]
 
-    def _resolve_bool(key: str, flag_val: bool | None, env_key: str, invert: bool = False) -> bool:
-        # ``invert`` applies ONLY to the negatively-named env var (e.g. BP_NO_LEDGER=1 -> off).
-        # An empty or unrecognised value (BP_REDACT=, redact=ye) is NOT treated as False — it
-        # falls through to the next layer, so a typo never silently disables a security control.
-        if flag_val is not None:
-            return flag_val
-        ev = os.environ.get(env_key)
-        if ev and ev.strip():
-            parsed = _parse_bool(ev)
+    def resolve_bool(
+        key: str, flag_value: bool | None, *, invert_environment: bool = False
+    ) -> bool:
+        if flag_value is not None:
+            return flag_value
+        env_name = _ENV_MAP[key]
+        env_value = os.environ.get(env_name)
+        if env_value is not None and env_value.strip():
+            parsed = _parse_bool(env_value)
             if parsed is not None:
-                return (not parsed) if invert else parsed
-            _warn_invalid(env_key, ev)
-        if key in file_vals:
-            parsed = _parse_bool(file_vals[key])
+                return not parsed if invert_environment else parsed
+            warn_invalid(env_name, env_value)
+        if key in file_values:
+            parsed = _parse_bool(file_values[key])
             if parsed is not None:
                 return parsed
-            _warn_invalid(key, file_vals[key])
-        default = _parse_bool(_DEFAULTS[key])
-        return default if default is not None else False
+            warn_invalid(key, file_values[key])
+        parsed_default = _parse_bool(_DEFAULTS[key])
+        assert parsed_default is not None
+        return parsed_default
 
-    def _resolve_int(key: str, flag_val: int | None, env_key: str) -> int:
-        raw = _resolve_str(key, str(flag_val) if flag_val is not None else None, env_key)
+    def resolve_int(key: str, flag_value: int | None) -> int:
+        if flag_value is not None:
+            return flag_value
+        raw = resolve_str(key, None)
         try:
             return int(raw)
         except ValueError:
-            # Warn only when the invalid value came from env/config, not from a CLI flag
-            # (a flag value is always pre-validated as int by the CLI layer).
-            if flag_val is None:
-                print(
-                    f"warning: invalid int for {env_key}={raw!r}; keeping default",
-                    file=sys.stderr,
-                )
+            warn_invalid(_ENV_MAP[key], raw, "integer")
             return int(_DEFAULTS[key])
 
-    url_flag = burp_rest_url  # may be None or explicit str
+    selected_url = _validate_rest_url(resolve_str("burp_rest_url", burp_rest_url))
+    selected_scope = resolve_str("enforce_scope", enforce_scope).lower()
+    if selected_scope not in _SCOPE_VALUES:
+        raise ConfigError(f"enforce_scope must be one of {', '.join(_SCOPE_VALUES)}")
+
+    selected_throttle = resolve_int("throttle_ms", throttle_ms)
+    if selected_throttle < 0:
+        raise ConfigError("throttle_ms must be greater than or equal to 0")
+    selected_anomaly = resolve_int("anomaly_pct", anomaly_pct)
+    if not 0 <= selected_anomaly <= 100:
+        raise ConfigError("anomaly_pct must be between 0 and 100")
 
     return BpConfig(
-        burp_rest_url=_resolve_str("burp_rest_url", url_flag, _ENV_MAP["burp_rest_url"]),
-        enforce_scope=_resolve_str("enforce_scope", enforce_scope, _ENV_MAP["enforce_scope"]),
-        envelope=_resolve_bool("envelope", envelope, _ENV_MAP["envelope"]),
-        redact=_resolve_bool("redact", redact, _ENV_MAP["redact"]),
-        # BP_NO_LEDGER is inverted: BP_NO_LEDGER=1 -> ledger=False
-        ledger=_resolve_bool("ledger", ledger, _ENV_MAP["ledger"], invert=True),
-        throttle_ms=_resolve_int("throttle_ms", throttle_ms, _ENV_MAP["throttle_ms"]),
-        anomaly_pct=_resolve_int("anomaly_pct", anomaly_pct, _ENV_MAP["anomaly_pct"]),
+        burp_rest_url=selected_url,
+        enforce_scope=selected_scope,
+        envelope=resolve_bool("envelope", envelope),
+        redact=resolve_bool("redact", redact),
+        ledger=resolve_bool("ledger", ledger, invert_environment=True),
+        throttle_ms=selected_throttle,
+        anomaly_pct=selected_anomaly,
     )
 
 
-# ---------------------------------------------------------------------------
-# redact()
-# ---------------------------------------------------------------------------
+# Exact canonical names plus deliberately narrow suffixes. ``key`` alone is
+# sensitive, but arbitrary words ending in "key" (for example "monkey") are not.
+_SENSITIVE_NAMES = {
+    "authorization",
+    "proxyauthorization",
+    "cookie",
+    "cookies",
+    "setcookie",
+    "apikey",
+    "apikeys",
+    "apiaccesskey",
+    "accesskey",
+    "secretkey",
+    "privatekey",
+    "key",
+    "token",
+    "tokens",
+    "accesstoken",
+    "authtoken",
+    "bearertoken",
+    "idtoken",
+    "refreshtoken",
+    "sessiontoken",
+    "password",
+    "passwords",
+    "passwd",
+    "pwd",
+    "secret",
+    "secrets",
+    "clientsecret",
+    "credential",
+    "credentials",
+}
+_SENSITIVE_SUFFIXES = (
+    "apikey",
+    "accesskey",
+    "secretkey",
+    "privatekey",
+    "secretaccesskey",
+    "token",
+    "tokenhash",
+    "tokenvalue",
+    "password",
+    "passwordhash",
+    "passwordvalue",
+    "passwd",
+    "secret",
+    "secretvalue",
+    "credential",
+    "credentials",
+)
+_SENSITIVE_QUERY_NAMES = _SENSITIVE_NAMES | {
+    "auth",
+    "code",
+    "csrf",
+    "xsrf",
+    "jwt",
+    "session",
+    "sessionid",
+    "sig",
+    "xamzcredential",
+    "xamzsignature",
+    "xgoogcredential",
+    "xgoogsignature",
+    "awsaccesskeyid",
+    "googleaccessid",
+    "signature",
+}
 
-# Patterns to mask.  Each pattern must use a named group ``secret`` for the
-# portion to redact.  Everything else in the match (prefix/context captured by
-# other groups or plain match text) is preserved verbatim.
-#
-# Two forms are covered for each credential class:
-#   (A) Header-line form:  "Authorization: Basic <cred>"
-#   (B) JSON-embedded form: "Basic <cred>" inside a JSON string value, or a
-#       Cookie "value" field in {"name":"Cookie","value":"..."} blobs.
-_REDACT_PATTERNS: list[re.Pattern[str]] = [
-    # [A] Authorization header line — Bearer / Basic / Token (NOT Digest).
-    # Value match uses [^"\r\n]+ so the pattern is JSON-safe: it stops at the
-    # closing double-quote when the header line is embedded inside a JSON string
-    # value (NDJSON output), leaving the line independently parseable.
-    # Bearer/Basic/Token credentials never contain bare `"` so this is lossless.
-    re.compile(
-        r'(Authorization:\s*(?:Bearer|Basic|Token)\s+)(?P<secret>[^"\r\n]+)',
-        re.IGNORECASE,
-    ),
-    # [A-Digest] Authorization: Digest header line — plain/raw form.
-    # RFC 7235 Digest credentials contain bare `"` (quoted-string parameters
-    # like username="u", response="deadbeef") so we must NOT stop at `"`.
-    # We stop at CR/LF only, which is correct for a raw header line.
-    # Note: this pattern is NOT JSON-safe for a Digest header embedded inside a
-    # JSON string value ("raw":"Authorization: Digest ...").  That case is rare
-    # in bp output (burp serialises headers as structured {name, value} objects);
-    # the structured form is covered by [B-Digest] below.
-    re.compile(
-        r"(Authorization:\s*Digest\s+)(?P<secret>[^\r\n]+)",
-        re.IGNORECASE,
-    ),
-    # [B] Credential scheme keyword anywhere (JSON-embedded or standalone).
-    #     Covers Bearer, Basic, Token — masks the credential that follows.
-    #     Min 4 chars to avoid false positives on short words after "Token".
-    re.compile(
-        r"((?:Bearer|Basic|Token)\s+)(?P<secret>[A-Za-z0-9\-_=.+/]{4,})",
-        re.IGNORECASE,
-    ),
-    # [B-Digest] Digest credential value anywhere — JSON-embedded form.
-    # In JSON, inner quotes in the Digest value are escaped as \" in the raw
-    # Python string.  The alternation (?:\\"|[^"\r\n])+ tries the two-char
-    # sequence \" FIRST so that \ and " are consumed together as a unit; the
-    # fallback [^"\r\n] then handles every other non-quote character.  The
-    # combined effect: passes through \"-sequences (escaped inner quotes) and
-    # stops only at a bare " (the JSON closing delimiter), keeping the NDJSON
-    # line parseable after redaction.
-    # For the plain Authorization: Digest header-line form, [A-Digest] fires
-    # first and the Digest keyword is consumed into the replacement, so this
-    # pattern does not double-fire on already-redacted output.
-    re.compile(r'(Digest\s+)(?P<secret>(?:\\"|[^"\r\n])+)', re.IGNORECASE),
-    # [A] Cookie / Set-Cookie header line.
-    # Cookie values do not contain bare `"` so [^"\r\n]+ is both lossless for
-    # plain header lines and JSON-safe when embedded in a JSON string value.
-    re.compile(r'((?:Set-)?Cookie:\s*)(?P<secret>[^"\r\n]+)', re.IGNORECASE),
-    # [B] Cookie value in JSON flat-key form: {"Cookie":"session=SECRET"}
-    re.compile(r'("(?:Set-)?Cookie"\s*:\s*")(?P<secret>[^"]+)', re.IGNORECASE),
-    # [B] Cookie value in {"name":"Cookie","value":"session=SECRET"} blob.
-    #     Non-capturing context (Cookie name field) precedes the value field.
-    re.compile(
-        r'(?:"(?:Set-)?Cookie"[^}]{0,200}"value"\s*:\s*")(?P<secret>[^"]+)',
-        re.IGNORECASE | re.DOTALL,
-    ),
-    # JWT: three base64url segments — keep header, mask payload+signature.
-    re.compile(r"(eyJ[A-Za-z0-9\-_]+\.)(?P<secret>[A-Za-z0-9\-_.]+)"),
-]
 
-_REDACT_PLACEHOLDER = "***"
+def _canonical_name(value: Any) -> str:
+    if not isinstance(value, str):
+        return ""
+    return re.sub(r"[^a-z0-9]", "", value.lower())
+
+
+def _is_sensitive_name(value: Any) -> bool:
+    name = _canonical_name(value)
+    return bool(name) and (name in _SENSITIVE_NAMES or name.endswith(_SENSITIVE_SUFFIXES))
+
+
+def _is_sensitive_query_name(value: str) -> bool:
+    decoded = unquote_plus(value)
+    name = _canonical_name(decoded)
+    return (
+        _is_sensitive_name(decoded)
+        or bool(name)
+        and (name in _SENSITIVE_QUERY_NAMES or name.endswith(_SENSITIVE_SUFFIXES))
+    )
+
+
+def _redact_query(query: str) -> str:
+    if not query:
+        return query
+    parts = re.split(r"([&;])", query)
+    for index in range(0, len(parts), 2):
+        item = parts[index]
+        key, separator, _value = item.partition("=")
+        if separator and _is_sensitive_query_name(key):
+            parts[index] = f"{key}={REDACTED}"
+    return "".join(parts)
+
+
+def _redact_url(url: str) -> str:
+    try:
+        parsed = urlsplit(url)
+        _ = parsed.port
+    except ValueError:
+        return url
+    if parsed.scheme:
+        if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+            return url
+    elif parsed.netloc:
+        pass
+    elif not parsed.query or not url.startswith(("/", "?")):
+        return url
+
+    netloc = parsed.netloc
+    if parsed.username is not None or parsed.password is not None:
+        netloc = f"{REDACTED}@{netloc.rsplit('@', 1)[-1]}"
+    query = _redact_query(parsed.query)
+    fragment = _redact_query(parsed.fragment)
+    return urlunsplit((parsed.scheme, netloc, parsed.path, query, fragment))
+
+
+_URL_IN_TEXT = re.compile(r"(?:https?:)?//[^\s<>\"']+", re.IGNORECASE)
+
+# Text fallback patterns intentionally need recognizable credential context.
+# Structured output takes the recursive path below and never relies on these.
+_TEXT_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(
+        r"((?:Proxy-)?Authorization:\s*)(?P<secret>[^\r\n]+)",
+        re.IGNORECASE,
+    ),
+    re.compile(r"((?:Set-)?Cookie:\s*)(?P<secret>[^\r\n]+)", re.IGNORECASE),
+    re.compile(
+        r"((?:Bearer|Basic|Token|Digest)\s+)(?P<secret>[A-Za-z0-9_\-=.+/, :\\\"]{4,})",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(?P<prefix>\b(?:(?:proxy[_-]?)?authorization|api[_-]?key|access[_-]?token|auth[_-]?token|password|passwd|pwd|client[_-]?secret|secret|(?:set[_-]?)?cookie)\b[\"']?\s*[=:]\s*[\"']?)(?P<secret>[^\s,;&\"']+)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(?P<prefix>--(?:api[_-]?key|access[_-]?token|auth[_-]?token|password|passwd|pwd|client[_-]?secret|secret)(?:=|\s+)[\"']?)(?P<secret>[^\s\"']+)",
+        re.IGNORECASE,
+    ),
+    re.compile(r"(eyJ[A-Za-z0-9_-]+\.)(?P<secret>[A-Za-z0-9_.-]+)"),
+)
+
+
+def _redact_text_fallback(text: str) -> str:
+    text = _redact_url(text)
+    text = _URL_IN_TEXT.sub(lambda match: _redact_url(match.group(0)), text)
+    for pattern in _TEXT_PATTERNS:
+
+        def replace(match: re.Match[str]) -> str:
+            full = match.group(0)
+            prefix_length = match.start("secret") - match.start(0)
+            return f"{full[:prefix_length]}{REDACTED}"
+
+        text = pattern.sub(replace, text)
+    return text
 
 
 def redact(text: str) -> str:
-    """Mask JWT/Authorization/Cookie values in *text*.
+    """Conservatively redact credentials from unstructured text.
 
-    Applies all _REDACT_PATTERNS.  Each pattern uses a named group ``secret``
-    for the portion to replace; everything else in the match is kept verbatim.
-    If the config has redact=off this function should not be called by the
-    caller — but it is always safe to call.
+    Older callers sometimes pass already serialized JSON/NDJSON. Parse those
+    records first so compatibility never comes at the cost of broken JSON; new
+    output paths call :func:`redact_data` before serialization instead.
     """
-    for pattern in _REDACT_PATTERNS:
-        def _replace(m: re.Match[str]) -> str:
-            full = m.group(0)
-            # Keep everything in the match before the secret group.
-            prefix = full[: m.start("secret") - m.start(0)]
-            return f"{prefix}{_REDACT_PLACEHOLDER}"
+    sentinel = object()
+    parsed: Any = sentinel
+    try:
+        parsed = json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        pass
+    if parsed is not sentinel:
+        return json.dumps(redact_data(parsed), separators=(",", ":"), ensure_ascii=False)
 
-        text = pattern.sub(_replace, text)
-    return text
+    lines = text.splitlines()
+    if len(lines) > 1:
+        parsed_lines: list[Any] = []
+        try:
+            parsed_lines = [json.loads(line) for line in lines]
+        except json.JSONDecodeError:
+            parsed_lines = []
+        if parsed_lines:
+            return "\n".join(
+                json.dumps(redact_data(record), separators=(",", ":"), ensure_ascii=False)
+                for record in parsed_lines
+            )
+    return _redact_text_fallback(text)
+
+
+def _copy_mapping(value: Mapping[Any, Any]) -> Any:
+    try:
+        result: Any = copy.copy(value)
+        for key in value:
+            result[key] = value[key]
+        return result
+    except (AttributeError, TypeError):
+        return dict(value)
+
+
+def _mask_sensitive_value(value: Any) -> Any:
+    """Mask every scalar while retaining the value's structural shape and types."""
+    if isinstance(value, Mapping):
+        result = _copy_mapping(value)
+        for key, item in value.items():
+            result[key] = _mask_sensitive_value(item)
+        return result
+    if isinstance(value, list):
+        return [_mask_sensitive_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_mask_sensitive_value(item) for item in value)
+    if isinstance(value, bytes):
+        return REDACTED.encode()
+    if isinstance(value, bytearray):
+        return bytearray(REDACTED, "utf-8")
+    if isinstance(value, str):
+        return REDACTED
+    if isinstance(value, bool) or value is None:
+        return value
+    if isinstance(value, int):
+        return 0
+    if isinstance(value, float):
+        return 0.0
+    return REDACTED
+
+
+def redact_data(value: Any) -> Any:
+    """Return a recursively redacted copy while retaining structure and key order.
+
+    Nested mappings and lists are handled before serialization. Header maps,
+    ``{name, value}`` header records, credential-named fields, URL userinfo, and
+    common credential query parameters are recognized case-insensitively.
+    """
+    if isinstance(value, Mapping):
+        result = _copy_mapping(value)
+        header_name: Any = None
+        value_key: Any = None
+        for key, item in value.items():
+            canonical = _canonical_name(key)
+            if canonical == "name":
+                header_name = item
+            elif canonical == "value":
+                value_key = key
+        header_record = _is_sensitive_name(header_name)
+
+        for key, item in value.items():
+            if header_record and key == value_key:
+                result[key] = _mask_sensitive_value(item)
+            elif _is_sensitive_name(key):
+                result[key] = _mask_sensitive_value(item)
+            else:
+                result[key] = redact_data(item)
+        return result
+    if isinstance(value, list):
+        return [redact_data(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(redact_data(item) for item in value)
+    if isinstance(value, bytes):
+        return _redact_text_fallback(value.decode("utf-8", "replace")).encode("utf-8")
+    if isinstance(value, bytearray):
+        return bytearray(_redact_text_fallback(value.decode("utf-8", "replace")), "utf-8")
+    if isinstance(value, str):
+        return _redact_text_fallback(value)
+    return value
+
+
+# Descriptive aliases for callers migrating from serialized redaction.
+redact_structure = redact_data
+redact_value = redact_data

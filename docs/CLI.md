@@ -1,5 +1,24 @@
 # `bp` — Canonical CLI Grammar (contract)
 
+# Current CLI contract
+
+This section supersedes stale design sketches later in this historical command document. The shipped command tree and method/path mapping are exercised by `bp/tests/test_cli_conformance.py` and `bp/tests/test_entrypoints.py`; REST operations are described by `src/main/resources/openapi.json`.
+
+- `bp` is primary and `burpctl` is an equivalent installed alias.
+- Global `--url`, `--format`, `--fields`, `--no-ledger`, and `--no-redact` may appear before or after a command, but option hoisting stops at `--`.
+- `-h` and `--help` are accepted. `BP_AGENT=1` selects JSON unless `--format` is explicit.
+- `--format` accepts `json`, `table`, `raw`, and `quiet`; `raw` is rejected when the command has no genuine raw/scalar artifact.
+- Parser and runtime errors honor JSON mode. Exit codes are 0 success, 1 runtime/unsupported, 2 local usage, 3 transport, 4 Pro capability, and 5 confirmed security-check finding.
+- `scan audit URL` seeds that URL. `scan all` reaches a discoverable but unsupported linked operation in Montoya 2025.3.
+- `intercept forward|drop` are discoverable but unsupported, never acknowledged as completed.
+- `config get|set` exports/imports actual nested Burp project/user JSON.
+- `check endpoints` reads extension-owned Repeater/session H2 history, not ordinary proxy-listener history.
+
+See [ADR-0013](adr/0013-truthful-executable-contracts.md) and the current-contract section of [SPEC.md](SPEC.md).
+
+---
+
+
 > Single source of truth for the command surface.
 > All BDD scenarios must conform to it. Resolves divergences detected during the audit
 > (`--id` vs `--request-id`, `bp fuzz` vs `bp intruder`, `--url` vs positional).

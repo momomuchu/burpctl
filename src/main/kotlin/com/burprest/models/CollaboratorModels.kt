@@ -31,10 +31,12 @@ data class Interaction(
     val clientIp: String? = null,
     val timestamp: String? = null,
     val details: Map<String, String> = emptyMap(),
+    val clientPort: Int? = null,
 )
 
 @Serializable
 data class PollResponse(
     val found: Boolean,
     val interactions: List<Interaction>,
+    val queriedPayloadId: String? = null,
 )

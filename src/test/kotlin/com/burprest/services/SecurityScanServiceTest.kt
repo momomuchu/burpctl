@@ -7,10 +7,13 @@ import com.burprest.models.*
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import io.mockk.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SecurityScanServiceTest {
@@ -59,13 +62,13 @@ class SecurityScanServiceTest {
      */
     @Test
     fun `idor - different bodyPreview is flagged vulnerable even when byte delta is small`() {
-        every { sessionService.send(match { it.url.contains("alice") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("alice") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = "alice-record",
             durationMs = 0,
         )
-        every { sessionService.send(match { it.url.contains("bob") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("bob") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = "bob-record  ",   // same length, different content
@@ -92,13 +95,13 @@ class SecurityScanServiceTest {
      */
     @Test
     fun `idor - identical bodyPreview is sameAsBaseline regardless of small byte difference`() {
-        every { sessionService.send(match { it.url.contains("alice") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("alice") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = "alice-record",
             durationMs = 0,
         )
-        every { sessionService.send(match { it.url.contains("alice2") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("alice2") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = "alice-record",   // identical content
@@ -132,13 +135,13 @@ class SecurityScanServiceTest {
         val aliceBody = "a".repeat(71)
         val bobBody   = "b".repeat(67)   // different content, smaller length (delta=4 < old floor 10)
 
-        every { sessionService.send(match { it.url.contains("alice") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("alice") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = aliceBody,
             durationMs = 0,
         )
-        every { sessionService.send(match { it.url.contains("bob") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("bob") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = bobBody,
@@ -243,10 +246,12 @@ class SecurityScanServiceTest {
         // Track which methods probeNoAuthRaw was called with
         val capturedMethods = mutableListOf<String>()
 
-        every { spy.probeWithAuthRaw(any(), any()) } returns
+        every { spy.probeWithAuthRaw(any<SecurityScanService.EndpointRequest>()) } returns
             SecurityScanService.RawProbe(200, "protected", 0)
-        every { spy.probeNoAuthRaw(any(), capture(capturedMethods)) } returns
-            SecurityScanService.RawProbe(401, "", 0)
+        every { spy.probeNoAuthRaw(match<SecurityScanService.EndpointRequest> {
+            capturedMethods += it.method
+            true
+        }) } returns SecurityScanService.RawProbe(401, "", 0)
 
         // One POST endpoint in history
         val entry = HistoryEntry(
@@ -290,7 +295,7 @@ class SecurityScanServiceTest {
     @Test
     fun `cors - static non-reflected ACAO with credentials allowed is NOT vulnerable`() {
         // sessionService.send returns a response where ACAO is a static value, not the probed origin
-        every { sessionService.send(any()) } answers {
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } answers {
             AuthenticatedResponse(
                 statusCode = 200,
                 headers = listOf(
@@ -318,7 +323,7 @@ class SecurityScanServiceTest {
      */
     @Test
     fun `cors - reflected origin with credentials allowed IS vulnerable`() {
-        every { sessionService.send(any()) } answers {
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } answers {
             val req = firstArg<AuthenticatedRequest>()
             val origin = req.extraHeaders?.get("Origin") ?: "https://evil.com"
             AuthenticatedResponse(
@@ -417,13 +422,13 @@ class SecurityScanServiceTest {
         val baselineBody = sharedPrefix + "baseline-only-data"
         val targetBody   = sharedPrefix + "target-extra-secret-fields-" + "y".repeat(200)  // ~200+ extra bytes
 
-        every { sessionService.send(match { it.url.contains("own") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("own") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = baselineBody,
             durationMs = 0,
         )
-        every { sessionService.send(match { it.url.contains("other") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("other") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = targetBody,
@@ -455,7 +460,7 @@ class SecurityScanServiceTest {
     fun `idor - equal preview and equal length IS sameAsBaseline and NOT vulnerable`() {
         val sharedBody = "x".repeat(200) + "common-suffix"
 
-        every { sessionService.send(any()) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = sharedBody,
@@ -489,13 +494,13 @@ class SecurityScanServiceTest {
      */
     @Test
     fun `idor - baseline returning 404 suppresses all vulnerable flags even when target returns 200 with different body`() {
-        every { sessionService.send(match { it.url.contains("own") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("own") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 404,
             headers = emptyList(),
             body = "Not Found — error page content that differs from any real record",
             durationMs = 0,
         )
-        every { sessionService.send(match { it.url.contains("other") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("other") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = "real-user-record-content-completely-different-from-baseline",
@@ -528,13 +533,13 @@ class SecurityScanServiceTest {
      */
     @Test
     fun `idor - baseline returning 200 and target returning 200 with different body remains vulnerable`() {
-        every { sessionService.send(match { it.url.contains("own") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("own") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = "alice-private-record",
             durationMs = 0,
         )
-        every { sessionService.send(match { it.url.contains("other") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("other") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = "bob-private-record-different",
@@ -577,13 +582,13 @@ class SecurityScanServiceTest {
      */
     @Test
     fun `idor - null baseline body with non-empty target body is NOT sameAsBaseline and IS vulnerable`() {
-        every { sessionService.send(match { it.url.contains("own") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("own") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = null,   // SessionService returns null when HTTP response body is empty
             durationMs = 0,
         )
-        every { sessionService.send(match { it.url.contains("tgt") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("tgt") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = "ok",   // short affirmative body — the real IDOR payload
@@ -618,7 +623,7 @@ class SecurityScanServiceTest {
      */
     @Test
     fun `idor - null baseline body with null target body is sameAsBaseline and NOT vulnerable`() {
-        every { sessionService.send(any()) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = null,   // both baseline and target return null body
@@ -650,13 +655,13 @@ class SecurityScanServiceTest {
      */
     @Test
     fun `idor - non-null different bodies still flagged vulnerable after null guard`() {
-        every { sessionService.send(match { it.url.contains("own") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("own") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = "alice-record",
             durationMs = 0,
         )
-        every { sessionService.send(match { it.url.contains("tgt") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("tgt") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = "bob-record",
@@ -701,13 +706,13 @@ class SecurityScanServiceTest {
         // Pad target to match length so the old length-delta tiebreaker would also pass
         val targetBodyPadded = targetBody.padEnd(baselineBody.length, '.')
 
-        every { sessionService.send(match { it.url.contains("own") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("own") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = baselineBody,
             durationMs = 0,
         )
-        every { sessionService.send(match { it.url.contains("other") }) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("other") }, emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = targetBodyPadded,
@@ -744,7 +749,7 @@ class SecurityScanServiceTest {
     fun `idor - fully identical bodies including tail IS sameAsBaseline and NOT vulnerable`() {
         val body = "x".repeat(200) + "role=admin;ssn=111-22-3333;salary=150000"
 
-        every { sessionService.send(any()) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = body,
@@ -777,7 +782,7 @@ class SecurityScanServiceTest {
     // that limitation is surfaced as a note so the analyst applies judgement.
     @Test
     fun `idor - response includes privilege direction limitation note`() {
-        every { sessionService.send(any()) } returns AuthenticatedResponse(200, emptyList(), "body", 0)
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(200, emptyList(), "body", 0)
         val resp = svc.idor(IdorRequest("http://t?id={id}", "id", listOf("1"), listOf("2")))
         assertNotNull(resp.note)
         assertTrue(resp.note!!.contains("privilege direction", ignoreCase = true))
@@ -786,7 +791,7 @@ class SecurityScanServiceTest {
     // [11] Only the first own value is the baseline; the rest are not tested and must be surfaced.
     @Test
     fun `idor - multiple own values lists ignored ones in ignoredOwnValues`() {
-        every { sessionService.send(any()) } returns AuthenticatedResponse(200, emptyList(), "body", 0)
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(200, emptyList(), "body", 0)
         val resp = svc.idor(IdorRequest("http://t?id={id}", "id", listOf("1", "2", "3"), listOf("99")))
         assertEquals(listOf("2", "3"), resp.ignoredOwnValues)
     }
@@ -926,9 +931,9 @@ class SecurityScanServiceTest {
         val baselineBody = """{"ok":true}"""          // 11 chars — well under 500-byte breakpoint
         val probeBody    = """{"ok":true,"extra":"injected-val"}"""  // 11+26=37 chars, delta=26 > floor 10
 
-        every { sessionService.send(match { it.extraHeaders == null || it.extraHeaders!!.isEmpty() }) } returns
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders == null || it.extraHeaders!!.isEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
             AuthenticatedResponse(statusCode = 200, headers = emptyList(), body = baselineBody, durationMs = 0)
-        every { sessionService.send(match { it.extraHeaders != null && it.extraHeaders!!.isNotEmpty() }) } returns
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders != null && it.extraHeaders!!.isNotEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
             AuthenticatedResponse(statusCode = 200, headers = emptyList(), body = probeBody, durationMs = 0)
 
         val resp = svc.headersBypass(
@@ -954,9 +959,9 @@ class SecurityScanServiceTest {
         val baselineBody = """{"id":1,"v":1}"""          // 14 chars
         val probeBody    = """{"id":1,"v":1,"x":1}"""    // 20 chars, delta=6 < floor 10
 
-        every { sessionService.send(match { it.extraHeaders == null || it.extraHeaders!!.isEmpty() }) } returns
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders == null || it.extraHeaders!!.isEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
             AuthenticatedResponse(statusCode = 200, headers = emptyList(), body = baselineBody, durationMs = 0)
-        every { sessionService.send(match { it.extraHeaders != null && it.extraHeaders!!.isNotEmpty() }) } returns
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders != null && it.extraHeaders!!.isNotEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
             AuthenticatedResponse(statusCode = 200, headers = emptyList(), body = probeBody, durationMs = 0)
 
         val resp = svc.headersBypass(
@@ -979,9 +984,9 @@ class SecurityScanServiceTest {
     fun `headersBypass - status change from baseline is always anomalous`() {
         val body = """{"ok":true}"""
 
-        every { sessionService.send(match { it.extraHeaders == null || it.extraHeaders!!.isEmpty() }) } returns
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders == null || it.extraHeaders!!.isEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
             AuthenticatedResponse(statusCode = 200, headers = emptyList(), body = body, durationMs = 0)
-        every { sessionService.send(match { it.extraHeaders != null && it.extraHeaders!!.isNotEmpty() }) } returns
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders != null && it.extraHeaders!!.isNotEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
             AuthenticatedResponse(statusCode = 403, headers = emptyList(), body = body, durationMs = 0)
 
         val resp = svc.headersBypass(
@@ -1021,7 +1026,7 @@ class SecurityScanServiceTest {
      */
     @Test
     fun `cors - server reflecting own subdomain origin with credentials is NOT vulnerable`() {
-        every { sessionService.send(any()) } answers {
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } answers {
             val req = firstArg<AuthenticatedRequest>()
             val origin = req.extraHeaders?.get("Origin") ?: return@answers AuthenticatedResponse(
                 statusCode = 200, headers = emptyList(), body = "ok", durationMs = 0,
@@ -1060,7 +1065,7 @@ class SecurityScanServiceTest {
      */
     @Test
     fun `cors - server reflecting evil dot com origin with credentials IS vulnerable`() {
-        every { sessionService.send(any()) } answers {
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } answers {
             val req = firstArg<AuthenticatedRequest>()
             val origin = req.extraHeaders?.get("Origin") ?: return@answers AuthenticatedResponse(
                 statusCode = 200, headers = emptyList(), body = "ok", durationMs = 0,
@@ -1099,23 +1104,24 @@ class SecurityScanServiceTest {
      * Expected: probeWithAuthRaw returns the sentinel instead of throwing.
      */
     @Test
-    fun `probeWithAuthRaw returns sentinel RawProbe when sessionService send throws`() {
+    fun `probeWithAuthRaw reports an explicit error when sessionService send throws`() {
         val throwingSvc = mockk<SessionService>(relaxed = true)
-        every { throwingSvc.send(any()) } throws RuntimeException("connection refused")
+        every {
+            throwingSvc.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false)
+        } throws RuntimeException("connection refused")
 
-        val localSvc = SecurityScanService(api, throwingSvc, historyDao)
+        val result = SecurityScanService(api, throwingSvc, historyDao)
+            .probeWithAuthRaw("http://t/api/resource", "GET")
 
-        // Must not throw; must return the zero sentinel
-        val result = localSvc.probeWithAuthRaw("http://t/api/resource", "GET")
-
-        assertEquals(0, result.status, "Sentinel status must be 0 on exception: got ${result.status}")
-        assertEquals("", result.bodyText, "Sentinel bodyText must be empty on exception: got '${result.bodyText}'")
-        assertEquals(0L, result.durationMs, "Sentinel durationMs must be 0 on exception: got ${result.durationMs}")
+        assertNull(result.status, "A transport failure is not an HTTP status")
+        assertNotNull(result.error, "A failed probe must be explicit")
+        assertEquals("", result.bodyText)
+        assertEquals(0L, result.durationMs)
     }
 
     @Test
     fun `probeWithAuthRaw returns real response when sessionService send succeeds`() {
-        every { sessionService.send(any()) } returns AuthenticatedResponse(
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(
             statusCode = 200,
             headers = emptyList(),
             body = "real-body",
@@ -1125,6 +1131,795 @@ class SecurityScanServiceTest {
         val result = svc.probeWithAuthRaw("http://t/api/resource", "GET")
 
         assertEquals(200, result.status)
+        assertNull(result.error)
         assertEquals("real-body", result.bodyText)
     }
+
+    // ---------------------------------------------------------------------------
+    // Comprehensive behavior hardening: validate the complete plan before effects
+    // ---------------------------------------------------------------------------
+
+    @Test
+    fun `authBypass rejects an unsafe endpoint anywhere in the plan before every probe`() {
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+        every { spy.probeWithAuthRaw(any(), any()) } returns SecurityScanService.RawProbe(200, "ok", 0)
+        every { spy.probeNoAuthRaw(any(), any()) } returns SecurityScanService.RawProbe(401, "", 0)
+
+        assertFailsWith<IllegalArgumentException> {
+            spy.authBypass(
+                AuthBypassRequest(
+                    endpoints = listOf("/safe", "https://other.example/escape"),
+                    baseUrl = "https://target.example",
+                )
+            )
+        }
+
+        verify(exactly = 0) { spy.probeWithAuthRaw(any(), any()) }
+        verify(exactly = 0) { spy.probeNoAuthRaw(any(), any()) }
+        verify(exactly = 0) { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) }
+    }
+
+    @Test
+    fun `all direct scanners reject unsafe methods and URLs without sending`() {
+        val calls = listOf<() -> Unit>(
+            { svc.authBypass(AuthBypassRequest(listOf("/x"), "file:///etc/passwd", "GET")) },
+            { svc.authBypass(AuthBypassRequest(listOf("/x"), "https://target.example", "GET\r\nX-Evil: 1")) },
+            { svc.idor(IdorRequest("https://target.example/u?id={id}", "id", listOf("1"), listOf("2"), "CONNECT")) },
+            { svc.idor(IdorRequest("https://user:pass@target.example/u?id={id}", "id", listOf("1"), listOf("2"))) },
+            { svc.headersBypass(HeadersBypassRequest("//target.example/x", "GET")) },
+            { svc.headersBypass(HeadersBypassRequest("https://target.example/x#fragment", "GET")) },
+            { svc.cors(CorsRequest("javascript:alert(1)", "GET")) },
+            { svc.cors(CorsRequest("https://target.example/x", "TRACE")) },
+        )
+
+        calls.forEach { call -> assertFailsWith<IllegalArgumentException> { call() } }
+        verify(exactly = 0) { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) }
+    }
+
+    @Test
+    fun `idor rejects blank values and header injection before baseline send`() {
+        val invalidRequests = listOf(
+            IdorRequest("https://target.example/u?id={id}", "", listOf("1"), listOf("2")),
+            IdorRequest("https://target.example/u?id={id}", "id", listOf(""), listOf("2")),
+            IdorRequest("https://target.example/u?id={id}", "id", listOf("1"), listOf("")),
+            IdorRequest(
+                "https://target.example/u?id={id}", "id", listOf("1"), listOf("2"),
+                extraHeaders = mapOf("X-Test\r\nInjected" to "yes"),
+            ),
+            IdorRequest(
+                "https://target.example/u?id={id}", "id", listOf("1"), listOf("2"),
+                extraHeaders = mapOf("X-Test" to "yes\r\nInjected: true"),
+            ),
+        )
+
+        invalidRequests.forEach { request ->
+            assertFailsWith<IllegalArgumentException> { svc.idor(request) }
+        }
+        verify(exactly = 0) { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) }
+    }
+
+    @Test
+    fun `endpoint scan rejects unsupported tests blank hosts and out of range limits before history access`() {
+        val invalidRequests = listOf(
+            EndpointsScanRequest("target.example", listOf("auth-bypass", "unknown"), 10),
+            EndpointsScanRequest("target.example", listOf("auth-bypass", "auth-bypass"), 10),
+            EndpointsScanRequest("target.example", emptyList(), 10),
+            EndpointsScanRequest("", listOf("auth-bypass"), 10),
+            EndpointsScanRequest("https://target.example/path", listOf("auth-bypass"), 10),
+            EndpointsScanRequest("target.example", listOf("auth-bypass"), 0),
+            EndpointsScanRequest("target.example", listOf("auth-bypass"), 1001),
+        )
+
+        invalidRequests.forEach { request ->
+            assertFailsWith<IllegalArgumentException> { svc.scanEndpoints(request) }
+        }
+        verify(exactly = 0) { historyDao.search(any<HistoryFilter>()) }
+        verify(exactly = 0) { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) }
+    }
+
+    @Test
+    fun `endpoint scan accepts both limit boundaries`() {
+        every { historyDao.search(any<HistoryFilter>()) } returns emptyList()
+
+        svc.scanEndpoints(EndpointsScanRequest("target.example", listOf("auth-bypass"), 1))
+        svc.scanEndpoints(EndpointsScanRequest("target.example", listOf("method-switch"), 1000))
+
+        verify(exactly = 1) { historyDao.search(match { it.pageSize == 1 }) }
+        verify(exactly = 1) { historyDao.search(match { it.pageSize == 1000 }) }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Header bypass: anomaly is observation; only a denied control -> substantive 2xx is vulnerable
+    // ---------------------------------------------------------------------------
+
+    @Test
+    fun `headersBypass confirms denial to substantive 2xx and reports vulnerableCount`() {
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(403, emptyList(), "denied", 1)
+        every { sessionService.sendPreservingHeaders(match { !it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(200, emptyList(), "protected admin content", 1)
+
+        val response = svc.headersBypass(
+            HeadersBypassRequest(
+                "https://target.example/admin",
+                protectedContentMarker = "admin content",
+            )
+        )
+
+        assertEquals(response.results.size, response.anomalousCount)
+        assertEquals(response.results.size, response.vulnerableCount)
+        assertTrue(response.results.all { it.anomalous && it.vulnerable })
+    }
+
+    @Test
+    fun `headersBypass denial to 2xx without a protected marker remains anomaly only`() {
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(403, emptyList(), "denied", 1)
+        every { sessionService.sendPreservingHeaders(match { !it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(200, emptyList(), "generic login page", 1)
+
+        val response = svc.headersBypass(HeadersBypassRequest("https://target.example/admin"))
+
+        assertTrue(response.results.all { it.anomalous && !it.vulnerable })
+        assertEquals(0, response.vulnerableCount)
+    }
+
+    @Test
+    fun `headersBypass mismatched protected marker remains anomaly only`() {
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(403, emptyList(), "denied", 1)
+        every { sessionService.sendPreservingHeaders(match { !it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(200, emptyList(), "generic login page", 1)
+
+        val response = svc.headersBypass(
+            HeadersBypassRequest(
+                "https://target.example/admin",
+                protectedContentMarker = "server-held admin marker",
+            )
+        )
+
+        assertTrue(response.results.all { it.anomalous && !it.vulnerable })
+        assertEquals(0, response.vulnerableCount)
+    }
+
+    @Test
+    fun `headersBypass marker already present in denial baseline cannot corroborate bypass`() {
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(403, emptyList(), "admin marker - access denied", 1)
+        every { sessionService.sendPreservingHeaders(match { !it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(200, emptyList(), "admin marker - login required", 1)
+
+        val response = svc.headersBypass(
+            HeadersBypassRequest(
+                "https://target.example/admin",
+                protectedContentMarker = "admin marker",
+            )
+        )
+
+        assertTrue(response.results.all { it.anomalous && !it.vulnerable })
+        assertEquals(0, response.vulnerableCount)
+    }
+
+    @Test
+    fun `headersBypass rejects a blank protected marker before sending`() {
+        assertFailsWith<IllegalArgumentException> {
+            svc.headersBypass(
+                HeadersBypassRequest(
+                    "https://target.example/admin",
+                    protectedContentMarker = "  ",
+                )
+            )
+        }
+        verify(exactly = 0) {
+            sessionService.sendPreservingHeaders(any(), any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `headersBypass keeps successful baseline deltas anomalous but never vulnerable`() {
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(200, emptyList(), "ordinary", 1)
+        every { sessionService.sendPreservingHeaders(match { !it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(201, emptyList(), "different substantive body", 1)
+
+        val response = svc.headersBypass(HeadersBypassRequest("https://target.example/resource"))
+
+        assertTrue(response.results.all { it.anomalous })
+        assertTrue(response.results.none { it.vulnerable })
+        assertEquals(0, response.vulnerableCount)
+    }
+
+    @Test
+    fun `headersBypass does not call an empty or no-content success vulnerable`() {
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(403, emptyList(), "denied", 1)
+        every { sessionService.sendPreservingHeaders(match { !it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(204, emptyList(), null, 1)
+
+        val response = svc.headersBypass(HeadersBypassRequest("https://target.example/admin"))
+
+        assertTrue(response.results.all { it.anomalous })
+        assertTrue(response.results.none { it.vulnerable })
+        assertEquals(0, response.vulnerableCount)
+    }
+
+    @Test
+    fun `headersBypass does not call a 2xx denial body substantive`() {
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(403, emptyList(), "access denied", 1)
+        every { sessionService.sendPreservingHeaders(match { !it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(200, emptyList(), "access denied", 1)
+
+        val response = svc.headersBypass(HeadersBypassRequest("https://target.example/admin"))
+
+        assertTrue(response.results.all { it.anomalous })
+        assertTrue(response.results.none { it.vulnerable })
+        assertEquals(0, response.vulnerableCount)
+    }
+
+    @Test
+    fun `headersBypass does not infer denial from a 404`() {
+        every { sessionService.sendPreservingHeaders(match { it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(404, emptyList(), "not found", 1)
+        every { sessionService.sendPreservingHeaders(match { !it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(200, emptyList(), "some other resource", 1)
+
+        val response = svc.headersBypass(HeadersBypassRequest("https://target.example/missing"))
+
+        assertTrue(response.results.all { it.anomalous })
+        assertTrue(response.results.none { it.vulnerable })
+        assertEquals(0, response.vulnerableCount)
+    }
+
+    @Test
+    fun `headersBypass baseline transport failure is explicit and stops dependent probes`() {
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } throws RuntimeException("connection refused")
+
+        val response = svc.headersBypass(HeadersBypassRequest("https://target.example/admin"))
+
+        assertNull(response.baseline.status)
+        assertNotNull(response.baseline.error)
+        assertTrue(response.results.isEmpty())
+        assertEquals(1, response.inconclusiveCount)
+        assertEquals(0, response.anomalousCount)
+        assertEquals(0, response.vulnerableCount)
+        verify(exactly = 1) { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) }
+    }
+
+    @Test
+    fun `headersBypass transient baseline is explicit and stops dependent probes`() {
+        every {
+            sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false)
+        } returns AuthenticatedResponse(503, emptyList(), "unavailable", 1)
+
+        val response = svc.headersBypass(HeadersBypassRequest("https://target.example/admin"))
+
+        assertEquals(503, response.baseline.status)
+        assertTrue(response.baseline.inconclusive)
+        assertNotNull(response.baseline.inconclusiveReason)
+        assertTrue(response.results.isEmpty())
+        assertEquals(1, response.inconclusiveCount)
+        verify(exactly = 1) {
+            sessionService.sendPreservingHeaders(any(), any(), any(), false)
+        }
+    }
+
+    @Test
+    fun `headersBypass transient treatment is inconclusive not anomalous or vulnerable`() {
+        every {
+            sessionService.sendPreservingHeaders(match { it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false)
+        } returns AuthenticatedResponse(403, emptyList(), "denied", 1)
+        every {
+            sessionService.sendPreservingHeaders(match { !it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false)
+        } returns AuthenticatedResponse(429, emptyList(), "slow down", 1)
+
+        val response = svc.headersBypass(
+            HeadersBypassRequest(
+                "https://target.example/admin",
+                protectedContentMarker = "admin content",
+            )
+        )
+
+        assertTrue(response.results.all { it.status == 429 && it.inconclusive })
+        assertTrue(response.results.none { it.anomalous || it.vulnerable })
+        assertEquals(response.results.size, response.inconclusiveCount)
+    }
+
+    // ---------------------------------------------------------------------------
+    // Probe failures and CORS classification are explicit and conservative
+    // ---------------------------------------------------------------------------
+
+    @Test
+    fun `authBypass failed classifier probe is explicit and never status zero`() {
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+        every { spy.probeWithAuthRaw(any(), any()) } returns
+            SecurityScanService.RawProbe(null, "", 0, "request failed")
+        every { spy.probeNoAuthRaw(any(), any()) } returns
+            SecurityScanService.RawProbe(401, "denied", 1)
+
+        val response = spy.authBypass(
+            AuthBypassRequest(listOf("/admin"), "https://target.example")
+        )
+
+        val result = response.results.single()
+        assertNull(result.withAuth.status)
+        assertNotNull(result.withAuth.error)
+        assertTrue(result.withAuth.inconclusive)
+        assertTrue(result.inconclusive)
+        assertFalse(result.vulnerable)
+        assertEquals(1, response.inconclusiveCount)
+    }
+
+    @Test
+    fun `idor target transport failure is explicit rather than status zero or clean`() {
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("own") }, emptyList(), CredentialMode.FULL, false) } returns
+            AuthenticatedResponse(200, emptyList(), "own record", 1)
+        every { sessionService.sendPreservingHeaders(match { it.url.contains("other") }, emptyList(), CredentialMode.FULL, false) } throws
+            RuntimeException("connection refused")
+
+        val response = svc.idor(
+            IdorRequest("https://target.example/u?id={id}", "id", listOf("own"), listOf("other"))
+        )
+
+        val result = response.results.single()
+        assertNull(result.status)
+        assertNotNull(result.error)
+        assertTrue(result.inconclusive)
+        assertFalse(result.vulnerable)
+        assertEquals(1, response.inconclusiveCount)
+    }
+
+    @Test
+    fun `cors transport failures are explicit and never vulnerable`() {
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } throws RuntimeException("connection refused")
+
+        val response = svc.cors(CorsRequest("https://target.example/data"))
+
+        assertTrue(response.results.isNotEmpty())
+        assertTrue(response.results.all { it.status == null && it.error != null && it.inconclusive })
+        assertTrue(response.results.none { it.vulnerable })
+        assertEquals(response.results.size, response.inconclusiveCount)
+        assertEquals(0, response.vulnerableCount)
+    }
+
+    @Test
+    fun `cors uses no target-owned subdomain and requires byte-exact reflection with credentials`() {
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } answers {
+            val origin = firstArg<AuthenticatedRequest>().extraHeaders!!.getValue("Origin")
+            val headers = when (origin) {
+                "https://evil.com" -> listOf(
+                    HttpHeader("Access-Control-Allow-Origin", "HTTPS://EVIL.COM"),
+                    HttpHeader("Access-Control-Allow-Credentials", "true"),
+                )
+                else -> listOf(
+                    HttpHeader("Access-Control-Allow-Origin", origin),
+                    HttpHeader("Access-Control-Allow-Credentials", "false"),
+                )
+            }
+            AuthenticatedResponse(200, headers, "ok", 1)
+        }
+
+        val response = svc.cors(CorsRequest("https://corp.example/data"))
+
+        assertTrue(response.results.none { result ->
+            runCatching { java.net.URI(result.origin).host }.getOrNull()
+                ?.endsWith(".corp.example", ignoreCase = true) == true
+        })
+        assertTrue(response.results.none { it.vulnerable })
+        assertEquals(0, response.vulnerableCount)
+    }
+
+    @Test
+    fun `cors rejects duplicate ACAO grants as non-exploitable ambiguity`() {
+        every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } answers {
+            val origin = firstArg<AuthenticatedRequest>().extraHeaders!!.getValue("Origin")
+            AuthenticatedResponse(
+                200,
+                listOf(
+                    HttpHeader("Access-Control-Allow-Origin", origin),
+                    HttpHeader("Access-Control-Allow-Origin", "*"),
+                    HttpHeader("Access-Control-Allow-Credentials", "true"),
+                ),
+                "ok",
+                1,
+            )
+        }
+
+        val response = svc.cors(CorsRequest("https://corp.example/data"))
+
+        assertTrue(response.results.none { it.vulnerable })
+        assertEquals(0, response.vulnerableCount)
+    }
+
+    // ---------------------------------------------------------------------------
+    // Endpoint H2 source and replay fidelity
+    // ---------------------------------------------------------------------------
+
+    @Test
+    fun `scanEndpoints identifies extension H2 source and deduplicates only exact requests`() {
+        val headersA = listOf(HttpHeader("Accept", "application/json"))
+        val headersB = listOf(HttpHeader("Accept", "text/plain"))
+        val entries = listOf(
+            historyEntry(
+                5, "session", "POST", "https://target.example/items",
+                listOf(HttpHeader("Authorization", "Bearer first"), HttpHeader("X-Variant", "a")), "one",
+            ),
+            historyEntry(4, "session", "POST", "https://target.example/items", headersA, "one"),
+            historyEntry(3, "session", "POST", "https://target.example/items", headersA, "one"),
+            historyEntry(2, "repeater", "POST", "https://target.example/items", headersA, "two"),
+            historyEntry(1, "repeater", "POST", "https://target.example/items", headersB, "one"),
+        )
+        every { historyDao.search(any<HistoryFilter>()) } returns entries
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+        val captured = mutableListOf<SecurityScanService.EndpointRequest>()
+        every { spy.probeWithAuthRaw(capture(captured)) } returns SecurityScanService.RawProbe(200, "body", 1)
+        every { spy.probeNoAuthRaw(any<SecurityScanService.EndpointRequest>()) } returns
+            SecurityScanService.RawProbe(401, "", 1)
+
+        val response = spy.scanEndpoints(
+            EndpointsScanRequest("target.example", listOf("auth-bypass"), 10)
+        )
+
+        assertEquals(4, response.scanned)
+        assertEquals(4, captured.size)
+        assertEquals("extension-h2-send-history", response.source)
+        assertEquals(mapOf("session" to 2, "repeater" to 2), response.sourceCounts)
+        assertTrue(captured.none { request ->
+            request.headers.any { it.name.equals("Authorization", ignoreCase = true) }
+        })
+    }
+
+    @Test
+    fun `scanEndpoints preserves method body and ordered noncredential duplicate headers`() {
+        val headers = listOf(
+            HttpHeader("Authorization", "Bearer stale-secret"),
+            HttpHeader("Cookie", "old=session"),
+            HttpHeader("X-Variant", "first"),
+            HttpHeader("X-Variant", "second"),
+            HttpHeader("Accept", "application/json"),
+            HttpHeader("Accept", "text/plain"),
+            HttpHeader("Content-Type", "application/json"),
+        )
+        every { historyDao.search(any<HistoryFilter>()) } returns listOf(
+            historyEntry(1, "repeater", "PATCH", "https://target.example/items/1", headers, "{\"x\":1}")
+        )
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+        val authenticated = mutableListOf<SecurityScanService.EndpointRequest>()
+        val unauthenticated = mutableListOf<SecurityScanService.EndpointRequest>()
+        every { spy.probeWithAuthRaw(capture(authenticated)) } returns SecurityScanService.RawProbe(200, "body", 1)
+        every { spy.probeNoAuthRaw(capture(unauthenticated)) } returns SecurityScanService.RawProbe(401, "", 1)
+
+        spy.scanEndpoints(EndpointsScanRequest("target.example", listOf("auth-bypass"), 10))
+
+        val authRequest = authenticated.single()
+        val noAuthRequest = unauthenticated.single()
+        assertEquals("PATCH", authRequest.method)
+        assertEquals("{\"x\":1}", authRequest.body)
+        assertEquals(
+            listOf(
+                HttpHeader("X-Variant", "first"),
+                HttpHeader("X-Variant", "second"),
+                HttpHeader("Accept", "application/json"),
+                HttpHeader("Accept", "text/plain"),
+                HttpHeader("Content-Type", "application/json"),
+            ),
+            authRequest.headers,
+        )
+        assertEquals(authRequest, noAuthRequest)
+    }
+
+    @Test
+    fun `scanEndpoints method switch retains the captured body and duplicate headers`() {
+        val headers = listOf(HttpHeader("Accept", "application/json"), HttpHeader("Accept", "text/plain"))
+        every { historyDao.search(any<HistoryFilter>()) } returns listOf(
+            historyEntry(1, "session", "POST", "https://target.example/action", headers, "payload")
+        )
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+        val requests = mutableListOf<SecurityScanService.EndpointRequest>()
+        every { spy.probeWithAuthRaw(capture(requests)) } returns SecurityScanService.RawProbe(405, "", 1)
+
+        spy.scanEndpoints(EndpointsScanRequest("target.example", listOf("method-switch"), 10))
+
+        assertEquals(setOf("GET", "PUT", "PATCH", "DELETE", "OPTIONS"), requests.map { it.method }.toSet())
+        assertTrue(requests.all { it.body == "payload" && it.headers == headers })
+    }
+
+    @Test
+    fun `method switch known-method suppression is scoped to full captured identity`() {
+        val headersA = listOf(HttpHeader("Accept", "application/json"))
+        val headersB = listOf(HttpHeader("Accept", "text/plain"))
+        every { historyDao.search(any<HistoryFilter>()) } returns listOf(
+            historyEntry(2, "session", "GET", "https://target.example/action", headersA, "body-a"),
+            historyEntry(1, "session", "POST", "https://target.example/action", headersB, "body-b"),
+        )
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+        val requests = mutableListOf<SecurityScanService.EndpointRequest>()
+        every { spy.probeWithAuthRaw(capture(requests)) } returns SecurityScanService.RawProbe(405, "", 1)
+
+        spy.scanEndpoints(EndpointsScanRequest("target.example", listOf("method-switch"), 10))
+
+        assertTrue(requests.any {
+            it.method == "GET" && it.body == "body-b" && it.headers == headersB
+        })
+        assertTrue(requests.any {
+            it.method == "POST" && it.body == "body-a" && it.headers == headersA
+        })
+    }
+
+    @Test
+    fun `raw scan probes delegate credential stripping and origin binding to SessionService`() {
+        val rawSession = mockk<SessionService>()
+        val local = SecurityScanService(api, rawSession, historyDao)
+        every {
+            rawSession.sendPreservingHeaders(any(), any(), any(), false)
+        } answers {
+            val mode = thirdArg<CredentialMode>()
+            when (mode) {
+                CredentialMode.FULL -> AuthenticatedResponse(200, emptyList(), "protected", 1)
+                CredentialMode.COOKIES_ONLY -> AuthenticatedResponse(401, emptyList(), "denied", 1)
+                CredentialMode.NONE -> AuthenticatedResponse(401, emptyList(), "denied", 1)
+            }
+        }
+
+        val capturedRequest = SecurityScanService.EndpointRequest(
+            "POST",
+            "https://target.example/action",
+            listOf(
+                HttpHeader("X-Custom-Auth", "captured-stale-value"),
+                HttpHeader("Accept", "application/json"),
+                HttpHeader("Accept", "text/plain"),
+            ),
+            "payload",
+        )
+        local.probeWithAuthRaw(capturedRequest)
+        local.probeNoAuthRaw(capturedRequest)
+        local.probeNoAuthRaw("https://target.example/action", "GET")
+        local.authBypass(AuthBypassRequest(listOf("/action"), "https://target.example"))
+
+        verify(exactly = 3) {
+            rawSession.sendPreservingHeaders(any(), any(), CredentialMode.NONE, false)
+        }
+        verify(exactly = 1) {
+            rawSession.sendPreservingHeaders(
+                match { it.method == "POST" && it.body == "payload" },
+                match {
+                    it == listOf(
+                        HttpHeader("X-Custom-Auth", "captured-stale-value"),
+                        HttpHeader("Accept", "application/json"),
+                        HttpHeader("Accept", "text/plain"),
+                    )
+                },
+                CredentialMode.FULL,
+                false,
+            )
+        }
+        verify(exactly = 1) {
+            rawSession.sendPreservingHeaders(
+                match { it.method == "POST" && it.body == "payload" },
+                match {
+                    it == listOf(
+                        HttpHeader("Accept", "application/json"),
+                        HttpHeader("Accept", "text/plain"),
+                    )
+                },
+                CredentialMode.NONE,
+                false,
+            )
+        }
+        verify(exactly = 1) {
+            rawSession.sendPreservingHeaders(any(), any(), CredentialMode.COOKIES_ONLY, false)
+        }
+    }
+
+    @Test
+    fun `scanEndpoints exposes individual send failures as errors rather than omitting them`() {
+        every { historyDao.search(any<HistoryFilter>()) } returns listOf(
+            historyEntry(1, "session", "GET", "https://target.example/data", emptyList(), null)
+        )
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+        every { spy.probeWithAuthRaw(any<SecurityScanService.EndpointRequest>()) } returns
+            SecurityScanService.RawProbe(null, "", 0, "request failed")
+        every { spy.probeNoAuthRaw(any<SecurityScanService.EndpointRequest>()) } returns
+            SecurityScanService.RawProbe(401, "", 1)
+
+        val response = spy.scanEndpoints(
+            EndpointsScanRequest("target.example", listOf("auth-bypass"), 10)
+        )
+
+        assertEquals(1, response.inconclusiveCount)
+        assertEquals(1, response.errors.size)
+        assertEquals("auth-bypass-authenticated-control", response.errors.single().probe)
+        assertNull(response.errors.single().status)
+        assertTrue(response.findings.isEmpty())
+    }
+
+    @Test
+    fun `authBypass treats unauthenticated rate limits and server failures as inconclusive`() {
+        for (status in listOf(429, 500, 503)) {
+            val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+            every { spy.probeWithAuthRaw(any(), any()) } returns
+                SecurityScanService.RawProbe(200, "protected", 1)
+            every { spy.probeNoAuthRaw(any(), any()) } returns
+                SecurityScanService.RawProbe(status, "temporary failure", 1)
+
+            val response = spy.authBypass(
+                AuthBypassRequest(listOf("/admin"), "https://target.example")
+            )
+
+            val result = response.results.single()
+            assertTrue(result.inconclusive, "status $status must be inconclusive")
+            assertTrue(result.withoutAuth.inconclusive, "status $status arm must be inconclusive")
+            assertNotNull(result.withoutAuth.inconclusiveReason)
+            assertEquals(1, response.inconclusiveCount)
+            assertEquals(0, response.vulnerableCount)
+        }
+    }
+
+    @Test
+    fun `idor validates every target URL before sending its baseline`() {
+        assertFailsWith<IllegalArgumentException> {
+            svc.idor(
+                IdorRequest(
+                    endpoint = "https://target.example/users?id={id}",
+                    param = "id",
+                    ownValues = listOf("own"),
+                    targetValues = listOf("other", "bad#fragment"),
+                )
+            )
+        }
+
+        verify(exactly = 0) {
+            sessionService.sendPreservingHeaders(any(), any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `idor rejects value-substituted cross-origin plans before baseline`() {
+        assertFailsWith<IllegalArgumentException> {
+            svc.idor(
+                IdorRequest(
+                    endpoint = "https://{id}.example/path",
+                    param = "id",
+                    ownValues = listOf("one"),
+                    targetValues = listOf("two"),
+                )
+            )
+        }
+
+        verify(exactly = 0) {
+            sessionService.sendPreservingHeaders(any(), any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `idor target rate limit is explicit and inconclusive`() {
+        every {
+            sessionService.sendPreservingHeaders(match { it.url.contains("own") }, emptyList(), CredentialMode.FULL, false)
+        } returns AuthenticatedResponse(200, emptyList(), "own record", 1)
+        every {
+            sessionService.sendPreservingHeaders(match { it.url.contains("other") }, emptyList(), CredentialMode.FULL, false)
+        } returns AuthenticatedResponse(429, emptyList(), "slow down", 1)
+
+        val response = svc.idor(
+            IdorRequest("https://target.example/users?id={id}", "id", listOf("own"), listOf("other"))
+        )
+
+        assertTrue(response.results.single().inconclusive)
+        assertNotNull(response.results.single().error)
+        assertEquals(1, response.inconclusiveCount)
+        assertEquals(0, response.vulnerableCount)
+    }
+
+    @Test
+    fun `large SPA HTML retains observed status and becomes explicitly inconclusive`() {
+        val localSession = mockk<SessionService>()
+        every {
+            localSession.sendPreservingHeaders(any(), any(), CredentialMode.FULL, false)
+        } returns AuthenticatedResponse(200, emptyList(), "<!doctype html>" + "x".repeat(50_001), 7)
+        val local = SecurityScanService(api, localSession, historyDao)
+
+        val result = local.probeWithAuthRaw(
+            SecurityScanService.EndpointRequest("GET", "https://target.example/unknown", emptyList(), null)
+        )
+
+        assertEquals(200, result.status)
+        assertNotNull(result.inconclusiveReason)
+        assertEquals(7, result.durationMs)
+    }
+
+    @Test
+    fun `cors rejects non-simple methods before every send`() {
+        assertFailsWith<IllegalArgumentException> {
+            svc.cors(CorsRequest("https://target.example/data", "PUT"))
+        }
+
+        verify(exactly = 0) {
+            sessionService.sendPreservingHeaders(any(), any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `endpoint scan records unusable authenticated controls as inconclusive`() {
+        every { historyDao.search(any<HistoryFilter>()) } returns listOf(
+            historyEntry(1, "session", "GET", "https://target.example/data", emptyList(), null)
+        )
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+        every { spy.probeWithAuthRaw(any<SecurityScanService.EndpointRequest>()) } returns
+            SecurityScanService.RawProbe(503, "unavailable", 1)
+        every { spy.probeNoAuthRaw(any<SecurityScanService.EndpointRequest>()) } returns
+            SecurityScanService.RawProbe(401, "denied", 1)
+
+        val response = spy.scanEndpoints(
+            EndpointsScanRequest("target.example", listOf("auth-bypass"), 10)
+        )
+
+        assertEquals(1, response.inconclusiveCount)
+        assertEquals("auth-bypass-authenticated-control", response.errors.single().probe)
+        assertEquals(503, response.errors.single().status)
+        assertTrue(response.findings.isEmpty())
+    }
+
+    @Test
+    fun `historical credential-like headers are removed from replay but retained in identity`() {
+        val first = listOf(
+            HttpHeader("Private-Token", "first-private"),
+            HttpHeader("X-GitLab-Token", "first-gitlab"),
+            HttpHeader("X-Session-Token", "first-session"),
+            HttpHeader("Accept", "application/json"),
+            HttpHeader("Accept", "text/plain"),
+            HttpHeader("Content-Type", "application/json"),
+        )
+        val second = listOf(
+            HttpHeader("Private-Token", "second-private"),
+            HttpHeader("X-GitLab-Token", "second-gitlab"),
+            HttpHeader("X-Session-Token", "second-session"),
+            HttpHeader("Accept", "application/json"),
+            HttpHeader("Accept", "text/plain"),
+            HttpHeader("Content-Type", "application/json"),
+        )
+        every { historyDao.search(any<HistoryFilter>()) } returns listOf(
+            historyEntry(2, "session", "GET", "https://target.example/data", first, null),
+            historyEntry(1, "session", "GET", "https://target.example/data", second, null),
+        )
+        val spy = spyk(SecurityScanService(api, sessionService, historyDao))
+        val captured = mutableListOf<SecurityScanService.EndpointRequest>()
+        every { spy.probeWithAuthRaw(capture(captured)) } returns SecurityScanService.RawProbe(200, "data", 1)
+        every { spy.probeNoAuthRaw(any<SecurityScanService.EndpointRequest>()) } returns
+            SecurityScanService.RawProbe(401, "denied", 1)
+
+        val response = spy.scanEndpoints(
+            EndpointsScanRequest("target.example", listOf("auth-bypass"), 10)
+        )
+
+        assertEquals(2, response.scanned, "credential differences remain part of captured identity")
+        assertTrue(captured.all { request ->
+            request.headers == listOf(
+                HttpHeader("Accept", "application/json"),
+                HttpHeader("Accept", "text/plain"),
+                HttpHeader("Content-Type", "application/json"),
+            )
+        })
+    }
+
+    private fun historyEntry(
+        id: Long,
+        source: String,
+        method: String,
+        url: String,
+        headers: List<HttpHeader>,
+        body: String?,
+    ) = HistoryEntry(
+        id = id,
+        source = source,
+        method = method,
+        url = url,
+        host = java.net.URI(url).host,
+        reqHeaders = headers,
+        reqBody = body,
+        statusCode = 200,
+        resHeaders = emptyList(),
+        resBody = "ok",
+        durationMs = 1,
+        timestamp = "2026-01-01T00:00:00Z",
+    )
 }

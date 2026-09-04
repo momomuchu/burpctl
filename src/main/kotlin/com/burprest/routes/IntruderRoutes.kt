@@ -4,10 +4,18 @@ import com.burprest.models.ApiResponse
 import com.burprest.models.CreateAttackRequest
 import com.burprest.models.QuickFuzzRequest
 import com.burprest.services.IntruderService
+import io.ktor.http.Parameters
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+
+private fun Parameters.nonNegativeInt(name: String, default: Int): Int {
+    val raw = this[name] ?: return default
+    val value = raw.toIntOrNull() ?: throw IllegalArgumentException("$name must be an integer")
+    require(value >= 0) { "$name must be >= 0" }
+    return value
+}
 
 fun Route.intruderRoutes(service: IntruderService) {
     route("/intruder") {
@@ -28,8 +36,8 @@ fun Route.intruderRoutes(service: IntruderService) {
 
         get("/attack/{id}/results") {
             val id = call.parameters["id"]!!
-            val offset = call.request.queryParameters["offset"]?.toIntOrNull() ?: 0
-            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 0
+            val offset = call.request.queryParameters.nonNegativeInt("offset", default = 0)
+            val limit = call.request.queryParameters.nonNegativeInt("limit", default = 0)
             call.respond(ApiResponse.ok(service.attackResults(id, offset, limit)))
         }
 

@@ -2,6 +2,7 @@ package com.burprest.routes
 
 import com.burprest.models.ApiResponse
 import com.burprest.models.ScanRequest
+import com.burprest.server.requiredParameter
 import com.burprest.services.ScannerService
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -11,42 +12,39 @@ import io.ktor.server.routing.*
 fun Route.scannerRoutes(service: ScannerService) {
     route("/scanner") {
         post("/crawl") {
-            val request = call.receive<ScanRequest>()
-            call.respond(ApiResponse.ok(service.crawl(request)))
+            call.respond(ApiResponse.ok(service.crawl(call.receive<ScanRequest>())))
         }
 
         post("/audit") {
-            val request = call.receive<ScanRequest>()
-            call.respond(ApiResponse.ok(service.audit(request)))
+            call.respond(ApiResponse.ok(service.audit(call.receive<ScanRequest>())))
         }
 
         post("/crawl-and-audit") {
-            val request = call.receive<ScanRequest>()
-            call.respond(ApiResponse.ok(service.crawlAndAudit(request)))
+            service.crawlAndAudit()
         }
 
         get("/{id}/status") {
-            val id = call.parameters["id"]!!
+            val id = requiredParameter(call.parameters["id"], "id")
             call.respond(ApiResponse.ok(service.status(id)))
         }
 
         get("/{id}/issues") {
-            val id = call.parameters["id"]!!
+            val id = requiredParameter(call.parameters["id"], "id")
             call.respond(ApiResponse.ok(service.issues(id)))
         }
 
         post("/{id}/pause") {
-            val id = call.parameters["id"]!!
-            call.respond(ApiResponse.ok(service.pause(id)))
+            val id = requiredParameter(call.parameters["id"], "id")
+            service.pause(id)
         }
 
         post("/{id}/resume") {
-            val id = call.parameters["id"]!!
-            call.respond(ApiResponse.ok(service.resume(id)))
+            val id = requiredParameter(call.parameters["id"], "id")
+            service.resume(id)
         }
 
         post("/{id}/stop") {
-            val id = call.parameters["id"]!!
+            val id = requiredParameter(call.parameters["id"], "id")
             call.respond(ApiResponse.ok(service.stop(id)))
         }
 

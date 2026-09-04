@@ -72,17 +72,13 @@ class TestRedactCookieJsonEmbedded:
     def test_cookie_json_value_masked(self) -> None:
         blob = '{"name":"Cookie","value":"session=SECRETSESSIONTOKEN"}'
         result = redact(blob)
-        assert "SECRETSESSIONTOKEN" not in result, (
-            "Cookie value in JSON blob must be masked"
-        )
+        assert "SECRETSESSIONTOKEN" not in result, "Cookie value in JSON blob must be masked"
         assert "***" in result
 
     def test_set_cookie_json_value_masked(self) -> None:
         blob = '{"name":"Set-Cookie","value":"session=SECRETSESSIONTOKEN; HttpOnly; Path=/"}'
         result = redact(blob)
-        assert "SECRETSESSIONTOKEN" not in result, (
-            "Set-Cookie value in JSON blob must be masked"
-        )
+        assert "SECRETSESSIONTOKEN" not in result, "Set-Cookie value in JSON blob must be masked"
         assert "***" in result
 
     def test_cookie_json_name_preserved(self) -> None:
@@ -124,7 +120,7 @@ class TestRedactAuthBasicTokenDigest:
                         {"Authorization":"Basic dXNlcjpwYXNzd29yZA=="}
     """
 
-    BASIC_TOKEN = "dXNlcjpwYXNzd29yZA=="   # base64("user:password")
+    BASIC_TOKEN = "dXNlcjpwYXNzd29yZA=="  # base64("user:password")
     TOKEN_VALUE = "myapitokenvalue123"
     DIGEST_CRED = 'username="user", realm="example", nonce="abc123", uri="/", response="deadbeef"'
 
@@ -139,17 +135,13 @@ class TestRedactAuthBasicTokenDigest:
     def test_basic_json_value_field_masked(self) -> None:
         blob = f'{{"name":"Authorization","value":"Basic {self.BASIC_TOKEN}"}}'
         result = redact(blob)
-        assert self.BASIC_TOKEN not in result, (
-            "Basic token in JSON value field must be masked"
-        )
+        assert self.BASIC_TOKEN not in result, "Basic token in JSON value field must be masked"
         assert "***" in result
 
     def test_basic_json_flat_key_masked(self) -> None:
         blob = f'{{"Authorization":"Basic {self.BASIC_TOKEN}"}}'
         result = redact(blob)
-        assert self.BASIC_TOKEN not in result, (
-            "Basic token in flat JSON key must be masked"
-        )
+        assert self.BASIC_TOKEN not in result, "Basic token in flat JSON key must be masked"
         assert "***" in result
 
     def test_basic_standalone_masked(self) -> None:
@@ -169,9 +161,7 @@ class TestRedactAuthBasicTokenDigest:
     def test_token_json_value_field_masked(self) -> None:
         blob = f'{{"name":"Authorization","value":"Token {self.TOKEN_VALUE}"}}'
         result = redact(blob)
-        assert self.TOKEN_VALUE not in result, (
-            "Token credential in JSON value field must be masked"
-        )
+        assert self.TOKEN_VALUE not in result, "Token credential in JSON value field must be masked"
         assert "***" in result
 
     def test_token_standalone_masked(self) -> None:
@@ -184,7 +174,7 @@ class TestRedactAuthBasicTokenDigest:
     def test_digest_header_line_masked(self) -> None:
         line = f"Authorization: Digest {self.DIGEST_CRED}"
         result = redact(line)
-        assert "response=\"deadbeef\"" not in result, "Digest cred in header line must be masked"
+        assert 'response="deadbeef"' not in result, "Digest cred in header line must be masked"
         assert "***" in result
 
     def test_digest_json_value_field_masked(self) -> None:
@@ -192,12 +182,11 @@ class TestRedactAuthBasicTokenDigest:
         # DIGEST_CRED contains bare " so we JSON-encode it first to get the
         # realistic wire form that redact() actually receives.
         import json as _json_mod
+
         encoded_cred = _json_mod.dumps(f"Digest {self.DIGEST_CRED}")[1:-1]  # strip outer quotes
         blob = f'{{"name":"Authorization","value":"{encoded_cred}"}}'
         result = redact(blob)
-        assert "deadbeef" not in result, (
-            "Digest credential in JSON value field must be masked"
-        )
+        assert "deadbeef" not in result, "Digest credential in JSON value field must be masked"
         assert "***" in result
 
     # --- Regression: Bearer still works after adding Basic/Token/Digest ---
@@ -294,9 +283,7 @@ class TestLoadInvalidNumericEnv:
     - emit a warning to stderr (mirrors the invalid-boolean behaviour)
     """
 
-    def test_invalid_throttle_ms_keeps_default(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_invalid_throttle_ms_keeps_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """BP_THROTTLE_MS=abc must keep the default (0), not crash."""
         monkeypatch.setenv("BP_THROTTLE_MS", "abc")
         cfg = load()
@@ -314,9 +301,7 @@ class TestLoadInvalidNumericEnv:
         )
         assert "warning" in err.lower()
 
-    def test_invalid_anomaly_pct_keeps_default(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_invalid_anomaly_pct_keeps_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """BP_ANOMALY_PCT=xyz must keep the default (5), not crash."""
         monkeypatch.setenv("BP_ANOMALY_PCT", "xyz")
         cfg = load()
@@ -395,7 +380,7 @@ class TestRedactNdjsonValidity:
         """Cookie secret inside a JSON object: redacted line must still parse."""
         line = '{"name":"Cookie","value":"session=SECRETTOK","x":1}'
         result = redact(line)
-        parsed = _json.loads(result)          # must not raise
+        parsed = _json.loads(result)  # must not raise
         assert "SECRETTOK" not in result, "secret must be masked"
         assert parsed.get("x") == 1, "sibling field 'x' must survive intact"
 

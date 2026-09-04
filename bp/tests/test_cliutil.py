@@ -94,11 +94,9 @@ def test_service_unavailable_maps_to_exit_generic() -> None:
     endpoints check).  Pro-only scanner failures travel as PRO_REQUIRED -> EXIT_PRO (4).
     Previously SERVICE_UNAVAILABLE was mapped to EXIT_PRO (4) — that is the bug fixed here.
     """
-    from bp.cliutil import EXIT_PRO, _EXIT_BY_CODE  # type: ignore[attr-defined]
+    from bp.cliutil import EXIT_PRO, _EXIT_BY_CODE
 
-    assert "SERVICE_UNAVAILABLE" in _EXIT_BY_CODE, (
-        "_EXIT_BY_CODE missing SERVICE_UNAVAILABLE key"
-    )
+    assert "SERVICE_UNAVAILABLE" in _EXIT_BY_CODE, "_EXIT_BY_CODE missing SERVICE_UNAVAILABLE key"
     assert _EXIT_BY_CODE["SERVICE_UNAVAILABLE"] == EXIT_GENERIC, (
         f"[13] expected EXIT_GENERIC={EXIT_GENERIC}, got {_EXIT_BY_CODE['SERVICE_UNAVAILABLE']}"
     )
@@ -121,7 +119,7 @@ def _make_validation_error() -> ValidationError:
         x: int
 
     try:
-        _Dummy.model_validate({"x": "not-an-int-sentinel"})  # type: ignore[arg-type]
+        _Dummy.model_validate({"x": "not-an-int-sentinel"})
     except ValidationError as exc:
         return exc
     raise AssertionError("model_validate did not raise")  # pragma: no cover
@@ -162,10 +160,14 @@ def test_run_validation_error_stderr_no_class_names(capsys: pytest.CaptureFixtur
 
     captured = capsys.readouterr()
     stderr = captured.err.lower()
-    assert "proxyentry" not in stderr, f"[12] leaked class name 'ProxyEntry' in stderr: {captured.err!r}"
+    assert "proxyentry" not in stderr, (
+        f"[12] leaked class name 'ProxyEntry' in stderr: {captured.err!r}"
+    )
     assert "pydantic" not in stderr, f"[12] leaked 'pydantic' in stderr: {captured.err!r}"
     # 'validation error' is the pydantic heading — must not appear verbatim
-    assert "validation error" not in stderr, f"[12] leaked pydantic header in stderr: {captured.err!r}"
+    assert "validation error" not in stderr, (
+        f"[12] leaked pydantic header in stderr: {captured.err!r}"
+    )
     # Clean message must be present
     assert "unexpected response" in stderr or "server returned" in stderr, (
         f"[12] expected clean error message in stderr, got: {captured.err!r}"
@@ -254,11 +256,15 @@ def test_run_exit_on_vuln_records_exit5_in_ledger(tmp_path: Path) -> None:
 
     ctx = _make_ctx(no_ledger=False)
 
-    def _client_factory(url: str, *, ledger: Ledger | None = None, redact: bool = True, command: str = "") -> BurpClient:
+    def _client_factory(
+        url: str, *, ledger: Ledger | None = None, redact: bool = True, command: str = ""
+    ) -> BurpClient:
         return _make_mock_burp_client(ledger, {"status": "ok"})
 
-    with patch("bp.cliutil.Ledger", side_effect=_ledger_factory), \
-         patch("bp.cliutil.BurpClient", side_effect=_client_factory):
+    with (
+        patch("bp.cliutil.Ledger", side_effect=_ledger_factory),
+        patch("bp.cliutil.BurpClient", side_effect=_client_factory),
+    ):
         with pytest.raises(typer.Exit) as exc_info:
             run(ctx, _fn, exit_on=lambda d: EXIT_VULN if d.get("vulnerableCount", 0) > 0 else None)
 
@@ -287,20 +293,22 @@ def test_run_exit_on_none_does_not_raise(tmp_path: Path) -> None:
     def _ledger_factory() -> Ledger:
         return Ledger(db_path=db)
 
-    def _client_factory(url: str, *, ledger: Ledger | None = None, redact: bool = True, command: str = "") -> BurpClient:
+    def _client_factory(
+        url: str, *, ledger: Ledger | None = None, redact: bool = True, command: str = ""
+    ) -> BurpClient:
         return _make_mock_burp_client(ledger, {"status": "ok"})
 
-    with patch("bp.cliutil.Ledger", side_effect=_ledger_factory), \
-         patch("bp.cliutil.BurpClient", side_effect=_client_factory):
+    with (
+        patch("bp.cliutil.Ledger", side_effect=_ledger_factory),
+        patch("bp.cliutil.BurpClient", side_effect=_client_factory),
+    ):
         # Must NOT raise; run() returns normally
         run(ctx, _fn, exit_on=lambda d: None)
 
     with Ledger(db_path=db) as verify_ledger:
         rows = verify_ledger.query()
     assert len(rows) == 1
-    assert rows[0].exit_code == 0, (
-        f"clean run must record exit_code=0, got {rows[0].exit_code}"
-    )
+    assert rows[0].exit_code == 0, f"clean run must record exit_code=0, got {rows[0].exit_code}"
 
 
 def test_run_no_exit_on_default_behavior(tmp_path: Path) -> None:
@@ -316,11 +324,15 @@ def test_run_no_exit_on_default_behavior(tmp_path: Path) -> None:
     def _ledger_factory() -> Ledger:
         return Ledger(db_path=db)
 
-    def _client_factory(url: str, *, ledger: Ledger | None = None, redact: bool = True, command: str = "") -> BurpClient:
+    def _client_factory(
+        url: str, *, ledger: Ledger | None = None, redact: bool = True, command: str = ""
+    ) -> BurpClient:
         return _make_mock_burp_client(ledger, {"status": "ok"})
 
-    with patch("bp.cliutil.Ledger", side_effect=_ledger_factory), \
-         patch("bp.cliutil.BurpClient", side_effect=_client_factory):
+    with (
+        patch("bp.cliutil.Ledger", side_effect=_ledger_factory),
+        patch("bp.cliutil.BurpClient", side_effect=_client_factory),
+    ):
         run(ctx, _fn)  # no exit_on — must not raise
 
     with Ledger(db_path=db) as verify_ledger:
@@ -334,7 +346,9 @@ def test_run_no_exit_on_default_behavior(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_run_ledger_ctor_permission_error_op_proceeds(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_run_ledger_ctor_permission_error_op_proceeds(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """[12] RED: when Ledger() raises PermissionError, run() warns on stderr and executes fn().
 
     Before the fix, a PermissionError from Ledger() propagates out of run() and the Burp
@@ -359,7 +373,9 @@ def test_run_ledger_ctor_permission_error_op_proceeds(tmp_path: Path, capsys: py
     )
 
 
-def test_run_ledger_ctor_sqlite_error_op_proceeds(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_run_ledger_ctor_sqlite_error_op_proceeds(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """[12] RED: when Ledger() raises sqlite3.OperationalError, run() warns and proceeds."""
     import sqlite3
 

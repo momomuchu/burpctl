@@ -1,5 +1,47 @@
 # `bp` — Product Spec
 
+# Current executable contract
+
+This section supersedes stale behavior descriptions later in this historical specification. The executable contract is tested against the Kotlin routes, DTOs, services, Python command adapters, and `src/main/resources/openapi.json`. See [ADR-0013](adr/0013-truthful-executable-contracts.md) and `quality/confirmed-defects.yaml`.
+
+## Server boundary
+
+- All responses, including 404, 405, validation, unsupported, Pro-gated, storage, and internal failures, use `ApiResponse { success, data, error }` JSON.
+- JSON request bodies are strict: malformed syntax and unknown fields fail before service or target effects.
+- Request logs contain method and path only, never query strings, headers, or bodies.
+- Discoverable operations unavailable in Montoya 2025.3 return HTTP 501 `UNSUPPORTED`; they never return a successful no-op.
+- Extension state uses H2/MVStore under `~/.burp-rest/`, with owner-only permissions where supported. The Python Run Ledger remains SQLite under `~/.bp/` and stores fingerprints rather than raw request/response bodies.
+
+## Corrected operation behavior
+
+- Proxy history filtering matches an exact normalized host and preserves absolute history indexes. Intercept state comes from Montoya. Forward/drop are unsupported. WebSocket history retains compatibility fields and adds stable socket identity, capture time, listener port, and Base64 byte fields.
+- Repeater send/tab enforce exactly one of inline request or proxy `requestId`; a batch is fully preflighted before its first send. A response-less exchange is `NO_RESPONSE`. Optional H2 recording cannot turn a completed target request into a retry-inducing failure.
+- Session replacement is atomic. Credentials bind to one normalized origin (legacy state binds at first use), and cross-origin credential sends fail before network access. Configured credentials and the observed cookie jar have distinct clear operations.
+- Client-side `bp fuzz` supports sniper, battering-ram, pitchfork, and cluster-bomb with byte offsets, a 10,000-shot cap, complete preflight, one fresh baseline, lazy execution, exact attempt rows, and terminal-failure stopping. The bounded server async API truthfully supports sniper only; other modes are `UNSUPPORTED` there.
+- Collaborator public/correlation IDs, timestamps, IP/port, and protocol details come from Montoya. Unknown IDs are `NOT_FOUND`; provider failure is not a clean empty poll.
+- Scanner audit is seeded with the supplied URL. Task status/counts and stop come from Montoya; unavailable progress is null. Pause/resume and linked crawl-and-audit are unsupported in Montoya 2025.3.
+- Header-check anomalies are observations. Only a denial-to-substantive-success result increments `vulnerableCount` or selects CLI exit 5. CORS probes exclude target-owned subdomains. Endpoint sweep reads extension-owned Repeater/session H2 history, not ordinary proxy listener history.
+- Target add/remove/check return the engine's resulting classification. Complete scope listing/replacement is unsupported because Montoya cannot enumerate or remove accumulated rules.
+- Project/user config endpoints export/import actual nested Burp JSON. `/extensions` explicitly reports only the current extension.
+- History routes remain mounted when H2 is unavailable and return `SERVICE_UNAVAILABLE`; history+sitemap clear is transactional; malformed filters fail rather than defaulting.
+- Utilities use RFC URI resolution, keep credentials same-origin, report bundle fetch failures, count UTF-8 bytes, and preserve duplicate-header differences.
+
+## Output and automation
+
+- `json` uses parseable compact JSON/NDJSON. Machine-mode failures emit one JSON error record on stderr.
+- Redaction is structural before serialization and covers nested credential fields, header records/maps, cookies, authorization schemes, URL userinfo, and sensitive query parameters. `--no-redact` is the explicit opt-out.
+- `raw` requires a genuine raw/scalar value; structured records do not masquerade as raw HTTP.
+- `--fields all` and `--fields '*'` select the full canonical record. Quiet security-check verdicts follow confirmed findings, not anomalies.
+- Config precedence is flag > environment > config file > default. REST URL, enum, boolean, throttle, and anomaly values are validated.
+- The Run Ledger fingerprints complete encoded GET query identity and pessimistically records failure until command execution and rendering succeed.
+
+## Acceptance status
+
+`docs/bdd/` is historical scenario material, not an executable gate. Current acceptance comes from the Kotlin tests, Python tests, OpenAPI validation, CLI route contracts, package builds, and the confirmed-defect ledger.
+
+---
+
+
 Canonical spec rebuilt from source
 (`RestServer.kt` + `routes/*.kt`).
 Enumeration: **13 groups · 69 endpoints ·

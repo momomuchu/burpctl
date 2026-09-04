@@ -38,12 +38,12 @@ It's two pieces:
 ## Features
 
 - 💥 **Flexible client-side fuzzing** — mark *any* byte range (`header:`, `cookie:`, `body:`, `query:`, `path:`, raw `offset:`), multiple positions at once, and all four attack types (sniper, battering-ram, pitchfork, cluster-bomb) with built-in anomaly detection. Not throttled on Community.
-- 🎯 **Full Burp surface from one CLI** — proxy history, repeater, intruder, scanner, target/scope, decoder, collaborator, sitemap, sessions.
-- 🔎 **Security checks** — built-in probes for auth-bypass, IDOR, CORS, and security headers; exit code `5` on findings so you can gate CI/scripts.
+- 🎯 **Truthful Burp control surface** — proxy history, Repeater, Scanner, target/scope, decoder, Collaborator, sitemap, and sessions; operations absent from pinned Montoya return typed `UNSUPPORTED`, never successful no-ops.
+- 🔎 **Security checks** — built-in probes for auth-bypass, IDOR, CORS, and security headers; exit code `5` only on confirmed classifier findings, while anomalies remain triage observations.
 - 📒 **Run Ledger** — every bp-to-extension operation is recorded locally with **sha256 fingerprints only** (never raw bodies), and **secret redaction is on by default**; it is not a curl/xh/browser traffic log.
 - 🧰 **Works on Community too** — only `collaborator` and `scan` start need Pro (they exit `4` with a clear message); everything else runs on Community.
 - 🔩 **Scriptable & automation-friendly** — `--format json` emits NDJSON (one record per line); stable exit codes; no interactive prompts. That also makes it easy to drive from scripts or AI agents.
-- ✅ **Spec-driven & tested** — 440+ Python tests + 110 Kotlin tests, `mypy --strict` + `ruff` clean, CI on every push.
+- ✅ **Spec-driven & tested** — extensive hermetic Python and Kotlin regression suites, strict typing/linting, OpenAPI validation, package smoke tests, and CI on every push.
 
 ## How it compares
 

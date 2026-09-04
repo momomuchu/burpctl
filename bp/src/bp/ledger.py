@@ -20,6 +20,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
+
+from bp.config import redact
 
 # ---------------------------------------------------------------------------
 # ULID-lite: sortable short id without external deps
@@ -42,6 +45,7 @@ def _short_id() -> str:
 # ---------------------------------------------------------------------------
 # Default ledger path
 # ---------------------------------------------------------------------------
+
 
 def _default_db_path() -> Path:
     return Path(os.environ.get("BP_LEDGER_PATH", "~/.bp/ledger.db")).expanduser()
@@ -102,19 +106,20 @@ _COLUMNS = (
 # Public data types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class OpRecord:
     """Input record for ledger.record().  Only 'status' is required."""
 
-    status: str                        # ok | error | refused
-    command: str | None = None         # redacted bp command line
-    burp_op: str | None = None         # e.g. "POST /intruder/attack/create"
-    target: str | None = None          # host / url targeted
-    program: str | None = None         # nullable workspace (ADR-0007)
+    status: str  # ok | error | refused
+    command: str | None = None  # redacted bp command line
+    burp_op: str | None = None  # e.g. "POST /intruder/attack/create"
+    target: str | None = None  # host / url targeted
+    program: str | None = None  # nullable workspace (ADR-0007)
     tag: str | None = None
     exit_code: int | None = None
-    req_body: bytes | None = None      # used ONLY for sha256; never stored
-    resp_body: bytes | None = None     # used ONLY for sha256; never stored
+    req_body: bytes | None = None  # used ONLY for sha256; never stored
+    resp_body: bytes | None = None  # used ONLY for sha256; never stored
     resp_status: int | None = None
     resp_len: int | None = None
     duration_ms: int | None = None
@@ -169,11 +174,11 @@ class Row:
 
 @dataclass
 class QueryFilters:
-    since: str | None = None     # ISO-8601; ops WHERE ts >= since
-    until: str | None = None     # ISO-8601; ops WHERE ts <= until
-    target: str | None = None    # exact match on target
-    tag: str | None = None       # exact match on tag
-    status: str | None = None    # ok | error | refused
+    since: str | None = None  # ISO-8601; ops WHERE ts >= since
+    until: str | None = None  # ISO-8601; ops WHERE ts <= until
+    target: str | None = None  # exact match on target
+    tag: str | None = None  # exact match on tag
+    status: str | None = None  # ok | error | refused
     limit: int = field(default=100)
 
 
@@ -181,15 +186,86 @@ class QueryFilters:
 # sha256 helper — bodies never stored, only fingerprint
 # ---------------------------------------------------------------------------
 
+
 def _sha256(data: bytes | None) -> str | None:
     if data is None:
         return None
     return hashlib.sha256(data).hexdigest()
 
 
+def _safe_operation(value: str | None) -> str | None:
+    """Keep an operation's method/path while dropping its raw query and authority."""
+    if value is None:
+        return None
+    method, separator, location = value.partition(" ")
+    if not separator:
+        return redact(value)
+    try:
+        parsed = urlsplit(location)
+    except ValueError:
+        return redact(value)
+    path = parsed.path or "/"
+    return f"{method} {path}"
+
+
+def _safe_target(value: str | None) -> str | None:
+    """Reduce a URL target to host[:port], otherwise redact recognizable secrets."""
+    if value is None:
+        return None
+    try:
+        parsed = urlsplit(value)
+        port = parsed.port
+    except ValueError:
+        return redact(value)
+    if parsed.scheme.lower() in {"http", "https"} and parsed.hostname:
+        host = parsed.hostname
+        if ":" in host:
+            host = f"[{host}]"
+        return f"{host}:{port}" if port is not None else host
+    if "@" in value:
+        return redact(value.rsplit("@", 1)[-1])
+    return redact(value)
+
+
+def _safe_text(value: str | None) -> str | None:
+    return redact(value) if value is not None else None
+
+
+def _validated_iso_instant(value: str, name: str) -> str:
+    candidate = value.replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(candidate)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an ISO-8601 timestamp") from exc
+    if parsed.tzinfo is None:
+        raise ValueError(f"{name} must include a timezone")
+    return parsed.astimezone(timezone.utc).isoformat()
+
+
+def _validated_status(value: str) -> str:
+    if value not in {"ok", "error", "refused"}:
+        raise ValueError("status must be one of: ok, error, refused")
+    return value
+
+
+def _validated_limit(value: int) -> int:
+    if not 1 <= value <= 10_000:
+        raise ValueError("limit must be between 1 and 10000")
+    return value
+
+
+def _validated_tag(value: str) -> str:
+    if not value or value != value.strip():
+        raise ValueError("tag must not be blank or have surrounding whitespace")
+    if len(value) > 256 or any(character in "\r\n\x00" for character in value):
+        raise ValueError("tag must be at most 256 safe characters")
+    return value
+
+
 # ---------------------------------------------------------------------------
 # Ledger
 # ---------------------------------------------------------------------------
+
 
 class Ledger:
     """Thin wrapper around a SQLite ops table."""
@@ -241,6 +317,7 @@ class Ledger:
         and an empty string is returned so the caller can proceed without crashing.
         """
         op_id = _short_id()
+        status = _validated_status(op.status)
         ts = datetime.now(timezone.utc).isoformat()
         req_sha256 = _sha256(op.req_body)
         resp_sha256 = _sha256(op.resp_body)
@@ -251,27 +328,28 @@ class Ledger:
                 (
                     op_id,
                     ts,
-                    op.command,
-                    op.burp_op,
-                    op.target,
-                    op.program,
-                    op.tag,
-                    op.status,
+                    _safe_text(op.command),
+                    _safe_operation(op.burp_op),
+                    _safe_target(op.target),
+                    _safe_text(op.program),
+                    _safe_text(op.tag),
+                    _safe_text(status),
                     op.exit_code,
                     req_sha256,
                     resp_sha256,
                     op.resp_status,
                     op.resp_len,
                     op.duration_ms,
-                    op.error_code,
-                    op.req_ref,
-                    op.resp_ref,
+                    _safe_text(op.error_code),
+                    _safe_text(op.req_ref),
+                    _safe_text(op.resp_ref),
                 ),
             )
             self._conn.commit()
-        except sqlite3.Error as exc:
+        except sqlite3.Error:
             import sys
-            print(f"warning: ledger write failed: {exc}", file=sys.stderr)
+
+            print("warning: ledger write failed", file=sys.stderr)
             return ""
         return op_id
 
@@ -287,23 +365,23 @@ class Ledger:
 
         if f.since is not None:
             clauses.append("ts >= ?")
-            params.append(f.since)
+            params.append(_validated_iso_instant(f.since, "since"))
         if f.until is not None:
             clauses.append("ts <= ?")
-            params.append(f.until)
+            params.append(_validated_iso_instant(f.until, "until"))
         if f.target is not None:
             clauses.append("target = ?")
-            params.append(f.target)
+            params.append(_safe_target(f.target))
         if f.tag is not None:
             clauses.append("tag = ?")
-            params.append(f.tag)
+            params.append(_safe_text(f.tag))
         if f.status is not None:
             clauses.append("status = ?")
-            params.append(f.status)
+            params.append(_validated_status(f.status))
 
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
         sql = f"SELECT * FROM ops{where} ORDER BY ts DESC LIMIT ?"
-        params.append(f.limit)
+        params.append(_validated_limit(f.limit))
 
         cursor = self._conn.execute(sql, params)
         rows: list[Row] = []
@@ -337,9 +415,8 @@ class Ledger:
 
     def tag(self, op_id: str, name: str) -> bool:
         """Set ops.tag = name WHERE id = op_id. Returns True if found."""
-        cursor = self._conn.execute(
-            "UPDATE ops SET tag = ? WHERE id = ?", (name, op_id)
-        )
+        safe_name = _safe_text(_validated_tag(name))
+        cursor = self._conn.execute("UPDATE ops SET tag = ? WHERE id = ?", (safe_name, op_id))
         self._conn.commit()
         return cursor.rowcount > 0
 
@@ -357,12 +434,11 @@ class Ledger:
         and False is returned so the caller can proceed without crashing.
         """
         try:
-            cursor = self._conn.execute(
-                "UPDATE ops SET exit_code = ? WHERE id = ?", (code, op_id)
-            )
+            cursor = self._conn.execute("UPDATE ops SET exit_code = ? WHERE id = ?", (code, op_id))
             self._conn.commit()
-        except sqlite3.Error as exc:
+        except sqlite3.Error:
             import sys
-            print(f"warning: ledger write failed: {exc}", file=sys.stderr)
+
+            print("warning: ledger write failed", file=sys.stderr)
             return False
         return cursor.rowcount > 0

@@ -1,14 +1,8 @@
-"""bp proxynav commands — flat top-level proxy navigation commands (docs/CLI.md §proxy).
+"""Flat CLI commands for proxy history and interception.
 
-Exposes (all FLAT on the root app per CLI.md §Principe):
-  bp req <id>              GET /proxy/history/{id}
-  bp ws                    GET /proxy/websocket/history
-  bp intercept on|off|forward|drop   POST /proxy/intercept/{enable,disable,forward,drop}
-
-Stub caveats (surfaced to stderr per SPEC §6.2):
-  - GET /proxy/intercept status is a stub: always returns {enabled:false}; not used here.
-  - POST /proxy/intercept/forward is a stub: returns {forwarded:true} but is a no-op.
-  - POST /proxy/intercept/drop   is a stub: returns {dropped:true}  but is a no-op.
+``forward`` and ``drop`` remain discoverable for route compatibility, but pinned
+Montoya 2025.3 cannot perform either operation. The server returns a typed
+``UNSUPPORTED`` failure rather than a successful no-op.
 """
 
 from __future__ import annotations
@@ -82,11 +76,7 @@ def req(
 # bp ws   →   GET /proxy/websocket/history
 # ---------------------------------------------------------------------------
 def ws(ctx: typer.Context) -> None:
-    """List WebSocket message history (direction + payload).
-
-    Note: the 'timestamp' field reflects the moment of the API call,
-    not the original capture time (SPEC §6.2 flag).
-    """
+    """List captured WebSocket messages with original identity and time."""
     run(ctx, lambda c: c.get("/proxy/websocket/history"))
 
 
@@ -94,7 +84,7 @@ def ws(ctx: typer.Context) -> None:
 # bp intercept on|off|forward|drop   →   POST /proxy/intercept/{action}
 # ---------------------------------------------------------------------------
 _INTERCEPT_ACTIONS = ("on", "off", "forward", "drop")
-_STUBS = {"forward", "drop"}
+_UNSUPPORTED_ACTIONS = {"forward", "drop"}
 _ACTION_TO_PATH = {
     "on": "/proxy/intercept/enable",
     "off": "/proxy/intercept/disable",
@@ -109,18 +99,11 @@ def intercept(
         str,
         typer.Argument(
             metavar="on|off|forward|drop",
-            help="on=enable, off=disable, forward/drop (stubs — no-op server-side).",
+            help="on=enable, off=disable; forward/drop report unsupported on Montoya 2025.3.",
         ),
     ],
 ) -> None:
-    """Control the Burp proxy intercept state.
-
-    \\b
-    STUB CAVEAT: 'forward' and 'drop' are server-side stubs.
-    The server returns {forwarded:true} / {dropped:true} but performs no real action.
-    GET /proxy/intercept status is also a stub (always {enabled:false}); it is not
-    called here. See SPEC §6.2 for details.
-    """
+    """Control interception; unsupported actions fail with a typed runtime error."""
     if action not in _INTERCEPT_ACTIONS:
         typer.echo(
             f"error: intercept action must be one of {_INTERCEPT_ACTIONS!r}, got {action!r}",
@@ -128,10 +111,10 @@ def intercept(
         )
         raise typer.Exit(EXIT_USAGE)
 
-    if action in _STUBS:
+    if action in _UNSUPPORTED_ACTIONS:
         typer.echo(
-            f"warning: '{action}' is a server-side stub — the server acknowledges the "
-            "request but performs no real action (SPEC §6.2).",
+            f"note: '{action}' is unavailable in pinned Montoya 2025.3; "
+            "the server will return UNSUPPORTED without acting.",
             err=True,
         )
 

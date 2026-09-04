@@ -38,7 +38,11 @@ def test_error_envelope_raises_burp_error() -> None:
     def handler(_req: httpx.Request) -> httpx.Response:
         return httpx.Response(
             200,
-            json={"success": False, "data": None, "error": {"code": "INVALID_REQUEST", "message": "bad"}},
+            json={
+                "success": False,
+                "data": None,
+                "error": {"code": "INVALID_REQUEST", "message": "bad"},
+            },
         )
 
     with pytest.raises(BurpError) as ei:
@@ -103,7 +107,7 @@ def _client_with_ledger(handler: Handler, base_url: str) -> tuple[BurpClient, "l
     recorded_targets: list[str] = []
 
     class _StubLedger(Ledger):
-        def record(self, op: OpRecord) -> str:  # type: ignore[override]
+        def record(self, op: OpRecord) -> str:
             recorded_targets.append(op.target or "")
             return "stub-id"
 
@@ -111,7 +115,7 @@ def _client_with_ledger(handler: Handler, base_url: str) -> tuple[BurpClient, "l
     ledger = _StubLedger.__new__(_StubLedger)  # bypass __init__ (no SQLite path needed)
     bc = BurpClient(
         client=httpx.Client(transport=transport, base_url=base_url),
-        ledger=ledger,  # type: ignore[arg-type]
+        ledger=ledger,
     )
     return bc, recorded_targets
 

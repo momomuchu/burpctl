@@ -13,7 +13,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from bp.client import BurpClient, BurpError
-from bp.fuzz import expand
+from bp.fuzz import ATTACK_TYPES, expand
 from bp.pos import Position, resolve_pos
 from bp.wire import build_raw, to_send_request
 
@@ -49,10 +49,9 @@ def _short(name: str) -> str:
 def _payload_lists(
     positions: Sequence[Position], payload_map: Mapping[str, list[bytes]], attack_type: str
 ) -> list[list[bytes]]:
-    _KNOWN_ATTACK_TYPES = ("sniper", "battering-ram", "pitchfork", "cluster-bomb")
-    if attack_type not in _KNOWN_ATTACK_TYPES:
+    if attack_type not in ATTACK_TYPES:
         raise ValueError(
-            f"unknown attack type {attack_type!r} (want one of {', '.join(_KNOWN_ATTACK_TYPES)})"
+            f"unknown attack type {attack_type!r} (want one of {', '.join(ATTACK_TYPES)})"
         )
     if attack_type in ("sniper", "battering-ram"):
         if not payload_map:
@@ -83,7 +82,9 @@ def _send_request(client: BurpClient, request: Mapping[str, Any]) -> tuple[int, 
     try:
         status = int(resp["statusCode"])
     except (TypeError, ValueError):
-        raise BurpError("INVALID_RESPONSE", "repeater/send reply has a non-integer 'statusCode'") from None
+        raise BurpError(
+            "INVALID_RESPONSE", "repeater/send reply has a non-integer 'statusCode'"
+        ) from None
     body = resp.get("body")
     if body is None:
         body = ""
@@ -93,7 +94,9 @@ def _send_request(client: BurpClient, request: Mapping[str, Any]) -> tuple[int, 
     try:
         duration = int(data.get("durationMs", 0))
     except (TypeError, ValueError):
-        raise BurpError("INVALID_RESPONSE", "repeater/send reply has invalid 'durationMs'") from None
+        raise BurpError(
+            "INVALID_RESPONSE", "repeater/send reply has invalid 'durationMs'"
+        ) from None
     return status, length, duration
 
 
@@ -116,15 +119,22 @@ def run_fuzz(
     """Run the full client-side fuzz against ``request_id`` and return per-request results."""
     if not selectors:
         raise ValueError("fuzz requires at least one --pos position")
+    if attack_type not in ATTACK_TYPES:
+        raise ValueError(
+            f"unknown attack type {attack_type!r} (want one of {', '.join(ATTACK_TYPES)})"
+        )
     entry = client.get(f"/proxy/history/{request_id}")
     raw, scheme, host = _base_raw(entry)
     positions = [resolve_pos(raw, s) for s in selectors]
     lists = _payload_lists(positions, payload_map, attack_type)
-    concrete = expand(raw, positions, lists, attack_type)
-    if not concrete:
-        raise ValueError("fuzz requires at least one concrete request")
+    plan = expand(raw, positions, lists, attack_type)
     base_request = _prepare_send(raw, scheme, host)
-    prepared = [(item, _prepare_send(item.raw, scheme, host)) for item in concrete]
+
+    # Validate the complete corpus before the baseline reaches the target, but retain no prepared
+    # request list.  FuzzPlan is restartable, so the second pass constructs and sends one shot at a
+    # time while the first pass guarantees an invalid late payload cannot cause a partial campaign.
+    for item in plan:
+        _prepare_send(item.raw, scheme, host)
 
     try:
         base_status, base_len, base_duration = _send_request(client, base_request)
@@ -157,8 +167,9 @@ def run_fuzz(
             error_code=None,
         )
     ]
-    for i, (cr, request) in enumerate(prepared):
-        payloads = tuple(payload.decode("utf-8", "replace") for payload in cr.payloads)
+    for i, cr in enumerate(plan):
+        request = _prepare_send(cr.raw, scheme, host)
+        payloads = tuple(payload.decode("utf-8") for payload in cr.payloads)
         try:
             status, length, duration = _send_request(client, request)
         except BurpError as exc:

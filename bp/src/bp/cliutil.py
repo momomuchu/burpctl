@@ -1,24 +1,19 @@
-"""Shared CLI helpers: global state, the command runner, and exit codes (docs/CLI.md).
-
-Command modules in ``bp.commands.*`` import from here (not from ``bp.cli``) to avoid circular
-imports. Each command resolves its data via a ``BurpClient`` and renders through ``run``.
-``run`` is the single chokepoint where the Run Ledger records the op (ADR-0005) and where
-secret redaction is applied to displayed output (ADR-0007).
-"""
+"""Shared CLI helpers: global state, command execution, and stable exits."""
 
 from __future__ import annotations
 
+import json
+import sqlite3
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
 import typer
-
 from pydantic import ValidationError
 
 from bp import config as _config
 from bp.client import BurpClient, BurpError
-from bp.config import redact
+from bp.config import ConfigError, redact, redact_data
 from bp.ledger import Ledger
 from bp.output import render
 from bp.pos import PosError
@@ -27,22 +22,13 @@ EXIT_GENERIC = 1
 EXIT_USAGE = 2
 EXIT_CONNECTION = 3
 EXIT_PRO = 4
-EXIT_VULN = 5  # security-scan finding(s) present (nmap/nuclei convention) — see ADR-0010
+EXIT_VULN = 5
 
 _EXIT_BY_CODE: dict[str, int] = {
     "CONNECTION_REFUSED": EXIT_CONNECTION,
     "TRANSPORT_ERROR": EXIT_CONNECTION,
     "PRO_REQUIRED": EXIT_PRO,
-    # [13] SERVICE_UNAVAILABLE is now a genuine infra/service failure (e.g. missing endpoints DB).
-    # Pro-only scanner failures (crawl/audit/crawl-and-audit on Community) are distinguished at
-    # the Kotlin source and travel as PRO_REQUIRED -> EXIT_PRO (4).  SERVICE_UNAVAILABLE ->
-    # EXIT_GENERIC (1) so that "check endpoints" with no DB gives a honest infra error, not a
-    # misleading "Pro required" message.
     "SERVICE_UNAVAILABLE": EXIT_GENERIC,
-    # NOTE: INVALID_REQUEST intentionally falls through to EXIT_GENERIC (1). A server 400 for a
-    # not-found resource ("Scan not found", "History entry N not found") is a runtime failure,
-    # not a malformed-invocation usage error (exit 2). Remapping it to exit 2 is a public exit-code
-    # contract change and would require an ADR; do not add it here without one.
 }
 
 
@@ -53,11 +39,59 @@ def exit_code_for_error_code(code: str) -> int:
 
 @dataclass
 class State:
-    url: str
+    # None means --url was omitted; config.load then applies env/file/default.
+    url: str | None
     fmt: str
     fields: list[str] | None
     no_ledger: bool = False
     no_redact: bool = False
+
+
+def _safe_message(message: str, *, redact_secrets: bool) -> str:
+    return redact(message) if redact_secrets else message
+
+
+def emit_error(
+    fmt: str,
+    code: str,
+    message: str,
+    *,
+    status: int | None = None,
+    op: str | None = None,
+    redact_secrets: bool = True,
+) -> None:
+    """Emit one machine record in JSON mode, or the established human line."""
+    safe_message = _safe_message(message, redact_secrets=redact_secrets)
+    if fmt == "json":
+        detail: dict[str, Any] = {"code": code, "message": safe_message}
+        if status is not None:
+            detail["status"] = status
+            detail["http_status"] = status
+        if op is not None:
+            detail["op"] = _safe_message(op, redact_secrets=redact_secrets)
+        typer.echo(json.dumps({"error": detail}, separators=(",", ":")), err=True)
+    else:
+        typer.echo(f"error: {safe_message}", err=True)
+
+
+def emit_warning(
+    fmt: str,
+    code: str,
+    message: str,
+    *,
+    redact_secrets: bool,
+) -> None:
+    safe_message = _safe_message(message, redact_secrets=redact_secrets)
+    if fmt == "json":
+        typer.echo(
+            json.dumps(
+                {"warning": {"code": code, "message": safe_message}},
+                separators=(",", ":"),
+            ),
+            err=True,
+        )
+    else:
+        typer.echo(f"warning: {safe_message}", err=True)
 
 
 def run(
@@ -66,85 +100,118 @@ def run(
     *,
     exit_on: Callable[[Any], "int | None"] | None = None,
 ) -> None:
-    """Run ``fn`` against a BurpClient; record to the Run Ledger and render (redacted) output.
-
-    ``exit_on`` is an optional callback invoked with the data returned by ``fn`` after a
-    successful render.  If it returns a non-None / non-zero int, ``run()`` sets that code as
-    the ledger exit_code (so the ledger row is back-filled correctly — ADR-0005 / finding
-    [10]) and then raises ``typer.Exit(code)``.  When ``exit_on`` is None the function
-    returns normally (existing behavior preserved for all non-security-scan commands).
-    """
-    import sqlite3 as _sqlite3
-
+    """Execute one command, structurally redact its result, render, and audit it."""
     state: State = ctx.obj
-    conf = _config.load(
-        burp_rest_url=state.url,
-        ledger=False if state.no_ledger else None,
-        redact=False if state.no_redact else None,
-    )
-    # [12] Guard Ledger() construction: a PermissionError or sqlite3.OperationalError must
-    # not abort the command.  Degrade gracefully to ledger=None (same as --no-ledger).
+    redact_secrets = not state.no_redact
+    config_warnings: list[str] = []
+    try:
+        conf = _config.load(
+            burp_rest_url=state.url,
+            ledger=False if state.no_ledger else None,
+            redact=False if state.no_redact else None,
+            warn=config_warnings.append,
+        )
+    except ConfigError as exc:
+        emit_error(
+            state.fmt,
+            "INVALID_CONFIG",
+            str(exc),
+            redact_secrets=redact_secrets,
+        )
+        raise typer.Exit(EXIT_USAGE) from None
+
+    runtime_warnings = [("INVALID_CONFIG_VALUE", warning) for warning in config_warnings]
+
     ledger: Ledger | None = None
     if conf.ledger:
         try:
             ledger = Ledger()
-        except (PermissionError, OSError, _sqlite3.Error) as _exc:
-            typer.echo(f"warning: ledger unavailable, proceeding without it: {_exc}", err=True)
-            ledger = None
+        except (PermissionError, OSError, sqlite3.Error):
+            runtime_warnings.append(
+                ("LEDGER_UNAVAILABLE", "ledger unavailable, proceeding without it")
+            )
 
-    client = BurpClient(state.url, ledger=ledger, redact=conf.redact, command=ctx.command_path)
-    exit_code = 0
+    client = BurpClient(
+        conf.burp_rest_url,
+        ledger=ledger,
+        redact=conf.redact,
+        command=ctx.command_path,
+    )
+    # Failure is the initial audit state. Only a fully processed and emitted
+    # result can change it to zero, so an unexpected exception never records
+    # success merely because it missed a known except branch.
+    exit_code = EXIT_GENERIC
     try:
         try:
             with client:
                 data = fn(client)
-            out = render(data, state.fmt, fields=state.fields)
-        except BurpError as e:
-            typer.echo(f"error: {e}", err=True)
-            exit_code = exit_code_for_error_code(e.code)
+            render_data = redact_data(data) if conf.redact else data
+            out = render(render_data, state.fmt, fields=state.fields)
+        except BurpError as exc:
+            exit_code = exit_code_for_error_code(exc.code)
+            emit_error(
+                state.fmt,
+                exc.code,
+                exc.message,
+                status=exc.status,
+                op=exc.op,
+                redact_secrets=conf.redact,
+            )
             raise typer.Exit(exit_code) from None
         except ValidationError:
-            # [12] pydantic ValidationError is a subclass of ValueError, so without this guard it
-            # would fall into the (PosError, ValueError) handler below → exit 2 (usage) and leak the
-            # raw pydantic message (internal class names, pydantic.dev URLs).  A schema mismatch is a
-            # server-response problem, not a user-invocation error.  Emit a clean, class-name-free
-            # message and exit 1 (generic).
-            typer.echo("error: server returned an unexpected response shape", err=True)
             exit_code = EXIT_GENERIC
+            emit_error(
+                state.fmt,
+                "INVALID_RESPONSE",
+                "server returned an unexpected response shape",
+                redact_secrets=conf.redact,
+            )
             raise typer.Exit(exit_code) from None
-        except (PosError, ValueError) as e:
-            typer.echo(f"error: {e}", err=True)
+        except (PosError, ValueError) as exc:
             exit_code = EXIT_USAGE
+            emit_error(
+                state.fmt,
+                "USAGE_ERROR",
+                str(exc),
+                redact_secrets=conf.redact,
+            )
             raise typer.Exit(exit_code) from None
-        # [10] Resolve exit_on BEFORE the finally back-fills the ledger so the stored
-        # exit_code reflects the true process outcome (e.g. EXIT_VULN=5 for findings).
+        except TypeError:
+            exit_code = EXIT_GENERIC
+            emit_error(
+                state.fmt,
+                "RENDER_ERROR",
+                "could not render command result",
+                redact_secrets=conf.redact,
+            )
+            raise typer.Exit(exit_code) from None
+
+        desired_exit = 0
         if exit_on is not None:
-            resolved = exit_on(data)
-            if resolved:
-                exit_code = resolved
+            desired_exit = exit_on(data) or 0
+        for warning_code, warning_message in runtime_warnings:
+            emit_warning(
+                state.fmt,
+                warning_code,
+                warning_message,
+                redact_secrets=conf.redact,
+            )
+        if out:
+            typer.echo(out)
+        exit_code = desired_exit
     finally:
-        # Back-fill the actual exit code onto every op recorded during this command (F16).
         if ledger is not None:
             for op_id in client.op_ids:
-                ledger.set_exit_code(op_id, exit_code)
+                if op_id:
+                    ledger.set_exit_code(op_id, exit_code)
             ledger.close()
-    if conf.redact:
-        out = redact(out)
-    # [18] suppress lone '\n' for empty result sets (OUTPUT.md §4.4: empty stdout + exit 0)
-    if out:
-        typer.echo(out)
-    # [10] Raise AFTER output is printed and AFTER the finally has run (ledger already correct).
+
     if exit_code != 0:
         raise typer.Exit(exit_code)
 
 
 def parse_header(raw: str, flag: str = "--set-header") -> tuple[str, str]:
-    """Parse a ``'Name: Value'`` header string into ``(name, value)``.
-
-    Shared by the repeater/session/check commands so the parsing, error text, and exit
-    code stay consistent. Raises ``ValueError`` (mapped to EXIT_USAGE by callers) on input
-    with no colon.
-    """
+    """Parse a ``Name: Value`` header string."""
     if ":" not in raw:
         raise ValueError(f"{flag} must be 'Name: Value', got {raw!r}")
     name, _, value = raw.partition(":")
@@ -152,17 +219,13 @@ def parse_header(raw: str, flag: str = "--set-header") -> tuple[str, str]:
 
 
 def parse_headers(raws: list[str], flag: str = "--set-header") -> dict[str, str]:
-    """Parse repeatable ``'Name: Value'`` strings into a dict; clean usage error on malformed.
-
-    Emits the error on stderr and raises ``typer.Exit(EXIT_USAGE)`` so every command surfaces
-    the same exit 2 for a bad header (previously one copy used a hardcoded literal ``2``).
-    """
+    """Parse repeatable header flags with a stable usage exit."""
     headers: dict[str, str] = {}
     for raw in raws:
         try:
             name, value = parse_header(raw, flag)
         except ValueError as exc:
-            typer.echo(f"error: {exc}", err=True)
+            typer.echo(f"error: {redact(str(exc))}", err=True)
             raise typer.Exit(EXIT_USAGE) from None
         headers[name] = value
     return headers

@@ -112,6 +112,8 @@ class StatusPagesTest {
             val text = bodyAsText()
             assertTrue(text.contains("SERVICE_UNAVAILABLE"), "expected SERVICE_UNAVAILABLE in body: $text")
             assertFalse(text.contains("PRO_REQUIRED"), "must not contain PRO_REQUIRED: $text")
+            assertFalse(text.contains("endpoints DB"), "leaked internal state detail: $text")
+            assertFalse(text.contains("IllegalStateException"), "leaked exception class: $text")
         }
     }
 }

@@ -139,6 +139,7 @@ def tab_cmd(
     If both request and requestId are null the server silently falls back to
     https://example.com — this command always supplies requestId to avoid that.
     """
+
     def _do(client: Any) -> Any:
         payload: dict[str, Any] = {"requestId": request_id}
         if name is not None:

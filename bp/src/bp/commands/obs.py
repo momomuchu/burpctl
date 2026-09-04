@@ -20,8 +20,8 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import State
-from bp.config import load as load_config
+from bp.cliutil import EXIT_GENERIC, EXIT_USAGE, State, emit_error, emit_warning
+from bp.config import ConfigError, load as load_config, redact_data
 from bp.ledger import Ledger, QueryFilters
 from bp.output import render
 
@@ -31,21 +31,44 @@ from bp.output import render
 # ---------------------------------------------------------------------------
 
 
-def _require_ledger(ctx: typer.Context) -> bool:
-    """Return True if the ledger is enabled; otherwise emit an error and return False.
-
-    Honours ctx.obj.no_ledger (set by --no-ledger / BP_NO_LEDGER) by passing
-    ledger=False to load_config(), mirroring cliutil.run's resolution pattern.
-    """
+def _require_ledger(ctx: typer.Context) -> Any | None:
+    """Resolve local config and return it when ledger operations are enabled."""
     state: State | None = ctx.obj
     ledger_override: bool | None = False if (state is not None and state.no_ledger) else None
-    if not load_config(ledger=ledger_override).ledger:
-        typer.echo(
-            "error: ledger is disabled (ledger=off / --no-ledger) — cannot query/tag",
-            err=True,
+    fmt, _fields = _resolve_fmt_fields(ctx)
+    redact_secrets = not (state is not None and state.no_redact)
+    warnings: list[str] = []
+    try:
+        conf = load_config(
+            ledger=ledger_override,
+            redact=False if not redact_secrets else None,
+            burp_rest_url=state.url if state is not None else None,
+            warn=warnings.append,
         )
-        return False
-    return True
+    except ConfigError as exc:
+        emit_error(
+            fmt,
+            "INVALID_CONFIG",
+            str(exc),
+            redact_secrets=redact_secrets,
+        )
+        raise typer.Exit(EXIT_USAGE) from None
+    for warning in warnings:
+        emit_warning(
+            fmt,
+            "INVALID_CONFIG_VALUE",
+            warning,
+            redact_secrets=conf.redact,
+        )
+    if not conf.ledger:
+        emit_error(
+            fmt,
+            "LEDGER_DISABLED",
+            "ledger is disabled (ledger=off / --no-ledger) — cannot query/tag",
+            redact_secrets=conf.redact,
+        )
+        return None
+    return conf
 
 
 def _resolve_fmt_fields(ctx: typer.Context) -> tuple[str, list[str] | None]:
@@ -72,9 +95,7 @@ def log_cmd(
     target: str | None = typer.Option(
         None, "--target", metavar="H", help="Filter by exact Burp REST listener host[:port]."
     ),
-    tag: str | None = typer.Option(
-        None, "--tag", metavar="X", help="Filter by exact tag value."
-    ),
+    tag: str | None = typer.Option(None, "--tag", metavar="X", help="Filter by exact tag value."),
     status: str | None = typer.Option(
         None, "--status", metavar="S", help="Filter by status: ok | error | refused."
     ),
@@ -88,30 +109,47 @@ def log_cmd(
     traffic log: curl, xh, browser, and other non-bp traffic never writes it. The `target` field is
     the Burp REST listener host, not the target application's host.
     """
-    if not _require_ledger(ctx):
-        raise typer.Exit(1)
+    conf = _require_ledger(ctx)
+    if conf is None:
+        raise typer.Exit(EXIT_GENERIC)
 
     filters = QueryFilters(
         since=since, until=until, target=target, tag=tag, status=status, limit=limit
     )
     try:
         ledger_ctx = Ledger()
-    except (OSError, sqlite3.Error) as exc:
-        typer.echo(f"error: ledger unavailable: {exc}", err=True)
-        raise typer.Exit(1)
+    except (OSError, sqlite3.Error):
+        emit_error(
+            _resolve_fmt_fields(ctx)[0],
+            "LEDGER_UNAVAILABLE",
+            "ledger unavailable",
+            redact_secrets=conf.redact,
+        )
+        raise typer.Exit(EXIT_GENERIC) from None
     try:
         with ledger_ctx as ledger:
             rows = ledger.query(filters)
-    except sqlite3.Error as exc:
-        typer.echo(f"error: ledger unavailable: {exc}", err=True)
-        raise typer.Exit(1)
+    except ValueError as exc:
+        # Malformed filters are an invocation problem, not a ledger failure.
+        emit_error(_resolve_fmt_fields(ctx)[0], "USAGE_ERROR", str(exc), redact_secrets=conf.redact)
+        raise typer.Exit(EXIT_USAGE) from None
+    except sqlite3.Error:
+        emit_error(
+            _resolve_fmt_fields(ctx)[0],
+            "LEDGER_UNAVAILABLE",
+            "ledger unavailable",
+            redact_secrets=conf.redact,
+        )
+        raise typer.Exit(EXIT_GENERIC) from None
 
     fmt, fields = _resolve_fmt_fields(ctx)
     data: list[dict[str, Any]] = [r.as_dict() for r in rows]
-    # [09] Mirror cliutil.run's guard: typer.echo('') writes '\n', breaking the zero-records
-    # contract (OUTPUT.md §4.4: empty stdout + exit 0). log_cmd bypasses cliutil.run so it
-    # needs its own guard — only echo when render produces non-empty output.
-    out = render(data, fmt, fields=fields)
+    display_data = redact_data(data) if conf.redact else data
+    try:
+        out = render(display_data, fmt, fields=fields)
+    except (TypeError, ValueError) as exc:
+        emit_error(fmt, "USAGE_ERROR", str(exc), redact_secrets=conf.redact)
+        raise typer.Exit(EXIT_USAGE) from None
     if out:
         typer.echo(out)
 
@@ -130,26 +168,60 @@ def tag_cmd(
 
     Exits 1 if the ledger is disabled or the opId is not found (the tag was not applied).
     """
-    if not _require_ledger(ctx):
-        raise typer.Exit(1)
+    conf = _require_ledger(ctx)
+    if conf is None:
+        raise typer.Exit(EXIT_GENERIC)
+
+    fmt, fields = _resolve_fmt_fields(ctx)
+    safe_name = redact_data(name) if conf.redact else name
+    data: dict[str, Any] = {"id": op_id, "tag": safe_name, "status": "tagged"}
+    render_data: Any
+    if fmt == "raw" or (fmt == "table" and fields is None):
+        render_data = f"tagged {op_id!r} -> {safe_name!r}"
+    else:
+        render_data = data
+    try:
+        out = render(render_data, fmt, fields=fields)
+    except (TypeError, ValueError) as exc:
+        emit_error(fmt, "USAGE_ERROR", str(exc), redact_secrets=conf.redact)
+        raise typer.Exit(EXIT_USAGE) from None
 
     try:
         ledger_ctx = Ledger()
-    except (OSError, sqlite3.Error) as exc:
-        typer.echo(f"error: ledger unavailable: {exc}", err=True)
-        raise typer.Exit(1)
+    except (OSError, sqlite3.Error):
+        emit_error(
+            fmt,
+            "LEDGER_UNAVAILABLE",
+            "ledger unavailable",
+            redact_secrets=conf.redact,
+        )
+        raise typer.Exit(EXIT_GENERIC) from None
     try:
         with ledger_ctx as ledger:
-            found = ledger.tag(op_id, name)
-    except sqlite3.Error as exc:
-        typer.echo(f"error: ledger unavailable: {exc}", err=True)
-        raise typer.Exit(1)
+            found = ledger.tag(op_id, safe_name)
+    except ValueError as exc:
+        emit_error(fmt, "USAGE_ERROR", str(exc), redact_secrets=conf.redact)
+        raise typer.Exit(EXIT_USAGE) from None
+    except sqlite3.Error:
+        emit_error(
+            fmt,
+            "LEDGER_UNAVAILABLE",
+            "ledger unavailable",
+            redact_secrets=conf.redact,
+        )
+        raise typer.Exit(EXIT_GENERIC) from None
 
     if not found:
-        typer.echo(f"error: op id {op_id!r} not found in ledger.", err=True)
-        raise typer.Exit(1)
+        emit_error(
+            fmt,
+            "NOT_FOUND",
+            f"op id {op_id!r} not found in ledger.",
+            redact_secrets=conf.redact,
+        )
+        raise typer.Exit(EXIT_GENERIC)
 
-    typer.echo(f"tagged {op_id!r} -> {name!r}")
+    if out:
+        typer.echo(out)
 
 
 # ---------------------------------------------------------------------------

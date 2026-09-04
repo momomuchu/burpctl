@@ -25,7 +25,9 @@ def test_tag_exits_nonzero_when_ledger_disabled() -> None:
         "from bp.cli import cli_main; cli_main()"
     )
     r = subprocess.run([sys.executable, "-c", entry], capture_output=True, text=True)
-    assert r.returncode == 1, f"expected exit 1 when ledger disabled, got {r.returncode}: {r.stderr}"
+    assert r.returncode == 1, (
+        f"expected exit 1 when ledger disabled, got {r.returncode}: {r.stderr}"
+    )
 
 
 # [28] RED — bp log must also exit 1 when ledger is disabled (consistent with bp tag).
@@ -41,7 +43,9 @@ def test_log_exits_nonzero_when_ledger_disabled() -> None:
         "from bp.cli import cli_main; cli_main()"
     )
     r = subprocess.run([sys.executable, "-c", entry], capture_output=True, text=True)
-    assert r.returncode == 1, f"expected exit 1 when ledger disabled, got {r.returncode}: {r.stderr}"
+    assert r.returncode == 1, (
+        f"expected exit 1 when ledger disabled, got {r.returncode}: {r.stderr}"
+    )
 
 
 # [09] RED — bp log must emit ZERO bytes on stdout when the ledger returns zero rows.
@@ -63,14 +67,13 @@ def test_log_empty_ledger_zero_stdout_bytes() -> None:
         )
         r = subprocess.run([sys.executable, "-c", entry], capture_output=True)
     assert r.returncode == 0, f"expected exit 0 for empty ledger, got {r.returncode}: {r.stderr!r}"
-    assert r.stdout == b"", (
-        f"expected zero stdout bytes for empty ledger, got {r.stdout!r}"
-    )
+    assert r.stdout == b"", f"expected zero stdout bytes for empty ledger, got {r.stdout!r}"
 
 
 # ---------------------------------------------------------------------------
 # [06] RED — Ledger() construction failure → clean error, exit 1, no traceback
 # ---------------------------------------------------------------------------
+
 
 def test_log_ledger_oserror_clean_stderr_no_traceback() -> None:
     """`bp log` exits 1 with a clean 'error: ledger unavailable' message when Ledger()
@@ -120,9 +123,7 @@ def test_tag_ledger_oserror_clean_stderr_no_traceback() -> None:
     runner = CliRunner()
     with patch("bp.commands.obs.Ledger", side_effect=OSError("permission denied")):
         result = runner.invoke(app, ["tag", "op123", "mytag"])
-    assert result.exit_code == 1, (
-        f"expected exit 1 on OSError, got {result.exit_code}"
-    )
+    assert result.exit_code == 1, f"expected exit 1 on OSError, got {result.exit_code}"
     combined = result.output + result.stderr
     assert "error: ledger unavailable" in combined, (
         f"expected 'error: ledger unavailable' in output/stderr, got {combined!r}"
@@ -159,6 +160,7 @@ def test_tag_ledger_sqlite_error_clean_stderr_no_traceback() -> None:
 # The Ledger() constructor is already guarded; these tests cover the CONTEXT
 # MANAGER body (query/tag calls) which are still outside any try/except.
 # ---------------------------------------------------------------------------
+
 
 def test_log_ledger_query_sqlite_error_clean_no_traceback() -> None:
     """[09] `bp log` exits 1 with a clean error when ledger.query() raises sqlite3.Error.
@@ -226,6 +228,7 @@ def test_tag_ledger_tag_sqlite_error_clean_no_traceback() -> None:
 # _require_ledger() must honour ctx.obj.no_ledger (the State flag).
 # ---------------------------------------------------------------------------
 
+
 def test_log_honors_no_ledger_state_flag() -> None:
     """[10] `bp log` respects --no-ledger flag — takes the ledger-disabled path.
 
@@ -241,10 +244,9 @@ def test_log_honors_no_ledger_state_flag() -> None:
         result = runner.invoke(app, ["--no-ledger", "log"])
 
     assert result.exit_code == 1, (
-        f"[10] expected exit 1 when --no-ledger, got {result.exit_code}; "
-        f"output={result.output!r}"
+        f"[10] expected exit 1 when --no-ledger, got {result.exit_code}; output={result.output!r}"
     )
-    mock_ledger_cls.assert_not_called()  # type: ignore[union-attr]
+    mock_ledger_cls.assert_not_called()
 
 
 def test_tag_honors_no_ledger_state_flag() -> None:
@@ -257,16 +259,16 @@ def test_tag_honors_no_ledger_state_flag() -> None:
         result = runner.invoke(app, ["--no-ledger", "tag", "op123", "mytag"])
 
     assert result.exit_code == 1, (
-        f"[10] expected exit 1 when --no-ledger, got {result.exit_code}; "
-        f"output={result.output!r}"
+        f"[10] expected exit 1 when --no-ledger, got {result.exit_code}; output={result.output!r}"
     )
-    mock_ledger_cls.assert_not_called()  # type: ignore[union-attr]
+    mock_ledger_cls.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
 # [15] RED — ledger-disabled path emits "note:" prefix (must be "error:")
 # Severity label must agree with exit code: exit 1 → "error:", not "note:".
 # ---------------------------------------------------------------------------
+
 
 def test_log_ledger_disabled_emits_error_prefix() -> None:
     """[15] `bp log` emits 'error:' (not 'note:') when the ledger is disabled.
@@ -278,13 +280,9 @@ def test_log_ledger_disabled_emits_error_prefix() -> None:
     runner = CliRunner()
     result = runner.invoke(app, ["--no-ledger", "log"])
 
-    assert result.exit_code == 1, (
-        f"[15] expected exit 1, got {result.exit_code}"
-    )
+    assert result.exit_code == 1, f"[15] expected exit 1, got {result.exit_code}"
     combined = result.output + result.stderr
-    assert "error:" in combined, (
-        f"[15] expected 'error:' prefix in output/stderr, got {combined!r}"
-    )
+    assert "error:" in combined, f"[15] expected 'error:' prefix in output/stderr, got {combined!r}"
     assert "note:" not in combined, (
         f"[15] 'note:' prefix must not appear when exiting 1, got {combined!r}"
     )
@@ -295,13 +293,9 @@ def test_tag_ledger_disabled_emits_error_prefix() -> None:
     runner = CliRunner()
     result = runner.invoke(app, ["--no-ledger", "tag", "op123", "mytag"])
 
-    assert result.exit_code == 1, (
-        f"[15] expected exit 1, got {result.exit_code}"
-    )
+    assert result.exit_code == 1, f"[15] expected exit 1, got {result.exit_code}"
     combined = result.output + result.stderr
-    assert "error:" in combined, (
-        f"[15] expected 'error:' prefix in output/stderr, got {combined!r}"
-    )
+    assert "error:" in combined, f"[15] expected 'error:' prefix in output/stderr, got {combined!r}"
     assert "note:" not in combined, (
         f"[15] 'note:' prefix must not appear when exiting 1, got {combined!r}"
     )

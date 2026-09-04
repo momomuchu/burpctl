@@ -6,16 +6,21 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  kotlin:
+    name: Kotlin / Java ${{ matrix.java }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        java: [17, 21]
+        java: ["17", "21"]
 
     steps:
       - uses: actions/checkout@v4
@@ -27,45 +32,139 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build
-        run: ./gradlew build
+      # `build` already runs check (tests, Detekt, coverage verification) and shadowJar,
+      # so this arm is the complete Java 17 gate and artifact build.
+      - name: Quality gates, tests, and artifact
+        if: matrix.java == '17'
+        run: ./gradlew build -PtestJvm=17
 
-      - name: Test
-        run: ./gradlew test
+      # -PtestJvm selects the actual test runtime; bytecode stays Java 17 compatible.
+      - name: Test runtime compatibility
+        if: matrix.java == '21'
+        run: ./gradlew test -PtestJvm=21
 
-      - name: Shadow JAR
-        run: ./gradlew shadowJar
-
-      - name: Upload JAR
-        if: matrix.java == 17
+      - name: Upload extension JAR
+        if: matrix.java == '17'
         uses: actions/upload-artifact@v4
         with:
           name: burp-rest-extension
           path: build/libs/burp-rest-extension.jar
+          if-no-files-found: error
           retention-days: 30
 
-  bp:
-    name: bp (Python CLI)
+      - name: Upload Kotlin reports
+        if: always() && matrix.java == '17'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-reports
+          path: |
+            build/reports/jacoco/test/
+            build/reports/detekt/
+            build/reports/tests/test/
+          if-no-files-found: warn
+          retention-days: 30
+
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+
+    defaults:
+      run:
+        working-directory: bp
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+          cache-dependency-glob: bp/uv.lock
+
+      - name: Install locked environment
+        run: uv sync --frozen
+
+      # Static gates run once, against the minimum supported interpreter.
+      - name: Static quality gates
+        if: matrix.python == '3.11'
+        run: |
+          uv run --frozen ruff check src tests
+          uv run --frozen ruff format --check src tests
+          uv run --frozen mypy --strict src tests
+
+      - name: Tests and branch coverage
+        if: matrix.python == '3.11'
+        run: >
+          uv run --frozen pytest -q
+          --cov=bp
+          --cov-branch
+          --cov-report=term-missing
+          --cov-report=xml
+          --cov-fail-under=78
+
+      - name: Tests
+        if: matrix.python != '3.11'
+        run: uv run --frozen pytest -q
+
+      - name: Upload Python coverage
+        if: always() && matrix.python == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage
+          path: bp/coverage.xml
+          if-no-files-found: warn
+          retention-days: 30
+
+  contracts:
+    name: Contracts and package
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: bp
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up uv + Python 3.11
+      - name: Set up uv and Python
         uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.11"
+          enable-cache: true
+          cache-dependency-glob: bp/uv.lock
 
-      - name: Install
-        run: uv sync
+      - name: Install locked environment
+        run: uv sync --frozen
 
-      - name: Test
-        run: uv run pytest -q
+      - name: Validate OpenAPI document
+        run: uv run --frozen openapi-spec-validator ../src/main/resources/openapi.json
 
-      - name: Type-check
-        run: uv run mypy --strict src
+      - name: Validate confirmed-defect ledger
+        env:
+          BURPCTL_REQUIRE_ALL_VERIFIED: "1"
+        run: uv run --frozen pytest -q tests/test_quality_ledger.py
 
-      - name: Lint
-        run: uv run ruff check src tests
+      - name: Build sdist and wheel
+        run: uv run --frozen python -m build
+
+      - name: Smoke-test the installed wheel
+        run: |
+          python -m venv "$RUNNER_TEMP/bp-smoke"
+          "$RUNNER_TEMP/bp-smoke/bin/pip" install --quiet dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/bp-smoke/bin/bp" --version
+          "$RUNNER_TEMP/bp-smoke/bin/burpctl" --version
+          "$RUNNER_TEMP/bp-smoke/bin/bp" -h > /dev/null
+          "$RUNNER_TEMP/bp-smoke/bin/burpctl" --help > /dev/null
+
+      - name: Upload Python distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: bp-distributions
+          path: bp/dist/*
+          if-no-files-found: error
+          retention-days: 30

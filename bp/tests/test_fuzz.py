@@ -3,7 +3,7 @@
 import pytest
 
 from bp.fuzz import ConcreteRequest, Sub, apply_subs, expand
-from bp.pos import Position, resolve_pos
+from bp.pos import Position, PosError, resolve_pos
 
 # base with two single-char query values to fuzz; '_' marks each position.
 BASE: bytes = b"GET /?u=_&p=_ HTTP/1.1\r\nHost: h\r\n\r\n"
@@ -178,7 +178,7 @@ def test_content_length_rewrite_strips_leading_ows() -> None:
     # Build request manually with OWS around the value
     base = (
         b"POST /api HTTP/1.1\r\n"
-        b"Content-Length:  5 \r\n"   # leading + trailing OWS
+        b"Content-Length:  5 \r\n"  # leading + trailing OWS
         b"Content-Type: application/x-www-form-urlencoded\r\n"
         b"\r\n"
         b"id=AB"
@@ -196,7 +196,7 @@ def test_content_length_rewrite_strips_trailing_ows() -> None:
     """[02] OWS after the digit (e.g. 'Content-Length: 5 ') must also be removed."""
     base = (
         b"POST /api HTTP/1.1\r\n"
-        b"Content-Length: 5 \r\n"   # trailing OWS only
+        b"Content-Length: 5 \r\n"  # trailing OWS only
         b"Content-Type: application/x-www-form-urlencoded\r\n"
         b"\r\n"
         b"id=AB"
@@ -264,3 +264,98 @@ def test_triple_content_length_collapsed_to_one() -> None:
     out = apply_subs(base, [Sub(pos, b"9999")])
     assert out.count(b"Content-Length:") == 1
     assert b"Content-Length: 7\r\n" in out
+
+
+# --- bounded, restartable planning -------------------------------------------
+
+
+def test_expand_is_restartable_without_materializing_a_list() -> None:
+    pu, pp = _positions()
+    plan = expand(BASE, [pu, pp], [[b"a", b"b"], [b"1", b"2"]], "cluster-bomb")
+
+    assert not isinstance(plan, list)
+    assert len(plan) == 4
+    assert [item.payloads for item in plan] == [item.payloads for item in plan]
+
+
+def test_expand_rejects_over_limit_cardinality_before_iteration() -> None:
+    pu, pp = _positions()
+    with pytest.raises(ValueError, match="10,000"):
+        expand(
+            BASE,
+            [pu, pp],
+            [[b"a"] * 101, [b"b"] * 100],
+            "cluster-bomb",
+        )
+
+
+def test_expand_accepts_exact_limit_without_materializing_requests() -> None:
+    pu, pp = _positions()
+    plan = expand(
+        BASE,
+        [pu, pp],
+        [[b"a"] * 100, [b"b"] * 100],
+        "cluster-bomb",
+    )
+    assert len(plan) == 10_000
+
+
+def test_expand_rejects_overlapping_plan_even_for_sniper() -> None:
+    p = resolve_pos(BASE, "query:u")
+    with pytest.raises(PosError) as exc_info:
+        expand(BASE, [p, p], [[b"a"]], "sniper")
+    assert exc_info.value.code == "POS_OVERLAP"
+
+
+def test_expand_rejects_out_of_range_position_before_iteration() -> None:
+    with pytest.raises(PosError):
+        expand(BASE, [Position(0, len(BASE) + 1, "offset:bad")], [[b"x"]], "sniper")
+
+
+@pytest.mark.parametrize("newline", [b"\r\n", b"\n"])
+def test_empty_body_replacement_sets_one_zero_content_length(newline: bytes) -> None:
+    base = newline.join(
+        [
+            b"POST / HTTP/1.1",
+            b"Host: example.test",
+            b"Content-Length: 3",
+            b"Content-Type: application/octet-stream",
+            b"",
+            b"abc",
+        ]
+    )
+    start = len(base) - 3
+    out = apply_subs(base, [Sub(Position(start, len(base), "offset:body"), b"")])
+
+    assert out.endswith(newline + newline)
+    assert out.lower().count(b"content-length:") == 1
+    assert b"Content-Length: 0" + newline in out
+
+
+def test_body_replacement_content_length_uses_utf8_byte_count() -> None:
+    base = b"POST / HTTP/1.1\r\nHost: example.test\r\nContent-Length: 1\r\n\r\nx"
+    pos = Position(len(base) - 1, len(base), "offset:body")
+
+    out = apply_subs(base, [Sub(pos, "🙂".encode())])
+
+    assert out.endswith("🙂".encode())
+    assert b"Content-Length: 4\r\n" in out
+
+
+def test_body_nul_replacement_still_repairs_content_length_before_bridge_rejects_it() -> None:
+    base = b"POST / HTTP/1.1\r\nHost: example.test\r\nContent-Length: 1\r\n\r\nx"
+    pos = Position(len(base) - 1, len(base), "offset:body")
+
+    out = apply_subs(base, [Sub(pos, b"a\x00b")])
+
+    assert out.endswith(b"a\x00b")
+    assert b"Content-Length: 3\r\n" in out
+
+
+def test_apply_subs_rejects_negative_and_reversed_positions() -> None:
+    for position in (
+        Position(-1, 1, "offset:negative"),
+        Position(3, 2, "offset:reversed"),
+    ):
+        with pytest.raises(PosError):
+            apply_subs(BASE, [Sub(position, b"x")])

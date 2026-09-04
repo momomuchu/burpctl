@@ -31,6 +31,7 @@ data class ProxyEntry(
     val timestamp: String? = null,
     val listenerInterface: String? = null,
     val clientIp: String? = null,
+    val listenerPort: Int? = null,
 )
 
 @Serializable
@@ -44,8 +45,16 @@ data class WebSocketEntry(
     val id: Int,
     val url: String,
     val direction: String,
+    /** Legacy text projection retained for compatibility; use [payloadBase64] for exact bytes. */
     val payload: String,
+    /** Compatibility alias for [time]. */
     val timestamp: String? = null,
+    /** Stable connection identity from Montoya; defaults preserve source compatibility. */
+    val webSocketId: Int = id,
+    val payloadBase64: String = payload,
+    val editedPayloadBase64: String? = null,
+    val time: String? = timestamp,
+    val listenerPort: Int? = null,
 )
 
 @Serializable

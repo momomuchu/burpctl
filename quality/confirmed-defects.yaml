@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "scope": "Confirmed defects in /Users/maache/burpctl at baseline 663bb56; not a claim that unknown defects cannot exist.",
+  "defects": [
+    {
+      "id": "D01",
+      "invariant": "Malformed or unknown request input is rejected before effects; every HTTP failure is a typed JSON envelope and logs contain no query secrets.",
+      "slice": "server-boundary",
+      "tests": [
+        "src/test/kotlin/com/burprest/server/StatusPagesTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Preserve routes and ApiResponse; tighten invalid-input acceptance.",
+      "status": "verified"
+    },
+    {
+      "id": "D02",
+      "invariant": "Default redaction removes credentials recursively without changing output types or corrupting JSON and NDJSON.",
+      "slice": "python-output",
+      "tests": [
+        "bp/tests/test_config.py",
+        "bp/tests/test_output.py"
+      ],
+      "contracts": [
+        "docs/OUTPUT.md",
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "Keep --no-redact as the explicit opt-out.",
+      "status": "verified"
+    },
+    {
+      "id": "D03",
+      "invariant": "Every shipped output mode, fields selector, tag command, help alias, and agent-mode error has one truthful stable representation.",
+      "slice": "python-output",
+      "tests": [
+        "bp/tests/test_output.py",
+        "bp/tests/test_cliutil.py",
+        "bp/tests/test_obs.py",
+        "bp/tests/test_cli_conformance.py"
+      ],
+      "contracts": [
+        "docs/CLI.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "Structured data is no longer mislabeled as raw; runtime exits remain 0-5.",
+      "status": "verified"
+    },
+    {
+      "id": "D04",
+      "invariant": "Flag, environment, file, and default precedence is observable and all config sources are validated without traceback or silent control drift.",
+      "slice": "python-config-ledger",
+      "tests": [
+        "bp/tests/test_config.py",
+        "bp/tests/test_cliutil.py"
+      ],
+      "contracts": [
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "Honor the already documented precedence order.",
+      "status": "verified"
+    },
+    {
+      "id": "D05",
+      "invariant": "The Run Ledger fingerprints the complete transmitted request identity without secrets and never records a crashed command as success.",
+      "slice": "python-config-ledger",
+      "tests": [
+        "bp/tests/test_client.py",
+        "bp/tests/test_ledger.py",
+        "bp/tests/test_cliutil.py"
+      ],
+      "contracts": [
+        "docs/STATE-AND-CONFIG.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "Keep the existing SQLite schema and hash-only policy where possible.",
+      "status": "verified"
+    },
+    {
+      "id": "D06",
+      "invariant": "Fuzz plans are byte-faithful, bounded, fully preflighted before effects, lazy in memory, and account for every baseline and attempted shot.",
+      "slice": "python-fuzz",
+      "tests": [
+        "bp/tests/test_fuzz.py",
+        "bp/tests/test_pos.py",
+        "bp/tests/test_wire.py",
+        "bp/tests/test_runner.py"
+      ],
+      "contracts": [
+        "docs/ALGORITHMS.md",
+        "docs/CLI.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "Preserve four client-side attack modes and structured REST bridge limits.",
+      "status": "verified"
+    },
+    {
+      "id": "D07",
+      "invariant": "H2 state is owner-only, resource-safe, transactionally consistent, concurrency-safe, and queried with validated normalized filters.",
+      "slice": "kotlin-storage",
+      "tests": [
+        "src/test/kotlin/com/burprest/db/DatabaseHardeningTest.kt"
+      ],
+      "contracts": [
+        "docs/STATE-AND-CONFIG.md",
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Preserve and migrate existing H2 schema/session keys without destructive reset.",
+      "status": "verified"
+    },
+    {
+      "id": "D08",
+      "invariant": "Repeater inputs obey XOR and batch preflight; response-less sends and post-effect persistence failures are reported without encouraging duplicate mutation retries.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/RepeaterServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Preserve send response fields and add truthful persistence metadata.",
+      "status": "verified"
+    },
+    {
+      "id": "D09",
+      "invariant": "Session credentials are immutable per send, atomically persisted, syntactically safe, origin-bound, and cleared independently from observed cookies.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/SessionServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/STATE-AND-CONFIG.md"
+      ],
+      "compatibility": "Add optional origin binding while keeping the singleton session API.",
+      "status": "verified"
+    },
+    {
+      "id": "D10",
+      "invariant": "Endpoint extraction follows RFC URI resolution and credential boundaries; diffs use UTF-8 bytes and preserve duplicate headers.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/UtilsServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Keep existing utility routes and add fetch accounting.",
+      "status": "verified"
+    },
+    {
+      "id": "D11",
+      "invariant": "Proxy filters and pagination are exact and safe, intercept state is authoritative, unsupported controls fail, and WebSocket metadata comes from capture time/identity.",
+      "slice": "montoya-controls",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/ProxyServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Preserve absolute proxy IDs; add evidence fields and reject no-op controls.",
+      "status": "verified"
+    },
+    {
+      "id": "D12",
+      "invariant": "Scanner work is bound to the supplied target, reflects Montoya task state/counts, is cleaned up, and never claims unsupported pause/resume/all behavior.",
+      "slice": "montoya-controls",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/ScannerServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Keep route paths; unsupported operations return 501 and existing progress becomes nullable.",
+      "status": "verified"
+    },
+    {
+      "id": "D13",
+      "invariant": "Security checks distinguish observations, inconclusive probes, anomalies, and confirmed classifier findings; invalid plans have zero effects.",
+      "slice": "stateful-http",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/SecurityScanServiceTest.kt",
+        "bp/tests/test_securityscan.py"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/OUTPUT.md"
+      ],
+      "compatibility": "CLI exit 5 follows confirmed vulnerable fields, never arbitrary deltas.",
+      "status": "verified"
+    },
+    {
+      "id": "D14",
+      "invariant": "Server-side Intruder truthfully supports bounded byte-accurate sniper attacks with a legal concurrent lifecycle and a fresh quick-fuzz baseline.",
+      "slice": "kotlin-intruder",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/IntruderServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/ALGORITHMS.md"
+      ],
+      "compatibility": "Retain routes; unsupported matrix modes direct callers to client-side bp fuzz.",
+      "status": "verified"
+    },
+    {
+      "id": "D15",
+      "invariant": "Scope mutation responses come from the engine and unimplementable complete listing/replacement never claim authority.",
+      "slice": "montoya-controls",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/TargetServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Keep add/remove/check; listing/replacement return unsupported.",
+      "status": "verified"
+    },
+    {
+      "id": "D16",
+      "invariant": "Project/user configuration endpoints export and import actual nested Burp JSON rather than returning successful stubs.",
+      "slice": "montoya-controls",
+      "tests": [
+        "src/test/kotlin/com/burprest/services/ConfigServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md",
+        "docs/CLI.md"
+      ],
+      "compatibility": "Preserve routes while correcting DTOs from string maps to JSON objects.",
+      "status": "verified"
+    },
+    {
+      "id": "D17",
+      "invariant": "Collaborator payload and interaction identity, time, address, protocol details, correlation, and operational failures come from Montoya authority.",
+      "slice": "kotlin-collaborator",
+      "tests": [
+        "src/test/kotlin/com/burprest/routes/CollaboratorRoutesTest.kt",
+        "src/test/kotlin/com/burprest/services/CollaboratorServiceTest.kt"
+      ],
+      "contracts": [
+        "docs/SPEC.md"
+      ],
+      "compatibility": "Keep state in memory and do not persist the Collaborator secret.",
+      "status": "verified"
+    },
+    {
+      "id": "D18",
+      "invariant": "Every route and shipped CLI command has an executable current contract, identifiable build provenance, package smoke coverage, and enforced CI quality gates.",
+      "slice": "contracts-ci",
+      "tests": [
+        "bp/tests/test_quality_ledger.py",
+        "src/test/kotlin/com/burprest/routes/HealthRoutesTest.kt"
+      ],
+      "contracts": [
+        "README.md",
+        "bp/README.md",
+        "docs/SPEC.md",
+        "docs/CLI.md",
+        "docs/OUTPUT.md",
+        "docs/STATE-AND-CONFIG.md",
+        "docs/adr/INDEX.md"
+      ],
+      "compatibility": "Do not invent or publish a release version; add source/build/schema provenance.",
+      "status": "verified"
+    }
+  ]
+}

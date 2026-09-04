@@ -7,7 +7,7 @@ import pytest
 
 from bp.cli import _fuzz_exit, _fuzz_rows
 from bp.client import BurpClient
-from bp.pos import Position
+from bp.pos import Position, PosError
 from bp.runner import _payload_lists, run_fuzz
 
 
@@ -56,9 +56,13 @@ def _mock_client(sends: list[str] | None = None, calls: list[str] | None = None)
                     "error": None,
                 },
             )
-        return httpx.Response(404, json={"success": False, "data": None, "error": {"code": "X", "message": "no"}})
+        return httpx.Response(
+            404, json={"success": False, "data": None, "error": {"code": "X", "message": "no"}}
+        )
 
-    return BurpClient(client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test"))
+    return BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
 
 
 def test_run_fuzz_sniper_flags_anomaly() -> None:
@@ -403,9 +407,13 @@ def _mock_client_missing_response() -> BurpClient:
                     "error": None,
                 },
             )
-        return httpx.Response(404, json={"success": False, "data": None, "error": {"code": "X", "message": "no"}})
+        return httpx.Response(
+            404, json={"success": False, "data": None, "error": {"code": "X", "message": "no"}}
+        )
 
-    return BurpClient(client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test"))
+    return BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
 
 
 def test_send_missing_response_key_returns_clean_error_row() -> None:
@@ -472,9 +480,13 @@ def _mock_client_missing_request() -> BurpClient:
                     "error": None,
                 },
             )
-        return httpx.Response(404, json={"success": False, "data": None, "error": {"code": "X", "message": "no"}})
+        return httpx.Response(
+            404, json={"success": False, "data": None, "error": {"code": "X", "message": "no"}}
+        )
 
-    return BurpClient(client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test"))
+    return BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
 
 
 def test_base_raw_missing_request_key_raises_burp_error() -> None:
@@ -518,11 +530,16 @@ def _mock_client_bad_statuscode(status_value: object | None) -> BurpClient:
             if status_value is not None:
                 resp["statusCode"] = status_value
             return httpx.Response(
-                200, json={"success": True, "data": {"response": resp, "durationMs": 5}, "error": None}
+                200,
+                json={"success": True, "data": {"response": resp, "durationMs": 5}, "error": None},
             )
-        return httpx.Response(404, json={"success": False, "data": None, "error": {"code": "X", "message": "no"}})
+        return httpx.Response(
+            404, json={"success": False, "data": None, "error": {"code": "X", "message": "no"}}
+        )
 
-    return BurpClient(client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test"))
+    return BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
 
 
 def test_send_missing_statuscode_returns_clean_error_row() -> None:
@@ -536,4 +553,131 @@ def test_send_noninteger_statuscode_returns_clean_error_row() -> None:
         _mock_client_bad_statuscode("not-a-number"), 1, ["query:u"], {"u": [b"x"]}, "sniper"
     )
 
-    assert results[0].error == "INVALID_RESPONSE: repeater/send reply has a non-integer 'statusCode'"
+    assert (
+        results[0].error == "INVALID_RESPONSE: repeater/send reply has a non-integer 'statusCode'"
+    )
+
+
+# --- bounded and all-or-nothing preflight ------------------------------------
+
+
+def test_over_limit_plan_sends_nothing() -> None:
+    sends: list[str] = []
+    with pytest.raises(ValueError, match="10,000"):
+        run_fuzz(
+            _mock_client(sends),
+            5,
+            ["query:u", "query:p"],
+            {"u": [b"u"] * 101, "p": [b"p"] * 100},
+            "cluster-bomb",
+        )
+    assert sends == []
+
+
+@pytest.mark.parametrize(
+    ("attack_type", "payload_map", "expected_shots"),
+    [
+        ("sniper", {"shared": [b"a", b"b"]}, 4),
+        ("battering-ram", {"shared": [b"a", b"b"]}, 2),
+        ("pitchfork", {"u": [b"a", b"b", b"c"], "p": [b"1", b"2"]}, 2),
+        ("cluster-bomb", {"u": [b"a", b"b", b"c"], "p": [b"1", b"2"]}, 6),
+    ],
+)
+def test_all_attack_types_send_one_baseline_then_exact_shot_count(
+    attack_type: str,
+    payload_map: dict[str, list[bytes]],
+    expected_shots: int,
+) -> None:
+    sends: list[str] = []
+
+    results = run_fuzz(
+        _mock_client(sends),
+        5,
+        ["query:u", "query:p"],
+        payload_map,
+        attack_type,
+    )
+
+    assert len(sends) == len(results) == expected_shots + 1
+    assert results[0].baseline is True
+    assert sum(not result.baseline for result in results) == expected_shots
+
+
+def test_out_of_range_selector_sends_nothing() -> None:
+    sends: list[str] = []
+    with pytest.raises(PosError, match="out of range"):
+        run_fuzz(
+            _mock_client(sends),
+            5,
+            ["offset:0-99999"],
+            {"shared": [b"x"]},
+            "sniper",
+        )
+    assert sends == []
+
+
+def test_overlapping_selectors_send_nothing() -> None:
+    sends: list[str] = []
+    with pytest.raises(PosError, match="POS_OVERLAP"):
+        run_fuzz(
+            _mock_client(sends),
+            5,
+            ["query:u", "query:u"],
+            {"u": [b"x"]},
+            "battering-ram",
+        )
+    assert sends == []
+
+
+def test_crlf_payload_injection_sends_nothing() -> None:
+    sends: list[str] = []
+    with pytest.raises(ValueError, match="CR|LF|control"):
+        run_fuzz(
+            _mock_client(sends),
+            5,
+            ["query:u"],
+            {"u": [b"safe", b"x\r\nInjected: yes"]},
+            "sniper",
+        )
+    assert sends == []
+
+
+def test_baseline_failure_sends_no_payloads() -> None:
+    sent_urls: list[str] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.path.startswith("/proxy/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {
+                        "request": {
+                            "method": "GET",
+                            "url": "https://t.example/s?u=base",
+                            "headers": [],
+                            "body": None,
+                        }
+                    },
+                    "error": None,
+                },
+            )
+        sent_urls.append(json.loads(req.content)["request"]["url"])
+        return httpx.Response(
+            500,
+            json={
+                "success": False,
+                "data": None,
+                "error": {"code": "SEND_FAILED", "message": "baseline failed"},
+            },
+        )
+
+    client = BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
+    results = run_fuzz(client, 5, ["query:u"], {"u": [b"one", b"two"]}, "sniper")
+
+    assert sent_urls == ["https://t.example/s?u=base"]
+    assert len(results) == 1
+    assert results[0].baseline is True
+    assert results[0].error_code == "SEND_FAILED"

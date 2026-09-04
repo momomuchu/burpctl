@@ -48,14 +48,11 @@ def _usage_prog(invoked_as: str) -> str:
     plain, wide render *and* strip any residual ANSI so the parse is deterministic.
     """
     entry = (
-        f"import sys; sys.argv=[{invoked_as!r}, '--help']; "
-        "from bp.cli import cli_main; cli_main()"
+        f"import sys; sys.argv=[{invoked_as!r}, '--help']; from bp.cli import cli_main; cli_main()"
     )
     env = {**os.environ, "NO_COLOR": "1", "TERM": "dumb", "COLUMNS": "200"}
     env.pop("FORCE_COLOR", None)
-    r = subprocess.run(
-        [sys.executable, "-c", entry], capture_output=True, text=True, env=env
-    )
+    r = subprocess.run([sys.executable, "-c", entry], capture_output=True, text=True, env=env)
     text = _ANSI.sub("", f"{r.stdout}\n{r.stderr}")
     for line in text.splitlines():
         stripped = line.strip()

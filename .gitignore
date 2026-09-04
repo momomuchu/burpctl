@@ -23,6 +23,12 @@ Thumbs.db
 # Logs
 logs/
 
+# Coverage / packaging output
+.coverage
+coverage.xml
+htmlcov/
+bp/dist/
+
 # Agent / internal tooling — never commit (machine-specific, private workflow)
 .omc/
 bp/.omc/

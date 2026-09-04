@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from bp.rawhttp import body_start, content_type, iter_headers, request_target_span
+from bp.rawhttp import body_start, content_type, iter_headers, parse_request, request_target_span
 
 
 @dataclass(frozen=True)
@@ -35,6 +35,10 @@ Resolver = Callable[[bytes, str, str], Position]
 
 def resolve_pos(raw: bytes, selector: str) -> Position:
     """Resolve ``selector`` against ``raw`` → Position. Raises PosError on failure."""
+    try:
+        parse_request(raw)
+    except (TypeError, ValueError) as exc:
+        raise PosError("INVALID_REQUEST", str(exc)) from None
     kind, sep, arg = selector.partition(":")
     if not sep:
         raise PosError("BAD_SELECTOR", f"expected kind:arg, got {selector!r}")
@@ -221,7 +225,7 @@ def _unescape_json_string(raw_key: bytes) -> bytes:
             break
         esc = raw_key[i]
         i += 1
-        if esc == 0x22:    # \"
+        if esc == 0x22:  # \"
             out.append(0x22)
         elif esc == 0x5C:  # \\
             out.append(0x5C)
@@ -288,7 +292,9 @@ def _resolve_json(body: bytes, b0: int, field: str, selector: str) -> Position:
 
         # Expect a quoted key.
         if body[i] != 0x22:  # '"'
-            raise PosError("POS_NOT_FOUND", f'json key "{field}" not found (unexpected byte at key position)')
+            raise PosError(
+                "POS_NOT_FOUND", f'json key "{field}" not found (unexpected byte at key position)'
+            )
         i += 1  # consume opening '"'
         key_start = i
         while i < n:

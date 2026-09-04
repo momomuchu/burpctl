@@ -7,6 +7,7 @@ data class SetSessionRequest(
     val cookies: Map<String, String>,
     val headers: Map<String, String>? = null,
     val name: String? = null,
+    val origin: String? = null,
 )
 
 @Serializable
@@ -16,6 +17,7 @@ data class SessionInfo(
     val headerCount: Int,
     val cookies: Map<String, String>,
     val headers: Map<String, String>,
+    val origin: String? = null,
 )
 
 @Serializable
@@ -32,7 +34,22 @@ data class AuthenticatedResponse(
     val headers: List<HttpHeader>,
     val body: String?,
     val durationMs: Long,
+    val hasResponse: Boolean = true,
+    val persistence: SessionPersistence = SessionPersistence.notConfigured(),
 )
+
+@Serializable
+data class SessionPersistence(
+    val status: PersistenceStatus,
+    val historyPersisted: Boolean = false,
+    val sitemapPersisted: Boolean = false,
+    val historyId: Long? = null,
+    val warning: String? = null,
+) {
+    companion object {
+        fun notConfigured() = SessionPersistence(PersistenceStatus.NOT_CONFIGURED)
+    }
+}
 
 @Serializable
 data class BatchAuthenticatedRequest(
@@ -50,6 +67,10 @@ data class CookieEntry(
     val domain: String,
     val name: String,
     val value: String,
+    val path: String = "/",
+    val secure: Boolean = false,
+    val expiresAt: Long? = null,
+    val hostOnly: Boolean = true,
 )
 
 @Serializable

@@ -118,10 +118,7 @@ def test_json_array_value_full_span() -> None:
 def test_json_object_value_full_span() -> None:
     """[00] body:data on a nested object value must return the full object."""
     req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/json\r\n"
-        b"\r\n"
-        b'{"data":{"x":1,"y":2},"id":3}'
+        b'POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n{"data":{"x":1,"y":2},"id":3}'
     )
     p = resolve_pos(req, "body:data")
     assert req[p.start : p.end] == b'{"x":1,"y":2}'
@@ -144,24 +141,14 @@ def test_json_nested_array_with_braces_full_span() -> None:
 
 def test_json_top_level_id_wins_over_nested() -> None:
     """[01] top-level 'id' must be 42, not the nested 99 inside 'data'."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/json\r\n"
-        b"\r\n"
-        b'{"data":{"id":99},"id":42}'
-    )
+    req = b'POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n{"data":{"id":99},"id":42}'
     p = resolve_pos(req, "body:id")
     assert req[p.start : p.end] == b"42"
 
 
 def test_json_key_absent_at_top_level_raises_not_found() -> None:
     """[01] key present only in a nested object must raise POS_NOT_FOUND."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/json\r\n"
-        b"\r\n"
-        b'{"data":{"id":99}}'
-    )
+    req = b'POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n{"data":{"id":99}}'
     with pytest.raises(PosError) as ei:
         resolve_pos(req, "body:id")
     assert ei.value.code == "POS_NOT_FOUND"
@@ -189,24 +176,14 @@ def test_path_index_negative_raises_bad_selector() -> None:
 
 def test_json_body_without_content_type_resolves_field() -> None:
     """[05] JSON body (starts with '{') with no Content-Type must use the JSON resolver."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Host: example.com\r\n"
-        b"\r\n"
-        b'{"id":1}'
-    )
+    req = b'POST /api HTTP/1.1\r\nHost: example.com\r\n\r\n{"id":1}'
     p = resolve_pos(req, "body:id")
     assert req[p.start : p.end] == b"1"
 
 
 def test_form_body_without_content_type_still_resolves() -> None:
     """[05] Form body (no '{'/']' prefix) without Content-Type must still work as before."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Host: example.com\r\n"
-        b"\r\n"
-        b"foo=bar&baz=qux"
-    )
+    req = b"POST /api HTTP/1.1\r\nHost: example.com\r\n\r\nfoo=bar&baz=qux"
     p = resolve_pos(req, "body:foo")
     assert req[p.start : p.end] == b"bar"
 
@@ -277,12 +254,7 @@ def test_json_escaped_backslash_key_resolved_by_logical_name() -> None:
 def test_json_array_body_raises_unsupported_body() -> None:
     """[03] body:x on a top-level JSON array must raise PosError(UNSUPPORTED_BODY),
     not POS_NOT_FOUND (which implies the field is simply missing)."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/json\r\n"
-        b"\r\n"
-        b"[1,2,3]"
-    )
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n[1,2,3]"
     with pytest.raises(PosError) as ei:
         resolve_pos(req, "body:x")
     assert ei.value.code == "UNSUPPORTED_BODY"
@@ -290,12 +262,7 @@ def test_json_array_body_raises_unsupported_body() -> None:
 
 def test_json_array_body_no_ct_raises_unsupported_body() -> None:
     """[03] no Content-Type + array body also raises UNSUPPORTED_BODY (auto-detect path)."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Host: example.com\r\n"
-        b"\r\n"
-        b'[{"a":1}]'
-    )
+    req = b'POST /api HTTP/1.1\r\nHost: example.com\r\n\r\n[{"a":1}]'
     with pytest.raises(PosError) as ei:
         resolve_pos(req, "body:a")
     assert ei.value.code == "UNSUPPORTED_BODY"
@@ -303,12 +270,7 @@ def test_json_array_body_no_ct_raises_unsupported_body() -> None:
 
 def test_json_object_body_still_resolves_normally() -> None:
     """[03] regression: a JSON object body must still resolve field correctly."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/json\r\n"
-        b"\r\n"
-        b'{"x":7}'
-    )
+    req = b'POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n{"x":7}'
     p = resolve_pos(req, "body:x")
     assert req[p.start : p.end] == b"7"
 
@@ -319,11 +281,7 @@ def test_json_object_body_still_resolves_normally() -> None:
 def test_empty_body_with_json_ct_raises_pos_not_found_not_array_message() -> None:
     """[00] body:x on an empty body (Content-Type: application/json) must raise
     POS_NOT_FOUND, not UNSUPPORTED_BODY with a misleading 'JSON array' message."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/json\r\n"
-        b"\r\n"
-    )
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n"
     with pytest.raises(PosError) as ei:
         resolve_pos(req, "body:x")
     # Must NOT be reclassified as UNSUPPORTED_BODY (that would be the bug)
@@ -335,12 +293,7 @@ def test_empty_body_with_json_ct_raises_pos_not_found_not_array_message() -> Non
 def test_whitespace_only_body_with_json_ct_raises_pos_not_found() -> None:
     """[00] body:x on a whitespace-only body must also raise POS_NOT_FOUND, not the
     array UNSUPPORTED_BODY — whitespace is not an array."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/json\r\n"
-        b"\r\n"
-        b"   \r\n"
-    )
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n   \r\n"
     with pytest.raises(PosError) as ei:
         resolve_pos(req, "body:x")
     assert ei.value.code == "POS_NOT_FOUND"
@@ -349,12 +302,7 @@ def test_whitespace_only_body_with_json_ct_raises_pos_not_found() -> None:
 
 def test_json_scalar_number_body_raises_pos_not_found_not_array_message() -> None:
     """[00] body:x on a JSON scalar number (42) must NOT claim 'JSON array'."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/json\r\n"
-        b"\r\n"
-        b"42"
-    )
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n42"
     with pytest.raises(PosError) as ei:
         resolve_pos(req, "body:x")
     # code can be POS_NOT_FOUND or UNSUPPORTED_BODY, but must NOT say "array"
@@ -363,12 +311,7 @@ def test_json_scalar_number_body_raises_pos_not_found_not_array_message() -> Non
 
 def test_json_scalar_string_body_raises_without_array_message() -> None:
     """[00] body:x on a JSON scalar string ("hello") must NOT claim 'JSON array'."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/json\r\n"
-        b"\r\n"
-        b'"hello"'
-    )
+    req = b'POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n"hello"'
     with pytest.raises(PosError) as ei:
         resolve_pos(req, "body:x")
     assert "array" not in str(ei.value).lower()
@@ -377,12 +320,7 @@ def test_json_scalar_string_body_raises_without_array_message() -> None:
 def test_json_array_body_still_raises_unsupported_body_mentioning_array() -> None:
     """[00] regression: a real JSON array body must still raise UNSUPPORTED_BODY
     with a message that mentions 'array'."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/json\r\n"
-        b"\r\n"
-        b"[1,2,3]"
-    )
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n[1,2,3]"
     with pytest.raises(PosError) as ei:
         resolve_pos(req, "body:x")
     assert ei.value.code == "UNSUPPORTED_BODY"
@@ -391,12 +329,7 @@ def test_json_array_body_still_raises_unsupported_body_mentioning_array() -> Non
 
 def test_json_object_body_resolves_correctly_after_fix() -> None:
     """[00] regression: a valid JSON object body must still resolve normally after fix."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/json\r\n"
-        b"\r\n"
-        b'{"id":99}'
-    )
+    req = b'POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n{"id":99}'
     p = resolve_pos(req, "body:id")
     assert req[p.start : p.end] == b"99"
 
@@ -412,24 +345,14 @@ def test_form_body_leading_spaces_resolves_field() -> None:
     is '   a', not 'a'.  After the fix, leading whitespace is stripped before the
     key scan and the returned offsets still point at the correct bytes in raw.
     """
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/x-www-form-urlencoded\r\n"
-        b"\r\n"
-        b"   a=b"
-    )
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n   a=b"
     p = resolve_pos(req, "body:a")
     assert req[p.start : p.end] == b"b"
 
 
 def test_form_body_leading_spaces_offset_is_original_relative() -> None:
     """[A] resolved offsets must be relative to the original raw bytes, not the stripped body."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/x-www-form-urlencoded\r\n"
-        b"\r\n"
-        b"   a=hello"
-    )
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n   a=hello"
     p = resolve_pos(req, "body:a")
     # The slice using the returned offsets must yield the value bytes in the original request.
     assert req[p.start : p.end] == b"hello"
@@ -449,24 +372,14 @@ def test_form_body_no_leading_spaces_still_resolves() -> None:
 
 def test_form_body_leading_spaces_second_field_resolves() -> None:
     """[A] a second field after leading-space prefix is also accessible."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/x-www-form-urlencoded\r\n"
-        b"\r\n"
-        b"   a=1&b=2"
-    )
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n   a=1&b=2"
     p = resolve_pos(req, "body:b")
     assert req[p.start : p.end] == b"2"
 
 
 def test_form_body_missing_field_still_raises() -> None:
     """[A] regression: a missing field on a leading-space body still raises POS_NOT_FOUND."""
-    req = (
-        b"POST /api HTTP/1.1\r\n"
-        b"Content-Type: application/x-www-form-urlencoded\r\n"
-        b"\r\n"
-        b"   a=b"
-    )
+    req = b"POST /api HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n   a=b"
     with pytest.raises(PosError) as ei:
         resolve_pos(req, "body:missing")
     assert ei.value.code == "POS_NOT_FOUND"
@@ -506,3 +419,16 @@ def test_cookie_mixed_ows_tab_and_space() -> None:
     req = b"GET / HTTP/1.1\r\nHost: x\r\nCookie: a=1;\t b=2\r\n\r\n"
     p = resolve_pos(req, "cookie:b")
     assert req[p.start : p.end] == b"2"
+
+
+@pytest.mark.parametrize(
+    "req",
+    [
+        b"GET / HTTP/1.1\r\nHost: h\n\n",
+        b"GET / HTTP/1.1\r\nBroken\r\n\r\n",
+        b"GET  / HTTP/1.1\r\nHost: h\r\n\r\n",
+    ],
+)
+def test_resolve_pos_rejects_malformed_raw_request(req: bytes) -> None:
+    with pytest.raises((PosError, ValueError)):
+        resolve_pos(req, "query:x")

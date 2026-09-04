@@ -1,36 +1,14 @@
-"""bp scan — Scanner group (§6.6 SPEC.md). Pro-only for crawl/audit/start endpoints.
+"""Burp Scanner commands.
 
-Commands
---------
-bp scan crawl <url>   POST /scanner/crawl          {url, config:{}}
-bp scan audit <url>   POST /scanner/audit          {url, config:{}} — url IGNORED by server
-bp scan all   <url>   POST /scanner/crawl-and-audit {url, config:{}}
-bp scan status <id>   GET  /scanner/{id}/status
-bp scan issues <id>   GET  /scanner/{id}/issues
-bp scan defs          GET  /scanner/issue-definitions
-
-Kotlin DTOs (§6.6):
-  ScanRequest    { url:String, config:ScanConfig={} }
-  ScanConfig     {} (empty, accepted for forward-compat)
-  scanId         String (8-char UUID prefix)
-
-Caveats (surfaced to stderr where relevant):
-  - crawl/audit/crawl-and-audit → PRO_REQUIRED (500) on Community.
-  - audit ignores the <url> argument server-side; scope = Burp UI scope.
-  - pause / resume are stubs (not implemented here — not in CLI.md scope).
-  - stop removes from tracking map but does NOT stop the Burp task.
-  - crawlProgress / auditProgress always 0 (server stub).
-  - Entire group absent from /docs (OpenAPI).
-  - issue-definitions degrades gracefully on Community (empty list).
+Crawl and target-seeded audit require Burp Professional. Montoya 2025.3 has
+no linked crawl-and-audit or pause/resume primitive; those discoverable REST
+operations return a typed ``UNSUPPORTED`` result rather than false success.
 """
 
 from __future__ import annotations
 
-from typing import Any
-
 import typer
 
-from bp.client import BurpClient
 from bp.cliutil import run
 
 sub = typer.Typer(
@@ -56,23 +34,11 @@ def scan_crawl(
 @sub.command("audit")
 def scan_audit(
     ctx: typer.Context,
-    url: str = typer.Argument(..., metavar="URL", help="URL argument (ignored server-side)."),
+    url: str = typer.Argument(..., metavar="URL", help="Exact HTTP(S) URL to audit."),
 ) -> None:
-    """Run active checks against the current Burp scope (Pro-only).
+    """Start active checks seeded with the supplied target URL (Pro-only)."""
 
-    WARNING: the <url> argument is accepted but IGNORED by the server.
-    Scope is determined by the Burp UI scope, not this argument.
-    Requires Burp Suite Professional; exits with code 4 on Community.
-    """
-    def _do(c: Any) -> Any:
-        result = c.post("/scanner/audit", {"url": url, "config": {}})
-        typer.echo(
-            "warning: audit ignores <url>; scope is the Burp UI scope, not this argument.",
-            err=True,
-        )
-        return result
-
-    run(ctx, _do)
+    run(ctx, lambda c: c.post("/scanner/audit", {"url": url, "config": {}}))
 
 
 @sub.command("all")
@@ -80,40 +46,28 @@ def scan_all(
     ctx: typer.Context,
     url: str = typer.Argument(..., metavar="URL", help="Target URL to crawl and audit."),
 ) -> None:
-    """Full scan: crawl then audit in one call (Pro-only).
-
-    Returns a scanId (String). Poll with 'bp scan status <id>'.
-    Requires Burp Suite Professional; exits with code 4 on Community.
-    """
+    """Request linked crawl+audit; Montoya 2025.3 reports this unsupported."""
     run(ctx, lambda c: c.post("/scanner/crawl-and-audit", {"url": url, "config": {}}))
 
 
 @sub.command("status")
 def scan_status(
     ctx: typer.Context,
-    scan_id: str = typer.Argument(..., metavar="SCAN_ID", help="Scan ID returned by crawl/audit/all."),
+    scan_id: str = typer.Argument(
+        ..., metavar="SCAN_ID", help="Scan ID returned by crawl/audit/all."
+    ),
 ) -> None:
-    """Show scan progress and issue count for a running scan (Pro-only).
+    """Show authoritative task status, request/error counts, and issue count."""
 
-    Note: crawlProgress and auditProgress are always 0 (server stub).
-    issueCount reflects issues found so far.
-    """
-
-    def _do(client: BurpClient) -> Any:
-        result = client.get(f"/scanner/{scan_id}/status")
-        typer.echo(
-            "note: crawlProgress/auditProgress are always 0 (server stub).",
-            err=True,
-        )
-        return result
-
-    run(ctx, _do)
+    run(ctx, lambda client: client.get(f"/scanner/{scan_id}/status"))
 
 
 @sub.command("issues")
 def scan_issues(
     ctx: typer.Context,
-    scan_id: str = typer.Argument(..., metavar="SCAN_ID", help="Scan ID returned by crawl/audit/all."),
+    scan_id: str = typer.Argument(
+        ..., metavar="SCAN_ID", help="Scan ID returned by crawl/audit/all."
+    ),
 ) -> None:
     """List vulnerabilities found by a scan (Pro-only).
 

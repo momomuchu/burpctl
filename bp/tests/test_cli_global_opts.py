@@ -50,7 +50,12 @@ def test_hoist_dangling_option_left_for_typer() -> None:
 
 
 def test_hoist_does_not_touch_non_global_options() -> None:
-    assert _hoist_global_opts(["fuzz", "5", "--pos", "header:X"]) == ["fuzz", "5", "--pos", "header:X"]
+    assert _hoist_global_opts(["fuzz", "5", "--pos", "header:X"]) == [
+        "fuzz",
+        "5",
+        "--pos",
+        "header:X",
+    ]
 
 
 def test_hoist_no_ledger_flag_after_subcommand() -> None:
@@ -73,6 +78,7 @@ def test_no_redact_flag_is_accepted_globally() -> None:
 
 
 # --- Burp-gated end-to-end: the real binary must accept the option after the subcommand ---
+
 
 def _burp_up() -> bool:
     try:

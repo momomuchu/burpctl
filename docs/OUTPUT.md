@@ -1,5 +1,25 @@
 # `bp` — OUTPUT Contract Specification
 
+# Current output contract
+
+This section supersedes unshipped design proposals later in this historical document. Executable behavior lives in `bp/src/bp/output.py`, `bp/src/bp/cliutil.py`, command projections, and their tests.
+
+- JSON lists are compact NDJSON; every record remains independently parseable after redaction.
+- JSON/agent-mode errors are one JSON object on stderr with empty stdout.
+- Redaction traverses structured data before serialization and protects nested secret keys, headers, cookies, authorization values, URL userinfo, and sensitive query values. `--no-redact` is explicit.
+- Safe default views omit raw request/response bodies and credential-bearing header blobs.
+- `raw` accepts only genuine bytes/strings/scalars; dict/list values fail rather than being JSON-labeled as raw.
+- `quiet` selects a command-specific essential value. Security checks emit `vulnerable` only from confirmed findings; anomaly-only output remains observational.
+- Field selection is case-insensitive, preserves canonical casing and requested order, validates against the union for heterogeneous rows, and accepts `all`/`*` for the complete canonical view.
+- Empty results produce empty stdout. Unknown fields and incompatible mode combinations are usage errors.
+
+Flags described later but absent from executable help (for example write-out/schema/pretty designs) are not current contract promises.
+
+See [ADR-0013](adr/0013-truthful-executable-contracts.md).
+
+---
+
+
 > **DEEP output-contract spec for the `bp` CLI.**
 > Companion to `docs/SPEC.md` (grammar §5, intruder results §6.4, ledger §9, Kotlin contract §8).
 > Generated 2026-06-16.

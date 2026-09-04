@@ -33,17 +33,45 @@ def _netloc_no_userinfo(url: str) -> str | None:
     host = parsed.hostname or ""
     if not host:
         return None
+    if ":" in host:
+        host = f"[{host}]"
     if parsed.port is not None:
         return f"{host}:{parsed.port}"
     return host
 
 
-class BurpError(Exception):
-    """The REST API returned an error envelope. ``code`` is the stable machine code."""
+def _operation_path(path: str) -> str:
+    """Return a query-free, userinfo-free path for ledger/error metadata."""
+    parsed = urlsplit(path)
+    clean_path = parsed.path or "/"
+    return clean_path
 
-    def __init__(self, code: str, message: str) -> None:
+
+class BurpError(Exception):
+    """REST API failure with stable code and optional response metadata.
+
+    ``status`` and ``op`` are optional so the established two-argument constructor
+    remains valid for command modules and tests that synthesize errors locally.
+    """
+
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        status: int | None = None,
+        op: str | None = None,
+        *,
+        http_status: int | None = None,
+    ) -> None:
         super().__init__(f"{code}: {message}")
         self.code = code
+        self.message = message
+        selected_status = status if status is not None else http_status
+        self.status = selected_status
+        self.http_status = selected_status
+        self.status_code = selected_status
+        self.op = op
+        self.operation = op
 
 
 class BurpUnreachable(BurpError):
@@ -92,7 +120,7 @@ class BurpClient:
         self,
         method: str,
         path: str,
-        req_json: Any,
+        req_identity: Any,
         resp: httpx.Response | None,
         status: str,
         error_code: str | None,
@@ -103,12 +131,17 @@ class BurpClient:
         cmd = self._command
         if cmd is not None and self._redact:
             cmd = _redact_text(cmd)
-        req_body = _json.dumps(req_json).encode() if req_json is not None else None
+        if isinstance(req_identity, (bytes, bytearray)):
+            req_body = bytes(req_identity)
+        elif req_identity is not None:
+            req_body = _json.dumps(req_identity).encode()
+        else:
+            req_body = None
         op_id = self._ledger.record(
             OpRecord(
                 status=status,
                 command=cmd,
-                burp_op=f"{method} {path}",
+                burp_op=f"{method} {_operation_path(path)}",
                 target=_netloc_no_userinfo(str(self._client.base_url)),
                 resp_status=resp.status_code if resp is not None else None,
                 resp_len=len(resp.content) if resp is not None else None,
@@ -118,33 +151,56 @@ class BurpClient:
                 error_code=error_code,
             )
         )
-        self._op_ids.append(op_id)
+        if op_id:
+            self._op_ids.append(op_id)
 
     def _request(
         self, method: str, path: str, *, params: dict[str, Any] | None = None, json: Any = None
     ) -> dict[str, Any]:
         start = time.monotonic()
+        operation = f"{method} {_operation_path(path)}"
+        # A GET has no body, but its exact encoded query bytes are part of
+        # transmitted request identity. Build locally to obtain the same httpx
+        # encoding even when transport later fails; only their digest persists.
+        if method.upper() == "GET":
+            prepared = self._client.build_request(method, path, params=params)
+            query = prepared.url.query
+            req_identity: Any = query if query else None
+        else:
+            req_identity = json
         try:
             resp = self._client.request(method, path, params=params, json=json)
         except httpx.TransportError as e:
             # ConnectError, timeouts, read/write/protocol errors — all network-level failures.
             code = "CONNECTION_REFUSED" if isinstance(e, httpx.ConnectError) else "TRANSPORT_ERROR"
-            self._record(method, path, json, None, "error", code, start)
-            raise BurpUnreachable(code, f"Burp REST unreachable: {e}") from e
+            self._record(method, path, req_identity, None, "error", code, start)
+            raise BurpUnreachable(
+                code,
+                f"Burp REST unreachable: {e}",
+                op=operation,
+            ) from e
         try:
             env = ApiResponse[dict[str, Any]].model_validate_json(resp.content)
         except ValueError as e:
             # Non-JSON / empty body (e.g. 404 on an unwired route): a server error, not CLI usage.
-            self._record(method, path, json, resp, "error", "INVALID_RESPONSE", start)
+            self._record(method, path, req_identity, resp, "error", "INVALID_RESPONSE", start)
             raise BurpError(
-                "INVALID_RESPONSE", f"server returned non-JSON (HTTP {resp.status_code})"
+                "INVALID_RESPONSE",
+                f"server returned non-JSON (HTTP {resp.status_code})",
+                status=resp.status_code,
+                op=operation,
             ) from e
         if not env.success or env.error is not None:
             err = env.error
             code = err.code if err else "ERROR"
-            self._record(method, path, json, resp, "error", code, start)
-            raise BurpError(code, err.message if err else "unknown error")
-        self._record(method, path, json, resp, "ok", None, start)
+            self._record(method, path, req_identity, resp, "error", code, start)
+            raise BurpError(
+                code,
+                err.message if err else "unknown error",
+                status=resp.status_code,
+                op=operation,
+            )
+        self._record(method, path, req_identity, resp, "ok", None, start)
         return env.data if env.data is not None else {}
 
     def get(self, path: str, **params: Any) -> dict[str, Any]:

@@ -34,7 +34,9 @@ from bp.cliutil import EXIT_USAGE, parse_headers, run
 # Sub-application
 # ---------------------------------------------------------------------------
 
-sub = typer.Typer(no_args_is_help=True, help="Session cookie/header management and authenticated requests.")
+sub = typer.Typer(
+    no_args_is_help=True, help="Session cookie/header management and authenticated requests."
+)
 
 
 # ---------------------------------------------------------------------------
@@ -145,8 +147,7 @@ def session_send(
         "--set-header",
         metavar="'N: V'",
         help=(
-            "Extra header 'Name: Value' (repeatable). "
-            "These OVERRIDE session headers, not additive."
+            "Extra header 'Name: Value' (repeatable). These OVERRIDE session headers, not additive."
         ),
     ),
 ) -> None:

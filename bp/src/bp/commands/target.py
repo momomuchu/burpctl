@@ -63,7 +63,9 @@ def scope_set(
     ] = [],
     confirm: Annotated[
         bool,
-        typer.Option("--confirm/--no-confirm", help="Confirm replacing the extension-managed list."),
+        typer.Option(
+            "--confirm/--no-confirm", help="Confirm replacing the extension-managed list."
+        ),
     ] = False,
 ) -> None:
     """Replace entries tracked by this extension process, then add them to Burp.

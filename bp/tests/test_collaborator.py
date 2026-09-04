@@ -26,12 +26,8 @@ def test_collab_poll_error_no_caveat_note() -> None:
     assert r.returncode == 3, (
         f"expected exit 3 (conn refused), got {r.returncode}\nstderr={r.stderr!r}"
     )
-    assert "timestamp" not in r.stderr, (
-        f"caveat note must not appear on error path:\n{r.stderr!r}"
-    )
-    assert "poll time" not in r.stderr, (
-        f"caveat note must not appear on error path:\n{r.stderr!r}"
-    )
+    assert "timestamp" not in r.stderr, f"caveat note must not appear on error path:\n{r.stderr!r}"
+    assert "poll time" not in r.stderr, f"caveat note must not appear on error path:\n{r.stderr!r}"
 
 
 def test_collab_poll_id_error_no_caveat_note() -> None:
@@ -45,9 +41,5 @@ def test_collab_poll_id_error_no_caveat_note() -> None:
     assert r.returncode == 3, (
         f"expected exit 3 (conn refused), got {r.returncode}\nstderr={r.stderr!r}"
     )
-    assert "timestamp" not in r.stderr, (
-        f"caveat note must not appear on error path:\n{r.stderr!r}"
-    )
-    assert "poll time" not in r.stderr, (
-        f"caveat note must not appear on error path:\n{r.stderr!r}"
-    )
+    assert "timestamp" not in r.stderr, f"caveat note must not appear on error path:\n{r.stderr!r}"
+    assert "poll time" not in r.stderr, f"caveat note must not appear on error path:\n{r.stderr!r}"

@@ -41,7 +41,7 @@ bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=ssrf.txt \
            --type cluster-bomb --anomalous-only
 
 bp collab new                              # OOB payload (blind SSRF/RCE) — Pro
-bp scan all https://target.example         # crawl + audit — Pro
+bp scan audit https://target.example       # target-seeded active audit — Pro
 bp encode 'a:b' --enc base64               # offline decoder
 bp scope check https://target.example      # classify with Burp's scope engine
 bp log --tag recon --limit 50              # query bp REST-operation records
@@ -67,8 +67,9 @@ Full grammar: [`docs/CLI.md`](../docs/CLI.md).
 
 ## Architecture
 
-`bp` owns the fuzzing engine client-side (the extension's Intruder only does sniper-by-name):
-`--pos` → byte offsets (A1) → matrix expansion + substitution (A2) → fire via `/repeater/send`.
+`bp` owns all four fuzz attack types client-side. The bounded extension Intruder surface supports
+sniper only; other server-side modes report `UNSUPPORTED`. The CLI path is:
+`--pos` → byte offsets (A1) → bounded lazy expansion + substitution (A2) → fire via `/repeater/send`.
 See [`docs/ALGORITHMS.md`](../docs/ALGORITHMS.md), [`docs/SPEC.md`](../docs/SPEC.md), and ADRs in
 [`docs/adr/`](../docs/adr/).
 

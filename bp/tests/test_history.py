@@ -8,6 +8,8 @@ RED-first (TDD per project disciplines):
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bp.commands.history import _history_rows
@@ -18,7 +20,7 @@ from bp.models import HistoryEntryResponse, HistoryPageResponse
 # Shared fixtures
 # ---------------------------------------------------------------------------
 
-ENTRY_DICT: dict = {
+ENTRY_DICT: dict[str, Any] = {
     "id": 42,
     "source": "proxy",
     "method": "GET",
@@ -33,7 +35,7 @@ ENTRY_DICT: dict = {
     "timestamp": "2026-06-19T10:00:00Z",
 }
 
-PAGE_DICT: dict = {
+PAGE_DICT: dict[str, Any] = {
     "entries": [ENTRY_DICT],
     "total": 1,
     "page": 0,
@@ -205,7 +207,7 @@ def test_history_get_display_table_render_has_no_blob() -> None:
 # [12] history replay default output must not leak headers/bodies
 # ---------------------------------------------------------------------------
 
-ENTRY_WITH_SECRETS: dict = {
+ENTRY_WITH_SECRETS: dict[str, Any] = {
     "id": 7,
     "source": "proxy",
     "method": "POST",
@@ -225,7 +227,7 @@ ENTRY_WITH_SECRETS: dict = {
     "timestamp": "2026-06-19T09:00:00Z",
 }
 
-REPLAY_RESPONSE: dict = {
+REPLAY_RESPONSE: dict[str, Any] = {
     "original": ENTRY_WITH_SECRETS,
     "replayed": {**ENTRY_WITH_SECRETS, "id": 0, "source": "replay", "statusCode": 201},
 }

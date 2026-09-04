@@ -16,7 +16,7 @@ from typing import Any
 import typer
 
 from bp import __version__
-from bp.client import DEFAULT_BASE_URL, BurpClient
+from bp.client import BurpClient
 from bp.cliutil import EXIT_USAGE, State, exit_code_for_error_code, run
 from bp.models import ProxyEntry
 from bp.output import FORMATS
@@ -25,6 +25,7 @@ from bp.runner import FuzzResult, run_fuzz
 app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
+    context_settings={"help_option_names": ["-h", "--help"]},
     help="bp — drive Burp Suite via its REST extension on :8089 (alias: burpctl)",
 )
 
@@ -38,11 +39,21 @@ def _version_cb(value: bool) -> None:
 @app.callback()
 def main(
     ctx: typer.Context,
-    url: str = typer.Option(DEFAULT_BASE_URL, "--url", envvar="BURP_REST_URL", help="REST base URL"),
-    fmt: str = typer.Option(
-        "table", "--format", help="json (NDJSON for lists)|table|raw|quiet"
+    url: str | None = typer.Option(
+        None,
+        "--url",
+        envvar="BURP_REST_URL",
+        help="REST base URL (env/config/default when omitted)",
     ),
-    fields: str | None = typer.Option(None, "--fields", help="comma-separated fields"),
+    fmt: str | None = typer.Option(
+        None,
+        "--format",
+        help="json (NDJSON for lists)|table|raw|quiet",
+        show_default="table; json when BP_AGENT=1",
+    ),
+    fields: str | None = typer.Option(
+        None, "--fields", help="comma-separated fields; all or * for all"
+    ),
     no_ledger: bool = typer.Option(
         False, "--no-ledger", help="Skip the Run Ledger for this invocation (ADR-0005)."
     ),
@@ -53,12 +64,16 @@ def main(
         False, "--version", help="Show bp version and exit.", is_eager=True, callback=_version_cb
     ),
 ) -> None:
-    if fmt not in FORMATS:
+    selected_format = (
+        fmt if fmt is not None else ("json" if os.environ.get("BP_AGENT") == "1" else "table")
+    )
+    if selected_format not in FORMATS:
         raise typer.BadParameter(f"must be one of {', '.join(FORMATS)}", param_hint="--format")
+    selected_fields = [item.strip() for item in fields.split(",")] if fields else None
     ctx.obj = State(
         url=url,
-        fmt=fmt,
-        fields=fields.split(",") if fields else None,
+        fmt=selected_format,
+        fields=selected_fields,
         no_ledger=no_ledger,
         no_redact=no_redact,
     )
@@ -115,9 +130,7 @@ def _fuzz_rows(results: list[FuzzResult], anomalous_only: bool) -> list[dict[str
     rows = [asdict(result) for result in results]
     if not anomalous_only:
         return rows
-    return [
-        row for row in rows if row["baseline"] or row["anomalous"] or row["error"] is not None
-    ]
+    return [row for row in rows if row["baseline"] or row["anomalous"] or row["error"] is not None]
 
 
 def _fuzz_exit(rows: list[dict[str, Any]], fmt: str = "table") -> int | None:
@@ -142,10 +155,18 @@ def _fuzz_exit(rows: list[dict[str, Any]], fmt: str = "table") -> int | None:
 @app.command()
 def fuzz(
     ctx: typer.Context,
-    request_id: int = typer.Argument(..., metavar="ID", help="proxy-history id of the base request"),
-    pos: list[str] = typer.Option([], "--pos", help="position selector, e.g. 'header:Authorization'"),
-    payloads: list[str] = typer.Option([], "--payloads", help="NAME=FILE (a payload list per position)"),
-    attack_type: str = typer.Option("sniper", "--type", help="sniper|battering-ram|pitchfork|cluster-bomb"),
+    request_id: int = typer.Argument(
+        ..., metavar="ID", help="proxy-history id of the base request"
+    ),
+    pos: list[str] = typer.Option(
+        [], "--pos", help="position selector, e.g. 'header:Authorization'"
+    ),
+    payloads: list[str] = typer.Option(
+        [], "--payloads", help="NAME=FILE (a payload list per position)"
+    ),
+    attack_type: str = typer.Option(
+        "sniper", "--type", help="sniper|battering-ram|pitchfork|cluster-bomb"
+    ),
     anomalous_only: bool = typer.Option(
         False, "--anomalous-only", help="show the fresh baseline plus anomalous payload results"
     ),
@@ -201,6 +222,8 @@ def _find_subcommand(argv: list[str]) -> int | None:
     i = 0
     while i < len(argv):
         tok = argv[i]
+        if tok == "--":
+            return None
         if not tok.startswith("-"):
             return i
         name = tok.partition("=")[0]
@@ -229,12 +252,17 @@ def _hoist_global_opts(argv: list[str]) -> list[str]:
     i = 1
     while i < len(tail):
         tok = tail[i]
+        if tok == "--":
+            # Everything after the delimiter is command payload, even when it
+            # happens to spell a global option.
+            rest.extend(tail[i:])
+            break
         name = tok.partition("=")[0]
         if name in _GLOBAL_VALUE_OPTS:
             if "=" in tok:  # --opt=value
                 hoisted.append(tok)
                 i += 1
-            elif i + 1 < len(tail):  # --opt value
+            elif i + 1 < len(tail) and tail[i + 1] != "--":  # --opt value
                 hoisted.extend((tok, tail[i + 1]))
                 i += 2
             else:  # dangling --opt with no value: leave for Typer to error on

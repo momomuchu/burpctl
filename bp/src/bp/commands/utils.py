@@ -1,15 +1,8 @@
-"""bp utils — HTTP diff and endpoint extraction commands. See docs/CLI.md + SPEC.md §6.12.
+"""HTTP response diffing and bounded endpoint extraction utilities.
 
-Endpoints (all Community, backed by SessionService HTTP engine — no DB required):
-  POST /utils/diff               — fire two live requests and diff status/length/headers
-  POST /utils/extract-endpoints  — fetch a URL + up to 10 JS bundles, extract API endpoints
-
-SPEC §6.12 flags surfaced per contract:
-  - diff body-diff is *set-based* (not a unified diff); only status/length/header deltas
-    are returned, not a line-by-line body comparison.
-  - extract-endpoints fetches up to 10 JS bundles (hard cap); per-bundle errors are
-    silently swallowed by the extension. Static assets and w3.org URLs are filtered out.
-  - Both endpoints are absent from the embedded /docs OpenAPI; SPEC.md is the authority.
+Endpoint extraction reports bundle attempt/success/failure/skip counts, resolves
+references using URI semantics, and never forwards target credentials across an
+origin boundary.
 """
 
 from __future__ import annotations
@@ -92,25 +85,7 @@ def endpoints(
         typer.Argument(metavar="data", help="URL to fetch and extract API endpoints from."),
     ],
 ) -> None:
-    """Extract API endpoints from a URL's HTML and linked JS bundles.
-
-    Sends POST /utils/extract-endpoints with ExtractEndpointsRequest { url:String }.
-
-    The extension fetches the page and up to 10 JS bundles (hard cap), applies regex
-    extraction, then filters out static assets and w3.org URLs.
-
-    NOTE: per-bundle fetch errors are silently swallowed by the extension — a partial
-    result (or empty list) does not indicate a failure, only that some bundles were
-    unreachable or contained no recognisable endpoint patterns.
-
-    Example:
-      bp endpoints https://app.example.com
-    """
-    typer.echo(
-        "note: /utils/extract-endpoints fetches up to 10 JS bundles (hard cap);"
-        " per-bundle errors are silently swallowed.",
-        err=True,
-    )
+    """Extract endpoint candidates with explicit linked-bundle fetch accounting."""
 
     request_body: dict[str, Any] = {"url": data}
     run(ctx, lambda c: c.post("/utils/extract-endpoints", request_body))

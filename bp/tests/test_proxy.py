@@ -4,6 +4,8 @@ Contract reconciliation — the Python model now mirrors the Kotlin nested shape
 (request/response), and the list view projects id/method/url/status for the table.
 """
 
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 
@@ -14,7 +16,11 @@ from bp.models import ProxyEntry, ProxyHistory
 
 def test_proxy_entry_model_is_nested() -> None:
     pe = ProxyEntry.model_validate(
-        {"id": 5, "request": {"method": "GET", "url": "http://h/p"}, "response": {"statusCode": 404}}
+        {
+            "id": 5,
+            "request": {"method": "GET", "url": "http://h/p"},
+            "response": {"statusCode": 404},
+        }
     )
     assert pe.request is not None and pe.request.method == "GET"
     assert pe.response is not None and pe.response.statusCode == 404
@@ -22,7 +28,11 @@ def test_proxy_entry_model_is_nested() -> None:
 
 def test_proxy_rows_flattens_nested_entry() -> None:
     entries = [
-        {"id": 1, "request": {"method": "GET", "url": "http://x/a"}, "response": {"statusCode": 200}}
+        {
+            "id": 1,
+            "request": {"method": "GET", "url": "http://x/a"},
+            "response": {"statusCode": 200},
+        }
     ]
     assert _proxy_rows(entries) == [{"id": 1, "method": "GET", "url": "http://x/a", "status": 200}]
 
@@ -37,6 +47,7 @@ def test_proxy_rows_empty() -> None:
 
 
 # --- RED contract-drift tests (Kotlin ProxyModels.kt: id=Int, request=HttpRequestData both non-null) ---
+
 
 def test_proxy_entry_id_is_required() -> None:
     """Kotlin: val id: Int  (non-nullable, no default) — omitting must raise ValidationError."""
@@ -61,7 +72,7 @@ def test_proxy_entry_response_is_optional() -> None:
 # RED — AX-CAP-BODY: bp req <id> must NOT leak response body/headers/secrets
 # ---------------------------------------------------------------------------
 
-_FAKE_ENTRY_WITH_SECRET: dict = {
+_FAKE_ENTRY_WITH_SECRET: dict[str, Any] = {
     "id": 42,
     "request": {
         "method": "POST",
@@ -137,7 +148,7 @@ def test_req_display_consistent_with_proxy_rows() -> None:
 
 def test_req_display_no_response_entry() -> None:
     """_proxy_entry_display handles missing response gracefully (status=None)."""
-    entry: dict = {"id": 7, "request": {"method": "GET", "url": "http://h/p"}}
+    entry: dict[str, Any] = {"id": 7, "request": {"method": "GET", "url": "http://h/p"}}
     result = _proxy_entry_display(entry)
     assert result["status"] is None
     assert result["id"] == 7

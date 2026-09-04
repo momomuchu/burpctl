@@ -223,28 +223,28 @@ def test_quiet_value_none_value_preserves_interior_blank() -> None:
 
 def test_cell_true_renders_lowercase_true() -> None:
     """[08] _cell(True) must return 'true' (JSON-style), not Python 'True'."""
-    from bp.output import _cell  # type: ignore[attr-defined]
+    from bp.output import _cell
 
     assert _cell(True) == "true"
 
 
 def test_cell_false_renders_lowercase_false() -> None:
     """[08] _cell(False) must return 'false' (JSON-style), not Python 'False'."""
-    from bp.output import _cell  # type: ignore[attr-defined]
+    from bp.output import _cell
 
     assert _cell(False) == "false"
 
 
 def test_cell_int_zero_unchanged() -> None:
     """[08] bool is a subclass of int; int 0 must still render as '0', not 'false'."""
-    from bp.output import _cell  # type: ignore[attr-defined]
+    from bp.output import _cell
 
     assert _cell(0) == "0"
 
 
 def test_cell_int_one_unchanged() -> None:
     """[08] int 1 must still render as '1', not 'true'."""
-    from bp.output import _cell  # type: ignore[attr-defined]
+    from bp.output import _cell
 
     assert _cell(1) == "1"
 
@@ -362,9 +362,9 @@ def test_fields_union_absent_from_one_row_no_error_table() -> None:
     """[08-NEW] 'b' is in union of keys → no error; row missing 'b' gets blank cell."""
     out = render([{"a": 1, "b": 2}, {"a": 3}], "table", fields=["b"])
     lines = out.splitlines()
-    assert lines[0].strip() == "B"   # uppercase header
-    assert lines[1].strip() == "2"   # first row has b=2
-    assert lines[2].strip() == ""    # second row: b absent → blank
+    assert lines[0].strip() == "B"  # uppercase header
+    assert lines[1].strip() == "2"  # first row has b=2
+    assert lines[2].strip() == ""  # second row: b absent → blank
 
 
 def test_fields_union_absent_from_one_row_no_error_json() -> None:

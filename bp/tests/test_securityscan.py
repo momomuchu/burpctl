@@ -1,8 +1,9 @@
 """[10][12] RED tests — bp check commands exit 5 (EXIT_VULN) when findings present.
 
-Per ADR-0010 (docs/adr/0010-check-exit-on-findings.md), bp check auth/idor/cors/headers/endpoints
-must exit 5 when the scan succeeded AND reported findings (vulnerableCount > 0 or
-anomalousCount > 0 for headers).
+Per ADR-0010 and ADR-0013, bp check auth/idor/cors/headers/endpoints must exit 5 when
+the scan succeeded and reported a confirmed finding (``vulnerableCount > 0`` or a nonempty
+``findings`` list). A response delta reported only through ``anomalousCount`` is triage evidence,
+not a vulnerability verdict.
 
 These tests cover:
 1. Unit tests for the _has_findings() helper (pure logic, no Burp needed).
@@ -39,8 +40,8 @@ def test_has_findings_vulnerable_count_zero() -> None:
 
 
 def test_has_findings_anomalous_count_nonzero() -> None:
-    """anomalousCount > 0 → has findings (headers command)."""
-    assert _has_findings({"anomalousCount": 3}) is True
+    """An anomaly alone is not a confirmed finding."""
+    assert _has_findings({"anomalousCount": 3}) is False
 
 
 def test_has_findings_anomalous_count_zero() -> None:
@@ -71,7 +72,11 @@ def test_has_findings_neither_key_present() -> None:
 
 def test_has_findings_findings_list_nonempty() -> None:
     """findings=[{...}] with scanned/durationMs → has findings (endpoints shape)."""
-    data = {"findings": [{"endpoint": "/admin", "test": "auth-bypass"}], "scanned": 3, "durationMs": 120}
+    data = {
+        "findings": [{"endpoint": "/admin", "test": "auth-bypass"}],
+        "scanned": 3,
+        "durationMs": 120,
+    }
     assert _has_findings(data) is True
 
 
@@ -98,10 +103,10 @@ def test_has_findings_vulnerable_count_unchanged_after_fix() -> None:
     assert _has_findings({"vulnerableCount": 0}) is False
 
 
-def test_has_findings_anomalous_count_unchanged_after_fix() -> None:
-    """Regression: existing anomalousCount path still works after findings-list fix."""
-    assert _has_findings({"anomalousCount": 2}) is True
-    assert _has_findings({"anomalousCount": 0}) is False
+def test_has_findings_anomalous_count_does_not_override_zero_verdict() -> None:
+    """Regression: an observation count cannot independently select exit 5."""
+    assert _has_findings({"anomalousCount": 2}) is False
+    assert _has_findings({"vulnerableCount": 0, "anomalousCount": 2}) is False
 
 
 def test_has_findings_nested_data() -> None:
@@ -115,6 +120,7 @@ def test_has_findings_nested_data() -> None:
 
 try:
     import httpx as _httpx
+
     _burp_up = _httpx.get("http://127.0.0.1:8089/health", timeout=1.0).status_code == 200
 except Exception:
     _burp_up = False
@@ -149,7 +155,7 @@ def test_check_commands_use_exit_on_not_holder_pattern() -> None:
     ]
 
     for cmd in commands:
-        src = inspect.getsource(cmd)
+        src = inspect.getsource(cmd)  # type: ignore[arg-type]
         try:
             tree = ast.parse(src)
         except SyntaxError:
@@ -338,11 +344,31 @@ def test_project_adds_verdict_clean_when_no_findings() -> None:
     )
 
 
-def test_project_adds_verdict_vulnerable_via_anomalous_count() -> None:
-    """[09] anomalousCount > 0 → verdict='vulnerable'."""
-    data: dict[str, Any] = {"anomalousCount": 2}
+def test_project_adds_verdict_clean_for_anomaly_only() -> None:
+    """Anomaly-only output remains visible but its quiet verdict is clean."""
+    data: dict[str, Any] = {"anomalousCount": 2, "vulnerableCount": 0}
     projected = _project_for_display(data)
-    assert projected.get("verdict") == "vulnerable"
+    assert projected.get("verdict") == "clean"
+
+
+def test_project_reports_inconclusive_instead_of_clean() -> None:
+    """A probe that never completed must not be summarized as clean."""
+    by_count: dict[str, Any] = {"vulnerableCount": 0, "inconclusiveCount": 1}
+    by_result: dict[str, Any] = {
+        "vulnerableCount": 0,
+        "results": [{"endpoint": "/a", "inconclusive": True}],
+    }
+    by_error: dict[str, Any] = {"findings": [], "errors": [{"endpoint": "/a"}], "scanned": 1}
+    by_baseline: dict[str, Any] = {"vulnerableCount": 0, "baseline": {"inconclusive": True}}
+
+    for data in (by_count, by_result, by_error, by_baseline):
+        assert _project_for_display(data).get("verdict") == "inconclusive"
+        assert _has_findings(data) is False
+
+
+def test_confirmed_finding_outranks_inconclusive_probes() -> None:
+    data: dict[str, Any] = {"vulnerableCount": 1, "inconclusiveCount": 3}
+    assert _project_for_display(data).get("verdict") == "vulnerable"
 
 
 def test_project_adds_verdict_vulnerable_via_findings_list() -> None:
@@ -355,6 +381,7 @@ def test_project_adds_verdict_vulnerable_via_findings_list() -> None:
 def test_quiet_render_verdict_vulnerable() -> None:
     """[09] render(projected, 'quiet') → 'vulnerable' when verdict key present."""
     from bp.output import render
+
     data = {"verdict": "vulnerable", "vulnerableCount": 1}
     assert render(data, "quiet") == "vulnerable"
 
@@ -362,6 +389,7 @@ def test_quiet_render_verdict_vulnerable() -> None:
 def test_quiet_render_verdict_clean() -> None:
     """[09] render(projected, 'quiet') → 'clean' when verdict='clean'."""
     from bp.output import render
+
     data = {"verdict": "clean", "vulnerableCount": 0}
     assert render(data, "quiet") == "clean"
 
@@ -369,6 +397,7 @@ def test_quiet_render_verdict_clean() -> None:
 def test_quiet_verdict_takes_priority_over_status() -> None:
     """[09] 'verdict' key must be picked before 'status' in _ESSENTIAL ordering."""
     from bp.output import render
+
     # If verdict is present it must win over status
     data = {"verdict": "vulnerable", "status": 200}
     assert render(data, "quiet") == "vulnerable"
@@ -378,6 +407,7 @@ def test_json_render_includes_verdict() -> None:
     """[09] json/table formats still include verdict (additive, not stripped)."""
     from bp.output import render
     import json as _json
+
     data = {"verdict": "vulnerable", "vulnerableCount": 1}
     out = render(data, "json")
     parsed = _json.loads(out)

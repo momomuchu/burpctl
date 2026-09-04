@@ -1,8 +1,8 @@
 """bp check — custom security-scan probes via /scan/* (SPEC §6.7).
 
 All five sub-commands are Community-compatible and synchronous/blocking.
-``bp check endpoints`` additionally requires the SQLite DB to be initialised
-inside the extension (503 SERVICE_UNAVAILABLE if absent).
+``bp check endpoints`` reads only extension-owned H2 history produced by
+Repeater/session sends; it does not read ordinary Burp proxy-listener history.
 
 The session must be loaded (``bp session set …``) before auth probes will
 carry credentials; otherwise probes run unauthenticated.
@@ -37,10 +37,16 @@ def _strip_body_preview(obj: Any) -> Any:
 
 
 @overload
-def _project_for_display(data: dict[str, Any], return_note: Literal[False] = ...) -> dict[str, Any]: ...
+def _project_for_display(
+    data: dict[str, Any], return_note: Literal[False] = ...
+) -> dict[str, Any]: ...
+
 
 @overload
-def _project_for_display(data: dict[str, Any], return_note: Literal[True]) -> tuple[dict[str, Any], str]: ...
+def _project_for_display(
+    data: dict[str, Any], return_note: Literal[True]
+) -> tuple[dict[str, Any], str]: ...
+
 
 def _project_for_display(
     data: dict[str, Any],
@@ -56,8 +62,9 @@ def _project_for_display(
     3. Drop ``ignoredOwnValues`` when it is an empty list — it clutters output
        without adding information ([13]).  Non-empty values are preserved.
 
-    The critical fields for ``_has_findings`` — ``vulnerableCount``,
-    ``anomalousCount``, and ``findings`` — are always preserved.
+    The critical fields for ``_has_findings`` — ``vulnerableCount`` and
+    ``findings`` — are always preserved. ``anomalousCount`` remains an
+    observation-only signal and never selects the vulnerability exit code.
 
     When ``return_note=True`` (used in unit tests), returns ``(projected, note)``
     as a 2-tuple so callers can assert on the extracted note text.
@@ -73,9 +80,15 @@ def _project_for_display(
         del projected["ignoredOwnValues"]
 
     # [09] Inject one-word verdict for --format quiet (OUTPUT.md §1.5 R-ESSENTIAL).
-    # "vulnerable" when any finding signal is present, "clean" otherwise.
-    # This is additive — json/table still render the full structured response.
-    projected["verdict"] = "vulnerable" if _has_findings(projected) else "clean"
+    # A probe that never completed is neither a finding nor a clean result, so it gets its
+    # own verdict rather than being reported as "clean". This is additive — json/table still
+    # render the full structured response.
+    if _has_findings(projected):
+        projected["verdict"] = "vulnerable"
+    elif _is_inconclusive(projected):
+        projected["verdict"] = "inconclusive"
+    else:
+        projected["verdict"] = "clean"
 
     if return_note:
         return projected, note
@@ -86,17 +99,39 @@ def _has_findings(data: dict[str, Any]) -> bool:
     """Return True when a security-scan response reports at least one finding.
 
     Covers:
-    - vulnerableCount > 0        (auth-bypass, IDOR, CORS, headers)
-    - anomalousCount > 0         (headers bypass)
+    - vulnerableCount > 0        (auth-bypass, IDOR, CORS, confirmed header bypass)
     - len(findings) > 0          (EndpointsScanResponse shape for check endpoints)
+
+    ``anomalousCount`` is intentionally excluded: a changed response is a
+    triage observation, not proof that access improved or a vulnerability exists.
     """
     if data.get("vulnerableCount", 0) > 0:
-        return True
-    if data.get("anomalousCount", 0) > 0:
         return True
     if len(data.get("findings", [])) > 0:
         return True
     return False
+
+
+def _is_inconclusive(data: dict[str, Any]) -> bool:
+    """Return True when at least one probe did not complete well enough to judge.
+
+    The extension marks a probe inconclusive when its treatment or control failed —
+    transport failure, throttling, a server error, or a missing authenticated baseline.
+    Such a scan proves nothing, so it must not be presented as a clean result.
+    """
+    if data.get("inconclusiveCount", 0) > 0:
+        return True
+    if len(data.get("errors", [])) > 0:
+        return True
+    for value in data.values():
+        if isinstance(value, list) and any(
+            isinstance(item, dict) and item.get("inconclusive") for item in value
+        ):
+            return True
+    if isinstance(data.get("baseline"), dict) and data["baseline"].get("inconclusive"):
+        return True
+    return False
+
 
 # ---------------------------------------------------------------------------
 # Sub-typer
@@ -117,7 +152,9 @@ sub = typer.Typer(
 @sub.command("auth")
 def check_auth(
     ctx: typer.Context,
-    url: str = typer.Argument(..., metavar="URL", help="Target base URL (e.g. https://example.com)."),
+    url: str = typer.Argument(
+        ..., metavar="URL", help="Target base URL (e.g. https://example.com)."
+    ),
     endpoints: list[str] = typer.Option(
         ["/api/admin"],
         "--endpoint",
@@ -216,15 +253,25 @@ def check_idor(
 @sub.command("headers")
 def check_headers(
     ctx: typer.Context,
-    url: str = typer.Argument(..., metavar="URL", help="Target URL to test for header-based 403 bypass."),
+    url: str = typer.Argument(
+        ..., metavar="URL", help="Target URL to test for header-based 403 bypass."
+    ),
     method: str = typer.Option("GET", "--method", help="HTTP method."),
     body: str | None = typer.Option(None, "--body", help="Optional request body string."),
+    marker: str | None = typer.Option(
+        None,
+        "--marker",
+        metavar="TEXT",
+        help="Protected content that only an authorized response contains; required for a"
+        " confirmed bypass verdict rather than an anomaly.",
+    ),
 ) -> None:
-    """16 IP-spoof / URL-override headers → 403-bypass probe.
+    """Probe IP-spoof and URL-override headers against a denial baseline.
 
-    Sends HeadersBypassRequest { url, method, body? } to POST /scan/headers.
-    The extension tries 16 fixed bypass headers (X-Forwarded-For, X-Real-IP,
-    X-Original-URL, X-Rewrite-URL, …) and reports which ones alter the response.
+    Sends HeadersBypassRequest { url, method, body?, protectedContentMarker? } to
+    POST /scan/headers. Without ``--marker`` a changed response is reported as an
+    anomaly for triage; the server confirms a bypass only when the marker is absent
+    from the denial control and present in the successful treatment.
     """
     req_body: dict[str, Any] = {
         "url": url,
@@ -232,6 +279,8 @@ def check_headers(
     }
     if body is not None:
         req_body["body"] = body
+    if marker is not None:
+        req_body["protectedContentMarker"] = marker
 
     def _do(client: Any) -> Any:
         return client.post("/scan/headers", req_body)
@@ -280,23 +329,21 @@ def check_endpoints(
     host: str = typer.Argument(
         ...,
         metavar="HOST",
-        help="Hostname to sweep from the proxy history DB (e.g. example.com).",
+        help="Hostname to sweep from extension-owned send history (e.g. example.com).",
     ),
     tests: list[str] = typer.Option(
         _DEFAULT_TESTS,
         "--test",
         help="Test type(s) to run per endpoint (repeatable). Default: auth-bypass method-switch.",
     ),
-    limit: int = typer.Option(100, "--limit", help="Maximum number of proxy-history entries to scan."),
+    limit: int = typer.Option(
+        100, "--limit", help="Maximum number of extension-history requests to scan."
+    ),
 ) -> None:
-    """Bulk-scan proxy-history endpoints for a host.
+    """Scan requests recorded by extension-driven Repeater/session sends.
 
-    Sends EndpointsScanRequest { host, tests, limit } to POST /scan/endpoints.
-
-    CAVEAT: this endpoint requires the SQLite DB to be initialised inside the
-    extension (~/.burp-rest/burpdata).  The server returns 503 SERVICE_UNAVAILABLE
-    if the DB is absent — bp will surface that as an error rather than silently
-    returning empty results.
+    This requires the extension's H2 store. Unavailable storage returns
+    ``SERVICE_UNAVAILABLE`` rather than an empty clean result.
     """
     req_body: dict[str, Any] = {
         "host": host,

@@ -1,8 +1,9 @@
 package com.burprest.db
 
 import java.net.URI
+import java.sql.Connection
+import java.sql.SQLException
 import java.time.Instant
-import java.time.format.DateTimeFormatter
 
 data class SitemapRow(
     val host: String,
@@ -13,57 +14,100 @@ data class SitemapRow(
 )
 
 class SitemapDao(private val db: DatabaseManager) {
+    internal fun uses(database: DatabaseManager): Boolean = db === database
 
-    @Synchronized
-    fun upsert(url: String, method: String) {
-        val uri = try { URI(url) } catch (_: Exception) { return }
-        val host = uri.host ?: return
-        val path = uri.rawPath ?: "/"
-        val ts = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
-
-        // H2: Use MERGE for upsert
-        val stmt = db.connection.prepareStatement(
-            """MERGE INTO sitemap (host, path, method, last_seen, hit_count)
-               KEY (host, path, method)
-               VALUES (?, ?, ?, ?, COALESCE((SELECT hit_count + 1 FROM sitemap WHERE host = ? AND path = ? AND method = ?), 1))"""
-        )
-        stmt.setString(1, host)
-        stmt.setString(2, path)
-        stmt.setString(3, method)
-        stmt.setString(4, ts)
-        stmt.setString(5, host)
-        stmt.setString(6, path)
-        stmt.setString(7, method)
-        stmt.executeUpdate()
+    fun upsert(url: String, method: String, timestamp: String = Instant.now().toString()) {
+        db.transaction { connection -> upsert(connection, url, method, timestamp) }
     }
 
     fun list(host: String? = null): List<SitemapRow> {
-        val sql = if (host != null) {
-            "SELECT * FROM sitemap WHERE host = ? ORDER BY path"
+        val normalizedHost = host?.let(::normalizeHostFilter)
+        val sql = if (normalizedHost != null) {
+            "SELECT * FROM sitemap WHERE host = ? ORDER BY path, method"
         } else {
-            "SELECT * FROM sitemap ORDER BY host, path"
+            "SELECT * FROM sitemap ORDER BY host, path, method"
         }
-        val stmt = db.connection.prepareStatement(sql)
-        if (host != null) stmt.setString(1, host)
-
-        val rs = stmt.executeQuery()
-        val results = mutableListOf<SitemapRow>()
-        while (rs.next()) {
-            results.add(
-                SitemapRow(
-                    host = rs.getString("host"),
-                    path = rs.getString("path"),
-                    method = rs.getString("method"),
-                    lastSeen = rs.getString("last_seen"),
-                    hitCount = rs.getInt("hit_count"),
-                )
-            )
+        return db.withConnection { connection ->
+            connection.prepareStatement(sql).use { statement ->
+                normalizedHost?.let { statement.setString(1, it) }
+                statement.executeQuery().use { resultSet ->
+                    buildList {
+                        while (resultSet.next()) {
+                            val lastSeen = try {
+                                Instant.parse(resultSet.getString("last_seen")).toString()
+                            } catch (failure: Exception) {
+                                throw StorageException("Stored sitemap data is invalid", failure)
+                            }
+                            add(
+                                SitemapRow(
+                                    host = resultSet.getString("host"),
+                                    path = resultSet.getString("path"),
+                                    method = resultSet.getString("method"),
+                                    lastSeen = lastSeen,
+                                    hitCount = resultSet.getInt("hit_count"),
+                                )
+                            )
+                        }
+                    }
+                }
+            }
         }
-        return results
     }
 
-    @Synchronized
-    fun clear() {
-        db.connection.createStatement().execute("DELETE FROM sitemap")
+    fun clear() = db.transaction { connection -> clear(connection) }
+
+    internal fun upsert(connection: Connection, url: String, method: String, timestamp: String) {
+        val uri = try {
+            URI(url)
+        } catch (_: Exception) {
+            return
+        }
+        val host = uri.host?.let(::normalizeHostFilter) ?: return
+        val path = uri.rawPath?.ifEmpty { "/" } ?: "/"
+        val normalizedTimestamp = normalizeTimestamp(timestamp, "timestamp")
+
+        // UPDATE-first avoids MERGE's read/replace race and preserves every increment under contention.
+        connection.prepareStatement(
+            """UPDATE sitemap
+               SET last_seen = ?, hit_count = hit_count + 1
+               WHERE host = ? AND path = ? AND method = ?"""
+        ).use { update ->
+            update.setString(1, normalizedTimestamp)
+            update.setString(2, host)
+            update.setString(3, path)
+            update.setString(4, method)
+            if (update.executeUpdate() == 1) return
+        }
+
+        try {
+            connection.prepareStatement(
+                """INSERT INTO sitemap (host, path, method, last_seen, hit_count)
+                   VALUES (?, ?, ?, ?, 1)"""
+            ).use { insert ->
+                insert.setString(1, host)
+                insert.setString(2, path)
+                insert.setString(3, method)
+                insert.setString(4, normalizedTimestamp)
+                insert.executeUpdate()
+            }
+        } catch (failure: SQLException) {
+            // Another transaction can win the absent-row race. Retry as an increment; only suppress
+            // the insert error if that exact row now exists and was updated.
+            connection.prepareStatement(
+                """UPDATE sitemap
+                   SET last_seen = ?, hit_count = hit_count + 1
+                   WHERE host = ? AND path = ? AND method = ?"""
+            ).use { retry ->
+                retry.setString(1, normalizedTimestamp)
+                retry.setString(2, host)
+                retry.setString(3, path)
+                retry.setString(4, method)
+                if (retry.executeUpdate() != 1) throw failure
+            }
+        }
+    }
+
+    internal fun clear(connection: Connection) {
+        connection.createStatement().use { statement -> statement.executeUpdate("DELETE FROM sitemap") }
     }
 }

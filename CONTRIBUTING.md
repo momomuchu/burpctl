@@ -55,19 +55,26 @@ You can work on either component independently.
 
 ```bash
 # needs JDK 17+
-./gradlew build           # compile + run the Kotlin tests
-./gradlew test            # tests only
-./gradlew shadowJar       # → build/libs/burp-rest-extension.jar (load this in Burp)
+./gradlew build              # check (tests, Detekt, coverage verification) + shadowJar
+./gradlew test               # tests only
+./gradlew test -PtestJvm=21  # run the same tests on a Java 21 runtime
+./gradlew detektBaseline     # regenerate config/detekt/baseline.xml when intentionally accepted
+./gradlew shadowJar          # → build/libs/burp-rest-extension.jar (load this in Burp)
 ```
+
+Kotlin bytecode always targets Java 17; `-PtestJvm` only selects the runtime that executes tests.
+Detekt fails on any finding outside the committed baseline, and JaCoCo fails below the recorded
+line-coverage floor.
 
 ### The `bp` CLI (Python 3.11+)
 
 ```bash
 cd bp
-uv sync                                   # or: python -m venv .venv && pip install -e ".[dev]"
-uv run pytest -q                          # ~430+ unit/contract tests, no Burp required
-uv run mypy --strict src                  # must be clean
-uv run ruff check src tests               # must be clean
+uv sync                                   # installs the PEP 735 dev dependency group
+uv run pytest -q                          # hermetic unit/contract/property tests
+uv run mypy --strict src tests            # source and test typing must be clean
+uv run ruff check src tests               # lint
+uv run ruff format --check src tests      # formatting gate
 ```
 
 Live/integration tests need the extension running on `:8089`; they skip automatically when it isn't.
@@ -86,8 +93,11 @@ Live/integration tests need the extension running on `:8089`; they skip automati
 
 ### Definition of done (what CI and review check)
 
-- [ ] **Kotlin:** `./gradlew test` green (CI runs on JDK 17 **and** 21).
-- [ ] **Python:** `pytest` green, `mypy --strict` clean, `ruff check` clean (CI runs these too).
+- [ ] **Kotlin:** `./gradlew build` green, plus `./gradlew test -PtestJvm=21` (CI runs both).
+- [ ] **Python:** `pytest` green on the supported interpreter matrix, `mypy --strict src tests`,
+      `ruff check`, and `ruff format --check` clean, with branch coverage at or above the gate.
+- [ ] **Contracts:** OpenAPI validates, the confirmed-defect ledger passes, and the built wheel's
+      `bp`/`burpctl` entry points smoke-test clean.
 - [ ] New behavior has a RED-first test; behavior changes update the spec/docs/CHANGELOG.
 - [ ] Material decision? An `accepted` ADR exists.
 - [ ] No phantom endpoint / no invented field name / no leaked secret / no traceback to the user.

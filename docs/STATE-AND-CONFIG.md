@@ -1,5 +1,21 @@
 # `bp` — Persistence (Run Ledger) & Configuration (spec)
 
+# Current state and configuration contract
+
+This section supersedes stale implementation descriptions later in this historical document.
+
+- Python configuration precedence is explicit flag > environment > `~/.bp/config` > default. The path is resolved at invocation time so isolated `HOME` values work.
+- REST base URLs must be valid HTTP(S) origins without userinfo, query, fragment, or a non-root path. `enforce_scope`, booleans, throttle, and anomaly percentage are validated.
+- The Python Run Ledger is SQLite under `~/.bp/`, owner-only, and stores fingerprints/metadata—not raw target request or response bodies. Complete encoded query identity affects the fingerprint but raw query/userinfo does not enter text columns. Command outcome starts failed and becomes success only after invocation and rendering finish.
+- Extension request/session/sitemap persistence is H2/MVStore under `~/.burp-rest/`, not SQLite. Its directory/files are tightened to owner-only modes where the filesystem supports them; unsafe symlink paths are rejected.
+- H2 operations use scoped connections and transactions. History+sitemap record/clear and complete session persistence do not expose partial commits.
+- The configured singleton session is an immutable snapshot bound to one origin; it is not a named multi-principal session store. Observed response cookies are a separate jar with a separate clear operation.
+
+See [ADR-0013](adr/0013-truthful-executable-contracts.md).
+
+---
+
+
 > Ref: `ADR-0005` (Ledger ON by default, SQLite `~/.bp/`),
 > `ADR-0007` (configurable security guards, non-blocking), `OUTPUT.md` (`bp log`).
 

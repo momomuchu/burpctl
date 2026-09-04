@@ -78,17 +78,7 @@ data class SearchResult(
     val context: String? = null,
 )
 
-// --- Config ---
-
-@Serializable
-data class ConfigResponse(
-    val config: Map<String, String>,
-)
-
-@Serializable
-data class ConfigUpdateRequest(
-    val config: Map<String, String>,
-)
+// --- Config DTOs live in ConfigModels.kt so nested JSON retains its types. ---
 
 // --- Extensions ---
 
@@ -103,6 +93,7 @@ data class ExtensionInfo(
 data class ExtensionsListResponse(
     val extensions: List<ExtensionInfo>,
     val total: Int,
+    val scope: String = "current-extension-only",
 )
 
 // --- Health ---

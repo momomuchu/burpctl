@@ -2,7 +2,7 @@ package com.burprest.routes
 
 import com.burprest.models.AddScopeRequest
 import com.burprest.models.ApiResponse
-import com.burprest.models.SetScopeRequest
+import com.burprest.server.requiredParameter
 import com.burprest.services.TargetService
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -12,32 +12,27 @@ import io.ktor.server.routing.*
 fun Route.targetRoutes(service: TargetService) {
     route("/target") {
         get("/sitemap") {
-            val urlPrefix = call.parameters["url"]
-            call.respond(ApiResponse.ok(service.getSitemap(urlPrefix)))
+            call.respond(ApiResponse.ok(service.getSitemap(call.parameters["url"])))
         }
 
         get("/scope") {
-            call.respond(ApiResponse.ok(service.getScope()))
+            service.getScope()
         }
 
         post("/scope") {
-            val request = call.receive<SetScopeRequest>()
-            call.respond(ApiResponse.ok(service.setScope(request)))
+            service.setScope()
         }
 
         post("/scope/add") {
-            val request = call.receive<AddScopeRequest>()
-            call.respond(ApiResponse.ok(service.addToScope(request)))
+            call.respond(ApiResponse.ok(service.addToScope(call.receive<AddScopeRequest>())))
         }
 
         post("/scope/remove") {
-            val request = call.receive<AddScopeRequest>()
-            call.respond(ApiResponse.ok(service.removeFromScope(request)))
+            call.respond(ApiResponse.ok(service.removeFromScope(call.receive<AddScopeRequest>())))
         }
 
         get("/scope/check") {
-            val url = call.parameters["url"]
-                ?: return@get call.respond(ApiResponse.error<Unit>("INVALID_PARAM", "Missing url"))
+            val url = requiredParameter(call.parameters["url"], "url")
             call.respond(ApiResponse.ok(service.isInScope(url)))
         }
     }

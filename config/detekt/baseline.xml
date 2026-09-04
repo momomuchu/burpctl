@@ -1,0 +1,404 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>ComplexCondition:DecoderService.kt$DecoderService$data.contains("&amp;amp;") || data.contains("&amp;lt;") || data.contains("&amp;gt;") || data.contains("&amp;quot;") || data.contains("&amp;#x27;")</ID>
+    <ID>ComplexCondition:DecoderService.kt$DecoderService$data.matches(Regex("^[A-Za-z0-9_-]+=*$")) &amp;&amp; (data.contains('-') || data.contains('_')) &amp;&amp; data.length &gt;= 4 &amp;&amp; isBase64UrlDecodableAsUtf8(data)</ID>
+    <ID>ComplexCondition:ProxyService.kt$ProxyService$host.contains("://") || host.any { it == '/' || it == '?' || it == '#' || it == '@' }</ID>
+    <ID>ComplexCondition:SecurityScanService.kt$SecurityScanService.Companion$status == 408 || status == 425 || status == 429 || (status != null &amp;&amp; status in 500..599)</ID>
+    <ID>ComplexCondition:SessionService.kt$SessionService$name.startsWith("__Host-") &amp;&amp; (!secure || target.origin.scheme != "https" || !hostOnly || path != "/")</ID>
+    <ID>ComplexCondition:UtilsService.kt$UtilsService$endpoint.isNotBlank() &amp;&amp; '\\' !in endpoint &amp;&amp; STATIC_EXTENSIONS.none { extension -&gt; endpoint.substringBefore('?').substringBefore('#') .endsWith(extension, ignoreCase = true) } &amp;&amp; !endpoint.startsWith("http://www.w3.org")</ID>
+    <ID>CyclomaticComplexMethod:DecoderService.kt$DecoderService$private fun detectEncoding(data: String): String</ID>
+    <ID>CyclomaticComplexMethod:ScannerService.kt$ScannerService$private fun validateAndExtractPort(uri: URI): Int</ID>
+    <ID>CyclomaticComplexMethod:ScannerService.kt$ScannerService$private fun validateScanUrl(value: String): String</ID>
+    <ID>CyclomaticComplexMethod:SecurityScanService.kt$SecurityScanService$fun authBypass(request: AuthBypassRequest): AuthBypassResponse</ID>
+    <ID>CyclomaticComplexMethod:SecurityScanService.kt$SecurityScanService$fun idor(request: IdorRequest): IdorResponse</ID>
+    <ID>CyclomaticComplexMethod:SecurityScanService.kt$SecurityScanService$fun scanEndpoints(request: EndpointsScanRequest): EndpointsScanResponse</ID>
+    <ID>CyclomaticComplexMethod:SessionService.kt$SessionService$private fun applySetCookie( headerValue: String, target: Target, now: Long, jar: MutableMap&lt;CookieKey, StoredCookie&gt;, )</ID>
+    <ID>CyclomaticComplexMethod:SessionService.kt$SessionService$private fun execute( request: AuthenticatedRequest, target: Target, authSnapshot: SessionSnapshot?, credentialMode: CredentialMode, orderedHeaders: List&lt;HttpHeader&gt;, credentialHeaderNames: Set&lt;String&gt;, captureResponseCookies: Boolean, persistObservation: Boolean = true, ): AuthenticatedResponse</ID>
+    <ID>CyclomaticComplexMethod:TargetService.kt$TargetService$private fun validateAndExtractPort(uri: URI): Int</ID>
+    <ID>CyclomaticComplexMethod:TargetService.kt$TargetService$private fun validateHttpUrl(value: String): String</ID>
+    <ID>CyclomaticComplexMethod:UtilsService.kt$UtilsService$fun extractEndpoints(request: ExtractEndpointsRequest): ExtractEndpointsResponse</ID>
+    <ID>LargeClass:IntruderService.kt$IntruderService</ID>
+    <ID>LargeClass:SecurityScanService.kt$SecurityScanService</ID>
+    <ID>LargeClass:SecurityScanServiceTest.kt$SecurityScanServiceTest</ID>
+    <ID>LargeClass:SessionService.kt$SessionService</ID>
+    <ID>LargeClass:SessionServiceTest.kt$SessionServiceTest</ID>
+    <ID>LongMethod:CollaboratorServiceTest.kt$CollaboratorServiceTest$@Test fun `poll maps authoritative identity capture metadata and all protocol details`()</ID>
+    <ID>LongMethod:HistoryRoutes.kt$fun Route.historyRoutes(historyDao: HistoryDao, sitemapDao: SitemapDao, repeaterService: RepeaterService)</ID>
+    <ID>LongMethod:IntruderService.kt$IntruderService$fun quickFuzz(request: QuickFuzzRequest): QuickFuzzResponse</ID>
+    <ID>LongMethod:RepeaterService.kt$RepeaterService$private fun persist( httpRequest: HttpRequest, requestHeaders: List&lt;HttpHeader&gt;, requestBody: String?, response: HttpResponseData, durationMs: Long, ): RepeaterPersistence</ID>
+    <ID>LongMethod:RestServer.kt$fun Application.installErrorHandling(logError: (String) -&gt; Unit)</ID>
+    <ID>LongMethod:SecurityScanService.kt$SecurityScanService$fun cors(request: CorsRequest): CorsResponse</ID>
+    <ID>LongMethod:SecurityScanService.kt$SecurityScanService$fun headersBypass(request: HeadersBypassRequest): HeadersBypassResponse</ID>
+    <ID>LongMethod:SecurityScanService.kt$SecurityScanService$fun idor(request: IdorRequest): IdorResponse</ID>
+    <ID>LongMethod:SecurityScanService.kt$SecurityScanService$fun scanEndpoints(request: EndpointsScanRequest): EndpointsScanResponse</ID>
+    <ID>LongMethod:SecurityScanServiceTest.kt$SecurityScanServiceTest$@Test fun `raw scan probes delegate credential stripping and origin binding to SessionService`()</ID>
+    <ID>LongMethod:ServerFoundationTest.kt$ServerFoundationTest$@Test fun `typed API exceptions have truthful statuses codes and safe messages`()</ID>
+    <ID>LongMethod:SessionService.kt$SessionService$private fun applySetCookie( headerValue: String, target: Target, now: Long, jar: MutableMap&lt;CookieKey, StoredCookie&gt;, )</ID>
+    <ID>LongMethod:SessionService.kt$SessionService$private fun execute( request: AuthenticatedRequest, target: Target, authSnapshot: SessionSnapshot?, credentialMode: CredentialMode, orderedHeaders: List&lt;HttpHeader&gt;, credentialHeaderNames: Set&lt;String&gt;, captureResponseCookies: Boolean, persistObservation: Boolean = true, ): AuthenticatedResponse</ID>
+    <ID>LongMethod:SessionService.kt$SessionService$private fun recordObservation( request: AuthenticatedRequest, requestHeaders: List&lt;HttpHeader&gt;, statusCode: Int, responseHeaders: List&lt;HttpHeader&gt;, responseBody: String?, durationMs: Long, ): SessionPersistence</ID>
+    <ID>LongMethod:UtilsService.kt$UtilsService$fun diff(request: DiffRequest): DiffResponse</ID>
+    <ID>LongMethod:UtilsService.kt$UtilsService$fun extractEndpoints(request: ExtractEndpointsRequest): ExtractEndpointsResponse</ID>
+    <ID>LongParameterList:HistoryDao.kt$HistoryDao$( connection: Connection, source: String, method: String, url: String, reqHeaders: List&lt;HttpHeader&gt;, reqBody: String?, statusCode: Int?, resHeaders: List&lt;HttpHeader&gt;?, resBody: String?, durationMs: Long, timestamp: String, )</ID>
+    <ID>LongParameterList:HistoryDao.kt$HistoryDao$( sitemapDao: SitemapDao, source: String, method: String, url: String, reqHeaders: List&lt;HttpHeader&gt;, reqBody: String?, statusCode: Int?, resHeaders: List&lt;HttpHeader&gt;?, resBody: String?, durationMs: Long, timestamp: String = Instant.now().toString(), )</ID>
+    <ID>LongParameterList:HistoryDao.kt$HistoryDao$( source: String, method: String, url: String, reqHeaders: List&lt;HttpHeader&gt;, reqBody: String?, statusCode: Int?, resHeaders: List&lt;HttpHeader&gt;?, resBody: String?, durationMs: Long, timestamp: String = Instant.now().toString(), )</ID>
+    <ID>LongParameterList:IntruderService.kt$IntruderService$( index: Int, payload: String, errorCode: String, error: String, durationMs: Long = 0, positionName: String? = null, )</ID>
+    <ID>LongParameterList:SecurityScanServiceTest.kt$SecurityScanServiceTest$( id: Long, source: String, method: String, url: String, headers: List&lt;HttpHeader&gt;, body: String?, )</ID>
+    <ID>LongParameterList:SessionService.kt$SessionService$( request: AuthenticatedRequest, requestHeaders: List&lt;HttpHeader&gt;, statusCode: Int, responseHeaders: List&lt;HttpHeader&gt;, responseBody: String?, durationMs: Long, )</ID>
+    <ID>LongParameterList:SessionService.kt$SessionService$( request: AuthenticatedRequest, target: Target, authSnapshot: SessionSnapshot?, credentialMode: CredentialMode, orderedHeaders: List&lt;HttpHeader&gt;, credentialHeaderNames: Set&lt;String&gt;, captureResponseCookies: Boolean, persistObservation: Boolean = true, )</ID>
+    <ID>LoopWithTooManyJumpStatements:DecoderService.kt$DecoderService$for</ID>
+    <ID>MagicNumber:BurpRestExtension.kt$BurpRestExtension$8089</ID>
+    <ID>MagicNumber:CollaboratorRoutes.kt$100</ID>
+    <ID>MagicNumber:DecoderService.kt$DecoderService$10</ID>
+    <ID>MagicNumber:DecoderService.kt$DecoderService$16</ID>
+    <ID>MagicNumber:DecoderService.kt$DecoderService$3</ID>
+    <ID>MagicNumber:DecoderService.kt$DecoderService$4</ID>
+    <ID>MagicNumber:HealthRoutes.kt$1000</ID>
+    <ID>MagicNumber:HistoryDao.kt$HistoryDao$10</ID>
+    <ID>MagicNumber:HistoryDao.kt$HistoryDao$11</ID>
+    <ID>MagicNumber:HistoryDao.kt$HistoryDao$3</ID>
+    <ID>MagicNumber:HistoryDao.kt$HistoryDao$4</ID>
+    <ID>MagicNumber:HistoryDao.kt$HistoryDao$5</ID>
+    <ID>MagicNumber:HistoryDao.kt$HistoryDao$6</ID>
+    <ID>MagicNumber:HistoryDao.kt$HistoryDao$7</ID>
+    <ID>MagicNumber:HistoryDao.kt$HistoryDao$8</ID>
+    <ID>MagicNumber:HistoryDao.kt$HistoryDao$9</ID>
+    <ID>MagicNumber:HistoryRoutes.kt$1000</ID>
+    <ID>MagicNumber:HistoryRoutes.kt$50</ID>
+    <ID>MagicNumber:IntruderService.kt$IntruderService$0x21</ID>
+    <ID>MagicNumber:IntruderService.kt$IntruderService$0x7e</ID>
+    <ID>MagicNumber:IntruderService.kt$IntruderService$0x80</ID>
+    <ID>MagicNumber:IntruderService.kt$IntruderService$0xC0</ID>
+    <ID>MagicNumber:IntruderService.kt$IntruderService$100</ID>
+    <ID>MagicNumber:IntruderService.kt$IntruderService$100L</ID>
+    <ID>MagicNumber:IntruderService.kt$IntruderService$65_535</ID>
+    <ID>MagicNumber:IntruderService.kt$IntruderService$8</ID>
+    <ID>MagicNumber:ProxyService.kt$ProxyService$16</ID>
+    <ID>MagicNumber:RepeaterService.kt$RepeaterService$65535</ID>
+    <ID>MagicNumber:RestServer.kt$2000</ID>
+    <ID>MagicNumber:RestServer.kt$RestServer$1000</ID>
+    <ID>MagicNumber:RestServer.kt$RestServer$2000</ID>
+    <ID>MagicNumber:ScannerService.kt$ScannerService$16</ID>
+    <ID>MagicNumber:ScannerService.kt$ScannerService$443</ID>
+    <ID>MagicNumber:ScannerService.kt$ScannerService$65_535</ID>
+    <ID>MagicNumber:ScannerService.kt$ScannerService$8</ID>
+    <ID>MagicNumber:ScannerService.kt$ScannerService$80</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$0.1</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$0.80</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$10</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$100</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$200</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$204</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$205</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$299</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$40</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$443</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$50_000</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$599</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$65535</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService$80</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService.Companion$408</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService.Companion$425</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService.Companion$429</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService.Companion$500</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService.Companion$599</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService.RawProbe$100</ID>
+    <ID>MagicNumber:SecurityScanService.kt$SecurityScanService.RawProbe$599</ID>
+    <ID>MagicNumber:SessionDao.kt$SessionDao$3</ID>
+    <ID>MagicNumber:SessionDao.kt$SessionDao$4</ID>
+    <ID>MagicNumber:SessionDao.kt$SessionDao$443</ID>
+    <ID>MagicNumber:SessionDao.kt$SessionDao$80</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$0x21</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$0x23</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$0x2b</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$0x3a</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$0x3c</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$0x5b</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$0x5d</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$0x7e</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$1_000</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$443</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$65535</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService$80</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService.Origin$443</ID>
+    <ID>MagicNumber:SessionService.kt$SessionService.Origin$80</ID>
+    <ID>MagicNumber:SitemapDao.kt$SitemapDao$3</ID>
+    <ID>MagicNumber:SitemapDao.kt$SitemapDao$4</ID>
+    <ID>MagicNumber:TargetService.kt$TargetService$16</ID>
+    <ID>MagicNumber:TargetService.kt$TargetService$443</ID>
+    <ID>MagicNumber:TargetService.kt$TargetService$65_535</ID>
+    <ID>MagicNumber:TargetService.kt$TargetService$80</ID>
+    <ID>MagicNumber:UtilsService.kt$UtilsService$0x7f</ID>
+    <ID>MagicNumber:UtilsService.kt$UtilsService$443</ID>
+    <ID>MagicNumber:UtilsService.kt$UtilsService$65535</ID>
+    <ID>MagicNumber:UtilsService.kt$UtilsService$80</ID>
+    <ID>MaxLineLength:ConfigRoutesTest.kt$ConfigRoutesTest$data["config"]!!.jsonObject["project_options"]!!.jsonObject["nested"]!!.jsonObject["enabled"]!!.jsonPrimitive.boolean</ID>
+    <ID>MaxLineLength:ConfigServiceTest.kt$ConfigServiceTest$assertEquals(2, config["project_options"]!!.jsonObject["http"]!!.jsonObject["redirections"]!!.jsonObject["type"]!!.jsonPrimitive.int)</ID>
+    <ID>MaxLineLength:ConfigServiceTest.kt$ConfigServiceTest$assertEquals(8080, config["user_options"]!!.jsonObject["connections"]!!.jsonObject["upstream_proxy"]!!.jsonObject["servers"]!!.jsonArray.single().jsonObject["port"]!!.jsonPrimitive.int)</ID>
+    <ID>MaxLineLength:ConfigServiceTest.kt$ConfigServiceTest$assertEquals(true, config["project_options"]!!.jsonObject["http"]!!.jsonObject["redirections"]!!.jsonObject["enabled"]!!.jsonPrimitive.boolean)</ID>
+    <ID>MaxLineLength:DatabaseHardeningTest.kt$DatabaseHardeningTest$connection.prepareStatement("""INSERT INTO session_store ("key", "value") VALUES ('name', 'partial')""")</ID>
+    <ID>MaxLineLength:DatabaseHardeningTest.kt$DatabaseHardeningTest$connection.prepareStatement("""UPDATE session_store SET "value" = ? WHERE "key" = 'cookies'""")</ID>
+    <ID>MaxLineLength:IntruderService.kt$IntruderService$require</ID>
+    <ID>MaxLineLength:IntruderService.kt$IntruderService$return HttpRequestData(method = method, url = url, headers = headers, body = body).also(::validateStructuredRequest)</ID>
+    <ID>MaxLineLength:IntruderService.kt$IntruderService.Companion$private val CRLF_SEPARATOR = byteArrayOf('\r'.code.toByte(), '\n'.code.toByte(), '\r'.code.toByte(), '\n'.code.toByte())</ID>
+    <ID>MaxLineLength:IntruderService.kt$IntruderService.Companion$private val HTTP_TOKEN_SEPARATORS = setOf('(', ')', '&lt;', '&gt;', '@', ',', ';', ':', '\\', '"', '/', '[', ']', '?', '=', '{', '}')</ID>
+    <ID>MaxLineLength:ProxyService.kt$ProxyService$if (address.address.size != 16) null else address.hostAddress.substringBefore('%').lowercase(Locale.ROOT)</ID>
+    <ID>MaxLineLength:RepeaterService.kt$RepeaterService$warning = "Target send completed and history was persisted, but sitemap persistence is not configured."</ID>
+    <ID>MaxLineLength:RepeaterService.kt$RepeaterService$warning = "Target send completed and sitemap was persisted, but history persistence is not configured."</ID>
+    <ID>MaxLineLength:RepeaterService.kt$RepeaterService$warning = "Target send completed, but optional history and sitemap persistence failed; do not retry the target send."</ID>
+    <ID>MaxLineLength:RepeaterService.kt$RepeaterService$warning = "Target send completed, but optional history persistence failed; do not retry the target send."</ID>
+    <ID>MaxLineLength:RepeaterService.kt$RepeaterService$warning = "Target send completed, but optional sitemap persistence failed; do not retry the target send."</ID>
+    <ID>MaxLineLength:RepeaterServiceTest.kt$RepeaterServiceTest$assertFailsWith</ID>
+    <ID>MaxLineLength:RepeaterServiceTest.kt$RepeaterServiceTest$verify(exactly = 1) { historyDao.insertWithSitemap(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }</ID>
+    <ID>MaxLineLength:RestServer.kt$logError("[burp-rest] Error: ${cause::class.simpleName}: ${cause.message}\n${cause.stackTraceToString().take(2000)}")</ID>
+    <ID>MaxLineLength:ScannerServiceTest.kt$ScannerServiceTest$every { fixture.scanner.startCrawl(fixture.crawlConfiguration) } throws IllegalStateException("engine unavailable")</ID>
+    <ID>MaxLineLength:SecurityScanService.kt$SecurityScanService$detail = "Accessible without auth: ${withoutAuth.status} (${withoutAuth.bodyText.length} bytes)"</ID>
+    <ID>MaxLineLength:SecurityScanService.kt$SecurityScanService$detail = "Method $method returns ${raw.status} (${raw.bodyText.length} bytes) — not tested before"</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$"Equal preview but target is ${targetBody.length - baselineBody.length} bytes longer than baseline — must NOT be sameAsBaseline"</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$"Static ACAO (not reflecting origin) + ACAC=true must NOT be flagged vulnerable; got: ${resp.results.filter { it.vulnerable }}"</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$assertTrue(bobResult.vulnerable, "Different content returned for a target ID -&gt; IDOR should be flagged vulnerable")</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) }</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } returns AuthenticatedResponse(200, emptyList(), "body", 0)</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(any(), emptyList(), CredentialMode.FULL, false) } throws RuntimeException("connection refused")</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(match { !it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) }</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(match { it.extraHeaders != null &amp;&amp; it.extraHeaders!!.isNotEmpty() }, emptyList(), CredentialMode.FULL, false) }</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(match { it.extraHeaders == null || it.extraHeaders!!.isEmpty() }, emptyList(), CredentialMode.FULL, false) }</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(match { it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false) }</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(match { it.url.contains("alice") }, emptyList(), CredentialMode.FULL, false) }</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(match { it.url.contains("alice2") }, emptyList(), CredentialMode.FULL, false) }</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(match { it.url.contains("bob") }, emptyList(), CredentialMode.FULL, false) }</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(match { it.url.contains("other") }, emptyList(), CredentialMode.FULL, false) }</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(match { it.url.contains("own") }, emptyList(), CredentialMode.FULL, false) }</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$every { sessionService.sendPreservingHeaders(match { it.url.contains("tgt") }, emptyList(), CredentialMode.FULL, false) }</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$fun</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$sessionService.sendPreservingHeaders(match { !it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false)</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$sessionService.sendPreservingHeaders(match { it.extraHeaders.isNullOrEmpty() }, emptyList(), CredentialMode.FULL, false)</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$sessionService.sendPreservingHeaders(match { it.url.contains("other") }, emptyList(), CredentialMode.FULL, false)</ID>
+    <ID>MaxLineLength:SecurityScanServiceTest.kt$SecurityScanServiceTest$sessionService.sendPreservingHeaders(match { it.url.contains("own") }, emptyList(), CredentialMode.FULL, false)</ID>
+    <ID>MaxLineLength:ServerFoundationTest.kt$ServerFoundationTest$ErrorCase("/no-response", HttpStatusCode.BadGateway, "NO_RESPONSE", "the upstream server returned no response")</ID>
+    <ID>MaxLineLength:ServerFoundationTest.kt$ServerFoundationTest$assertTrue(headers[HttpHeaders.ContentType]?.let { ContentType.parse(it).match(ContentType.Application.Json) } == true)</ID>
+    <ID>MaxLineLength:ServerFoundationTest.kt$ServerFoundationTest$assertTrue(response.headers[HttpHeaders.ContentType]?.startsWith(ContentType.Application.Json.toString()) == true)</ID>
+    <ID>MaxLineLength:SessionService.kt$SessionService$"Target send completed, but optional history and sitemap persistence failed; do not retry the target send."</ID>
+    <ID>MaxLineLength:SessionService.kt$SessionService$if (name.startsWith("__Host-") &amp;&amp; (!secure || target.origin.scheme != "https" || !hostOnly || path != "/")) return</ID>
+    <ID>MaxLineLength:SessionService.kt$SessionService$require</ID>
+    <ID>MaxLineLength:SessionService.kt$SessionService$warning = "Target send completed and history was persisted, but sitemap persistence is not configured."</ID>
+    <ID>MaxLineLength:SessionService.kt$SessionService$warning = "Target send completed and sitemap was persisted, but history persistence is not configured."</ID>
+    <ID>MaxLineLength:SessionServiceTest.kt$SessionServiceTest$AuthenticatedRequest(url = "https://example.test/invalid", extraHeaders = mapOf("Bad Header" to "x"))</ID>
+    <ID>MaxLineLength:SessionServiceTest.kt$SessionServiceTest$assertEquals(listOf("one", "two"), fixture.sent[0].headers().filter { it.name().equals("X-Duplicate", true) }.map { it.value() })</ID>
+    <ID>MaxLineLength:SessionServiceTest.kt$SessionServiceTest$verify(exactly = 0) { history.insertWithSitemap(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }</ID>
+    <ID>MaxLineLength:UtilsServiceTest.kt$UtilsServiceTest$b = DiffTarget(url = "https://example.test/bad", extraHeaders = mapOf("X-Test" to "ok\r\ninjected"))</ID>
+    <ID>NestedBlockDepth:SecurityScanService.kt$SecurityScanService$fun scanEndpoints(request: EndpointsScanRequest): EndpointsScanResponse</ID>
+    <ID>NestedBlockDepth:SessionService.kt$SessionService$private fun applySetCookie( headerValue: String, target: Target, now: Long, jar: MutableMap&lt;CookieKey, StoredCookie&gt;, )</ID>
+    <ID>NestedBlockDepth:UtilsService.kt$UtilsService$fun extractEndpoints(request: ExtractEndpointsRequest): ExtractEndpointsResponse</ID>
+    <ID>ReturnCount:DecoderService.kt$DecoderService$private fun detectEncoding(data: String): String</ID>
+    <ID>ReturnCount:HistoryDao.kt$internal fun String.truncateUtf8(maxBytes: Int): String</ID>
+    <ID>ReturnCount:IntruderService.kt$IntruderService$@Throws(InterruptedException::class) private fun awaitRunnable(attack: AttackState, throttleMs: Long): Boolean</ID>
+    <ID>ReturnCount:IntruderService.kt$IntruderService$fun quickFuzz(request: QuickFuzzRequest): QuickFuzzResponse</ID>
+    <ID>ReturnCount:IntruderService.kt$IntruderService$private fun ByteArray.indexOf(needle: ByteArray): Int</ID>
+    <ID>ReturnCount:IntruderService.kt$IntruderService$private fun findHeaderSeparator(raw: ByteArray): Pair&lt;Int, Int&gt;?</ID>
+    <ID>ReturnCount:ProxyService.kt$ProxyService$private fun normalizeHost(value: String): String?</ID>
+    <ID>ReturnCount:RepeaterService.kt$RepeaterService$private fun persist( httpRequest: HttpRequest, requestHeaders: List&lt;HttpHeader&gt;, requestBody: String?, response: HttpResponseData, durationMs: Long, ): RepeaterPersistence</ID>
+    <ID>ReturnCount:SecurityScanService.kt$SecurityScanService$internal fun substituteParam(urlTemplate: String, param: String, value: String): String</ID>
+    <ID>ReturnCount:SecurityScanService.kt$SecurityScanService$private fun bodiesEqualForIdor(baseline: String, target: String): Boolean</ID>
+    <ID>ReturnCount:SecurityScanService.kt$SecurityScanService$private fun contentSimilar(authBody: String, unauthBody: String): Boolean</ID>
+    <ID>ReturnCount:SessionService.kt$SessionService$private fun applySetCookie( headerValue: String, target: Target, now: Long, jar: MutableMap&lt;CookieKey, StoredCookie&gt;, )</ID>
+    <ID>ReturnCount:SessionService.kt$SessionService$private fun domainMatches(host: String, cookieDomain: String, hostOnly: Boolean): Boolean</ID>
+    <ID>ReturnCount:SessionService.kt$SessionService$private fun normalizeHost(rawHost: String): String</ID>
+    <ID>ReturnCount:SessionService.kt$SessionService$private fun pathMatches(requestPath: String, cookiePath: String): Boolean</ID>
+    <ID>ReturnCount:SessionService.kt$SessionService$private fun recordObservation( request: AuthenticatedRequest, requestHeaders: List&lt;HttpHeader&gt;, statusCode: Int, responseHeaders: List&lt;HttpHeader&gt;, responseBody: String?, durationMs: Long, ): SessionPersistence</ID>
+    <ID>ReturnCount:SitemapDao.kt$SitemapDao$internal fun upsert(connection: Connection, url: String, method: String, timestamp: String)</ID>
+    <ID>ThrowsCount:CollaboratorService.kt$CollaboratorService$@Synchronized private fun ensureClient(): CollaboratorClient</ID>
+    <ID>ThrowsCount:CollaboratorService.kt$CollaboratorService$fun generatePayload(): GeneratePayloadResponse</ID>
+    <ID>ThrowsCount:ConfigService.kt$ConfigService$private fun exportOptions(kind: String, export: () -&gt; String): JsonObject</ID>
+    <ID>ThrowsCount:Database.kt$DatabaseManager$private fun applyOwnerOnlyAcl(path: Path)</ID>
+    <ID>ThrowsCount:Database.kt$DatabaseManager$private fun createDirectoriesWithoutFollowingLinks(directory: Path)</ID>
+    <ID>ThrowsCount:Database.kt$DatabaseManager$private fun validateDatabaseFiles()</ID>
+    <ID>ThrowsCount:Database.kt$DatabaseManager.Companion$fun normalizeDatabasePath(rawPath: String): Path</ID>
+    <ID>ThrowsCount:HistoryDao.kt$HistoryDao$private fun rowToEntry(resultSet: ResultSet): HistoryEntry</ID>
+    <ID>ThrowsCount:HistoryRoutes.kt$fun Route.historyRoutes(historyDao: HistoryDao, sitemapDao: SitemapDao, repeaterService: RepeaterService)</ID>
+    <ID>ThrowsCount:ProxyService.kt$ProxyService$private fun normalizeFilterHost(value: String): String</ID>
+    <ID>ThrowsCount:ScannerService.kt$ScannerService$private fun validateAndExtractPort(uri: URI): Int</ID>
+    <ID>ThrowsCount:ScannerService.kt$ScannerService$private fun validateScanUrl(value: String): String</ID>
+    <ID>ThrowsCount:SessionService.kt$SessionService$private fun normalizeHost(rawHost: String): String</ID>
+    <ID>ThrowsCount:SessionService.kt$SessionService$private fun parseHttpUri(value: String, description: String): ParsedHttpUri</ID>
+    <ID>ThrowsCount:TargetService.kt$TargetService$private fun validateAndExtractPort(uri: URI): Int</ID>
+    <ID>ThrowsCount:TargetService.kt$TargetService$private fun validateHttpUrl(value: String): String</ID>
+    <ID>TooGenericExceptionCaught:CollaboratorService.kt$CollaboratorService$exception: Exception</ID>
+    <ID>TooGenericExceptionCaught:ConfigService.kt$ConfigService$cause: Exception</ID>
+    <ID>TooGenericExceptionCaught:Database.kt$DatabaseManager$failure: Exception</ID>
+    <ID>TooGenericExceptionCaught:Database.kt$DatabaseManager$failure: Throwable</ID>
+    <ID>TooGenericExceptionCaught:Database.kt$DatabaseManager.Companion$failure: Exception</ID>
+    <ID>TooGenericExceptionCaught:RestServer.kt$RestServer$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ScannerService.kt$ScannerService$cause: Exception</ID>
+    <ID>TooGenericExceptionCaught:ScannerService.kt$ScannerService$cleanupFailure: Exception</ID>
+    <ID>TooGenericExceptionCaught:SessionDao.kt$SessionDao$failure: Exception</ID>
+    <ID>TooGenericExceptionCaught:SessionService.kt$SessionService$failure: Exception</ID>
+    <ID>TooGenericExceptionCaught:SitemapDao.kt$SitemapDao$failure: Exception</ID>
+    <ID>TooGenericExceptionCaught:TargetService.kt$TargetService$cause: Exception</ID>
+    <ID>TooGenericExceptionCaught:UtilsService.kt$UtilsService$failure: Exception</ID>
+    <ID>TooGenericExceptionThrown:StatusPagesTest.kt$StatusPagesTest$throw RuntimeException("SECRET jdbc:h2 schema detail")</ID>
+    <ID>TooManyFunctions:Database.kt$DatabaseManager : Closeable</ID>
+    <ID>TooManyFunctions:HistoryDao.kt$HistoryDao</ID>
+    <ID>TooManyFunctions:IntruderService.kt$IntruderService</ID>
+    <ID>TooManyFunctions:ProxyService.kt$ProxyService</ID>
+    <ID>TooManyFunctions:RepeaterService.kt$RepeaterService</ID>
+    <ID>TooManyFunctions:ScannerService.kt$ScannerService</ID>
+    <ID>TooManyFunctions:SecurityScanService.kt$SecurityScanService</ID>
+    <ID>TooManyFunctions:SessionService.kt$SessionService</ID>
+    <ID>TooManyFunctions:UtilsService.kt$UtilsService</ID>
+    <ID>TooManyFunctions:Validation.kt$com.burprest.server.Validation.kt</ID>
+    <ID>UnusedParameter:DecoderService.kt$DecoderService$encodingLabel: String</ID>
+    <ID>UnusedPrivateMember:IntruderRoutesTest.kt$IntruderRoutesTest$private fun ByteArray.indexOf(needle: ByteArray): Int</ID>
+    <ID>UnusedPrivateProperty:DecoderService.kt$DecoderService$i</ID>
+    <ID>UnusedPrivateProperty:SecurityScanService.kt$SecurityScanService$private val api: MontoyaApi</ID>
+    <ID>UseCheckOrError:DatabaseHardeningTest.kt$DatabaseHardeningTest$throw IllegalStateException("injected")</ID>
+    <ID>UseCheckOrError:IntruderService.kt$IntruderService$throw IllegalStateException("quick fuzz was interrupted")</ID>
+    <ID>UseCheckOrError:IntruderServiceTest.kt$IntruderServiceTest$throw IllegalStateException("internal token secret-token")</ID>
+    <ID>UseCheckOrError:SecurityScanService.kt$SecurityScanService$throw IllegalStateException("Database required for endpoint scanning")</ID>
+    <ID>UseRequire:HistoryRoutes.kt$throw IllegalArgumentException("page must be &gt;= 0")</ID>
+    <ID>UseRequire:HistoryRoutes.kt$throw IllegalArgumentException("pageSize must be between 1 and 1000")</ID>
+    <ID>WildcardImport:CollaboratorRoutes.kt$import io.ktor.http.*</ID>
+    <ID>WildcardImport:CollaboratorRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:CollaboratorRoutes.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:CollaboratorRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:CollaboratorRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:CollaboratorRoutesTest.kt$import io.ktor.client.request.*</ID>
+    <ID>WildcardImport:CollaboratorRoutesTest.kt$import io.ktor.client.statement.*</ID>
+    <ID>WildcardImport:CollaboratorRoutesTest.kt$import io.ktor.http.*</ID>
+    <ID>WildcardImport:CollaboratorRoutesTest.kt$import io.ktor.serialization.kotlinx.json.*</ID>
+    <ID>WildcardImport:CollaboratorRoutesTest.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:CollaboratorRoutesTest.kt$import io.ktor.server.plugins.contentnegotiation.*</ID>
+    <ID>WildcardImport:CollaboratorRoutesTest.kt$import io.ktor.server.testing.*</ID>
+    <ID>WildcardImport:ConfigRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:ConfigRoutes.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:ConfigRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:ConfigRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:ConfigRoutesTest.kt$import io.ktor.client.request.*</ID>
+    <ID>WildcardImport:ConfigRoutesTest.kt$import io.ktor.client.statement.*</ID>
+    <ID>WildcardImport:ConfigRoutesTest.kt$import io.ktor.http.*</ID>
+    <ID>WildcardImport:ConfigRoutesTest.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:ConfigRoutesTest.kt$import io.ktor.server.testing.*</ID>
+    <ID>WildcardImport:ConfigServiceTest.kt$import io.mockk.*</ID>
+    <ID>WildcardImport:ConfigServiceTest.kt$import kotlinx.serialization.json.*</ID>
+    <ID>WildcardImport:DecoderRoutes.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:DecoderRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:DecoderRoutes.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:DecoderRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:DecoderRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:DecoderRoutesTest.kt$import io.ktor.client.request.*</ID>
+    <ID>WildcardImport:DecoderRoutesTest.kt$import io.ktor.client.statement.*</ID>
+    <ID>WildcardImport:DecoderRoutesTest.kt$import io.ktor.http.*</ID>
+    <ID>WildcardImport:DecoderRoutesTest.kt$import io.ktor.serialization.kotlinx.json.*</ID>
+    <ID>WildcardImport:DecoderRoutesTest.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:DecoderRoutesTest.kt$import io.ktor.server.plugins.contentnegotiation.*</ID>
+    <ID>WildcardImport:DecoderRoutesTest.kt$import io.ktor.server.testing.*</ID>
+    <ID>WildcardImport:DecoderService.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:HealthRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:HealthRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:HealthRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:HealthRoutesTest.kt$import io.ktor.client.request.*</ID>
+    <ID>WildcardImport:HealthRoutesTest.kt$import io.ktor.client.statement.*</ID>
+    <ID>WildcardImport:HealthRoutesTest.kt$import io.ktor.http.*</ID>
+    <ID>WildcardImport:HealthRoutesTest.kt$import io.ktor.serialization.kotlinx.json.*</ID>
+    <ID>WildcardImport:HealthRoutesTest.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:HealthRoutesTest.kt$import io.ktor.server.plugins.contentnegotiation.*</ID>
+    <ID>WildcardImport:HealthRoutesTest.kt$import io.ktor.server.testing.*</ID>
+    <ID>WildcardImport:HistoryRoutes.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:HistoryRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:HistoryRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:HistoryRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:IntruderRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:IntruderRoutes.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:IntruderRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:IntruderRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:ProxyRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:ProxyRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:ProxyRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:ProxyRoutesTest.kt$import io.ktor.client.request.*</ID>
+    <ID>WildcardImport:ProxyRoutesTest.kt$import io.ktor.client.statement.*</ID>
+    <ID>WildcardImport:ProxyRoutesTest.kt$import io.ktor.http.*</ID>
+    <ID>WildcardImport:ProxyRoutesTest.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:ProxyRoutesTest.kt$import io.ktor.server.testing.*</ID>
+    <ID>WildcardImport:ProxyService.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:ProxyServiceTest.kt$import io.mockk.*</ID>
+    <ID>WildcardImport:RepeaterRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:RepeaterRoutes.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:RepeaterRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:RepeaterRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:RepeaterRoutesTest.kt$import io.ktor.client.request.*</ID>
+    <ID>WildcardImport:RepeaterRoutesTest.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:RepeaterRoutesTest.kt$import io.mockk.*</ID>
+    <ID>WildcardImport:RepeaterService.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:RepeaterServiceTest.kt$import io.mockk.*</ID>
+    <ID>WildcardImport:RestServer.kt$import com.burprest.routes.*</ID>
+    <ID>WildcardImport:RestServer.kt$import com.burprest.services.*</ID>
+    <ID>WildcardImport:RestServer.kt$import io.ktor.http.*</ID>
+    <ID>WildcardImport:RestServer.kt$import io.ktor.serialization.kotlinx.json.*</ID>
+    <ID>WildcardImport:RestServer.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:RestServer.kt$import io.ktor.server.engine.*</ID>
+    <ID>WildcardImport:RestServer.kt$import io.ktor.server.netty.*</ID>
+    <ID>WildcardImport:RestServer.kt$import io.ktor.server.plugins.contentnegotiation.*</ID>
+    <ID>WildcardImport:RestServer.kt$import io.ktor.server.plugins.cors.routing.*</ID>
+    <ID>WildcardImport:RestServer.kt$import io.ktor.server.plugins.statuspages.*</ID>
+    <ID>WildcardImport:RestServer.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:RestServer.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:RestServer.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:ScannerRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:ScannerRoutes.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:ScannerRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:ScannerRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:ScannerRoutesTest.kt$import io.ktor.client.request.*</ID>
+    <ID>WildcardImport:ScannerRoutesTest.kt$import io.ktor.client.statement.*</ID>
+    <ID>WildcardImport:ScannerRoutesTest.kt$import io.ktor.http.*</ID>
+    <ID>WildcardImport:ScannerRoutesTest.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:ScannerRoutesTest.kt$import io.ktor.server.testing.*</ID>
+    <ID>WildcardImport:ScannerService.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:ScannerServiceTest.kt$import io.mockk.*</ID>
+    <ID>WildcardImport:SecurityScanRoutes.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:SecurityScanRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:SecurityScanRoutes.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:SecurityScanRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:SecurityScanRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:SecurityScanService.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:SecurityScanServiceTest.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:ServerFoundationTest.kt$import io.ktor.client.request.*</ID>
+    <ID>WildcardImport:ServerFoundationTest.kt$import io.ktor.client.statement.*</ID>
+    <ID>WildcardImport:ServerFoundationTest.kt$import io.ktor.http.*</ID>
+    <ID>WildcardImport:ServerFoundationTest.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:ServerFoundationTest.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:ServerFoundationTest.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:ServerFoundationTest.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:ServerFoundationTest.kt$import io.ktor.server.testing.*</ID>
+    <ID>WildcardImport:SessionRoutes.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:SessionRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:SessionRoutes.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:SessionRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:SessionRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:SessionServiceTest.kt$import io.mockk.*</ID>
+    <ID>WildcardImport:StatusPagesTest.kt$import io.ktor.client.request.*</ID>
+    <ID>WildcardImport:StatusPagesTest.kt$import io.ktor.client.statement.*</ID>
+    <ID>WildcardImport:StatusPagesTest.kt$import io.ktor.http.*</ID>
+    <ID>WildcardImport:StatusPagesTest.kt$import io.ktor.serialization.kotlinx.json.*</ID>
+    <ID>WildcardImport:StatusPagesTest.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:StatusPagesTest.kt$import io.ktor.server.plugins.contentnegotiation.*</ID>
+    <ID>WildcardImport:StatusPagesTest.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:StatusPagesTest.kt$import io.ktor.server.testing.*</ID>
+    <ID>WildcardImport:TargetRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:TargetRoutes.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:TargetRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:TargetRoutes.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:TargetRoutesTest.kt$import io.ktor.client.request.*</ID>
+    <ID>WildcardImport:TargetRoutesTest.kt$import io.ktor.client.statement.*</ID>
+    <ID>WildcardImport:TargetRoutesTest.kt$import io.ktor.http.*</ID>
+    <ID>WildcardImport:TargetRoutesTest.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:TargetRoutesTest.kt$import io.ktor.server.testing.*</ID>
+    <ID>WildcardImport:TargetService.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:TargetServiceTest.kt$import io.mockk.*</ID>
+    <ID>WildcardImport:UtilsRoutes.kt$import com.burprest.models.*</ID>
+    <ID>WildcardImport:UtilsRoutes.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:UtilsRoutes.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:UtilsRoutes.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:UtilsRoutes.kt$import io.ktor.server.routing.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

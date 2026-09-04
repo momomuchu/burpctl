@@ -4,15 +4,50 @@ All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.c
 
 ## [Unreleased]
 
+### Security
+- **Redaction is now structural.** Nested credential fields, `{name,value}` header records, header
+  maps, cookies, authorization values, URL userinfo, and sensitive query parameters are masked
+  before serialization, so JSON/NDJSON stays parseable and typed. The Run Ledger sanitizes at its own
+  persistence boundary, keeps request identity as hashes, and reduces targets to `host[:port]`.
+- **Extension H2 state is owner-only.** The `~/.burp-rest` directory/files are tightened where the
+  filesystem supports it, symlinked database paths are rejected, and corrupt stored state surfaces a
+  sanitized error instead of fabricated empty values. REST request logging no longer records query
+  strings.
+- **Session credentials are origin-bound.** A session snapshot is immutable per send, atomically
+  persisted, and refuses cross-origin use before any network access; utilities fetch cross-origin
+  assets unauthenticated.
+
+### Changed
+- **Unsupported operations tell the truth.** Proxy `intercept forward|drop`, scanner
+  `pause|resume|crawl-and-audit`, and complete target-scope listing/replacement now return HTTP 501
+  `UNSUPPORTED` (CLI exit 1) instead of a successful no-op, because pinned Montoya 2025.3 has no
+  primitive for them.
+- **Real Burp configuration.** `/config/project` and `/config/user` export and import actual nested
+  Burp JSON rather than echoing a hardcoded string map.
+- **Confirmed findings drive exit 5.** A response delta alone is an anomaly; `bp check` exits 5 only
+  for a confirmed classifier finding. CORS probes no longer treat target-owned subdomains as
+  attacker-controlled.
+- **Strict request handling.** The REST API rejects unknown/malformed JSON members and invalid query
+  or path values before effects, and every failure — including 404/405 — is a typed JSON envelope.
+- **Server-side Intruder is bounded.** It truthfully supports sniper with byte-accurate positions, a
+  legal concurrent lifecycle, and a real quick-fuzz control; matrix modes report `UNSUPPORTED` and
+  direct callers to client-side `bp fuzz`.
+
 ### Added
 - **`burpctl` alias.** The CLI now also installs as `burpctl` (identical to `bp`, for users who
   prefer the `*ctl` convention). `bp` stays the primary command and distribution name (ADR-0012).
   Both console scripts point at `bp.cli:cli_main`, and `--help`/usage output reflects whichever name
   you invoked.
 
-### Changed
+- **Executable contracts and quality gates.** `/docs` is served from a validated
+  `src/main/resources/openapi.json` covering every implemented operation, `quality/confirmed-defects.yaml`
+  records the repaired defect set with its regression evidence, and CI adds Detekt, JaCoCo coverage
+  verification, a genuine Java 21 test runtime, a Python interpreter matrix, formatting/typing gates,
+  and a wheel entry-point smoke test.
 - **README reframed** around the real hook: fast multi-position fuzzing fired via Burp's Repeater
   (not the throttled Community Intruder), staying inside the session/scope.
+- **Historical material is labeled.** `docs/bdd/` is explicitly non-executable scenario history, and
+  ADR-0013 records the truthful-contract policy.
 
 ### Fixed
 - **`bp fuzz` sent one invisible extra request.** The fresh unmodified control is now returned as an

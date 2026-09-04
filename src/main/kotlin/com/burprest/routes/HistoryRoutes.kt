@@ -90,6 +90,7 @@ fun Route.historyRoutes(historyDao: HistoryDao, sitemapDao: SitemapDao, repeater
                 )
             )
             val resp = repeaterService.send(sendReq)
+            val httpResponse = resp.response
 
             val replayedEntry = HistoryEntryResponse(
                 id = 0,
@@ -99,9 +100,9 @@ fun Route.historyRoutes(historyDao: HistoryDao, sitemapDao: SitemapDao, repeater
                 host = entry.host,
                 reqHeaders = resp.request.headers,
                 reqBody = resp.request.body,
-                statusCode = resp.response.statusCode,
-                resHeaders = resp.response.headers,
-                resBody = resp.response.body,
+                statusCode = httpResponse.statusCode,
+                resHeaders = httpResponse.headers,
+                resBody = httpResponse.body,
                 durationMs = resp.durationMs,
                 timestamp = java.time.Instant.now().toString(),
             )
@@ -113,8 +114,7 @@ fun Route.historyRoutes(historyDao: HistoryDao, sitemapDao: SitemapDao, repeater
         }
 
         delete {
-            historyDao.clear()
-            sitemapDao.clear()
+            historyDao.clearWithSitemap(sitemapDao)
             call.respond(ApiResponse.ok(mapOf("cleared" to true)))
         }
     }

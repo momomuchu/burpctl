@@ -109,9 +109,7 @@ def test_no_raw_body_stored(tmp_ledger: Ledger) -> None:
             continue
         if isinstance(val, str):
             assert "Secret body" not in val, f"raw resp body text leaked into column {key!r}"
-            assert "secret.internal" not in val, (
-                f"raw req host leaked into column {key!r}"
-            )
+            assert "secret.internal" not in val, f"raw req host leaked into column {key!r}"
 
 
 def test_sha256_correct(tmp_ledger: Ledger) -> None:
@@ -198,6 +196,27 @@ def test_filter_limit(tmp_ledger: Ledger) -> None:
         tmp_ledger.record(OpRecord(status="ok"))
     rows = tmp_ledger.query(QueryFilters(limit=3))
     assert len(rows) == 3
+
+
+def test_filter_rejects_invalid_timestamp_status_and_limit(tmp_ledger: Ledger) -> None:
+    with pytest.raises(ValueError, match="ISO-8601"):
+        tmp_ledger.query(QueryFilters(since="not-a-time"))
+    with pytest.raises(ValueError, match="timezone"):
+        tmp_ledger.query(QueryFilters(until="2026-09-03T12:00:00"))
+    with pytest.raises(ValueError, match="status"):
+        tmp_ledger.query(QueryFilters(status="success"))
+    for invalid in (-1, 0, 10_001):
+        with pytest.raises(ValueError, match="limit"):
+            tmp_ledger.query(QueryFilters(limit=invalid))
+
+
+def test_record_and_tag_reject_invalid_control_values(tmp_ledger: Ledger) -> None:
+    with pytest.raises(ValueError, match="status"):
+        tmp_ledger.record(OpRecord(status="success"))
+    op_id = tmp_ledger.record(OpRecord(status="ok"))
+    for invalid in ("", " ", " leading", "trailing ", "bad\nvalue", "x" * 257):
+        with pytest.raises(ValueError, match="tag"):
+            tmp_ledger.tag(op_id, invalid)
 
 
 # ---------------------------------------------------------------------------
@@ -374,7 +393,9 @@ def test_empty_redact_env_keeps_redaction_on(monkeypatch: pytest.MonkeyPatch) ->
 def test_empty_url_env_falls_back_to_default(monkeypatch: pytest.MonkeyPatch) -> None:
     """An empty env var is treated as unset, not as an empty URL."""
     monkeypatch.setenv("BURP_REST_URL", "")
-    assert load(config_path=Path("/nonexistent/path/config")).burp_rest_url == "http://127.0.0.1:8089"
+    assert (
+        load(config_path=Path("/nonexistent/path/config")).burp_rest_url == "http://127.0.0.1:8089"
+    )
 
 
 def test_invalid_bool_token_in_file_keeps_safe_default(tmp_path: Path) -> None:
@@ -428,7 +449,7 @@ def test_redact_leaves_non_sensitive_intact() -> None:
 
 def test_redact_masks_jwt_in_value() -> None:
     """A JWT appearing inline (e.g. JSON value) must be masked."""
-    text = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.SIGNATURE'
+    text = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.SIGNATURE"
     result = redact(text)
     assert "eyJzdWIiOiJ1c2VyIn0" not in result
 
@@ -449,26 +470,26 @@ def _make_broken_ledger(tmp_path: Path) -> Ledger:
     return ledger
 
 
-def test_record_on_broken_db_does_not_raise(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_record_on_broken_db_does_not_raise(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """[13] RED: Ledger.record() on a closed/broken db must NOT raise; must emit a stderr warning."""
     ledger = _make_broken_ledger(tmp_path)
     # Should return without raising even though the db connection is closed
     ledger.record(OpRecord(status="ok", target="example.com"))
     # Return value may be anything (empty string, None) — the key contract is no raise
     captured = capsys.readouterr()
-    assert "warning" in captured.err.lower(), (
-        f"expected a warning on stderr, got {captured.err!r}"
-    )
+    assert "warning" in captured.err.lower(), f"expected a warning on stderr, got {captured.err!r}"
 
 
-def test_set_exit_code_on_broken_db_does_not_raise(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_set_exit_code_on_broken_db_does_not_raise(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """[13] RED: Ledger.set_exit_code() on a closed db must NOT raise; must emit a stderr warning."""
     ledger = _make_broken_ledger(tmp_path)
     ledger.set_exit_code("any-id", 5)
     captured = capsys.readouterr()
-    assert "warning" in captured.err.lower(), (
-        f"expected a warning on stderr, got {captured.err!r}"
-    )
+    assert "warning" in captured.err.lower(), f"expected a warning on stderr, got {captured.err!r}"
 
 
 def test_close_on_already_closed_ledger_does_not_raise(tmp_path: Path) -> None:
@@ -521,9 +542,7 @@ def test_ledger_dir_mode_is_0o700(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 
     assert bp_dir.exists(), "~/.bp/ directory was not created"
     dir_mode = stat.S_IMODE(os.stat(bp_dir).st_mode)
-    assert dir_mode == 0o700, (
-        f"~/.bp/ dir must be 0o700 (owner only), got {oct(dir_mode)}"
-    )
+    assert dir_mode == 0o700, f"~/.bp/ dir must be 0o700 (owner only), got {oct(dir_mode)}"
 
 
 def test_ledger_chmod_best_effort_does_not_raise_on_existing_db(tmp_path: Path) -> None:

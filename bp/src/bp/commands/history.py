@@ -1,24 +1,9 @@
-"""bp history — server-side DB history commands. See docs/CLI.md + SPEC.md §6.13.
+"""Commands for extension-owned H2 request history and sitemap state.
 
-Endpoints (Community + DB, all 5 return 404 if the SQLite DB failed to init):
-  GET    /history                — paginated, filtered request history.
-  GET    /history/{id}          — single entry by Long id (req + resp).
-  GET    /history/sitemap        — unique host+path+method tuples + hitCount.
-  POST   /history/{id}/replay   — replay a history entry verbatim via Burp.
-  DELETE /history               — DESTRUCTIVE: wipe history + sitemap tables.
-
-Caveats surfaced per SPEC §6.13:
-  - The entire group is conditionally registered on the extension side: if the
-    SQLite DB (~/.burp-rest/burpdata) failed to initialise, ALL 5 endpoints
-    return 404 and the group is silently absent.  bp handles this gracefully —
-    a 404 / error response is rendered as-is via the normal BurpError path.
-  - history id is a Long (DB primary key), not an Int like proxy requestId.
-  - DELETE /history is irreversible and non-transactional between the two
-    tables (history + sitemap).  --confirm is required by bp to prevent
-    accidental data loss.
-  - POST /history/{id}/replay is NOT persisted with a real id (id=0,
-    source='replay'); the RepeaterService may re-insert it separately.
-  - ?search= uses SQL LIKE without escaping, so % and _ act as wildcards.
+The five routes remain mounted when storage is unavailable and then return a
+typed ``SERVICE_UNAVAILABLE`` response. History IDs are durable database keys,
+not ephemeral proxy-history indexes. Clearing history and sitemap is one
+transaction and remains guarded by ``--confirm``.
 """
 
 from __future__ import annotations
@@ -100,7 +85,7 @@ def _replay_display(response: dict[str, Any]) -> dict[str, Any]:
 # Sub-application
 # ---------------------------------------------------------------------------
 
-sub = typer.Typer(no_args_is_help=True, help="Server-side DB history (conditional on SQLite init).")
+sub = typer.Typer(no_args_is_help=True, help="Extension-owned H2 request history and sitemap.")
 
 
 # ---------------------------------------------------------------------------

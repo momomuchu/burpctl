@@ -15,8 +15,7 @@ fun Route.configRoutes(service: ConfigService) {
         }
 
         put("/project") {
-            val request = call.receive<ConfigUpdateRequest>()
-            call.respond(ApiResponse.ok(service.updateProjectConfig(request)))
+            call.respond(ApiResponse.ok(service.updateProjectConfig(call.receive<ConfigUpdateRequest>())))
         }
 
         get("/user") {
@@ -24,8 +23,7 @@ fun Route.configRoutes(service: ConfigService) {
         }
 
         put("/user") {
-            val request = call.receive<ConfigUpdateRequest>()
-            call.respond(ApiResponse.ok(service.updateUserConfig(request)))
+            call.respond(ApiResponse.ok(service.updateUserConfig(call.receive<ConfigUpdateRequest>())))
         }
     }
 

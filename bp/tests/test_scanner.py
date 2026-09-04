@@ -45,9 +45,5 @@ def test_scan_audit_error_no_warning() -> None:
     assert r.returncode == 3, (
         f"expected exit 3 (conn refused), got {r.returncode}\nstderr={r.stderr!r}"
     )
-    assert "audit ignores" not in r.stderr, (
-        f"warning must not appear on error path:\n{r.stderr!r}"
-    )
-    assert "Burp UI scope" not in r.stderr, (
-        f"warning must not appear on error path:\n{r.stderr!r}"
-    )
+    assert "audit ignores" not in r.stderr, f"warning must not appear on error path:\n{r.stderr!r}"
+    assert "Burp UI scope" not in r.stderr, f"warning must not appear on error path:\n{r.stderr!r}"

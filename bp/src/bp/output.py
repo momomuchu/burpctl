@@ -18,13 +18,24 @@ _ESSENTIAL = ("verdict", "status", "statusCode", "id", "attackId", "payload", "r
 
 
 def render(data: Any, fmt: str = "table", *, fields: list[str] | None = None) -> str:
-    # [23] raw requires a single record (OUTPUT.md §1.3 R-RAW-SINGLE)
     if fmt == "raw" and isinstance(data, list):
-        raise ValueError("raw requires a single record; use --format json for multiple records")
+        # Preserve the established list diagnostic while refusing every
+        # structured value (dict is handled below) instead of JSON-masquerading.
+        raise ValueError(
+            "raw requires a single record and an unstructured value; "
+            "use --format json for structured records"
+        )
     if fmt == "raw" and fields is not None:
         raise ValueError("--fields is not valid with --format raw")
     if fmt == "quiet" and fields is not None:
         raise ValueError("--fields is not valid with --format quiet")
+    if fmt == "raw" and isinstance(data, dict):
+        raise ValueError(
+            "raw requires an unstructured value, not a dict or list; "
+            "use --format json for structured records"
+        )
+    if fields is not None and len(fields) == 1 and fields[0].strip().lower() in {"all", "*"}:
+        fields = None
     if fmt == "json":
         return _render_json(data, fields)
     if fmt == "table":
@@ -51,9 +62,7 @@ def _canonical_map(record: dict[str, Any]) -> dict[str, str]:
     return result
 
 
-def _resolve_fields(
-    fields: list[str], union_map: dict[str, str]
-) -> tuple[list[str], list[str]]:
+def _resolve_fields(fields: list[str], union_map: dict[str, str]) -> tuple[list[str], list[str]]:
     """Resolve requested field names against a union canonical map.
 
     Returns (canonical_fields, unknown_fields).
@@ -95,9 +104,7 @@ def _select(record: dict[str, Any], fields: list[str] | None) -> dict[str, Any]:
     return {k: record[k] for k in canonical}
 
 
-def _select_list_rows(
-    rows: list[dict[str, Any]], fields: list[str]
-) -> list[dict[str, Any]]:
+def _select_list_rows(rows: list[dict[str, Any]], fields: list[str]) -> list[dict[str, Any]]:
     """Select fields from a list of rows using union-based validation.
 
     OUTPUT.md §2.1 R-FIELDS:
@@ -194,24 +201,17 @@ def _render_table(data: Any, fields: list[str] | None) -> str:
             cols = list(dict.fromkeys(k for r in rows for k in r))
 
         # Width: computed from the uppercase header label and cell values
-        widths = {
-            c: max(len(c.upper()), *(len(_cell(r.get(c))) for r in rows))
-            for c in cols
-        }
+        widths = {c: max(len(c.upper()), *(len(_cell(r.get(c))) for r in rows)) for c in cols}
         # [06-NEW] Header uses UPPERCASE field names (OUTPUT.md §1.2 F-TABLE)
         header = "  ".join(c.upper().ljust(widths[c]) for c in cols)
-        body = "\n".join(
-            "  ".join(_cell(r.get(c)).ljust(widths[c]) for c in cols) for r in rows
-        )
+        body = "\n".join("  ".join(_cell(r.get(c)).ljust(widths[c]) for c in cols) for r in rows)
         return f"{header}\n{body}"
 
     if isinstance(data, dict):
         record = _select(data, fields)
         width = max((len(k) for k in record), default=0)
         # [06-NEW] Key column is UPPERCASE (OUTPUT.md §1.2 F-TABLE)
-        return "\n".join(
-            f"{k.upper().ljust(width)}  {_cell(v)}" for k, v in record.items()
-        )
+        return "\n".join(f"{k.upper().ljust(width)}  {_cell(v)}" for k, v in record.items())
     return str(data)
 
 
