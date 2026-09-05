@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://burpctl.local/verify/result-schema.json",
+  "title": "burpctl live release verification result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "suite",
+    "run_id",
+    "started_at",
+    "finished_at",
+    "repository",
+    "versions",
+    "binary",
+    "targets",
+    "cases",
+    "resources",
+    "summary",
+    "proof_ceiling"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "suite": {"const": "burpctl-live-release-verification"},
+    "run_id": {"type": "string", "format": "uuid"},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "repository": {"type": "object"},
+    "versions": {"type": "object"},
+    "binary": {"type": "object"},
+    "targets": {"type": "array", "items": {"$ref": "#/$defs/finalResource"}},
+    "cases": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/case"}
+    },
+    "resources": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/finalResource"}
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "registered_behavior_cases",
+        "selected_behavior_cases",
+        "executed_behavior_cases",
+        "pass",
+        "fail",
+        "could_not_run",
+        "system_failures",
+        "clean",
+        "exit_code"
+      ]
+    },
+    "proof_ceiling": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "disposition": {
+      "type": "object",
+      "required": ["status", "detail"],
+      "properties": {
+        "status": {
+          "enum": ["released", "held", "spent", "contaminated", "unknown"]
+        },
+        "detail": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "case": {
+      "type": "object",
+      "required": [
+        "case_id",
+        "group",
+        "layer",
+        "invariant",
+        "assertion",
+        "outcome",
+        "observed_evidence",
+        "resource_disposition",
+        "started_at",
+        "duration_ms"
+      ],
+      "properties": {
+        "case_id": {"type": "string"},
+        "group": {"enum": ["harness", "system", "rest", "cli"]},
+        "layer": {"enum": ["harness", "CLI", "extension", "Burp", "target"]},
+        "invariant": {"type": "string", "minLength": 1},
+        "assertion": {"type": "string", "minLength": 1},
+        "outcome": {"enum": ["PASS", "FAIL", "COULD_NOT_RUN"]},
+        "observed_evidence": {"type": "object"},
+        "missing_precondition": {"type": "string", "minLength": 1},
+        "resource_disposition": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/disposition"}
+        },
+        "started_at": {"type": ["string", "null"], "format": "date-time"},
+        "duration_ms": {"type": "number", "minimum": 0}
+      }
+    },
+    "finalResource": {
+      "type": "object",
+      "required": ["name", "final_disposition", "detail"],
+      "properties": {
+        "name": {"type": "string"},
+        "final_disposition": {
+          "enum": ["released", "held", "spent", "contaminated", "unknown"]
+        },
+        "detail": {"type": "string"}
+      }
+    }
+  }
+}

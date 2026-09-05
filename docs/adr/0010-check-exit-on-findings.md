@@ -1,56 +1,41 @@
-# ADR-0010 — `bp check` exits 5 when vulnerabilities are found
+# ADR-0010 — Security-check findings use exit 5
 
-- **Status:** accepted — 2026-06-19
-- **Criticality:** `[HIGH]` (CLI exit-code contract / public interface)
-- **Supersedes:** none. Refines ADR-0009 area (CLI contract) and `docs/CLI.md §Output convention`.
-- **Trigger:** a security-check test (**[12]**) — `bp check auth|idor|cors|headers`
-  exited `0` even when `vulnerableCount > 0`, so a CI/CD pipeline or shell script could not gate on
-  findings without parsing output.
+**Status:** accepted 2026-06-19 · amended for inconclusive outcomes 2026-09-05
+**Criticality:** [HIGH]
 
 ## Context
 
-Every security CLI in common use (`nmap`, `nikto`, `nuclei`, `trivy`, `gitleaks`) returns a
-**non-zero exit code when it finds something**, so that `bp check … && deploy` and CI gates work
-without scraping stdout. `bp check` returned `0` regardless of `vulnerableCount` / `anomalousCount`,
-making the four `check` verbs unusable as a pipeline gate.
-
-The existing exit-code contract is `0` ok · `1` generic · `2` usage · `3` connection · `4` PRO.
-None of those carry "the scan ran fine **and** found a finding", which is a distinct, expected
-outcome for a scanner — not an error.
+A security-check command needs to distinguish a completed clean classifier result, a finding, an
+inconclusive observation, and operational failure without requiring a script to scrape human output.
+A finding is not a generic runtime error, and an absent response is not evidence of a vulnerability.
+No claim is made that every other security CLI follows the same convention.
 
 ## Decision
 
-Add **exit code `5` (`EXIT_VULN`)**: emitted by `bp check auth|idor|cors|headers|endpoints` when the
-scan **completed successfully** and reported at least one finding (`vulnerableCount > 0`, or
-`anomalousCount > 0` for `headers`). The normal rendered output is still written to stdout first;
-only the process exit code changes.
+Only `bp check auth|idor|headers|cors|endpoints` can use exit 5. The command emits its normal result to
+stdout before exit selection.
 
-- `0` — scan ran, **no** findings.
-- `5` — scan ran, **findings present** (output still on stdout, parsable).
-- `1/2/3/4` — unchanged (error / usage / connection / Pro-only), and take precedence over `5`
-  (a connection failure is exit 3, not 5).
+| Exit | Check meaning |
+|---:|---|
+| 0 | classifier completed with no finding and no unresolved inconclusive-only outcome |
+| 1 | runtime/service error or observations are only inconclusive |
+| 2 | invocation/local validation error |
+| 3 | REST transport failure |
+| 4 | required Pro capability unavailable |
+| 5 | one or more classifier findings |
 
-`EXIT_VULN` is additive: it never changes the meaning of `0/1/2/3/4` for any pre-existing case, and
-only the `check` group can emit it.
+A response anomaly is not automatically a finding. Findings select exit 5 even if other probes are
+inconclusive; otherwise an inconclusive-only result selects exit 1. A target HTTP error remains result
+data when the bp/Burp operation itself completed.
 
-## Rationale
-
-- **Product evidence:** `bp` is a security tool used in local bug-bounty / pentest workflows (the realistic-scenario campaign). Pipeline-gating on findings is the single most common way such tools are scripted.
-- No existing test asserts `check` exits `0` on findings, so the change breaks no frozen contract.
-- Convention alignment lowers operator surprise (matches `nuclei`/`trivy`).
-
-## Alternatives considered
-
-1. **Keep exit 0, require parsing `vulnerableCount`.** Rejected: forces every caller to parse JSON to
-   gate, defeats `&&`/CI use, diverges from every comparable tool.
-2. **Reuse exit 1 (generic error).** Rejected: a finding is not an error; conflating them means a
-   real connection/usage failure is indistinguishable from "found an issue".
-3. **Make it opt-in behind `--exit-on-findings`.** Rejected for v1 default: the scanner convention is
-   strong enough to be the default; a future `--no-fail` flag can opt out if a user needs exit 0.
+Exit 5 means only that the implemented classifier emitted a finding. It does not independently prove
+ownership, authorization policy, exploitability, or server-held marker origin. Those proof boundaries
+are in [`../PROOF-CEILINGS.md`](../PROOF-CEILINGS.md).
 
 ## Consequences
 
-- `docs/CLI.md §Output convention` exit-code list gains `5 vulnerabilities found`.
-- Implemented in `bp/src/bp/commands/securityscan.py` (post-render inspection of the response),
-  with `EXIT_VULN = 5` defined in `bp/src/bp/cliutil.py`. `run()` semantics are unchanged — the
-  command inspects the captured response after a successful `run()` and raises `typer.Exit(5)`.
+- Scripts can branch on the complete 0–5 contract in [`../CLI.md`](../CLI.md).
+- Structured stdout is retained for findings and inconclusive observations.
+- `EXIT_VULN` remains separate from generic/transport/Pro errors.
+- Changes to classifier meaning require synchronized output, exit, documentation, and acceptance
+  oracles; a constant pinned to a superseded classifier result is not a valid gate.

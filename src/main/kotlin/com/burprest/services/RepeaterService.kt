@@ -27,12 +27,15 @@ class RepeaterService(
     fun send(request: SendRequest): SendResponse = sendPrepared(resolveRequest(request))
 
     fun sendBatch(batch: BatchSendRequest): BatchSendResponse {
+        require(batch.requests.isNotEmpty()) { "requests must not be empty" }
         val start = System.nanoTime()
         // Resolve and validate the whole batch before the first target effect. In particular, do not
         // implement this as requests.map(::send): a bad late item must not leave an earlier item sent.
         val prepared = batch.requests.mapIndexed { index, request ->
             try {
                 resolveRequest(request)
+            } catch (failure: InvalidParamException) {
+                throw InvalidParamException("requests[$index]: ${failure.clientMessage}", failure)
             } catch (failure: IllegalArgumentException) {
                 throw IllegalArgumentException("requests[$index]: ${failure.message ?: "invalid request"}", failure)
             }
@@ -57,6 +60,9 @@ class RepeaterService(
         // produced an unidentifiable tab, so absence takes the default while blank is rejected.
         val name = request.name?.let {
             validateParameter(it, "name", "must not be blank", String::isNotBlank)
+            validateParameter(it, "name", "must not contain control characters") { value ->
+                value.none(Character::isISOControl)
+            }
         } ?: DEFAULT_TAB_NAME
 
         api.repeater().sendToRepeater(httpRequest, name)
@@ -326,8 +332,10 @@ class RepeaterService(
     private fun validateHeader(name: String, value: String, field: String) {
         require(name.isNotBlank()) { "$field name must not be blank" }
         require(name.all(::isTokenCharacter)) { "$field name must be a valid HTTP token" }
-        require(value.none { it == '\r' || it == '\n' || it == '\u0000' }) {
-            "$field value contains forbidden CR, LF, or NUL"
+        require(value.none { character ->
+            character == '\u007f' || (character < ' ' && character != '\t')
+        }) {
+            "$field value contains invalid control characters"
         }
     }
 

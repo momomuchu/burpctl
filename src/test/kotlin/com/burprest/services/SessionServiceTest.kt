@@ -1399,4 +1399,222 @@ class SessionServiceTest {
         assertEquals("application/javascript", request.headerValueOrNull("Accept"))
         assertEquals(listOf("jar"), service.getCookieJar().cookies.map { it.name })
     }
+
+    @Test
+    fun `COOKIES_ONLY retains configured cookies when a Cookie session header also exists`() {
+        val fixture = httpFixture(emptyList())
+        val service = fixture.service()
+        service.setSession(
+            SetSessionRequest(
+                cookies = mapOf("sid" to "map-cookie"),
+                headers = mapOf("Cookie" to "header-cookie"),
+                origin = "https://example.test",
+            )
+        )
+
+        assertTrue(service.cookieOnlyDiffersFromNone())
+        service.sendPreservingHeaders(
+            request = AuthenticatedRequest(url = "https://example.test/path"),
+            headers = emptyList(),
+            credentialMode = CredentialMode.COOKIES_ONLY,
+            persistObservation = false,
+        )
+
+        assertEquals(
+            "sid=map-cookie",
+            fixture.sent.single().headerValueOrNull("Cookie"),
+            "COOKIES_ONLY and NONE became the same request despite the accessor reporting a difference",
+        )
+    }
+
+    @Test
+    fun `cross-site single-label Domain attributes are rejected`() {
+        val fixture = httpFixture(
+            listOf("Set-Cookie" to "wide=secret; Domain=com; Path=/"),
+            emptyList(),
+        )
+        val service = fixture.service()
+
+        service.send(AuthenticatedRequest(url = "https://foo.com/"))
+        service.send(AuthenticatedRequest(url = "https://bar.com/"))
+
+        assertTrue(service.getCookieJar().cookies.none { it.name == "wide" })
+        assertNull(fixture.sent[1].headerValueOrNull("Cookie"))
+    }
+
+    @Test
+    fun `cookie domain path replacement and serialization boundaries are exact`() {
+        val fixture = httpFixture(
+            listOf(
+                "Set-Cookie" to "wide=one; Domain=example.test; Path=/",
+                "Set-Cookie" to "root=one; Path=/",
+                "Set-Cookie" to "same=root; Path=/",
+                "Set-Cookie" to "same=deep; Path=/app",
+                "Set-Cookie" to "slash=yes; Path=/app/",
+            ),
+            emptyList(),
+            listOf("Set-Cookie" to "wide=two; Domain=example.test; Path=/"),
+            emptyList(),
+            emptyList(),
+            emptyList(),
+        )
+        val service = fixture.service()
+
+        service.send(AuthenticatedRequest(url = "https://api.example.test/app/start"))
+        service.send(AuthenticatedRequest(url = "https://cdn.example.test/app"))
+        val sibling = fixture.sent[1].headerValueOrNull("Cookie").orEmpty()
+        assertTrue("wide=one" in sibling)
+        assertFalse("root=one" in sibling, "host-only cookie reached a sibling")
+        assertEquals(listOf("wide=one"), fixture.sent[1].headerValueOrNull("Cookie")?.split("; "))
+
+        service.send(AuthenticatedRequest(url = "https://api.example.test/refresh"))
+        service.send(AuthenticatedRequest(url = "https://badexample.test/app/x"))
+        assertNull(fixture.sent[3].headerValueOrNull("Cookie"))
+
+        service.send(AuthenticatedRequest(url = "https://api.example.test/app"))
+        assertFalse("slash=yes" in fixture.sent[4].headerValueOrNull("Cookie").orEmpty())
+        service.send(AuthenticatedRequest(url = "https://api.example.test/app/x"))
+        assertEquals(
+            listOf("slash=yes", "same=deep", "wide=two", "root=one", "same=root"),
+            fixture.sent[5].headerValueOrNull("Cookie")?.split("; "),
+        )
+        assertEquals("two", service.getCookieJar().cookies.single { it.name == "wide" }.value)
+    }
+
+    @Test
+    fun `header precedence covers configured Cookie case folding and per-request override`() {
+        val fixture = httpFixture(emptyList(), emptyList())
+        val service = fixture.service()
+        service.setSession(
+            SetSessionRequest(
+                cookies = mapOf("sid" to "map"),
+                headers = linkedMapOf(
+                    "Cookie" to "header=yes",
+                    "X-Key" to "first",
+                    "x-key" to "last",
+                ),
+                origin = "https://example.test",
+            )
+        )
+
+        service.send(AuthenticatedRequest(url = "https://example.test/one"))
+        service.send(
+            AuthenticatedRequest(
+                url = "https://example.test/two",
+                extraHeaders = mapOf("cookie" to "request=yes", "X-KEY" to "request"),
+            )
+        )
+
+        assertEquals("header=yes", fixture.sent[0].headerValueOrNull("Cookie"))
+        assertEquals("last", fixture.sent[0].headerValueOrNull("X-Key"))
+        assertEquals(1, fixture.sent[0].headers().count { it.name().equals("X-Key", true) })
+        assertEquals("request=yes", fixture.sent[1].headerValueOrNull("Cookie"))
+        assertEquals("request", fixture.sent[1].headerValueOrNull("X-Key"))
+    }
+
+    @Test
+    fun `request material accessors cover direct false true cross-origin jar and invalid URL arms`() {
+        val fixture = httpFixture(listOf("Set-Cookie" to "jar=one; Path=/"))
+        val jarOnly = fixture.service()
+        assertFalse(jarOnly.cookieOnlyDiffersFromNone())
+        jarOnly.send(AuthenticatedRequest(url = "https://example.test/seed"))
+        assertEquals(
+            SessionRequestMaterialSnapshot.Available(
+                headers = emptyList(),
+                cookies = listOf(SessionRequestCookie("jar", "one")),
+                cookieHeaderValue = "jar=one",
+            ),
+            jarOnly.snapshotSessionRequestMaterial("https://example.test/next"),
+        )
+        assertEquals(
+            SessionRequestMaterialSnapshot.Unavailable,
+            jarOnly.snapshotSessionRequestMaterial("not a URL"),
+        )
+
+        val configured = httpFixture().service()
+        configured.setSession(
+            SetSessionRequest(
+                cookies = mapOf("sid" to "one"),
+                headers = mapOf("Cookie" to "opaque=yes"),
+                origin = "https://example.test",
+            )
+        )
+        assertTrue(configured.cookieOnlyDiffersFromNone())
+        assertEquals(
+            SessionRequestMaterialSnapshot.Available(emptyList(), emptyList(), "opaque=yes"),
+            configured.snapshotSessionRequestMaterial("https://example.test/path"),
+        )
+        assertEquals(
+            SessionRequestMaterialSnapshot.Available(emptyList(), emptyList(), null),
+            configured.snapshotSessionRequestMaterial("https://other.test/path"),
+        )
+    }
+
+    @Test
+    fun `cookie expiry boundaries include exact now malformed dates and saturating Max-Age`() {
+        val now = AtomicLong(1_700_000_000_000L)
+        val fixture = httpFixture(
+            listOf(
+                "Set-Cookie" to "exact=gone; Path=/; Max-Age=0",
+                "Set-Cookie" to "malformed=session; Path=/; Expires=not-a-date",
+                "Set-Cookie" to "huge=alive; Path=/; Max-Age=${Long.MAX_VALUE}",
+                "Set-Cookie" to "overflow=alive; Path=/; Max-Age=${Long.MAX_VALUE / 1_000}",
+            )
+        )
+        val service = fixture.service(collaborators = fixture.collaborators(clock = now::get))
+
+        service.send(AuthenticatedRequest(url = "https://example.test/"))
+
+        val cookies = service.getCookieJar().cookies.associateBy { it.name }
+        assertFalse("exact" in cookies)
+        assertNull(cookies.getValue("malformed").expiresAt)
+        assertEquals(Long.MAX_VALUE, cookies.getValue("huge").expiresAt)
+        assertEquals(Long.MAX_VALUE, cookies.getValue("overflow").expiresAt)
+    }
+
+    @Test
+    fun `successful singleton repeated and later-failing batches have explicit effect order`() {
+        val fixture = httpFixture(emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val service = fixture.service()
+        val first = AuthenticatedRequest(url = "https://example.test/one")
+        val second = AuthenticatedRequest(url = "https://example.test/two")
+
+        val singleton = service.sendBatch(BatchAuthenticatedRequest(listOf(first)))
+        val repeated = service.sendBatch(BatchAuthenticatedRequest(listOf(first, first)))
+        assertEquals(1, singleton.results.size)
+        assertEquals(2, repeated.results.size)
+        assertEquals(listOf(first.url, first.url, first.url), fixture.sent.take(3).map { it.url() })
+
+        every { fixture.http.sendRequest(any<HttpRequest>()) } answers {
+            fixture.sent.add(firstArg())
+            if (fixture.sent.size == 5) error("transport stopped")
+            exchange(emptyList())
+        }
+        assertFailsWith<IllegalStateException> {
+            service.sendBatch(BatchAuthenticatedRequest(listOf(first, second)))
+        }
+        assertEquals(
+            listOf(first.url, second.url),
+            fixture.sent.takeLast(2).map { it.url() },
+            "validation is atomic, but a later transport failure cannot roll back an earlier target send",
+        )
+    }
+
+    @Test
+    fun `clears are idempotent on empty state and return exact empty accessors`() {
+        val fixture = httpFixture()
+        val dao = mockk<SessionDao>()
+        every { dao.load() } returns null
+        every { dao.clear() } returnsMany listOf(0, 0)
+        val service = fixture.service(sessionDao = dao)
+
+        repeat(2) {
+            val cleared = service.clearSession()
+            assertEquals("default", cleared.name)
+            assertTrue(cleared.cookies.isEmpty())
+            assertEquals(0, service.getCookieJar().total)
+        }
+        assertEquals(0, service.clearCookieJar().total)
+        verify(exactly = 2) { dao.clear() }
+    }
 }

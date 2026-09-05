@@ -1,1003 +1,304 @@
-# `bp` — Product Spec
+# `bp` REST contract
 
-# Current executable contract
-
-This section supersedes stale behavior descriptions later in this historical specification. It records the shipped v2.0.0 behavior rechecked against a real Burp Suite Professional 2026.3.3 instance on 2026-09-04. Where the live campaign contradicted a prior contract claim, the limitation is named below and linked to `quality/confirmed-defects.yaml`; a fix is not current behavior until the original live reproduction passes after redeployment. See [ADR-0013](adr/0013-truthful-executable-contracts.md) and [ADR-0014](adr/0014-state-preserving-reportable-operations.md).
+The published v2.1.0 contract is [`src/main/resources/openapi.json`](../src/main/resources/openapi.json).
+It declares **69 operations on 64 paths in 13 groups**, and every operation has a unique
+`operationId`. Kotlin contract tests join those operations to route request/response serializers. That
+is publication and source-level shape evidence, not proof that each operation works against real Burp.
+See [ADR-0014](adr/0014-state-preserving-reportable-operations.md), the
+[quality ledger](../quality/confirmed-defects.yaml), and the [proof ceilings](PROOF-CEILINGS.md).
 
 ## Server boundary
 
-- Most 404, 405, validation, unsupported, Pro-gated, storage, and internal failures use `ApiResponse { success, data, error }` JSON. In v2.0.0, unsupported/missing request media and an empty JSON body instead produce a bare HTTP 415 with no body (D19).
-- Outer REST request DTOs reject malformed syntax and unknown members. A nested Burp configuration document is a separate boundary: v2.0.0 allows Burp to coerce a wrong-typed value and reset siblings (D49), or silently ignore an unknown key while reporting success (D50).
-- Request logs contain method and path only, never query strings, headers, or bodies. Invalid `/history` timestamps nevertheless echo the raw query value and Java parser class in the response error (D21).
-- Discoverable operations unavailable in Montoya 2025.3 return HTTP 501 `UNSUPPORTED`; they never return a successful no-op. The v2.0.0 server-side Intruder matrix routes are an exception in classification only: they reject without sending, but use HTTP 400 `INVALID_REQUEST` (D48).
-- Extension state uses H2/MVStore under `~/.burp-rest/`, with owner-only permissions where supported. The Python Run Ledger remains SQLite under `~/.bp/` and stores fingerprints rather than raw request/response bodies.
+- The extension listens on loopback; the default is `http://127.0.0.1:8089` and the port can be changed
+  by the extension configuration. The OpenAPI `servers` value records the default, not every runtime
+  port.
+- JSON decoding is compact, strict (`isLenient=false`, `ignoreUnknownKeys=false`), and emits defaults.
+  Unknown outer DTO members, malformed values, and semantic validation failures are rejected.
+- Success and failure normally use `ApiResponse {success,data,error}`. `/docs` is the one raw-document
+  success. Framework 404, 405, and 415 failures are converted to typed JSON envelopes; a 415 does not
+  distinguish missing/unsupported media type from an unparseable body.
+- Request logging records method, path without query, resulting status, duration, and time. It does not
+  log query strings, headers, or bodies.
+- H2/MVStore state is under `~/.burp-rest/`. Routes remain discoverable when H2 initialization fails
+  and return service-unavailable responses where storage is required.
+- The OpenAPI document declares no HTTP authentication scheme. That means only “not declared by this
+  publication”; it is not a general claim about deployment protections.
 
-## Observed operation behavior
+## Complete published surface
 
-- Proxy history filtering matches an exact normalized host and preserves absolute history indexes. Intercept on/off state comes from Montoya; forward/drop are unsupported. A populated real WebSocket history is unreadable in v2.0.0: one absent edited-payload value fails the whole listing with HTTP 500 (D23). The 2.1.0 response contract makes `WebSocketEntry.url`, `direction`, legacy `payload`, and `payloadBase64` nullable, but that repair still requires live verification.
-- Repeater send enforces exactly one of inline request or proxy `requestId`, and batch input is preflighted. A response-less exchange is `NO_RESPONSE`. An explicitly blank Repeater tab name is accepted and creates `name:""` (D26).
-- Session replacement is atomic and credentials bind to one normalized origin. Invalid CR/LF/NUL header values are stopped by the extension before target traffic, but v2.0.0 sends them across the local REST boundary first (D28). The captured cookie jar is separate from configured session fields and survives `bp session clear`; v2.0.0 exposes no CLI operation to clear that jar (D29). Cookie output omits `HttpOnly` (D30).
-- Client-side `bp fuzz` names sniper, battering-ram, pitchfork, and cluster-bomb and emits one explicit baseline plus attempted-shot rows. Live v2.0.0 sends add browser-default headers (D38), collapse duplicate Cookie fields (D39), corrupt multibyte body payloads (D40), silently ignore extra named lists in sniper/battering-ram (D41), cannot represent several payload-file values (D43), rejects NUL bodies (D44), and cannot normalize a captured fragment-bearing URL (D45). Unequal pitchfork lists intentionally stop at the shortest list (D42 is rejected). A baseline `NO_RESPONSE` stops the campaign but exits 1 rather than transport exit 3 (D46).
-- Collaborator identities and interaction details come from Montoya while the extension registry survives. Unknown IDs return the generic global `route not found` text rather than the payload-specific message (D35). A user-configuration reload destroys the whole registry, including untouched controls (D53).
-- Scanner audit creates a task for the supplied URL, but real task status, issues, and audit stop fail with HTTP 503 in v2.0.0 (D55). Six task states remain unknown; no API enumerates scanner tasks. Pause/resume and linked crawl-and-audit are unsupported in Montoya 2025.3. No claim is made about the empty target-sitemap observation until the Burp target sitemap and extension H2 sitemap stores are disambiguated (D56).
-- `check auth` in v2.0.0 still marks three identical public HTTP 200 representations as vulnerable and exits 5 (D58). The 2.1.0 target rule compares FULL, COOKIES_ONLY, and NONE: three identical arms establish no credential-sensitive boundary. **Detection ceiling:** Without a server-held marker, `check auth` cannot distinguish a cookie-only bypass where FULL, COOKIES_ONLY, and NONE all return the same representation from an intentionally public route; that case is not confirmed. A FULL/NONE protected-byte match with an independently denied COOKIES_ONLY control remains confirmable.
-- Structured inconclusive check results use exit 0 in v2.0.0 across auth, headers, IDOR, CORS, and endpoints (D60), so the representation—not the exit alone—must be inspected. Check probes also have no per-probe timeout; a 1.5-second public response remained conclusive and became the same false auth finding, while only the aggregate 30-second client deadline stopped seven repeated endpoints (D61). The 2.1.0 target behavior is bounded but deliberately does not diagnose an absent response: the result is inconclusive and names the configured budget. Pinned Montoya signals a slow target, refused connection, and resolution failure identically as no response and exposes no public timeout-specific type, so the extension cannot truthfully distinguish them.
-- Header-check anomalies are observations. A fresh protected marker distinguished a real denial-to-substantive-success bypass from a decoy live: only the former incremented `vulnerableCount` and selected exit 5. CORS probes excluded target-owned subdomains in the live campaign. Endpoint sweep reads extension-owned Repeater/session H2 history, not ordinary proxy listener history.
-- Target add/remove/check return the engine's resulting classification for ordinary accepted URLs. Complete listing/replacement is unsupported; v2.0.0 help text incorrectly describes those commands as usable (D52). An accepted 8 KiB scope URL cannot be checked through the GET query path, so its final independent state is unknown (D51).
-- Project/user config endpoints export and import nested Burp JSON, but import is not an exact all-or-nothing contract in v2.0.0 (D49–D50). `PUT /config/user` also reloads the serving extension while the request is in flight, resets uptime, and destroys extension-owned in-memory state; project-only imports did not reset uptime in the observed sequence. Because the operation cannot report its own completion truthfully, ADR-0014 requires it to refuse (D53). `/extensions` reports only the current extension.
-- History routes remain mounted when H2 is unavailable and history+sitemap clear is transactional. Valid filters work, but malformed `page`, `pageSize`, and `statusCode` values are silently defaulted/omitted (D20), and invalid timestamp errors disclose parser details/input (D21).
-- Utilities use RFC URI resolution, keep credentials same-origin, report bundle fetch failures, count UTF-8 bytes, and preserve duplicate-header differences in the tested utility paths.
+Each row is `METHOD path — operationId`, copied from the v2.1.0 declaration.
 
-## Output and automation
+### System
 
-- Successful JSON lists use compact NDJSON. Runtime/server failures use one JSON error record in JSON mode, but v2.0.0 local validation and Typer parser errors remain human/Rich text even under `BP_AGENT=1` or explicit JSON (D22).
-- Redaction is structural before serialization. In v2.0.0 cookie-jar redaction also hides safe domain/name/path metadata, so inspecting identity requires the unsafe `--no-redact` value opt-out (D31).
-- `raw` rejects structured values. Despite the historical single-entry raw design below, v2.0.0 does not reconstruct raw HTTP for `bp req`, `bp send`, `bp history get`, or `bp history replay`; those commands exit 2 after receiving a dictionary (D27).
-- Output compatibility is checked after command execution in v2.0.0. Invalid `raw` or `--fields` selections therefore can mutate intercept/scope/config, send/replay target traffic, create tabs/payloads/tasks, or consume a Collaborator interaction before exit 2 (D24). The Run Ledger records the REST call as successful and later stores exit 2; rendering success is not part of its operation-status field.
-- Quiet and field selection are command projections, not universally correct in v2.0.0: Collaborator quiet emits Python containers/booleans and can consume detail (D33), while Collaborator fields address wrappers rather than documented records (D34). Scope/config quiet output has the same Python-representation/wrong-essential-value class recorded under D33. Among security checks, only IDOR emits the promised one-word quiet verdict; auth, headers, CORS, and endpoints emit a wrapper value or Python representation (D59).
-- Config precedence is flag > environment > config file > default for the exercised Python settings.
-
-## Acceptance status
-
-`docs/bdd/` is historical scenario material, not an executable gate. Hermetic Kotlin/Python, OpenAPI, CLI-route, package, lint, and coverage gates all passed before the campaign, but mocks could not expose real Montoya null/throw behavior. For affected integration claims, comparable proof against a real supported Burp build is now a release gate; see ADR-0014. D19–D61 preserve 37 live-confirmed v2.0.0 defects; the current dispositions are 33 `confirmed`, four `fixed` but not live-reverified, one `unconfirmed` observation, and five `rejected` brief-derived candidates. No campaign defect is `verified`.
-
----
-
-
-Canonical spec rebuilt from source
-(`RestServer.kt` + `routes/*.kt`).
-Enumeration: **13 groups · 69 endpoints ·
-verdict COMPLETE**.
-Generated 2026-06-16.
-
----
-
-## Table of Contents
-
-1. Mission
-2. Source-of-truth
-3. Name
-4. Components
-5. `--pos` grammar
-6. API — 13 groups / 69 endpoints
-7. Community vs Pro
-8. Kotlin contract (serialization)
-9. C4 Run Ledger
-10. Test architecture (TDD)
-11. DDD
-12. Coverage roadmap
-13. Resolved decisions
-14. Acceptance criteria
-
----
-
-## 1 · Mission
-
-`bp` (alias `burpctl`) is a **standalone POSIX
-CLI** that drives Burp Suite through its local
-REST API at `:8089`. It provides **flexible
-fuzzing** (`--pos` grammar with multi-position +
-4 attack-types) and **observability** for every
-operation. Target: a distributable user-facing
-product, not an internal tool.
-Default config: `BURP_REST_URL =
-http://127.0.0.1:8089`.
-
----
-
-## 2 · Source-of-truth
-
-The 3 docs in the repo contradict each other. **Only
-one tells the truth.**
-
-| Doc | Verdict |
-|---|---|
-| `spec.md` | **OUTDATED** — port 9876, Python, MCP wrapper. Describes the pre-rewrite architecture. |
-| `README.md` | **PARTIAL** — omits session/scan/utils/history; references ghost routes. |
-| `RestServer.kt` | **TRUTH** — the actual `configureRouting()` wiring. |
-
-**Consequence:** the spec is rebuilt from
-source, never from a doc. `spec.md` will be
-marked deprecated (archived, not deleted).
-
-### Critical docMismatches
-
-- **CRITICAL** — `spec.md` states port **9876**;
-  the actual port is **8089**. Any client built
-  against `spec.md` hits the wrong port and fails.
-- **HIGH** — `spec.md` describes a
-  Python/SSE/**MCP PortSwigger** wrapper; the actual
-  implementation is a flat **Kotlin/Ktor REST**
-  extension (no SSE, no MCP).
-- **HIGH** — `README` lists `/sequencer/*`,
-  `/comparer/*`, `/logger/*`, `/search` as
-  active: **none are wired** (ghost endpoints).
-- **MEDIUM** — `README` omits
-  `/session/*`, `/scan/*`, `/utils/*` entirely (3
-  groups that are actually functional).
-- **LOW** — the OpenAPI spec embedded at
-  `/docs` declares **0.2.0** while
-  `/health` and `/version` return **2.0.0**;
-  it also omits several real endpoints.
-
----
-
-## 3 · Name
-
-**`bp`** — 2 letters, unoccupied, memorable.
-**Alias: `burpctl`** (`*ctl` convention:
-kubectl / systemctl).
-
-| Rejected | Reason |
-|---|---|
-| `burp` | collision with an existing backup tool. |
-| `bx` | already taken (Ruby / bundler context). |
-
-`bp` is the canonical name; `burpctl` is the alias.
-
----
-
-## 4 · Components
-
-| # | Component | Status |
-|---|---|---|
-| **C1** | API spec (this source-grounded enumeration). | priority |
-| **C2** | Standalone CLI `bp` — DX + AX, core = `--pos` grammar. | priority |
-| **C4** | **Run Ledger** — bp-to-extension REST operation metadata in a local DB (§9). | shipped |
-| **W** | SDD / TDD / DDD / spec-as-contract methodology. | cross-cutting |
-
-> **C4 complements `curl`; it does not replace target traffic evidence.** It makes bp's REST control
-> calls timestamped and queryable. Burp proxy or extension history and caller-owned request evidence
-> answer the separate question of what reached a target.
-
----
-
-## 5 · `--pos` grammar
-
-Load-bearing core of the CLI. Mark any
-byte-range: header / cookie / body /
-query / path, multi-position, 4 attack-types.
-
-### Selectors (target)
-
-| Selector | Target |
-|---|---|
-| `header:NAME` | a header value |
-| `cookie:NAME` | a cookie value |
-| `body:FIELD` | form field / JSON field |
-| `query:NAME` | URL parameter |
-| `path:INDEX` | path segment |
-| `offset:START-END` | raw byte-range |
-
-### Attack-types (Intruder)
-
-| Type | Combination |
-|---|---|
-| `sniper` | 1 payload set; each position **in turn** (only 1 active at a time). |
-| `battering-ram` | **same** payload injected into **all** positions simultaneously. |
-| `pitchfork` | N **parallel** sets: set[i] ↔ position[i], iterated in lock-step (shortest length wins). |
-| `cluster-bomb` | N-dimensional **Cartesian product**: every combination of every set. |
-
-### Matrix fuzzing (cluster-bomb)
-
-`cluster-bomb` = **Cartesian product**. With
-2 headers + 1 cookie, there is a **3D matrix**:
-`a × b × c` requests.
-
-```
-bp fuzz --id 42 \
-  --pos 'header:X-Forwarded-For' \
-  --pos 'header:X-Real-IP' \
-  --pos 'cookie:role' \
-  --type cluster-bomb \
-  --payloads X-Forwarded-For=ips.txt \
-  --payloads X-Real-IP=ips.txt \
-  --payloads role=roles.txt \
-  --throttle-ms 500 --anomalous-only
+```text
+GET /health — get_health
+GET /version — get_version
+GET /docs — get_docs
 ```
 
-If `ips.txt`=a lines, `ips.txt`=b, `roles.txt`=c
-→ **a × b × c** requests sent.
+### Proxy
 
-### Key note — offset resolution
-
-> REST positions are **byte-offsets**:
-> `PayloadPosition { start:Int, end:Int,
-> name:String }` (all 3 required, no defaults).
-> The API accepts **only** raw offsets,
-> not parameter names.
->
-> **Therefore `bp` MUST RESOLVE** semantic selectors
-> (`header:X`, `body:f`…) **into
-> byte-ranges** by parsing the captured base request.
-> This is the CLI's central task.
-
-**Current API Intruder implementation caveats**
-(to surface to the user):
-
-- Only `positions[0].name` is consumed in
-  sniper mode.
-- All `payloads` values
-  (`Map<String,List<String>>`) are **flattened**
-  (`values.flatten()`) into a single list — map keys
-  have no functional role.
-- Only `sniper` is implemented server-side;
-  the other 3 types are **accepted but
-  execute sniper**. `battering-ram` /
-  `pitchfork` / `cluster-bomb` must be
-  implemented **client-side by `bp`** (matrix
-  expansion + multiple sends) or by a later Kotlin
-  extension.
-- `options.throttleMs` active;
-  `followRedirects` / `maxRetries` accepted but
-  **not wired**.
-
----
-
-## 6 · API — 13 groups / 69 endpoints
-
-Adverse critical verdict: **COMPLETE** (69
-source handlers = 69 enumerated, 0 missed).
-Source `routes/*.kt` is the sole authority —
-no invented endpoints.
-
-Legend: **P** = Pro required · **C** = Community
-OK · **stub** = dummy handler.
-
----
-
-### 6.1 · health `/` — 3 endpoints · C
-
-Pure server introspection. No Montoya, no
-Pro, no DB. Paths without prefix.
-
-| Method | Path | Pro | Request model | Hunter usage |
-|---|---|---|---|---|
-| GET | `/health` | C | — | poll at session start: confirms extension is up + uptime. |
-| GET | `/version` | C | — | confirms the deployed version. |
-| GET | `/docs` | C | — | fetches the embedded OpenAPI spec (⚠ incomplete, declares 0.2.0). |
-
-- **pre/post/err**: Ktor server listening;
-  unconditional HTTP 200; `INTERNAL_ERROR`
-  500 only on unexpected Throwable.
-- Responses: `ApiResponse<HealthResponse>`
-  {status:'ok', version:'2.0.0', uptime:Long,
-  burpVersion:null}. `/docs` = raw JSON (**not**
-  wrapped, `respondText()`).
-- **Flag**: `burpVersion` is never populated.
-
----
-
-### 6.2 · proxy `/proxy` — 8 endpoints · C
-
-⚠ **4 of the 8 are stubs / hardcoded.**
-
-| Method | Path | Pro | Request model (fields · Kotlin types) | Hunter usage |
-|---|---|---|---|---|
-| GET | `/proxy/history` | C | query: `limit:Int?`, `offset:Int?=0`, `host:String?` | dumps history filtered by host + paginated. |
-| GET | `/proxy/history/{id}` | C | path: `id:Int` (toIntOrNull) | single entry by absolute index. |
-| GET | `/proxy/websocket/history` | C | — | inspect WS messages (direction + payload). |
-| GET | `/proxy/intercept` | C | — **stub** | always `{enabled:false}` — unreliable. |
-| POST | `/proxy/intercept/enable` | C | — | enables intercept before manual navigation. |
-| POST | `/proxy/intercept/disable` | C | — | disables after inspection. |
-| POST | `/proxy/intercept/forward` | C | — **stub** | `{forwarded:true}` no-op. |
-| POST | `/proxy/intercept/drop` | C | — **stub** | `{dropped:true}` no-op. |
-
-- **Key contract**: `ProxyHistoryResponse.total` is the filtered size before pagination. Every row's
-  `id` is its absolute index in `api.proxy().history()`, preserved across host filtering and offsets,
-  so it can be passed directly to `/proxy/history/{id}`, `bp req`, `bp send`, or `bp fuzz`.
-- **err**: `/{id}` non-integer → `INVALID_PARAM`;
-  out of bounds → 500 Ktor (unmapped).
-- **Flags**: `listenerInterface`, `clientIp`,
-  `timestamp` (HTTP) always null. WS
-  `timestamp` = `Instant.now()` at call time (not
-  capture time). `forward`/`drop` **absent from
-  `/docs`**.
-
----
-
-### 6.3 · repeater `/repeater` — 3 endpoints · C · **fuzz-critical**
-
-`/send` + `/send/batch` drive
-`http().sendRequest()` (HTTP engine, **not**
-the UI). `/tab/create` opens a UI tab without
-traffic. DB optional (row silently skipped if init fails).
-
-| Method | Path | Pro | Request model (Kotlin types) | Hunter usage |
-|---|---|---|---|---|
-| POST | `/repeater/send` | C | `SendRequest` { request:HttpRequestData?=null, requestId:Int?=null, modifications:RequestModifications?=null } — **exactly one** of request/requestId | replay/craft with on-the-fly overrides; returns req+resp+timing. |
-| POST | `/repeater/send/batch` | C | `BatchSendRequest` { requests:List\<SendRequest\> } | multiple requests in one call (sequential). |
-| POST | `/repeater/tab/create` | C | `CreateTabRequest` { name:String?=null, request:HttpRequestData?=null, requestId:Int?=null } | pushes a request into the Repeater UI. |
-
-- **pre/post/err**: `/send` requires exactly one of
-  request/requestId; history row (source=
-  'repeater') + sitemap upsert if DB.
-  `INVALID_REQUEST` 400 (neither/both /
-  out of bounds / malformed JSON),
-  `SERVICE_UNAVAILABLE` 503, `INTERNAL_ERROR`
-  500. `/send/batch` is strictly sequential;
-  failure on item N → **total abort**, no partial
-  result. `/tab/create` no traffic, no
-  DB; if both request AND requestId are null → **silent
-  fallback** to `https://example.com`.
-
-#### fuzzModels — repeater
-
-```
-SendRequest (inline + modifications) :
-{ "request":{"method":"POST","url":"https://t/api",
-   "headers":[{"name":"Authorization","value":"Bearer T"}],
-   "body":"{...}"},
-  "requestId":null,
-  "modifications":{"headers":{"X-Role":"admin"},
-   "body":"FUZZ","method":"POST","path":"/api?x=FUZZ"} }
-
-SendRequest (history replay) :
-{ "requestId":42, "modifications":{"body":"FUZZ"} }
-
-RequestModifications {
-  headers:Map<String,String>?  // replace (remove+add)
-  body:String?                 // replaces the entire body
-  method:String?               // replaces the verb
-  path:String?                 // replaces the path (not the URL)
-}  // 4 independent fields; only non-null fields are applied
+```text
+GET  /proxy/history — get_proxy_history
+GET  /proxy/history/{id} — get_proxy_history_id
+GET  /proxy/intercept — get_proxy_intercept
+POST /proxy/intercept/enable — post_proxy_intercept_enable
+POST /proxy/intercept/disable — post_proxy_intercept_disable
+GET  /proxy/websocket/history — get_proxy_websocket_history
+POST /proxy/intercept/drop — post_proxy_intercept_drop
+POST /proxy/intercept/forward — post_proxy_intercept_forward
 ```
 
-> No positional markers here: repeater fuzzing
-> is done via the full payload in
-> `body`/`path`. **For positional fuzzing →
-> Intruder.**
+### Repeater
 
----
-
-### 6.4 · intruder `/intruder` — 8 endpoints · C(limited) · **fuzz-critical**
-
-Attack state in memory (ConcurrentHashMap,
-lost on reload). `/quick-fuzz` synchronous;
-`/attack/create`+`/start` async (background thread). ⚠ **Only sniper is implemented.**
-
-> Pro: Burp Pro's Intruder is **not**
-> used directly — sending is delegated to
-> RepeaterService (HTTP engine). So this
-> surface runs on **Community** (no Community Intruder
-> throttling), but remains
-> limited to sniper server-side.
-
-| Method | Path | Pro | Request model (Kotlin types) | Hunter usage |
-|---|---|---|---|---|
-| POST | `/intruder/attack/create` | C | `CreateAttackRequest` { requestId:Int?=null, request:HttpRequestData?=null, attackType:String="sniper", positions:List\<PayloadPosition\>=[], payloads:Map\<String,List\<String\>\>={}, options:AttackOptions=() } | creates the attack, returns `attackId`. |
-| POST | `/intruder/attack/{id}/start` | C | path: `id:String` | starts the background thread. |
-| GET | `/intruder/attack/{id}/status` | C | path: `id:String` | polls progress 0-100 / isComplete. |
-| GET | `/intruder/attack/{id}/results` | C | path `id:String`; query `offset:Int=0`, `limit:Int=0` (0=all) | inspects statusCode/length/anomalous. |
-| POST | `/intruder/attack/{id}/pause` | C | path: `id:String` | cooperative pause. |
-| POST | `/intruder/attack/{id}/resume` | C | path: `id:String` | resumes. |
-| POST | `/intruder/attack/{id}/stop` | C | path: `id:String` | stops (no interrupt). |
-| POST | `/intruder/quick-fuzz` | C | `QuickFuzzRequest` { requestId:Int?=null, request:HttpRequestData?=null, param:String (required), payloads:List\<String\> (required non-empty), options:AttackOptions=() } | synchronous 1-param fuzz + baseline + anomalous. |
-
-- **Key contract**: `attackId:String` (8-char
-  UUID); `requestId:Int` (0-based history index).
-- **pre/post/err**: `create` does **not** validate
-  request/requestId (validated at `/start`).
-  `/start` starts a **new Thread on every
-  call** → race condition if attack already running.
-  `isComplete` = status ∈ {completed, stopped,
-  error}. `quick-fuzz`: baseline = first result
-  with `error==null`; `anomalous` if statusCode≠ OR
-  |Δlength| > max(length·0.2, 20) OR
-  contentType≠. 400 if param blank / payloads
-  empty / neither request nor requestId.
-
-#### fuzzModels — intruder (load-bearing `--pos`)
-
-```
-PayloadPosition { "start":42, "end":52, "name":"username" }
-// start/end = offsets (Int, required, no defaults).
-// name = substitution key. Only positions[0].name used in sniper.
-
-CreateAttackRequest {
-  "requestId":3,                  // OR "request" inline
-  "attackType":"sniper",          // only sniper is implemented
-  "positions":[{"start":42,"end":52,"name":"username"}],
-  "payloads":{"set1":["admin","root","' OR 1=1--"]},
-                                   // ALL values are flattened
-  "options":{"followRedirects":true,"maxRetries":0,"throttleMs":100} }
-
-QuickFuzzRequest {
-  "requestId":3, "param":"q",     // param String required non-blank
-  "payloads":["<script>alert(1)</script>","' OR '1'='1"],
-  "options":{"throttleMs":0} }
-
-AttackResultEntry {  // differential analysis
-  index, payload, statusCode (0 on err), length, durationMs,
-  error:String?, contentType:String?, bodyPreview:String?,
-  anomalous:Boolean }  // anomalous only in quick-fuzz
+```text
+POST /repeater/send — post_repeater_send
+POST /repeater/send/batch — post_repeater_send_batch
+POST /repeater/tab/create — post_repeater_tab_create
 ```
 
-**6 substitution modes** (substitutePayload):
-URL `{param}` · query `?param=*` · body
-`{param}` · form `param=*` · JSON
-`"param":"*"` · header whose name == param
-(case-insensitive).
+### Session
 
----
-
-### 6.5 · collaborator `/collaborator` — 4 endpoints · **P**
-
-⚠ **Burp Suite Professional required** (Community
-does not have the Collaborator API). State in memory
-(lost on restart).
-
-| Method | Path | Pro | Request model | Hunter usage |
-|---|---|---|---|---|
-| POST | `/collaborator/generate` | **P** | — | generates 1 OAST payload (SSRF/XXE/OOB blind). |
-| POST | `/collaborator/generate/batch` | **P** | `BatchGenerateRequest` { count:Int=1 } | N distinct payloads in one call. |
-| GET | `/collaborator/poll` | **P** | — | sweeps all interactions for the session. |
-| GET | `/collaborator/poll/{id}` | **P** | path: `id:String` | poll scoped to a specific payload. |
-
-- **err**: `SERVICE_UNAVAILABLE` 503 if Collaborator
-  API is null (Community / server not
-  configured) or client cannot be created.
-- **Flags**: `interactionId == id` (local key,
-  not a Burp UUID). `timestamp` =
-  `Instant.now()` at poll time. Poll errors
-  **silently swallowed** → `found=false`
-  (HTTP 200); impossible to distinguish "unknown id"
-  from "no interaction yet".
-  `Interaction.type` = `.name` of Burp enum
-  (DNS/HTTP/SMTP). `/generate/batch` and
-  `/poll/{id}` **absent from `/docs`**.
-
-#### fuzzModels — collaborator
-
-```
-BatchGenerateRequest { "count":<Int> }
-// fuzz: 0, negatives, very large, omitted (→1), non-integer (→ deser error)
-Interaction.type : "DNS" | "HTTP" | "SMTP"
+```text
+POST   /session/set — post_session_set
+GET    /session/get — get_session_get
+DELETE /session/clear — delete_session_clear
+POST   /session/send — post_session_send
+POST   /session/send/batch — post_session_send_batch
+GET    /session/cookie-jar — get_session_cookie_jar
+DELETE /session/cookie-jar — delete_session_cookie_jar
 ```
 
----
+### Intruder
 
-### 6.6 · scanner `/scanner` — 9 endpoints · **P**
-
-⚠ **Burp Suite Professional required** for the 3
-start endpoints (crawl/audit/crawl-and-audit). State in
-memory.
-
-| Method | Path | Pro | Request model | Hunter usage |
-|---|---|---|---|---|
-| POST | `/scanner/crawl` | **P** | `ScanRequest` { url:String, config:ScanConfig=() } | spiders the app, maps endpoints. |
-| POST | `/scanner/audit` | **P** | `ScanRequest` (⚠ url **ignored**) | active checks (LEGACY_ACTIVE) — scope = Burp scope. |
-| POST | `/scanner/crawl-and-audit` | **P** | `ScanRequest` | full scan in one call. |
-| GET | `/scanner/{id}/status` | **P** | path: `id:String` | issueCount (crawl/auditProgress = stub 0). |
-| GET | `/scanner/{id}/issues` | **P** | path: `id:String` | list of vulns (name/url/severity/confidence). |
-| POST | `/scanner/{id}/pause` | **P** | path: `id:String` — **stub** | does NOT pause (returns status). |
-| POST | `/scanner/{id}/resume` | **P** | path: `id:String` — **stub** | resumes nothing. |
-| POST | `/scanner/{id}/stop` | **P** | path: `id:String` | removes from map; **does NOT stop** the Burp scan. |
-| GET | `/scanner/issue-definitions` | C | — | issue definitions from the sitemap (graceful degradation). |
-
-- **err**: `IllegalStateException` 500 on
-  Community (explicit message "requires Burp
-  Suite Professional"). Many exceptions
-  **silently swallowed** → HTTP 200 with `status='error'`
-  or empty list.
-- **Flags**: `audit` does **not** use `url`;
-  `pause`/`resume` are stubs; `stop` decouples
-  tracking from execution (the Burp task continues);
-  `crawl/auditProgress` always 0;
-  `typeIndex` always 0L. **Entire group
-  absent from `/docs`.**
-- `severity`: HIGH/MEDIUM/LOW/INFORMATION/
-  FALSE_POSITIVE. `confidence`: CERTAIN/FIRM/
-  TENTATIVE.
-
-> `/scanner/issue-definitions` reads the sitemap →
-> **degrades on Community** (empty list if
-> unavailable), making it the only endpoint in the group
-> usable without Pro.
-
----
-
-### 6.7 · securityscan `/scan` — 5 endpoints · C
-
-Custom scanner (≠ Pro ScannerRoutes). All
-probes go through `SessionService.send()` +
-Burp HTTP engine. **An active session is
-required** for auth probes. Synchronous /
-blocking.
-
-> Without a server-held marker, `check auth` cannot distinguish a cookie-only bypass where FULL, COOKIES_ONLY, and NONE all return the same representation from an intentionally public route; that case is not confirmed.
->
-> A bounded probe that returns no response is reported inconclusive with the budget it was given. The
-> extension cannot determine whether the target was slow, refused the connection, or failed to
-> resolve, because the pinned Montoya API signals all three as an absent response and exposes no
-> timeout-specific type.
-
-| Method | Path | Pro | Request model (Kotlin types) | Hunter usage |
-|---|---|---|---|---|
-| POST | `/scan/auth-bypass` | C | `AuthBypassRequest` { endpoints:List\<String\> (required), baseUrl:String (required), method:String="GET" } | triple-probe (withAuth/withoutAuth/cookieOnly) → unauthenticated access. |
-| POST | `/scan/idor` | C | `IdorRequest` { endpoint, param, ownValues:List\<String\>, targetValues:List\<String\> (all required), method="GET", body:String?, extraHeaders:Map?\} | cross-account access: target full-body differs from the own baseline (content equality, empty-vs-non-empty guard) with both 2xx and a 2xx baseline. |
-| POST | `/scan/headers` | C | `HeadersBypassRequest` { url:String (required), method="GET", body:String? } | 16 IP-spoof/URL-override headers → 403 bypass. |
-| POST | `/scan/cors` | C | `CorsRequest` { url:String (required), method="GET" } | 8 crafted origins → exploitable credentialed CORS. |
-| POST | `/scan/endpoints` | C **+DB** | `EndpointsScanRequest` { host:String (required), tests:List\<String\>=["auth-bypass","method-switch"], limit:Int=100 } | bulk scan of proxy history by host. |
-
-- **pre/post/err**: `INVALID_REQUEST` 400 on
-  empty lists / malformed JSON; `INTERNAL_ERROR`
-  500. `/scan/endpoints` requires the **SQLite DB**
-  (otherwise `SERVICE_UNAVAILABLE` 503).
-- **Flags**: SPA HTML catch-all filter
-  (body `<!` and >50000 → status 302/length 0).
-  `headers` = 16 fixed entries. `cors` = 8
-  fixed origins. No-auth probes **not recorded**
-  in history. **Entire group absent from `/docs`.**
-
-#### fuzzModels — securityscan
-
-```
-AuthBypassRequest {"endpoints":["/api/admin"],"baseUrl":"https://t","method":"GET"}
-IdorRequest {"endpoint":"https://t/orders/{id}","param":"id",
-  "ownValues":["123"],"targetValues":["124","125"],"method":"GET"}
-HeadersBypassRequest {"url":"https://t/admin","method":"GET"}
-CorsRequest {"url":"https://t/api/data","method":"GET"}
-EndpointsScanRequest {"host":"t.com","tests":["auth-bypass","method-switch"],"limit":100}
+```text
+POST /intruder/attack/create — post_intruder_attack_create
+POST /intruder/attack/{id}/start — post_intruder_attack_id_start
+GET  /intruder/attack/{id}/status — get_intruder_attack_id_status
+GET  /intruder/attack/{id}/results — get_intruder_attack_id_results
+POST /intruder/attack/{id}/pause — post_intruder_attack_id_pause
+POST /intruder/attack/{id}/resume — post_intruder_attack_id_resume
+POST /intruder/attack/{id}/stop — post_intruder_attack_id_stop
+POST /intruder/quick-fuzz — post_intruder_quick_fuzz
 ```
 
----
+### Scanner
 
-### 6.8 · target `/target` — 6 endpoints · C
-
-Scope changes tracked **in memory** (JVM heap, reset on restart). `/scope/check` delegates to the
-Burp scope engine (reflects earlier extension and UI rules). Burp target scope classifies traffic for
-Burp features; it does not block requests traversing the proxy listener.
-
-| Method | Path | Pro | Request model | Hunter usage |
-|---|---|---|---|---|
-| GET | `/target/sitemap` | C | query: `url:String?` (prefix) | dumps the Burp sitemap (wordlist / hidden endpoints). |
-| GET | `/target/scope` | C | — | reads entries changed through the current extension process (not the complete Burp UI/engine scope). |
-| POST | `/target/scope` | C | `SetScopeRequest` { includes:List\<String\> (required), excludes:List\<String\>=[] } | replaces the extension-managed list, then adds those rules to Burp; cannot remove earlier engine rules. |
-| POST | `/target/scope/add` | C | `AddScopeRequest` { url:String (required) } | adds 1 URL. |
-| POST | `/target/scope/remove` | C | `AddScopeRequest` { url:String } | excludes 1 URL (same DTO as add). |
-| GET | `/target/scope/check` | C | query: `url:String` (required) | authoritative scope verdict (Burp engine). |
-
-- **Flags**: `POST /target/scope` clears only the extension's tracked list before applying the new
-  rules. Montoya exposes no complete scope listing or rule-removal operation, so earlier Burp/UI
-  rules remain active and `includes=[]` does not clear the engine scope. `GET /target/scope` does
-  **not** see rules configured in the UI or by an earlier extension process; `/scope/check` does.
-  `/scope/check` without url → `INVALID_PARAM` inside an **HTTP 200** envelope (early-return).
-  `ScopeCheckRequest` = **dead** DTO (unused).
-
-#### fuzzModels — target
-
-```
-SetScopeRequest {"includes":["https://ex.com"],"excludes":["https://ex.com/logout"]}
-AddScopeRequest {"url":"https://ex.com/api"}  // add AND remove
-SitemapEntry {"url":"...","method":"GET","statusCode":200,"mimeType":"HTML"}
-// statusCode/mimeType nullable → appear as null (encodeDefaults=true)
+```text
+POST /scanner/crawl — post_scanner_crawl
+POST /scanner/audit — post_scanner_audit
+POST /scanner/crawl-and-audit — post_scanner_crawl_and_audit
+GET  /scanner/{id}/status — get_scanner_id_status
+GET  /scanner/{id}/issues — get_scanner_id_issues
+POST /scanner/{id}/pause — post_scanner_id_pause
+POST /scanner/{id}/resume — post_scanner_id_resume
+POST /scanner/{id}/stop — post_scanner_id_stop
+GET  /scanner/issue-definitions — get_scanner_issue_definitions
 ```
 
----
+### Target
 
-### 6.9 · decoder `/decoder` — 4 endpoints · C
-
-Pure JVM (Base64/URL/hex/HTML + MessageDigest).
-No Montoya, no Pro.
-
-| Method | Path | Pro | Request model (Kotlin types) | Hunter usage |
-|---|---|---|---|---|
-| POST | `/decoder/encode` | C | `EncodeRequest` { data:String, encoding:String } — encoding ∈ {base64,url,hex,html} | encodes a payload to survive a WAF. |
-| POST | `/decoder/decode` | C | `DecodeRequest` { data:String, encoding:String?=null } — null → auto-detect | decodes cookie/token; auto if encoding omitted. |
-| POST | `/decoder/hash` | C | `HashRequest` { data:String, algorithm:String } — md5/sha1/sha256/384/512 | compares a token against a candidate hash. |
-| POST | `/decoder/smart-decode` | C | `DecodeRequest` (encoding **ignored**) | peels up to 10 layers + step-by-step trace. |
-
-- **err**: `INVALID_REQUEST` 400 (encoding out of
-  set / invalid base64 / odd-length hex / malformed
-  JSON). `INTERNAL_ERROR` 500.
-- **Flags**: `html` encodes only 5 entities
-  (`& < > " '`). `smart-decode` **ignores**
-  `encoding`. Auto-detect can fail on
-  short/ambiguous inputs. `hash` echoes
-  the requested algorithm name (not the normalized JVM name).
-
-#### fuzzModels — decoder
-
-```
-EncodeRequest {"data":"<s>","encoding":"base64|url|hex|html"}
-DecodeRequest {"data":"<s>","encoding":"base64|url|hex|html|null"}
-HashRequest {"data":"<s>","algorithm":"md5|sha1|sha-1|sha256|...|<raw-jvm>"}
-DecodeStep (response) {"encoding":"<scheme>","result":"<intermediate>"}
+```text
+GET  /target/sitemap — get_target_sitemap
+GET  /target/scope — get_target_scope
+POST /target/scope — post_target_scope
+POST /target/scope/add — post_target_scope_add
+POST /target/scope/remove — post_target_scope_remove
+GET  /target/scope/check — get_target_scope_check
 ```
 
----
+### Collaborator
 
-### 6.10 · config `/config` — 5 endpoints · C
-
-⚠ **All 4 `/config/*` are stubs**: GET
-returns a hardcoded map `{"type":"..."}`;  PUT
-echoes the payload without writing to Burp.
-
-| Method | Path | Pro | Request model | Hunter usage |
-|---|---|---|---|---|
-| GET | `/config/project` | C — **stub** | — | returns `{"type":"project"}`. |
-| PUT | `/config/project` | C — **stub** | `ConfigUpdateRequest` { config:Map\<String,String\> } | echo (no durable write). |
-| GET | `/config/user` | C — **stub** | — | returns `{"type":"user"}`. |
-| PUT | `/config/user` | C — **stub** | `ConfigUpdateRequest` { config:Map } | echo. |
-| GET | `/extensions` | C | — | self-metadata (filename); total **always 1**. |
-
-- **Flag**: `/extensions` is mounted at the root
-  (`/extensions`, **not** `/config/extensions`)
-  but belongs to the config group by
-  ownership. Montoya only allows inspecting the active
-  extension → `total=1` hardcoded.
-
----
-
-### 6.11 · session `/session` — 7 endpoints · C
-
-Shared singleton session. Cookies/headers
-applied to all `/send` calls. Persisted via
-SessionDao (SQLite `~/.burp-rest/burpdata`) if
-DB is available. Cookie-jar (auto-captured Set-Cookie)
-is **distinct** from session cookies.
-
-| Method | Path | Pro | Request model (Kotlin types) | Hunter usage |
-|---|---|---|---|---|
-| POST | `/session/set` | C | `SetSessionRequest` { cookies:Map (required), headers:Map?=null, name:String?=null } | loads auth cookies+headers (full **replace**). |
-| GET | `/session/get` | C | — | inspects the active session. |
-| DELETE | `/session/clear` | C | — | resets cookies/headers (not the cookie-jar). |
-| POST | `/session/send` | C | `AuthenticatedRequest` { method="GET", url:String (required), body:String?=null, extraHeaders:Map?=null } | authenticated request via Burp; recorded in the extension's server-side history when its DB is available, not in proxy-listener history. |
-| POST | `/session/send/batch` | C | `BatchAuthenticatedRequest` { requests:List\<AuthenticatedRequest\> } | multi-step sequence (workflow / IDOR). |
-| GET | `/session/cookie-jar` | C | — | auto-captured cookies by domain. |
-| DELETE | `/session/cookie-jar` | C | — | clears the cookie-jar (not the session). |
-
-- **Flags**: `/session/set` = full replace.
-  `extraHeaders` **overrides** session
-  headers (not additive). Cookie-jar is in-memory
-  (not DB); survives `clear`, wiped on reload.
-  `/send/batch` sequential; failure → total abort.
-  **Entire group absent from `/docs`.**
-
----
-
-### 6.12 · utils `/utils` — 2 endpoints · C
-
-Depends on SessionService (Burp HTTP engine).
-No DB required.
-
-| Method | Path | Pro | Request model (Kotlin types) | Hunter usage |
-|---|---|---|---|---|
-| POST | `/utils/diff` | C | `DiffRequest` { a:DiffTarget, b:DiffTarget } — DiffTarget { url:String (required), method="GET", body:String?, extraHeaders:Map? } | 2 live requests → diff of status/length/headers (access-control). |
-| POST | `/utils/extract-endpoints` | C | `ExtractEndpointsRequest` { url:String (required) } | extracts API endpoints from HTML + JS (regex). |
-
-- **Flags**: `diff` body-diff = set-based summary
-  (not unified diff). `extract-endpoints`
-  fetches up to **10 JS bundles** (cap), errors
-  per bundle are swallowed, filters out static
-  assets + w3.org. **Entire group absent from `/docs`.**
-
----
-
-### 6.13 · history `/history` — 5 endpoints · C · **CONDITIONAL DB**
-
-> ⚠ **Group registered ONLY if
-> `historyDao != null && sitemapDao != null`.**
-> If DB init (`~/.burp-rest/burpdata`)
-> fails, **all 5 endpoints return 404** —
-> the group is silently absent.
-> **`bp` must handle this absence** (probe +
-> graceful degradation).
-
-| Method | Path | Pro | Request model (Kotlin types) | Hunter usage |
-|---|---|---|---|---|
-| GET | `/history` | C+DB | `HistoryFilter` (query): host?, method?, statusCode:Int?, source?, search?, since?, until?, page:Int=0, pageSize:Int=50 | paginates all traffic; grep secrets/JWT. |
-| GET | `/history/{id}` | C+DB | path: `id:Long` (toLongOrNull) | single full entry (req+resp). |
-| GET | `/history/sitemap` | C+DB | query: `host:String?` | unique host+path+method tuples + hitCount. |
-| POST | `/history/{id}/replay` | C+DB | path: `id:Long` | replays an entry verbatim (live via Burp). |
-| DELETE | `/history` | C+DB | — | **destructive**: wipes history + sitemap. |
-
-- **Key contract**: `HistoryEntryResponse.id` =
-  **Long**; `HistoryPageResponse.total` =
-  **Long**; `SitemapListResponse.total` =
-  **Int** (assumed type inconsistency).
-  Entries sorted id DESC. Bodies truncated to
-  **1 MB** at insert.
-- **err**: non-Long id → `INVALID_REQUEST` 400;
-  missing id → 400; DB failed → **404** (route
-  absent).
-- **Flags**: `replay` not persisted (id=0,
-  source='replay') but RepeaterService may
-  re-insert. `?search=` = unescaped SQL LIKE
-  (`%`/`_` = wildcards). `DELETE` **irreversible,
-  no confirmation**, non-transactional across
-  the 2 tables.
-
-#### fuzzModels — history
-
-```
-HistoryFilter (query) :
-host&method&statusCode=<int>&source=proxy|repeater|replay|intruder
-&search&since=<ISO8601>&until=<ISO8601>&page=0&pageSize=50
-// fuzz: statusCode=abc (ignored), page=-1, pageSize=0, search=%25
-HistoryEntryResponse : nullables = reqBody, statusCode, resHeaders, resBody
+```text
+POST /collaborator/generate — post_collaborator_generate
+GET  /collaborator/poll — get_collaborator_poll
+GET  /collaborator/poll/{id} — get_collaborator_poll_id
+POST /collaborator/generate/batch — post_collaborator_generate_batch
 ```
 
----
+### Decoder
 
-## 7 · Community vs Pro matrix
-
-`bp` must **degrade gracefully**: detect
-Pro/Community at runtime and disable/warn
-on Pro-only groups.
-
-| Group | Pro required? | Detail |
-|---|---|---|
-| health | **No (C)** | pure introspection. |
-| proxy | **No (C)** | Montoya proxy available on Community; 4 stubs. |
-| repeater | **No (C)** | HTTP engine, available on Community. |
-| intruder | **No (C)** | delegated to Repeater (not Pro Intruder); **sniper only** server-side. |
-| collaborator | **YES (P)** | Collaborator API = **Pro only** → 503 on Community. |
-| scanner | **YES (P)** | crawl/audit = Pro → 500 on Community. `issue-definitions` degrades (C). |
-| securityscan `/scan` | **No (C)** | probes via HTTP engine + session; `/scan/endpoints` requires DB. |
-| target | **No (C)** | scope API available on Community. |
-| decoder | **No (C)** | pure JVM. |
-| config | **No (C)** | stubs. |
-| session | **No (C)** | HTTP engine. |
-| utils | **No (C)** | HTTP engine. |
-| history | **No (C)** but **+DB** | conditional on SQLite init. |
-
-**Summary**: only **collaborator** and
-**scanner (start)** are strictly Pro
-(derived from `conditional`/`caveats` in the
-source). Everything else runs on Community. Intruder
-runs on Community: the source shows it **does not
-use** Pro Intruder (sending delegated to Repeater).
-
----
-
-## 8 · Kotlin contract (serialization)
-
-Global Json config (RestServer.configurePlugins):
-
-```
-Json {
-  prettyPrint = false
-  isLenient = true
-  ignoreUnknownKeys = true
-  encodeDefaults = true
-}
+```text
+POST /decoder/encode — post_decoder_encode
+POST /decoder/decode — post_decoder_decode
+POST /decoder/hash — post_decoder_hash
+POST /decoder/smart-decode — post_decoder_smart_decode
 ```
 
-**Client implications (`bp`)**:
+### Config
 
-- `prettyPrint=false` → compact single-line responses.
-- `isLenient=true` → server tolerates slightly
-  invalid JSON on input (unquoted keys, trailing
-  commas).
-- `ignoreUnknownKeys=true` → `bp` can send a
-  **superset** of fields without error;
-  unknown fields are **silently dropped**.
-- `encodeDefaults=true` → responses
-  **always include** every field even if
-  null/default. `bp` can rely on all declared
-  fields being present (no missing key to handle).
+```text
+GET /config/project — get_config_project
+PUT /config/project — put_config_project
+GET /config/user — get_config_user
+PUT /config/user — put_config_user
+GET /extensions — get_extensions
+```
 
-**Envelope**: `ApiResponse<T>` { success:
-Boolean, data:T?=null, error:ApiError?=null };
-`ApiError` { code:String, message:String }.
-Exceptions: `/docs` (raw JSON) and the proxy
-stubs (`Map<String,Boolean>` inline) are **not**
-wrapped.
+### History
 
-**StatusPages mapping**:
+```text
+GET    /history — get_history
+DELETE /history — delete_history
+GET    /history/{id} — get_history_id
+POST   /history/{id}/replay — post_history_id_replay
+GET    /history/sitemap — get_history_sitemap
+```
 
-| Exception | HTTP | code |
-|---|---|---|
-| BadRequestException | 400 | INVALID_REQUEST |
-| SerializationException | 400 | INVALID_REQUEST |
-| IllegalArgumentException | 400 | INVALID_REQUEST |
-| IllegalStateException | 503 | SERVICE_UNAVAILABLE |
-| Throwable | 500 | INTERNAL_ERROR |
+### Security checks
 
-**Id types (load-bearing)**:
+```text
+POST /scan/auth-bypass — post_scan_auth_bypass
+POST /scan/cors — post_scan_cors
+POST /scan/endpoints — post_scan_endpoints
+POST /scan/headers — post_scan_headers
+POST /scan/idor — post_scan_idor
+```
 
-- `requestId` = **Int** (0-based history index),
-  everywhere (repeater, intruder, quick-fuzz).
-- `attackId` / `scanId` / collaborator `id` =
-  **String** (8-char UUID prefix).
-- history `id` = **Long** (DB key).
-- `{id}` proxy path parsed via `toIntOrNull` →
-  `INVALID_PARAM` (not 404) if non-integer.
+### Utilities
 
-**Enum shapes (all as String, not Kotlin
-`@Serializable` enum)**:
+```text
+POST /utils/diff — post_utils_diff
+POST /utils/extract-endpoints — post_utils_extract_endpoints
+```
 
-- `attackType`: "sniper" (impl.) | "battering-ram"
-  | "pitchfork" | "cluster-bomb" (accepted,
-  execute sniper).
-- attack `status`: created | running | paused |
-  stopped | completed | error.
-- WS `direction` / Interaction `type`: `.name`
-  of the Montoya enum (CLIENT_TO_SERVER;
-  DNS/HTTP/SMTP).
-- scan `severity`: HIGH/MEDIUM/LOW/INFORMATION/
-  FALSE_POSITIVE. `confidence`: CERTAIN/FIRM/
-  TENTATIVE.
+## Current behavior by group
 
-**Notable nullables / defaults**: `body`
-omit-safe everywhere; `headers=emptyList()`
-serialized as `[]`; `method="GET"` always present
-(encodeDefaults); never-populated fields rendered as
-`null` (burpVersion, listenerInterface,
-clientIp, HTTP timestamp).
+### System and proxy
 
-**No `@SerialName`** anywhere in the codebase →
-JSON names = Kotlin identifiers (camelCase).
+`/health` and `/version` report extension version 2.1.0; Burp version is populated best-effort from
+Montoya and may be null if that accessor fails. `/docs` serves the embedded OpenAPI JSON.
 
----
+Proxy host filtering is exact after normalization and returned IDs remain absolute Burp history
+indexes. Intercept status comes from Montoya. Forward/drop cannot be implemented with pinned Montoya
+and return 501 `UNSUPPORTED`; they never return fabricated `{forwarded:true}` or `{dropped:true}`
+success. WebSocket entries preserve a stable socket identifier, original/edited payload representations,
+capture metadata where available, and nullable platform values rather than failing the entire list.
 
-## 9 · C4 Run Ledger (observability / ISO)
+### Repeater and session
 
-Each attempted HTTP call from `bp` to the REST extension is recorded in a **local SQLite DB under
-`~/.bp/`**, independent of the extension's DB. It is control-plane operation metadata; it does not
-observe curl, xh, browser, or other proxy traffic and does not by itself prove a target request.
+Repeater send accepts exactly one inline request or proxy-history `requestId`; batches are validated
+before their first target send. A missing target response is typed `NO_RESPONSE`. Successful target
+send and optional H2 persistence are separate outcomes, so persistence failure is reported without
+claiming the target send did not occur. Repeater tab creation requires exactly one request source and a
+nonblank explicit name.
 
-**Fields per entry**:
+The session is one immutable origin-bound credential snapshot. Body text is encoded as exact UTF-8
+bytes for Montoya; `bodyBase64` carries exact request-body bytes. Persisted history is reconstructed
+from the request actually sent. Response text is decoded from response bytes rather than
+`bodyToString()`, but a text model cannot preserve arbitrary malformed UTF-8 (PC-07).
 
-- `id`, `ts`, optional `tag`, `command` (subcommand name), `target` (Burp REST listener),
-  `burp_op`, operation `status`, `exit_code`, REST request/response SHA-256 values, REST response
-  status/length, duration, error code, and reserved refs. Current `req_ref`/`resp_ref` values are
-  null and raw bodies are not stored.
+Configured credentials and captured response cookies are separate stores. `DELETE /session/clear`
+clears both. Both clear entry points advance the cookie epoch under the fixed
+`sessionMutationLock -> cookieMutationLock` order, so a response from an older snapshot cannot restore
+cleared cookies. Cookie output includes `httpOnly`, expiry, and host-only state.
 
-**Queryable**:
+### Intruder and client fuzzing
 
-- `bp log` lists and filters operation rows and exports them through the ordinary output formats.
-- `bp tag <id> <label>` annotates an existing row.
-- No `bp show` or target-request reconstruction command is shipped.
+The server-side Intruder surface supports bounded exact-offset sniper work. Matrix modes are not
+silently executed as sniper; unavailable modes return 501 `UNSUPPORTED`. Start/lifecycle transitions
+are state-locked. The Python `bp fuzz` command independently implements all four attack expansions and
+fires through Repeater; see [`ALGORITHMS.md`](ALGORITHMS.md).
 
-**Traceability boundary**: timestamps, endpoint names, outcomes, REST metadata, and hashes establish
-which control-plane calls were attempted and whether they resolved or failed in transport. They are
-useful operational evidence, not a complete engagement ledger or replay source. Exact target-request
-evidence remains caller-owned because a returned URL may itself contain credential material.
+### Scanner
 
----
+Crawl/audit starts require Pro and use the supplied target. Options unavailable in pinned Montoya are
+rejected as `UNSUPPORTED`, including linked crawl-and-audit and pause/resume. Status/count projections
+that Montoya cannot supply are nullable. Stop reports success only after task deletion succeeds.
 
-## 10 · Test architecture (TDD)
+Task handles are extension-owned and no operation enumerates them. A lost handle cannot be recovered
+after its registry is gone; task state then remains unknown (PC-04).
 
-3 levels, RED-first for unit.
+### Target
 
-| Level | What | Burp required? |
-|---|---|---|
-| **Unit (pure)** | `--pos` parser, offset resolver (semantic selector → byte-range), `CreateAttackRequest` builder. | No. |
-| **Contract-tests** | JSON emitted matches the Kotlin contract (types, nullables, enums-as-String, id-types) frozen from source §8. | No. |
-| **Integration (live)** | smoke against real `:8089`, endpoint walk. | **YES — accepted (D1 resolved).** |
+Add/remove/check use Burp's scope engine. Complete scope listing and replacement are not available in
+pinned Montoya and return 501 rather than successful partial behavior. Scope classifies traffic; it is
+not a forwarding block. The GET check path has a length ceiling that can make a previously accepted
+very long mutation independently uncheckable (PC-05).
 
-> **D1 resolved**: the "live tests ↔
-> Burp running" dependency is **accepted** —
-> Burp must be running for the integration suite;
-> clean skip otherwise.
+### Collaborator
 
----
+Collaborator requires Pro. Identifiers, timestamps, and interaction details come from Montoya; provider
+failures are not converted into empty success. The extension registry is in-memory and is lost on
+reload. Poll results may be one-use state, so callers must select a valid output representation before
+polling.
 
-## 11 · DDD
+### Decoder
 
-**Aggregates**:
+Encode/decode supports Base64, URL, hexadecimal, and HTML representations; smart decode peels bounded
+layers. Hash supports MD5, SHA-1, SHA-256, SHA-384, and SHA-512 spellings accepted by the service. These
+are REST operations, not offline Python commands.
 
-- `FuzzPlan` — Positions[] + PayloadSets +
-  AttackType. **Invariant**: a `cluster-bomb`
-  requires ≥1 set per position.
-- `CapturedRequest` — requestId, base bytes
-  (source of offset resolution).
-- `AttackRun` — state created → running →
-  completed + `AttackResultEntry[]`.
-- `LedgerEntry` — one traced operation (C4).
+### Configuration
 
-**Ubiquitous language** = that of **Burp /
-Intruder** (sniper, position, payload set,
-collaborator, scope), **not** invented jargon.
+Project/user endpoints export real nested Burp JSON and validate supplied object shape before import.
+User import excludes only `user_options.extender.extensions`, reports that path, and applies safe
+siblings so the operation does not reload its own responder. A completed import whose post-state cannot
+be exported returns `applied=true`, `config=null`, and a do-not-retry warning.
 
----
+`GET /extensions` returns only this extension because that is all pinned Montoya exposes; it is not a
+complete loaded-extension inventory.
 
-## 12 · Coverage roadmap
+### History
 
-**Not exposed today** (confirmed absent from
-`configureRouting()`):
+All history routes stay mounted. If H2 is unavailable they return service-unavailable rather than 404
+or an empty success. Numeric/time filters are validated; malformed values are 400 without echoing raw
+parser internals. History and sitemap clear in one transaction. Replay returns the original record, a
+nullable persisted replay row, and the exact persistence outcome; it does not calculate a comparison.
+A null replay row is not permission to retry a completed target send. Only target sends persisted by
+Repeater/session services populate this H2 history/sitemap—not all Burp or API traffic.
 
-| Surface | Source status |
-|---|---|
-| **Sequencer** | `SequencerModels.kt` **orphaned** — dead models, no route, no service. |
-| **Comparer** | never implemented (`/utils/diff` ≠ full Comparer). |
-| **Logger** | never implemented. |
-| **Organizer** | never implemented. |
-| **Engagement** | never implemented. |
-| **Search** | never implemented (listed as ghost in README). |
-| **Inspector** | never implemented. |
-| **Dashboard** | never implemented. |
-| **Clickbandit** | never implemented. |
+### Security checks and utilities
 
-**Principle**: `bp` must be **extensible**.
-Exposing more = **Kotlin extension work**
-server-side (new `*Routes.kt` +
-`*Service.kt`) — sequenced for future releases.
-`bp` can only drive what the API actually exposes.
+The security-check routes return observations, per-probe errors, inconclusive reasons, and classifier
+counts. A no-response observation is bounded but does not diagnose timeout versus refusal/resolution
+failure (PC-01). `check endpoints` reads extension H2 request identity rather than proxy-listener
+history.
 
----
+A configured marker can support a protected-representation check only when the caller has established
+that the server held it and policy withholds it. The implementation rejects recognized actor-supplied
+representations in supplied method/URL/body and observed final headers/cookies, under a bounded
+transform closure. It does **not** currently record final method/URL/body from the HttpRequest handed to
+Montoya; those components remain inferred from pre-send values. This is a code/proof-boundary defect,
+not a basis for a stronger documentation claim. The related proof-ceiling sections are under correction
+and must be re-verified before release.
 
-## 13 · Resolved decisions
+The IDOR route compares responses produced under one configured session for caller-labelled object
+values. A differing nonempty 2xx representation is a classifier finding, not proof that two principals
+were distinguished or that the caller lacked authority. Establish actor identity and ownership
+independently before describing a cross-principal read.
 
-| # | Decision | Resolution |
-|---|---|---|
-| **D1** | Live tests ↔ Burp running. | Burp required for integration suite; clean skip otherwise. |
-| **D-Name** | CLI name. | **`bp`** with alias **`burpctl`**. |
-| **D-Intruder-Pro** | Intruder Community vs Pro? | **Community** — sending delegated to Repeater, not Pro Intruder. Confirmed by source review. |
-| **D-Ledger** | Run Ledger scope / retention / export. | All operations recorded; retention and export (JSON/CSV) configurable (§9). |
+Utilities send through the session service. Diff returns observed deltas; endpoint extraction fetches
+and analyzes a bounded set of same-origin resources. A missing response can produce 502 `NO_RESPONSE`.
 
----
+## Permanently unsupported operations
 
-## 14 · Acceptance criteria
+These seven operations remain published for discovery but have no success response in the current
+contract and always return 501 under pinned Montoya:
 
-Each item carries both axes (importance ·
-blocking).
+```text
+POST /proxy/intercept/forward
+POST /proxy/intercept/drop
+POST /scanner/crawl-and-audit
+POST /scanner/{id}/pause
+POST /scanner/{id}/resume
+GET  /target/scope
+POST /target/scope
+```
 
-### CRITICAL
+Other operations can also have request-dependent unsupported arms—for example Scanner options that
+pinned Montoya does not expose. Discoverability never implies a successful no-op.
 
-- [CRITICAL][BLOCKS:high] The `--pos` grammar
-  covers header / cookie / body / path / query +
-  `offset:` + multi-position + 4 attack-types.
-- [CRITICAL][BLOCKS:high] `bp` resolves
-  semantic selectors into **byte-offsets**
-  (`start/end/name`) from the base request,
-  because the Intruder API only accepts raw offsets.
-- [CRITICAL][BLOCKS:critical] The spec is
-  **source-grounded**: 69 endpoints / 13
-  groups, no invented endpoints, authority =
-  `routes/*.kt`.
-- [CRITICAL][BLOCKS:high] `bp` targets
-  `http://127.0.0.1:8089` (not 9876);
-  `spec.md` is treated as **outdated**.
+## Publication limits and release status
 
-### HIGH
+The serializer contract gate checks operation/model shape. It does not prove that summaries convey the
+right semantics, that every reachable status is declared, or that Montoya behaves as a mock does. The
+release audit corrected the identified semantic/status descriptions in the moving OpenAPI tree; the
+focused `OpenApiContractTest` then passed in a forced six-task run. That remains source-level evidence.
 
-- [HIGH][BLOCKS:high] `bp` detects
-  Pro/Community and **degrades gracefully**:
-  warns/disables collaborator and scanner
-  (start) outside Pro.
-- [HIGH][BLOCKS:high] `bp` handles the **conditional
-  absence** of the `/history` group (404 if
-  DB not initialized).
-- [HIGH][BLOCKS:low] The client respects the
-  serialization contract: `ApiResponse<T>` envelope,
-  StatusPages mapping, id-types
-  (requestId Int / attackId String / history
-  Long), enums-as-String.
-- [HIGH][BLOCKS:high] `cluster-bomb` /
-  `pitchfork` / `battering-ram` are implemented
-  **client-side** (matrix expansion) as long as
-  the extension only implements sniper.
-- [HIGH][BLOCKS:low] Contract-tests freeze the
-  emitted JSON against real Kotlin models.
-
-### MEDIUM
-
-- [MEDIUM][BLOCKS:none] The **Run Ledger (C4)**
-  records every op (id, name/tag, timestamp,
-  target, refs, status) and is queryable
-  (`bp log`, `bp tag`).
-- [MEDIUM][BLOCKS:none] `bp` surfaces the
-  **caveats** of stubs (proxy intercept/forward/
-  drop, scanner pause/resume, config) rather than
-  pretending they work.
-- [MEDIUM][BLOCKS:none] The live integration
-  suite runs against `:8089` (clean skip if
-  Burp is absent).
-
-### LOW (convergence tail)
-
-- [LOW][BLOCKS:none] `bp` signals that `/docs`
-  (embedded OpenAPI) is **incomplete** (declares
-  0.2.0, omits several groups) and does not
-  rely on it for discovery.
-- [LOW][BLOCKS:none] The CLI name is `bp` with
-  alias `burpctl` (see §3).
-- [LOW][BLOCKS:none] Intruder runs on Community:
-  sending is delegated to Repeater, not Pro Intruder
-  (confirmed by source review — see §6.4).
-
----
+No record in `quality/confirmed-defects.yaml` is `verified`. The final redeployed-binary pass has not
+completed. Four acceptance oracles were found pinned to superseded contracts; their repaired
+unversioned harness was destroyed before execution. Its in-repository replacement then produced a
+non-clean retained run: a system preflight proved the deployed binary predates current source because
+embedded and source OpenAPI differ, so all 30 selected REST/CLI behavior cases became
+`COULD_NOT_RUN`. Do not infer release readiness from that run or the exact 69-to-69 route inventory.

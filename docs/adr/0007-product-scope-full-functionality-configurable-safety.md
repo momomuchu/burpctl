@@ -1,41 +1,39 @@
-# ADR-0007 — Product Scope: Full Functionality, Configurable Safety
+# ADR-0007 — Product direction and configurable safeguards
 
-**Status:** accepted · 2026-06-16
-**Criticality:** `[CRITICAL]` (defines the scope of the entire spec)
+**Status:** accepted as product direction 2026-06-16; unimplemented items are not commitments
+**Criticality:** [CRITICAL]
 
 ## Decision
 
-`bp` targets the **full functional surface of a bug bounty tool** — every identified capability
-becomes a **feature**, not something "out of scope by design".
+`bp` may grow toward a broad bug-bounty control surface, but an identified capability becomes a feature
+only when source, CLI/REST contract, safety boundary, tests, and required live evidence exist. A model,
+ADR, roadmap item, or historical scenario is not implementation.
 
-**Security and scope are CONFIGURABLE**, never **mandatory blocking guards**:
-- Scope verification (anti-OOS pre-fire), the anti-injection envelope (I6), and secret
-  redaction (I7) are **configuration options** (enable/disable), not enforced preconditions.
-- A reasonable default is fine (e.g. scope-check = `warn`), but the user configures it;
-  `bp` **enforces** nothing.
+Target-scope preflight and response envelopes were proposed as configurable safeguards rather than
+mandatory global policy. Current configuration parses `enforce_scope`, `envelope`, and `throttle_ms`,
+but commands do not consume them and no matching root options are registered. They must not be
+advertised as active controls.
 
-## Rationale
+The current product does enforce non-configurable correctness/safety invariants where a truthful
+operation requires them: origin binding, strict request shape, effect-before-output ordering, bounded
+fuzz cardinality, unsupported-operation refusal, and state/reportability rules. “Configurable safety”
+does not mean the tool enforces nothing.
 
-Founder, 2026-06-16 (verbatim): "checking the scope is important, but it's not necessarily
-mandatory… it's among the configurations… we just need all the features of the bot, the bug
-bounties, plain and simple."
+Redaction is intended to default on and has an explicit `--no-redact`/`BP_REDACT=off` opt-out. The
+release still requires the final disclosure-path review described in `docs/OUTPUT.md`; absence of the
+opt-out is not yet claimed as proof that every representation is covered.
 
-## Rejected Alternatives
+## Historical proposals
 
-- **T1 — Pure driver**: rejected — `bp` alone would not cover the full functional surface intended.
-- **T2 — Mandatory security floor**: rejected — the founder does NOT want an enforced guard; security
-  must be configurable, not blocking.
+The original `program`, `asset`, `endpoint`, `finding`, `report`, classification, and named
+multi-session namespaces were design ideas. They are not registered commands and have no assigned
+release. The accepted command inventory is [`../CLI.md`](../CLI.md); future additions require a new or
+amended decision rather than relying on this list.
 
-## Implications (spec, not execution)
+## Consequences
 
-1. The **command map `CLI.md` expands**: new namespaces — `bp program`, `bp asset`,
-   `bp endpoint`, `bp finding`, `bp report`, multi-session (`bp session --as <ctx>`),
-   classification, in addition to the current driver.
-2. **Safety** features become **flags/config**: `--enforce-scope warn|block|off`,
-   `--envelope on|off`, `--redact on|off` (plus config-file equivalents).
-3. Next spec phase: map each identified capability → concrete command/config and extend
-   `SPEC.md` + `CLI.md`. **Still zero execution before your GO.**
-
-## Related
-
-- `ADR-0005` (Run Ledger) · `ADR-0004` (fuzz --async)
+- Current docs distinguish shipped, unsupported, proposed, and verified.
+- User-configurable policy never substitutes for hard consistency/security invariants.
+- New functionality starts with an exact effect and evidence boundary, then earns a command/route.
+- Proof ceilings in [`../PROOF-CEILINGS.md`](../PROOF-CEILINGS.md) remain explicit even when a feature
+  is useful within them.

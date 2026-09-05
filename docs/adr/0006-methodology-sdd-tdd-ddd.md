@@ -1,85 +1,46 @@
-# ADR-0006 — Methodology: SDD + TDD + DDD + spec-as-contract; trunk-based; atomic commits
+# ADR-0006 — Contract-first development and evidence boundaries
 
-**Status:** accepted — 2026-06-16
+**Status:** accepted 2026-06-16 · amended by [ADR-0013](0013-truthful-executable-contracts.md) and
+[ADR-0014](0014-state-preserving-reportable-operations.md)
 **Criticality:** [HIGH][BLOCKS:high]
-
----
 
 ## Decision
 
-The `bp` project follows four interlocking methodologies and one branching + commit policy:
+The project uses source-aligned contracts, RED-first tests for new corrective behavior, strict static
+checks, and small reviewable changes. The authorities are separated:
 
-| Axis | Choice |
-|---|---|
-| Design | **SDD** — Spec-Driven Development: spec is written and validated before any implementation file is created. |
-| Testing | **TDD** — Test-Driven Development: RED test before GREEN implementation, always. Unit tests are written without a running Burp instance. |
-| Architecture | **DDD** — Domain-Driven Design: aggregates, ubiquitous language, and bounded context defined in `docs/SPEC.md §11`. |
-| Spec role | **spec-as-contract**: `docs/SPEC.md`, `docs/CLI.md`, and `docs/OUTPUT.md` are the authoritative contracts. Diverging from them requires a spec update, not a silent code choice. |
-| Branching | **Trunk-based**: all work lands on `main`. Feature branches are short-lived (1–2 days max) and merged via fast-forward or squash. No long-lived feature branches. |
-| Commits | **Atomic**: each commit compiles, passes tests, and represents one logical change. No WIP commits on `main`. |
+- Kotlin routes/services/DTO serializers define extension implementation behavior;
+- Typer registrations and Python execution/output code define CLI behavior;
+- OpenAPI publishes the REST interface and is mechanically joined to serializers;
+- current prose explains those executable sources without overriding them;
+- real-Burp behavior requires comparable live evidence where Montoya is involved.
 
-### Community + Pro support
+A local test or mock is necessary evidence for pure logic but cannot by itself promote a defect to
+`verified`. Promotion follows the receipt-backed policy in `quality/README.md` and ADR-0014.
 
-`bp` targets both Burp Suite Community and Professional users. The CLI detects edition at runtime
-and degrades gracefully for Pro-only surfaces:
+This ADR states a method, not a retrospective claim that every historical change had a retained
+assertion-reaching RED or that every commit was green. Where durable evidence is absent, documentation
+must say so rather than infer it from intent.
 
-- `collaborator` group → 503 on Community; `bp` exits 69 with a clear message.
-- `scanner` start endpoints → 500 on Community; `bp` exits 69.
-- All other 11 groups are available on Community (Intruder uses RepeaterService internally, not
-  the Pro Intruder engine).
+## Current product boundaries
 
-This Community-first posture is explicit: `bp` must not silently fail or hide capability gaps.
-
-### DDD aggregates (from `docs/SPEC.md §11`)
-
-| Aggregate | Invariant |
-|---|---|
-| `FuzzPlan` | Positions[] + PayloadSets + AttackType. `cluster-bomb` requires ≥1 set per position. |
-| `CapturedRequest` | requestId + raw bytes (source for offset resolution). |
-| `AttackRun` | State machine: created → running → paused → completed / stopped / error. |
-| `LedgerEntry` | One per `bp` invocation. Immutable after write (tag is the only mutable field). |
-
-Ubiquitous language = Burp/Intruder vocabulary (sniper, position, payload set, collaborator,
-scope). No invented jargon.
-
----
-
-## Rationale
-
-Decision 2026-06-16. The combination of SDD + TDD + DDD is the `W` (transverse method)
-component in `docs/SPEC.md §4`.
-
-- **SDD** is required because three existing documents contradicted each other (see ADR-0001).
-  A spec validated before code prevents the same drift from recurring.
-- **TDD** is required because the `--pos` parser and offset resolver are the most complex pieces
-  of the CLI and have well-defined inputs/outputs (byte ranges). They must be testable without
-  Burp running.
-- **DDD** is required to keep the Intruder vocabulary consistent between the CLI surface, the
-  test layer, and the API call layer. Renaming concepts mid-stack produces bugs.
-- **spec-as-contract** closes the loop: if the spec and the code diverge, the spec wins (update
-  the code), unless the spec is wrong (update the spec with a recorded decision).
-- **Trunk-based branching** with atomic commits enables the ISO traceability goal of the C4 Run
-  Ledger — every commit is a verifiable unit.
-
----
-
-## Alternatives Considered
-
-| Alternative | Rejection reason |
-|---|---|
-| Code-first, spec later | Would repeat the existing documentation drift problem. The spec exists; use it as the contract. |
-| BDD-only (no TDD unit layer) | BDD scenarios require a running Burp instance for integration; the `--pos` parser does not. A pure BDD approach delays feedback on the core algorithm. |
-| Feature branches per command group | With 13 groups and 69 endpoints, long-lived branches would create merge conflicts and make the ledger's atomic-commit audit trail meaningless. Trunk-based is simpler and fits a 1–2 person team. |
-| Pro-only support (no Community degradation) | Eliminates the majority of the hunter community who use Burp Community. Graceful degradation costs little and broadens the user base significantly. |
-
----
+- `bp` targets Python 3.11+ and the extension targets Java 17 bytecode.
+- Pro-only capability maps to exit 4, not historical sysexits value 69.
+- A Run Ledger row represents one bp-to-extension HTTP operation. One invocation may write several
+  rows, and exit/tag fields can be updated after insertion.
+- `docs/bdd/` has never had a runner or step bindings and is not an acceptance gate. ADR-0013 marks its
+  641 scenarios non-normative and pending removal.
+- The current CLI exit set is 0–5; [`../CLI.md`](../CLI.md) owns its meanings.
 
 ## Consequences
 
-- Implementation is test-first: RED tests for the `--pos` parser come first.
-- Every new command must have its contract test before its implementation.
-- The BDD feature files in `docs/bdd-clean/` serve as the integration acceptance gate.
-- Community-mode degradation must be tested in contract tests (mock the 503/500 response; verify
-  `bp` exits 69 with the correct message).
-- The `FuzzPlan` aggregate's `cluster-bomb` invariant must be enforced in the parser layer (not
-  delegated to the server, which silently accepts invalid input).
+1. Behavior changes update source, executable tests, published contracts, and current prose together.
+2. A shape check must not be described as a semantics check; a mock must not be described as live
+   integration proof.
+3. RED evidence reaches the named assertion and is retained if it will support verification.
+4. A release changing Montoya behavior replays that contract against the pinned real Burp build and
+   retains the result.
+5. The acceptance instrument itself is versioned and reviewed. The loss of the unversioned `/tmp`
+   harness before its repaired cases ran is concrete evidence for this requirement.
+6. Historical decisions remain labeled when superseded; they are not silently rewritten as current
+   implementation history.

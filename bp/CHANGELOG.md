@@ -2,80 +2,119 @@
 
 All notable changes to `bp`. Format: [Keep a Changelog](https://keepachangelog.com/).
 
-## [2.1.0] - 2026-09-04
+Historical entries use the verification vocabulary in force when they were written. They do not
+satisfy the receipt-backed v2.1 meaning of `verified`; the current ledger count below is authoritative.
 
-This is a **minor**, not patch, release. Two planned compatibility corrections are intentionally
-observable: `bp session clear` will also clear the captured cookie jar, and several
-`WebSocketEntry` response fields will become nullable because real Burp can omit them. Neither change
-is claimed live-verified until the v2.0.0 reproductions pass against a rebuilt and reloaded extension.
+## [2.1.0] - Unreleased
+
+This entry describes source behavior in the v2.1.0 candidate. It is **not** a claim that the release is
+ready or that the corrected behavior has completed live verification.
 
 ### Security
 
-- **Operations must preserve and report live state.** ADR-0014 now requires output/field preflight
-  before effects and refusal when an operation cannot truthfully report its own completion. The live
-  v2.0.0 campaign proved why: `config set user` reloaded the serving extension during import and
-  erased in-memory registries, while a scanner audit was created and its id discarded by a later raw
-  rendering error.
-- **Real Burp is part of the release proof for Montoya behavior.** Hermetic suites, Detekt, and
-  coverage were green before live calls found WebSocket listing and Scanner lifecycle unusable. A mock
-  still tests pure logic, but cannot verify what a nullable/throwing third-party accessor does in the
-  supported Burp build.
+- Marker-backed auth and header-bypass findings now reject recognized actor-supplied equivalents across
+  request method/URL components, body, injected/session headers, explicit/session/cookie-jar cookies,
+  and serialized `Cookie` values. Representation exploration is symmetric across marker and request
+  components. The current implementation observes finalized headers/cookies but still reconstructs
+  method, URL, and body from pre-send arguments; that provenance boundary must be resolved before a
+  stronger final-request claim is made (D58, D62, D69). The corresponding proof-ceiling wording is
+  under correction and is not evidence for this release yet.
+- Session credential state and the captured-cookie epoch are snapshotted atomically under the fixed
+  `sessionMutationLock -> cookieMutationLock` order. Both clear entry points advance the epoch, and
+  `session clear` now removes configured credentials, origin binding, and captured cookies so an older
+  response cannot restore cleared credentials (D29, D63, D70).
+- User configuration import excludes and reports only `user_options.extender.extensions`, preventing a
+  self-reload while preserving safe siblings. Completed imports return observed post-state when
+  available or `applied=true`, nullable state, and a do-not-retry warning (D53, D66).
+- Output format and static field-name compatibility are preflighted before configuration, ledger/client
+  construction, REST dispatch, target/state effects, task creation, and one-use Collaborator polls.
+  Three remaining catalog divergences (`scan issues --fields severity`, `sitemap --fields url`, and
+  absent `req --fields listenerPort`) can fail after a GET, so the blanket pre-effect claim remains
+  blocked until those paths are corrected (D24, ADR-0014).
 
-### Fixed
+### Fixed in source
 
-- **Public pages no longer satisfy the auth-bypass rule (implementation landed; live verification
-  pending).** Three identical FULL, COOKIES_ONLY, and NONE representations now establish no
-  credential-sensitive boundary. A finding remains possible when FULL and NONE contain the same
-  substantive protected bytes while the independent cookie-only control is denied (D58).
-- **Real-Burp request construction (implementation landed; live verification pending).** Constructed
-  requests now strip factory-injected browser headers, preserve duplicate `Cookie` fields and
-  untouched cookies in order, and pass text bodies to Montoya as UTF-8 bytes (D38–D40).
-
-> **Landing/redeployment placeholder — not release claims yet.** The 2026-09-04 campaign confirmed
-> 37 defects in shipped v2.0.0. Move an item out of this placeholder only after its implementation is
-> present and retain the qualification “not live-verified” until the exact reproduction passes on the
-> rebuilt extension/CLI. No D19–D61 record is `verified` at the time this entry was written.
-
-- [ ] Reject incompatible `--format`/`--fields` before intercept, Repeater, history replay, tab,
-  Collaborator, config, scope, fuzz, or Scanner effects; never orphan a task/payload or consume an
-  interaction without its result (D24).
-- [ ] Keep populated WebSocket history readable when edited payload or other response-side Montoya
-  values are absent (D23).
-- [ ] Make Scanner status, issues, and audit stop usable when individual Montoya counters throw; keep
-  unavailable values nullable and stop without a failing pre-delete count read (D55). The six tasks
-  listed in D55 remain **unknown**, not presumed stopped.
-- [ ] Refuse user-configuration import while it can reload the serving extension and destroy live
-  registries (D53).
-- [ ] Return typed JSON for bare-415 cases, validate `/history` numbers, and remove raw timestamp/parser
-  details from errors (D19–D21).
-- [ ] Complete the shipped CLI/output contract: JSON local errors, history list filters, single-entry
-  raw behavior, stable quiet/field projections, local input validation, and truthful scope help
-  (D22, D25, D27–D28, D31–D35, D37, D52).
-- [ ] Finish the remaining fuzz contracts for named lists, versioned payload files, NUL/fragment
-  normalization, transport exits, and unsupported matrix classification (D41, D43–D46, D48).
-- [ ] Reject invalid/unknown nested Burp configuration changes rather than coercing or silently
-  discarding them; reject blank Repeater tab names (D26, D49–D50).
-- [ ] Complete check output and timeout handling: emit one-word quiet verdicts for every check, give
-  inconclusive results a nonzero non-finding exit, and land the configurable per-probe budget without
-  a shared worker-pool bottleneck (D59–D61). The value and option name remain deliberately unspecified.
-- [ ] Re-run the unresolved target-sitemap observation against a proved-populated Burp target sitemap;
-  it remains `unconfirmed`, not a fix claim (D56).
+- Typed server errors now cover framework 415 responses, malformed history filters, sanitized timestamp
+  parsing, and unsupported operations. Discoverable operations unavailable in pinned Montoya return
+  501 rather than successful no-ops (D19–D21, D48, D52).
+- Populated WebSocket history tolerates absent platform values. Scanner status/issues preserve available
+  values when individual accessors fail, and stop reports completion only after deletion succeeds
+  (D23, D55; PC-04).
+- Constructed Repeater/session requests remove factory-injected browser defaults, preserve duplicate
+  headers and cookies in order, carry exact body bytes through `bodyBase64`, and pass text bodies to
+  Montoya as UTF-8. Session history is derived from the request actually sent, and response text is
+  decoded from response bytes rather than `bodyToString()` (D38–D40, D64–D65; PC-07).
+- Versioned `#!bp-payloads-json-v1` payload files represent empty, whitespace, embedded-line-break, NUL,
+  and arbitrary Base64 bytes; legacy nonblank-line files retain their behavior. Extra/unused payload
+  lists are rejected, fragments are normalized, and client plans are capped before sends (D41,
+  D43–D45).
+- Fuzz retains baseline/error evidence and treats `NO_RESPONSE` as terminal exit 3. Unsupported
+  server-side matrix modes return 501 instead of silently executing sniper semantics (D46, D48).
+- Machine-mode local failures, complete history filters, deterministic raw HTTP reconstruction for
+  `req`, `send`, `history get`, and `history replay`, Collaborator leaf projection, and an allowlisted
+  quiet renderer are implemented. Missing optional Collaborator leaves become `null` rather than a
+  post-poll usage failure; 32 commands without a declared quiet essential emit no invented value
+  (D22, D25, D27–D28, D31–D35, D37, D59–D60).
+- The OpenAPI serializer contract was rebuilt after 294 violations were inventoried across 67/69
+  operations plus four shared-envelope violations: 221 response-schema, 52 request-schema, and 21
+  parameter violations. All 61 success envelopes had referenced the wrong data model and five
+  always-unsupported operations advertised impossible 200 responses. The model-derived gate now checks
+  all 69 operations. The release-audit semantic/status descriptions were then corrected and a forced
+  focused contract run passed (D68).
 
 ### Changed
 
-- **`session clear` broadens its boundary (planned; live verification pending).** In v2.0.0 it clears
-  configured cookies, headers, and origin but leaves automatically captured response cookies active.
-  The 2.1.0 contract clears both credential stores in one user-facing clear operation (D29).
-- **`WebSocketEntry` accepts absent response-side values (planned; live verification pending).** `url`,
-  `direction`, legacy `payload`, and `payloadBase64` become nullable instead of letting one missing Java
-  platform value fail the complete listing (D23). Consumers must accept `null`; this schema change is
-  one reason the release is 2.1.0.
-- **Campaign counts distinguish reality from brief assumptions.** All 37 product defects were live
-  confirmed in v2.0.0; the current ledger state is 33 `confirmed`, four `fixed` but not live-reverified,
-  one `unconfirmed`, and five `rejected` candidates. The rejected commands/expectations were never product
-  contracts and are not counted as defects.
+- CLI package, lockfile, Gradle extension, build identity, and OpenAPI source versions are 2.1.0.
+- `session clear` clearing the captured jar and nullable WebSocket response fields are observable
+  minor-version changes. Consumers must accept `null` where Montoya supplies no value.
+- `verified` now requires machine-validated receipts for a redeployed live pass, an
+  assertion-reaching causal RED, and content-bound review by a distinct attested non-author lane.
+  D01–D18 were demoted from `verified` to `fixed` because that word changed meaning and their newer
+  receipts are absent—not because those corrections regressed.
+- `docs/bdd/` is explicitly non-normative and pending removal: its 641 scenarios across 16 files have
+  never had step bindings or a runner, and independent static audits found all 16 files false overall.
+
+### Upgrade notes
+
+- Upgrade the Python CLI and extension JAR together; no general runtime handshake prevents a 2.1 CLI
+  from driving a 2.0 extension (PC-06).
+- Regenerate OpenAPI clients from the 2.1 declaration because success/error schemas, nullability,
+  constraints, and unsupported success responses changed broadly.
+- Account for the broader `session clear` boundary, nullable WebSocket values, exit 1 for
+  inconclusive-only checks, exit 3 for fuzz `NO_RESPONSE`, and quiet output becoming empty on commands
+  without a documented essential.
+- Existing line payload files remain valid. Use the magic-gated JSON/Base64 form only when values cannot
+  be represented as nonblank lines.
+
+### Verification status and release blockers
+
+- The ledger contains **73 records: 0 verified, 51 fixed, 16 confirmed, 1 unconfirmed, and 5 rejected**.
+  The mandatory `BURPCTL_REQUIRE_ALL_VERIFIED=1` release gate fails for all 67 established records at
+  `fixed` or `confirmed`.
+- Live verification against the final redeployed v2.1.0 pair has **not been completed**. A prior partial
+  run established D19–D23 only; none qualifies as ledger-`verified` without all three receipt types.
+- Four acceptance oracles were identified as pinned to superseded contracts. `VERIFY-D24` has a full
+  causal reproduction and artifact; `VERIFY-D58`, `VERIFY-D59`, and `VERIFY-D61` were identified by
+  source analysis without standalone reproductions or durable artifacts. All four were repaired only in
+  an unversioned `/tmp` harness that an unrelated reboot destroyed before it ever ran. Its
+  in-repository replacement produced a non-clean retained run: a system preflight proved the deployed
+  binary predates current source because embedded/source OpenAPI differ, so all 30 selected REST/CLI
+  behavior cases correctly became `COULD_NOT_RUN`. That is not release proof.
+- Redaction disclosure paths and the finalized method/URL/body provenance gap remain under corrective
+  review. This candidate does not claim those boundaries sound before their final regressions land.
+- No v2.1.0 tag or matching published CLI/JAR artifact exists yet.
 
 ## [2.0.0] - 2026-09-04
+
+### Post-release errata
+
+The v2.0.0 bullets below record the release-time claim, not later live truth. The 2026-09-04 campaign
+found that 415 responses could be bare; several query/config values were accepted or defaulted; the
+OpenAPI operation set existed but most schemas were wrong; complete scope replacement was unsupported;
+and additional behavior claims failed against real Burp. Those contradictions are tracked as D19–D61
+in `quality/confirmed-defects.yaml` and corrected in the unreleased source above. Do not use the older
+“every failure,” “strict,” “covering every operation,” or scope-replacement wording as current behavior
+or as evidence that v2.0.0 satisfied it.
 
 ### Security
 - **Redaction is now structural.** Nested credential fields, `{name,value}` header records, header

@@ -98,7 +98,7 @@ def test_req_raw_cli_writes_http_bytes(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert result.exit_code == 0, result.stderr
     assert result.stdout_bytes.startswith(b"GET /a HTTP/1.1\r\nHost: example.test\r\n\r\n")
-    assert result.stdout_bytes.endswith(b"HTTP/1.1 200 OK\r\n\r\nok")
+    assert result.stdout_bytes.endswith(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok")
 
 
 def test_proxy_rows_flattens_nested_entry() -> None:

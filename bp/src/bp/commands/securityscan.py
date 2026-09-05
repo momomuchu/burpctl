@@ -14,7 +14,15 @@ from typing import Any, Literal, cast, overload
 
 import typer
 
-from bp.cliutil import EXIT_GENERIC, EXIT_VULN, emit_error, parse_headers, run
+from bp.cliutil import (
+    EXIT_GENERIC,
+    EXIT_VULN,
+    emit_error,
+    emit_warning,
+    parse_headers,
+    resolve_redaction,
+    run,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -181,7 +189,7 @@ def _scan_exit(ctx: typer.Context, data: dict[str, Any]) -> int | None:
             ctx.obj.fmt,
             "INCONCLUSIVE",
             "one or more probes were inconclusive; no confirmed finding was reported",
-            redact_secrets=not ctx.obj.no_redact,
+            redact_secrets=resolve_redaction(ctx.obj),
         )
     return exit_code
 
@@ -332,7 +340,12 @@ def check_idor(
         # [02] Strip bodyPreview (AX-CAP-BODY) and [13] route note to stderr.
         projected, note = _project_for_display(raw, return_note=True)
         if note:
-            typer.echo(f"note: {note}", err=True)
+            emit_warning(
+                ctx.obj.fmt,
+                "OPERATION_NOTE",
+                note,
+                redact_secrets=resolve_redaction(ctx.obj),
+            )
         return projected
 
     timeout = _timeout_options(1 + len(target), probe_timeout_ms, operation_timeout_ms)

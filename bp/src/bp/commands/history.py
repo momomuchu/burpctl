@@ -159,7 +159,7 @@ def history_list(
     Entries are sorted id DESC (newest first).  Bodies are truncated at 1 MB
     at insert time.
 
-    NOTE: returns 404 if the Burp extension DB failed to initialise.
+    NOTE: storage initialisation failure returns SERVICE_UNAVAILABLE (HTTP 503).
     """
 
     def _do(c: Any) -> Any:
@@ -207,7 +207,7 @@ def history_get(
     timestamp). JSON returns the complete structured entry. Raw emits the stored request and response
     as HTTP/1.1 bytes separated by an ASCII record-separator line.
 
-    NOTE: returns 404 if the Burp extension DB failed to initialise.
+    NOTE: storage initialisation failure returns SERVICE_UNAVAILABLE (HTTP 503).
     """
 
     def _do(c: Any) -> Any:
@@ -239,7 +239,7 @@ def history_sitemap(
     Each entry includes a hitCount reflecting how many times that combination
     was seen.  Useful for endpoint discovery and wordlist generation.
 
-    NOTE: returns 404 if the Burp extension DB failed to initialise.
+    NOTE: storage initialisation failure returns SERVICE_UNAVAILABLE (HTTP 503).
     """
 
     def _do(c: Any) -> Any:
@@ -271,7 +271,7 @@ def history_replay(
     structured entries. Raw emits the replayed request and response as HTTP/1.1 bytes separated by an
     ASCII record-separator line.
 
-    NOTE: returns 404 if the Burp extension DB failed to initialise.
+    NOTE: storage initialisation failure returns SERVICE_UNAVAILABLE (HTTP 503).
     """
 
     def _do(c: Any) -> Any:
@@ -299,11 +299,10 @@ def history_clear(
 ) -> None:
     """DESTRUCTIVE: delete all history and sitemap entries (DELETE /history).
 
-    This operation is irreversible and non-transactional between the two
-    tables — history and sitemap are wiped separately.  Pass --confirm to
-    proceed.
+    This operation is irreversible and transactional across both tables — either
+    history and sitemap are both wiped or neither is. Pass --confirm to proceed.
 
-    NOTE: returns 404 if the Burp extension DB failed to initialise.
+    NOTE: storage initialisation failure returns SERVICE_UNAVAILABLE (HTTP 503).
     """
     if not confirm:
         typer.echo(

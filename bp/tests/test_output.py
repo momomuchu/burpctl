@@ -1,7 +1,10 @@
 """Tests for the output rendering layer (docs/OUTPUT.md)."""
 
+import base64
+
 import pytest
 
+from bp.config import redact_data
 from bp.output import render
 
 # ---------------------------------------------------------------------------
@@ -125,7 +128,9 @@ def test_raw_proxy_request_emits_http_request_and_response() -> None:
     out = render(data, "raw", command_path="bp req")
 
     assert out.startswith(b"GET /a?q=1 HTTP/1.1\r\nHost: example.test\r\n\r\n")
-    assert b"\x1e\r\nHTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nok" in out
+    assert (
+        b"\x1e\r\nHTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nok" in out
+    )
 
 
 def test_raw_proxy_request_null_body_base64_falls_back_to_text() -> None:
@@ -142,6 +147,130 @@ def test_raw_proxy_request_null_body_base64_falls_back_to_text() -> None:
     }
 
     assert render(data, "raw", command_path="bp req").endswith(b"\r\n\r\ncaf\xc3\xa9")
+
+
+def test_raw_body_base64_cannot_reconstruct_a_structurally_redacted_secret() -> None:
+    """A duplicate encoded body cannot bypass masking of its text sibling."""
+    secret = b"password=raw-body-secret"
+    data = {
+        "id": 5,
+        "request": {
+            "method": "POST",
+            "url": "https://example.test/a",
+            "headers": [],
+            "body": secret.decode(),
+            "bodyBase64": base64.b64encode(secret).decode(),
+        },
+        "response": None,
+    }
+
+    out = render(redact_data(data), "raw", command_path="bp req")
+
+    assert secret not in out
+    assert b"raw-body-secret" not in out
+    assert b"password=***" in out
+
+
+def test_raw_redaction_recomputes_content_length_from_emitted_bytes() -> None:
+    secret = b"password=raw-body-secret"
+    data = {
+        "id": 6,
+        "request": {
+            "method": "POST",
+            "url": "https://example.test/a",
+            "headers": [{"name": "Content-Length", "value": str(len(secret))}],
+            "body": secret.decode(),
+            "bodyBase64": base64.b64encode(secret).decode(),
+        },
+        "response": None,
+    }
+
+    out = render(redact_data(data), "raw", command_path="bp req")
+    head, body = out.split(b"\r\n\r\n", 1)
+
+    assert body == b"password=***"
+    assert f"Content-Length: {len(body)}".encode() in head.split(b"\r\n")
+    assert f"Content-Length: {len(secret)}".encode() not in head.split(b"\r\n")
+
+
+def test_raw_reconstruction_has_one_truthful_content_length_for_every_capture_shape() -> None:
+    """Synthetic HTTP/1.1 framing describes emitted bytes, never captured framing metadata."""
+    cases = [
+        ({}, [], None),
+        ({"body": ""}, [], 0),
+        ({"body": "abc"}, [], 3),
+        (
+            {"body": "abc", "httpVersion": "HTTP/2"},
+            [{"name": "Content-Length", "value": "999"}],
+            3,
+        ),
+        (
+            {"body": "abc"},
+            [
+                {"name": "Transfer-Encoding", "value": "chunked"},
+                {"name": "Trailer", "value": "X-Checksum"},
+                {"name": "X-Checksum", "value": "secret-trailer"},
+                {"name": "Content-Length", "value": "1"},
+                {"name": "Content-Length", "value": "2"},
+            ],
+            3,
+        ),
+    ]
+    for body_fields, headers, expected_length in cases:
+        data = {
+            "request": {
+                "method": "POST",
+                "url": "https://example.test/a",
+                "headers": headers,
+                **body_fields,
+            },
+            "response": None,
+        }
+
+        out = render(data, "raw", command_path="bp req")
+        head, body = out.split(b"\r\n\r\n", 1)
+        lines = head.split(b"\r\n")
+        content_lengths = [line for line in lines if line.lower().startswith(b"content-length:")]
+
+        assert not any(line.lower().startswith(b"transfer-encoding:") for line in lines)
+        assert not any(line.lower().startswith(b"trailer:") for line in lines)
+        assert not any(line.lower().startswith(b"x-checksum:") for line in lines)
+        if expected_length is None:
+            assert content_lengths == []
+        else:
+            assert content_lengths == [f"Content-Length: {len(body)}".encode()]
+            assert len(body) == expected_length
+
+
+def test_raw_bodyless_response_preserves_representation_content_length() -> None:
+    """HEAD/304 metadata is true even though no response body bytes were captured."""
+    data = {
+        "request": {"method": "HEAD", "url": "https://example.test/a", "headers": []},
+        "response": {
+            "statusCode": 200,
+            "headers": [{"name": "Content-Length", "value": "24"}],
+            "body": None,
+        },
+    }
+
+    out = render(data, "raw", command_path="bp req")
+
+    assert b"HTTP/1.1 200 OK\r\nContent-Length: 24\r\n\r\n" in out
+
+
+def test_raw_reconstruction_preserves_an_empty_query_delimiter() -> None:
+    data = {
+        "request": {
+            "method": "GET",
+            "url": "https://example.test/a?",
+            "headers": [],
+        },
+        "response": None,
+    }
+
+    out = render(data, "raw", command_path="bp req")
+
+    assert out.startswith(b"GET /a? HTTP/1.1\r\n")
 
 
 def test_raw_send_emits_response_only() -> None:

@@ -1,77 +1,51 @@
-# ADR-0003 — `--pos` flexible-fuzzing grammar with client-side expansion
+# ADR-0003 — `--pos` grammar and client-side attack expansion
 
-**Status:** accepted — 2026-06-16
+**Status:** accepted 2026-06-16 · amended to shipped behavior 2026-09-05
 **Criticality:** [CRITICAL][BLOCKS:critical]
-
----
 
 ## Decision
 
-The `--pos` flag accepts **semantic selectors** that the CLI resolves to byte-offsets before
-calling the Intruder API. Multi-position and 4 attack types are supported. Non-sniper attack
-types are expanded **client-side**.
+`bp fuzz` accepts repeatable semantic selectors and resolves them to byte ranges in a captured request:
 
-### Selector grammar
-
-```
-header:NAME     — value of a named request header
-cookie:NAME     — value of a named cookie
-body:FIELD      — a named field in a form-urlencoded or JSON body
-query:NAME      — a named URL query parameter
-path:INDEX      — a path segment by 0-based index
-offset:START-END — raw byte range (passthrough, no resolution needed)
+```text
+header:NAME
+cookie:NAME
+body:FIELD
+query:NAME
+path:INDEX
+offset:START-END
 ```
 
-Multiple `--pos` flags on one command produce a slice of positions.
+`path:INDEX` is 1-based over non-empty path segments. `body:FIELD` supports a top-level JSON object
+member or form-urlencoded member; multipart and dot-path selectors are not implemented.
 
-### Attack types (`--type`)
+The Python client expands all four attack modes and sends each concrete request through
+`POST /repeater/send`:
 
-| Type | Behaviour |
-|---|---|
-| `sniper` | One payload set; each position fuzzed in turn (server implements this natively). |
-| `battering-ram` | Same payload injected into all positions simultaneously (client-side expansion). |
-| `pitchfork` | N payload sets, iterated in lock-step; set[i] maps to position[i] (client-side). |
-| `cluster-bomb` | N-dimensional Cartesian product; all combinations of all sets (client-side). |
+- sniper: one shared list or one named list per position, changing one position per shot;
+- battering-ram: one shared value applied to every position;
+- pitchfork: one list per position, lockstep to the shortest;
+- cluster-bomb: Cartesian product.
 
-### Offset resolution
+The server-side Intruder API is not the engine behind `bp fuzz`. It supports bounded exact-offset
+sniper behavior; unsupported matrix modes return 501 rather than silently executing as sniper. There is
+no `bp fuzz --param` shorthand or asynchronous lifecycle CLI.
 
-The Intruder API only accepts raw byte-offsets (`PayloadPosition{start:Int, end:Int, name:String}`).
-`bp` resolves semantic selectors by parsing the raw bytes of the base captured request
-(`requestId` from proxy history). This is the **central, non-delegatable work of the CLI**.
+## Safety and representation
 
----
+The client rejects overlapping positions, incompatible list layouts, empty plans, and any plan above
+10,000 payload shots before target sends. The bound is fixed, not a warning threshold or user
+configuration.
 
-## Rationale
-
-Decision 2026-06-16. `docs/SPEC.md §5` identifies offset resolution as "the central work
-of the CLI." The REST extension's `PayloadPosition` has no semantic selector support — it only
-accepts `start`, `end`, `name` as required integers. Without this resolver layer, a user would
-need to manually count byte offsets in raw HTTP, which is error-prone and not user-facing quality.
-
-The 4 attack types mirror Burp Intruder's own vocabulary (ubiquitous language, `docs/SPEC.md §11`).
-Server-side, only sniper is implemented; the other three are accepted by the API but execute as
-sniper. Client-side expansion lets `bp` deliver the correct semantics now without waiting for a
-Kotlin extension update.
-
----
-
-## Alternatives Considered
-
-| Alternative | Rejection reason |
-|---|---|
-| Expose only byte-offset (`offset:START-END`) | Forces users to count bytes manually. Unusable for a user-facing product. Defeats the purpose of a CLI wrapper. |
-| Implement only sniper, defer others | `pitchfork` and `cluster-bomb` are the most valuable attack types for multi-param auth testing (the primary use case). Deferring would ship a half-capable fuzzer. |
-| Wait for server to implement all attack types | No timeline for a Kotlin extension update. Client-side expansion is feasible now and produces correct results. Can be deprecated later if the server adds native support. |
-| Use field-name substitution (`substitutePayload` pattern) instead of offset resolution | The server's 6-mode substitution is for `quick-fuzz` (`/intruder/quick-fuzz`) only. Full intruder attacks require offsets. The `--param` shorthand for quick-fuzz is exposed separately as `bp fuzz <id> --param NAME`. |
-
----
+Substitution is byte-indexed and applied right-to-left. Body changes recalculate one canonical
+`Content-Length`. Exact body bytes can cross the structured bridge through `bodyBase64`, but Montoya
+still constructs the outgoing request; this is not raw-framing transport.
 
 ## Consequences
 
-- The `--pos` parser and offset resolver are the first units to be RED-tested.
-- `cluster-bomb` with N positions and large payload sets can produce very large request counts. `bp`
-  must warn when the Cartesian product exceeds a configurable threshold (e.g. >10 000 requests).
-- The `--payloads NAME=FILE` flag binds a payload list to a named position. For `pitchfork`/`cluster-bomb`,
-  at least one payload file per position is required.
-- Caveats from `docs/SPEC.md §5` must be surfaced to the user: only `positions[0].name` is consumed
-  in sniper mode; payload map keys have no functional role (all values are flattened).
+- Selector and expansion semantics are contract-tested in Python.
+- Named payload files bind deterministically; extra/unused sets are rejected rather than flattened or
+  ignored.
+- The complete executable algorithm is maintained in [`../ALGORITHMS.md`](../ALGORITHMS.md).
+- Any claim about original/final wire identity remains bounded by PC-07 and the structured-bridge
+  limits in [`../PROOF-CEILINGS.md`](../PROOF-CEILINGS.md).

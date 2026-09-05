@@ -1,201 +1,136 @@
-# `bp` — Load-bearing algorithms (spec, not code)
+# `bp` load-bearing algorithms
 
-> Implementation spec, language-neutral (pseudocode). The 2 algorithms implemented by `bp`.
-> Reference: `CLI.md` (`--pos` grammar), `SPEC.md §6.4` (Intruder models).
-> Actual REST model: `PayloadPosition{start:Int, end:Int, name:String}` (all required),
-> `CreateAttackRequest{positions:[…], payloads:Map<name,[String]>, attackType:String}`.
->
-> **v2.0.0 live qualification (2026-09-04):** A1/A2 describe the intended expansion model, not a
-> claim of end-to-end byte fidelity. Against real Burp 2026.3.3, the structured bridge added twelve
-> browser headers (D38), collapsed an unrelated duplicate Cookie field (D39), and corrupted a
-> multibyte body (D40). Extra named lists were silently ignored in sniper/battering-ram (D41), payload
-> files could not represent empty/space/embedded-LF values (D43), NUL bodies were rejected (D44), and
-> a captured fragment-bearing URL could not be normalized (D45). Unequal pitchfork lists stopping at
-> the shortest list is intentional and remains the contract (D42 rejected). No repair is treated as
-> verified until these live reproductions pass after redeployment.
+This document specifies the implemented client-side positional fuzzer. It does not claim end-to-end
+wire identity or completed live verification. See [`PROOF-CEILINGS.md`](PROOF-CEILINGS.md) and the
+v2.1.0 status in the root [`README.md`](../README.md).
 
----
+## A1: selector to byte range
 
-## A1 · `--pos` resolver: semantic selector → byte-offset
-
-**Contract:** `resolvePos(rawRequest: bytes, selector: string) -> PayloadPosition{start,end,name}`
-where `start`/`end` are **byte offsets** into `rawRequest` (`end` exclusive), and the slice
-`rawRequest[start:end]` = **the value** to fuzz. Multiple `--pos` → list sorted by `start`.
-
-**Pre-parse** (once per request) — HTTP/1.1 split:
+```text
+resolve_pos(raw_request: bytes, selector: str) -> Position(start, end, name)
 ```
-request-line = METHOD SP request-target SP HTTP-version CRLF
-headers      = ( field-name ":" OWS field-value OWS CRLF )*
-CRLF                       # blank line
-body         = remaining octets
-```
-Store offsets of: request-target, each header (name+value), body start.
-Assumes CRLF; if LF-only is detected, adjust line-ending length (1 vs 2).
 
-**Per selector type:**
+`start` is inclusive and `end` exclusive. The selected bytes are exactly
+`raw_request[start:end]`. The parser accepts HTTP/1 request text with CRLF or LF line endings.
 
-| Selector | Resolution | `name` |
-|---|---|---|
-| `offset:A-B` | `{A, B}` as-is. Validate `0 ≤ A < B ≤ len`. | `offset:A-B` |
-| `header:NAME` | header where `field-name` == NAME (**case-insensitive**). Span = `field-value` after OWS, up to end of value (before CRLF). **1st occurrence** (see rule below). | `header:NAME` |
-| `cookie:NAME` | within the `Cookie:` header value, find token `NAME=`, span = after `=` up to the next `;` or end of value. | `cookie:NAME` |
-| `query:NAME` | within `request-target` after `?`, find `NAME=`, span = up to the next `&` or end. Span = **raw encoded value**. | `query:NAME` |
-| `path:INDEX` | path = `request-target` before `?`, segments separated by `/`. **1-based** (`path:1` = 1st segment after the leading `/`). Span = segment bytes. | `path:INDEX` |
-| `body:FIELD` | dispatch on `Content-Type` (see below). | `body:FIELD` |
-
-**`body:FIELD` by content-type:**
-- `application/x-www-form-urlencoded` → `FIELD=value` in the body, span = value up to `&`/end.
-- `application/json` → value of key `FIELD` (top-level; **extension**: dot-path `body:a.b`). String → span = **inside the quotes**; number/bool/null → the literal.
-- `multipart/form-data` → part `name="FIELD"`, span = part body. *(supported v2)*
-- other → error `UNSUPPORTED_BODY`.
-
-**Rules & errors:**
-- Selector not found → `POS_NOT_FOUND` (exit 2).
-- Repeated headers/params → **1st occurrence by default**; `header:NAME[k]` (index) as extension.
-- 2 positions that **overlap** → `POS_OVERLAP` (exit 2) (otherwise A2 expansion breaks).
-- Offsets are **bytes** (not characters) — watch out for multi-byte UTF-8.
-
-**RED test cases (TDD) — fixture request:**
-```
-POST /api/v2/users/42?redirect=/home HTTP/1.1\r\n
-Host: t.example.com\r\n
-Authorization: Bearer abc123\r\n
-Cookie: sid=XYZ; role=user\r\n
-Content-Type: application/json\r\n
-\r\n
-{"id":42,"name":"bob"}
-```
-| Selector | Expected (`rawRequest[start:end]`) |
+| Selector | Implemented selection |
 |---|---|
-| `header:Authorization` | `Bearer abc123` |
-| `cookie:role` | `user` |
-| `query:redirect` | `/home` |
-| `path:3` | `42` (segments: api/v2/users/42 → 1=api,2=v2,3=users… **verify convention**) |
-| `body:id` | `42` (JSON literal) |
-| `body:name` | `bob` (inside quotes) |
-| `offset:0-4` | `POST` |
-| `header:Nope` | error `POS_NOT_FOUND` |
+| `offset:A-B` | literal byte range after `0 <= A < B <= len(raw)` validation |
+| `header:NAME` | value of the first case-insensitive matching header |
+| `cookie:NAME` | first exact cookie-name match across all `Cookie` header fields |
+| `query:NAME` | first exact query member value before any fragment |
+| `path:INDEX` | 1-based non-empty path segment, before query/fragment |
+| `body:FIELD` | top-level JSON member or form member value |
 
-> ⚠️ The `path:INDEX` convention (does it include the empty 1st segment before `/api`?) must be
-> **locked in** by a test: recommendation `path:1`=`api` (non-empty segments).
+For JSON, the resolver recognizes `application/json` and a content-type-free body beginning with `{`
+or `[`. Only a top-level object member can be selected; keys are matched by their decoded JSON name,
+strings select bytes inside their quotes, compound values select their complete literal, and primitives
+select the token. A top-level array is not addressable by `body:FIELD`.
 
----
+For form data, it recognizes `application/x-www-form-urlencoded` and a content-type-free body containing
+`=`. It selects the exact member's encoded value after leading body whitespace. Multipart form data and
+dot-path JSON selectors are not implemented.
 
-## A2 · Attack expansion (matrix-style, client-side)
+Errors are typed local usage failures:
 
-**Source verdict (`IntruderService.kt`, verified 2026-06-16):** the extension's intruder is
-**unusable for real fuzzing** — `executeAttack()` **ignores `attackType`**, only uses
-**the 1st position** (`positions.firstOrNull()`), substitutes **by NAME** (regex template/query/body/
-header, not by byte-offset), and flattens all payloads into sniper. No battering-ram, no
-pitchfork, no cluster-bomb, no multi-position. → **`bp` handles the ENTIRE attack client-side**,
-for **all 4 types including sniper**: A1 resolves offsets, A2 expands + substitutes (precise
-byte-offset) + fires each request via `POST /repeater/send`. The native `/intruder/attack/create`
-is **not** used for fuzzing (exposed at most as a passthrough). The only native path that works
-is `/intruder/quick-fuzz` (sniper 1-param, by name, with baseline) — `bp` can wrap it as a
-shortcut, but the real engine = A1+A2 client-side.
+- malformed selector/range/path index: `BAD_SELECTOR`;
+- absent member or out-of-range offset: `POS_NOT_FOUND`;
+- unsupported body shape/media type: `UNSUPPORTED_BODY`;
+- overlapping positions: `POS_OVERLAP`.
 
-**Contract:** `expand(base: bytes, positions: [Pos], payloads: Map<name,[String]>, type) -> [ConcreteRequest]`
+Repeated members use the first match. There is no `[k]` selector extension. Positions are validated as
+non-overlapping half-open ranges; adjacent ranges are valid, while equal starts are ambiguous and
+rejected.
 
-**Substitution primitive (the critical correctness point):**
-```
-applySubs(base, subs: [{start, end, payload}]) -> bytes:
-    # subs do not overlap (guaranteed by A1 POS_OVERLAP)
-    sort subs by start DESCENDING          # ← right→left, otherwise offsets shift
-    out = base
-    for sub in subs:
-        out = out[0:sub.start] + sub.payload + out[sub.end:]
-    if any substitution touches the body:
-        recalculate Content-Length = byteLength(body after the blank line)  # on out
-        keep one Content-Length field; collapse duplicates
-    return out
-```
-> **Transport boundary:** byte-offset precision describes this substitution, not the final wire
-> message. `bp` converts the result to structured method/URL/headers/body data and the REST
-> extension asks Montoya to build and send it. Body substitution therefore cannot preserve
-> conflicting length fields, transfer-coding/trailers, request-line HTTP version, or non-UTF-8 body
-> bytes. `bp send` and `bp fuzz` are not raw-framing transports and must not be used where exact
-> framing is the experiment.
->
-> **Why right→left:** substituting a value of different length shifts all offsets *after* it.
-> By applying from the largest `start` to the smallest, offsets not yet processed remain valid.
-> This is THE classic bug to avoid.
+## A2: bounded attack expansion
 
-**Combination generators** (positions `p_1..p_n`, sets `s_1..s_n`):
+The extension's server-side Intruder surface is not the engine used by `bp fuzz`. `bp` resolves ranges,
+expands one of four modes, substitutes locally, and sends each concrete structured request through
+`POST /repeater/send`.
 
-| `type` | Sets | Generation | # requests |
-|---|---|---|---|
-| `sniper` | either one shared `S`, or one named `s_k` per position | shared form: for each `p_k`, each `v∈S`; named form: for each `p_k`, each `v∈s_k`; only one position changes per shot | shared: `n × |S|`; named: `Σ|s_k|` |
-| `battering-ram` | exactly 1 shared set `S` | for each `v∈S`: subs=`[{p_k,v} ∀k]` (same payload everywhere); more than one supplied list is rejected before any send | `|S|` |
-| `pitchfork` | `s_k`/position | `m=min(|s_k|)`; for `i∈0..m-1`: subs=`[{p_k, s_k[i]} ∀k]` | `m` |
-| `cluster-bomb` | `s_k`/position | for each tuple ∈ `product(s_1,…,s_n)`: subs=`[{p_k, tuple[k]} ∀k]` | `∏|s_k|` |
+For positions `p1..pn` and payload lists `s1..sn`:
 
-The named sniper form is additive: existing one-set callers retain the shared-set behavior. For two
-positions with list lengths 2 and 3, named sniper emits **5** shots, pitchfork emits **2**, and
-cluster-bomb emits **6**; battering-ram rejects the two-list plan because it has exactly one shared set.
+| Type | Accepted payload-list layout | Generated shots |
+|---|---|---|
+| `sniper` | one shared list, or one named list per position | one position changed at a time; `n * |S|` shared or `sum(|si|)` named |
+| `battering-ram` | exactly one shared list | every position receives the same value; `|S|` |
+| `pitchfork` | exactly one list per position | lockstep to the shortest list; `min(|si|)` |
+| `cluster-bomb` | exactly one list per position | Cartesian product; `product(|si|)` |
 
-**Payload-file representations (2.1.0 contract; live verification pending):**
+The plan is snapshotted, restartable, and capped at 10,000 payload shots before target traffic. Empty
+plans and incompatible list counts fail before sends. Expansion materializes only the current concrete
+request rather than retaining the complete expanded corpus.
 
-- A file without a magic header retains the legacy line-oriented behavior: each nonblank line is one
-  payload, an optional CR before LF is removed, and empty/whitespace-only lines are skipped. This form
-  cannot represent an empty, whitespace-only, or embedded-line-break payload.
-- A byte-safe file starts with the exact first line `#!bp-payloads-json-v1`, then a UTF-8 JSON array.
-  Each array element is either a JSON string (encoded to UTF-8, so `""`, `" "`, `"A\\nB"`, and
-  `"\\u0000"` are distinct payloads) or exactly `{ "b64": "..." }` for arbitrary bytes. Invalid JSON,
-  a non-array document, malformed Base64, or any other element shape is a usage error before sending.
-- The magic-gated form is additive; existing legacy payload files keep their prior nonblank-line
-  behavior. This documents the repair for D43/D44 without pretending the v2.0.0 live reproduction has
-  already passed.
+### Substitution
 
-**Firing + baseline + anomaly (intended contract; v2.0.0 deviations above):**
-1. Expand, convert through the structured REST bridge, and validate every `ConcreteRequest` without
-   retaining the whole prepared corpus;
-   an empty/invalid plan returns a usage error before any target send (and an empty selector list
-   before any REST call).
-2. Fire the unmodified `base` once and emit that attempted control first as
-   `{index:-1, payloads:[], baseline:true, anomalous:false, status, length, duration_ms, error,
-   error_code}`.
-3. For each `ConcreteRequest`, `POST /repeater/send` and emit a result with `baseline:false`.
-4. A successful payload is anomalous when `statusCode ≠ status0` or `|length − len0|` exceeds the
-   threshold. A payload send error emits `status:0`, `length:0`, `anomalous:false`, `error`, and
-   `error_code`: no target response exists to compare, so infrastructure failure is not an anomaly.
-   A baseline send error emits its baseline error row and stops before payload sends.
-5. `--anomalous-only` retains the baseline and every error row, filtering only successful ordinary
-   payload rows; error rows make the command exit in the typed stable category after rendering all
-   attempted-shot evidence (`CONNECTION_REFUSED`/`TRANSPORT_ERROR` remain exit 3; generic errors 1).
-   Connection/transport and invalid-response errors stop the remaining prepared corpus after their
-   triggering row; per-shot server failures may continue. JSON output gets a JSON stderr summary.
+For each concrete request:
 
-The fresh baseline prevents a stale history response from inverting anomaly classification after
-session, state, or target drift. Every attempted target send has one returned row: N payloads produce
-N+1 attempts and N+1 rows when all run, with the extra row explicitly identified as the baseline.
-Response `length` is UTF-8 body bytes, not the host language's character count.
+1. validate all ranges and payload byte types;
+2. reject CR, LF, or NUL insertion outside the body;
+3. apply substitutions in descending `start` order so a later byte-length change cannot shift an
+   unresolved earlier range;
+4. if any substitution touches the body, recalculate the byte `Content-Length`, collapse duplicates,
+   or add one when absent.
 
-**Guards (config, non-blocking by default — ADR-0007):**
-- Total count `> threshold` (recommendation 10000) → **warn** (or confirm if `--confirm`), not a hard block.
-- `--enforce-scope warn|block|off`: if enabled, check host of `base` before firing.
+Payloads are bytes. After substitution, the wire bridge parses the reconstructed HTTP request into
+method, URL, ordered headers, and body. Binary bodies travel through the `bodyBase64` request member;
+text bodies travel as UTF-8. The extension supplies exact body bytes to Montoya where the request model
+carries them. Montoya still builds the outbound request.
 
-**Worked example — "2 headers + 1 cookie":**
-```
-bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=a.txt(2) \
-           --pos 'header:X-Real-IP'       --payloads X-Real-IP=a.txt(2) \
-           --pos 'cookie:role'            --payloads role=b.txt(3) \
-           --type cluster-bomb
-→ resolvePos × 3 → 3 Pos (sorted offsets, non-overlapping)
-→ product 2×2×3 = 12 ConcreteRequest, each applySubs(right→left) + Content-Length if body
-→ 13 shots /repeater/send → 13 FuzzResult rows: 1 explicit fresh baseline + 12 payload rows
+Therefore byte-precise selection/substitution is **not** raw-framing transport. It does not preserve the
+request-line HTTP version, conflicting length fields, transfer-coding/trailers, connection-level
+framing, or arbitrary malformed request structure end to end. Do not use `bp send`/`fuzz` where those
+bytes are the oracle.
+
+## Payload files
+
+A file whose first line is not the magic line uses legacy behavior: split on LF, strip one trailing CR
+from each line, and discard blank/whitespace-only lines.
+
+A byte-safe file begins exactly:
+
+```text
+#!bp-payloads-json-v1
 ```
 
-**RED test cases (TDD):**
-- `applySubs`: 2 subs of different lengths → verify that the lower offset remains correct after splicing the upper one (right→left anti-regression).
-- `applySubs` body → `Content-Length` recalculated == new body length.
-- `cluster-bomb` [a,b]×[1,2] → 4 requests, exact combinations `{a,1},{a,2},{b,1},{b,2}`.
-- `pitchfork` sets of sizes 3 and 2 → 2 requests (min), paired by index.
-- `sniper` 2 positions, set of 3 → 6 requests, only one position modified at a time.
-- `battering-ram` set of 3, 2 positions → 3 requests, same payload at both positions.
+The remainder is UTF-8 JSON containing an array. Each member is either:
 
----
+- a JSON string, encoded as UTF-8 bytes; or
+- exactly `{"b64":"CANONICAL_BASE64"}` for arbitrary bytes.
 
-## Status
+The versioned form can represent empty, whitespace-only, embedded-line-break, NUL, and arbitrary byte
+payloads. Duplicate object members, extra keys, noncanonical/malformed Base64, non-array documents, and
+other member types are usage errors before sending.
 
-`[CRITICAL][BLOCKS:critical]` A1 + A2 are the **core of the driver** — without them, no fuzzing.
-Conventions locked in by tests: `path:INDEX` (base), anomaly threshold, repeated header occurrence.
+## Execution, control, and errors
+
+A valid invocation sends one fresh unmodified baseline first, then each concrete payload request. Each
+attempt produces one row:
+
+```text
+index, payloads, status, length, duration_ms,
+anomalous, baseline, error, error_code
+```
+
+The baseline has `index=-1`, empty payloads, `baseline=true`, and `anomalous=false`. Successful payload
+rows are anomalous when their target status or response-byte length differs from the baseline under the
+implemented threshold. A request failure has status and length sentinels of zero, `anomalous=false`,
+and typed error fields; an infrastructure failure is not a target-response anomaly.
+
+`--anomalous-only` retains the baseline and every error row. A baseline failure stops before payload
+shots. `CONNECTION_REFUSED`, `TRANSPORT_ERROR`, `NO_RESPONSE`, and `INVALID_RESPONSE` stop the remaining
+prepared corpus after their row. `NO_RESPONSE` is terminal and exits 3. Other per-shot server failures
+may allow later attempts. JSON mode emits the retained rows to stdout and a typed summary diagnostic to
+stderr before the nonzero exit.
+
+The response body text is decoded from exact response bytes. Malformed UTF-8 is still non-injective in
+text output; when exact response bytes are the oracle, use an original-byte capture as required by
+PC-07.
+
+## Release evidence
+
+The source and local regression suite implement the behavior above, but the corrective campaign has
+not completed a retained live acceptance run against the final redeployed v2.1.0 pair. No ledger record
+is `verified`. The destroyed unversioned acceptance harness and the non-clean retained results from its
+in-repository replacement are described in the root README and ROADMAP; do not infer live proof from
+this algorithm specification.

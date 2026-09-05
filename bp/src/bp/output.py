@@ -363,13 +363,22 @@ def _body_bytes(record: dict[str, Any], text_key: str, base64_key: str) -> bytes
     return body.encode("utf-8")
 
 
-def _header_lines(headers: Any) -> tuple[list[bytes], set[str]]:
+def _body_is_present(record: dict[str, Any], text_key: str, base64_key: str) -> bool:
+    return record.get(base64_key) is not None or record.get(text_key) is not None
+
+
+def _header_lines(
+    headers: Any,
+    *,
+    body_present: bool,
+    body_length: int,
+) -> tuple[list[bytes], set[str]]:
     if headers is None:
-        return [], set()
+        headers = []
     if not isinstance(headers, list):
         raise TypeError("HTTP headers must be a list")
-    lines: list[bytes] = []
-    names: set[str] = set()
+    parsed: list[tuple[str, str]] = []
+    trailer_names: set[str] = set()
     for header in headers:
         if not isinstance(header, dict):
             raise TypeError("each HTTP header must be an object")
@@ -379,8 +388,38 @@ def _header_lines(headers: Any) -> tuple[list[bytes], set[str]]:
             raise TypeError("HTTP header names and values must be text")
         if any(character in name + value for character in "\r\n\0"):
             raise ValueError("HTTP header contains CR, LF, or NUL")
+        parsed.append((name, value))
+        if name.lower() == "trailer":
+            trailer_names.update(item.strip().lower() for item in value.split(",") if item.strip())
+
+    lines: list[bytes] = []
+    names: set[str] = set()
+    has_transfer_encoding = any(name.lower() == "transfer-encoding" for name, _ in parsed)
+    captured_lengths = [(name, value) for name, value in parsed if name.lower() == "content-length"]
+    framing_names = {"content-length", "transfer-encoding", "trailer", *trailer_names}
+    for name, value in parsed:
+        lowered = name.lower()
+        if lowered in framing_names:
+            continue
         lines.append(f"{name}: {value}".encode("utf-8"))
-        names.add(name.lower())
+        names.add(lowered)
+
+    if has_transfer_encoding:
+        selected_lengths = [("Content-Length", str(body_length))]
+    elif body_present:
+        matching_length = len(captured_lengths) == 1 and captured_lengths[0][1].strip() == str(
+            body_length
+        )
+        selected_lengths = (
+            captured_lengths if matching_length else [("Content-Length", str(body_length))]
+        )
+    else:
+        # A bodyless HEAD/304 response may truthfully carry the length of the
+        # selected representation. Preserve that metadata when no conversion is needed.
+        selected_lengths = captured_lengths
+    for name, value in selected_lengths:
+        lines.append(f"{name}: {value}".encode("utf-8"))
+        names.add("content-length")
     return lines, names
 
 
@@ -393,14 +432,20 @@ def _raw_request(record: dict[str, Any]) -> bytes:
     if not parts.scheme or not parts.netloc:
         raise ValueError("raw HTTP request requires an absolute URL")
     target = parts.path or "/"
-    if parts.query:
+    before_fragment = url.split("#", 1)[0]
+    if "?" in before_fragment:
         target = f"{target}?{parts.query}"
     lines = [f"{method} {target} HTTP/1.1".encode("utf-8")]
-    headers, names = _header_lines(record.get("headers"))
+    body = _body_bytes(record, "body", "bodyBase64")
+    headers, names = _header_lines(
+        record.get("headers"),
+        body_present=_body_is_present(record, "body", "bodyBase64"),
+        body_length=len(body),
+    )
     if "host" not in names:
         lines.append(f"Host: {parts.netloc}".encode("utf-8"))
     lines.extend(headers)
-    return b"\r\n".join(lines) + b"\r\n\r\n" + _body_bytes(record, "body", "bodyBase64")
+    return b"\r\n".join(lines) + b"\r\n\r\n" + body
 
 
 def _raw_response(record: dict[str, Any]) -> bytes:
@@ -412,12 +457,13 @@ def _raw_response(record: dict[str, Any]) -> bytes:
     except ValueError:
         phrase = ""
     status_line = f"HTTP/1.1 {status}{f' {phrase}' if phrase else ''}".encode("ascii")
-    headers, _names = _header_lines(record.get("headers"))
-    return (
-        b"\r\n".join([status_line, *headers])
-        + b"\r\n\r\n"
-        + _body_bytes(record, "body", "bodyBase64")
+    body = _body_bytes(record, "body", "bodyBase64")
+    headers, _names = _header_lines(
+        record.get("headers"),
+        body_present=_body_is_present(record, "body", "bodyBase64"),
+        body_length=len(body),
     )
+    return b"\r\n".join([status_line, *headers]) + b"\r\n\r\n" + body
 
 
 def _history_http(record: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any] | None]:
@@ -671,6 +717,24 @@ def _render_json(data: Any, fields: list[str] | None) -> str:
     return _json.dumps(data, separators=(",", ":"))
 
 
+def escape_terminal_controls(text: str) -> str:
+    """Render untrusted controls visibly instead of executing them in a terminal.
+
+    Raw output is intentionally exempt: it is an exact byte artifact and must not be
+    directed to a terminal. JSON already escapes controls during serialization.
+    """
+    parts: list[str] = []
+    for character in text:
+        codepoint = ord(character)
+        if codepoint < 0x20 or 0x7F <= codepoint <= 0x9F:
+            parts.append(f"\\x{codepoint:02x}")
+        elif 0xD800 <= codepoint <= 0xDFFF:
+            parts.append(f"\\u{codepoint:04x}")
+        else:
+            parts.append(character)
+    return "".join(parts)
+
+
 def _cell(value: Any) -> str:
     """Render one table cell: null -> blank, nested dict/list -> compact JSON, else str.
 
@@ -685,7 +749,7 @@ def _cell(value: Any) -> str:
         return "true" if value else "false"
     if isinstance(value, (dict, list)):
         return _json.dumps(value, separators=(",", ":"))
-    return str(value)
+    return escape_terminal_controls(str(value))
 
 
 def _render_table(data: Any, fields: list[str] | None) -> str:
@@ -779,7 +843,7 @@ def _scalar_text(value: Any) -> str:
         return "true" if value else "false"
     if isinstance(value, (dict, list)):
         return _json.dumps(value, separators=(",", ":"))
-    return str(value)
+    return escape_terminal_controls(str(value))
 
 
 def _essential(record: Any) -> str:

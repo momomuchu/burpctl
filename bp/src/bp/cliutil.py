@@ -17,7 +17,7 @@ from bp import config as _config
 from bp.client import BurpClient, BurpError
 from bp.config import ConfigError, redact, redact_data
 from bp.ledger import Ledger
-from bp.output import render, validate_output_options
+from bp.output import escape_terminal_controls, render, validate_output_options
 from bp.pos import PosError
 
 EXIT_GENERIC = 1
@@ -50,8 +50,31 @@ class State:
     no_redact: bool = False
 
 
+def resolve_redaction(
+    state: State | None = None,
+    *,
+    no_redact: bool = False,
+    warn: Callable[[str], None] | None = None,
+) -> bool:
+    """Resolve redaction once from CLI flag, environment, config file, and default.
+
+    Configuration read failures fail closed here. The normal command path still reports
+    the underlying invalid configuration when it subsequently loads the full config.
+    """
+    selected_no_redact = no_redact or (state is not None and state.no_redact)
+    warning_sink = warn if warn is not None else lambda _message: None
+    try:
+        return _config.resolve_redaction(
+            redact=False if selected_no_redact else None,
+            warn=warning_sink,
+        )
+    except ConfigError:
+        return not selected_no_redact
+
+
 def _safe_message(message: str, *, redact_secrets: bool) -> str:
-    return redact(message) if redact_secrets else message
+    safe = redact(message) if redact_secrets else message
+    return escape_terminal_controls(safe)
 
 
 def emit_error(
@@ -84,7 +107,7 @@ def fail_usage(ctx: typer.Context, message: str) -> "NoReturn":
         state.fmt,
         "USAGE_ERROR",
         message,
-        redact_secrets=not state.no_redact,
+        redact_secrets=resolve_redaction(state),
     )
     raise typer.Exit(EXIT_USAGE)
 
@@ -133,7 +156,7 @@ def preflight_output(ctx: typer.Context) -> None:
             state.fmt,
             "USAGE_ERROR",
             str(exc),
-            redact_secrets=not state.no_redact,
+            redact_secrets=resolve_redaction(state),
         )
         raise typer.Exit(EXIT_USAGE) from None
 
@@ -148,14 +171,14 @@ def run(
     """Execute one command, structurally redact its result, render, and audit it."""
     state: State = ctx.obj
     preflight_output(ctx)
-    redact_secrets = not state.no_redact
 
     config_warnings: list[str] = []
+    redact_secrets = resolve_redaction(state, warn=config_warnings.append)
     try:
         conf = _config.load(
             burp_rest_url=state.url,
             ledger=False if state.no_ledger else None,
-            redact=False if state.no_redact else None,
+            redact=redact_secrets,
             warn=config_warnings.append,
         )
     except ConfigError as exc:

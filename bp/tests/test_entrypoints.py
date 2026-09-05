@@ -14,6 +14,11 @@ import subprocess
 import sys
 import tomllib
 from pathlib import Path
+from typing import Any
+
+import pytest
+
+import bp.cli as cli_module
 
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
@@ -23,6 +28,14 @@ PYPROJECT = Path(__file__).resolve().parent.parent / "pyproject.toml"
 def _scripts() -> dict[str, str]:
     data = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))
     return dict(data["project"]["scripts"])
+
+
+def test_declared_typer_floor_contains_the_vendored_click_module() -> None:
+    """The lowest installable Typer must provide the private module imported by cli.py."""
+    data = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))
+    dependencies = list(data["project"]["dependencies"])
+
+    assert "typer>=0.26.0" in dependencies
 
 
 def test_both_commands_are_declared() -> None:
@@ -59,6 +72,34 @@ def _usage_prog(invoked_as: str) -> str:
         if stripped.startswith("Usage:"):
             return stripped.split("Usage:", 1)[1].split()[0]
     raise AssertionError(f"no Usage line in --help output:\n{text}")
+
+
+def test_top_level_unexpected_exception_is_redacted_without_traceback(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """No uncaught exception may quote a credential through the interpreter traceback."""
+    secret = "sk-live-abc123"
+
+    def explode(**_kwargs: Any) -> None:
+        raise ValueError(f"invalid literal for int() with base 10: {secret!r}")
+
+    monkeypatch.setattr(cli_module, "app", explode)
+    monkeypatch.setattr(sys, "argv", ["bp", "health"])
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("BP_AGENT", "1")
+    monkeypatch.setenv("BP_REDACT", "on")
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli_module.cli_main()
+
+    captured = capsys.readouterr()
+    assert exc_info.value.code == 1
+    assert captured.out == ""
+    assert secret not in captured.err
+    assert "Traceback" not in captured.err
+    assert '"code":"INTERNAL_ERROR"' in captured.err
 
 
 def test_usage_reflects_the_invoked_command_name() -> None:

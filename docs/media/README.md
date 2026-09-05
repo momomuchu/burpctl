@@ -5,30 +5,21 @@ Marketing / branding assets for the repo. Regenerate freely; keep sizes as noted
 ## `social-preview.svg` / `social-preview.png` (1280×640)
 
 GitHub's social preview — the image shown when the repo link is shared on Reddit, X, Slack, etc.
-GitHub has no API to set it, so upload it **manually**:
+Upload the preview manually in the repository settings:
 
 > **Repo → Settings → General → Social preview → Edit → Upload** `social-preview.png`.
 
-To regenerate the PNG after editing the SVG:
+To regenerate the PNG from the repository root after editing the SVG:
 
 ```bash
-rsvg-convert -w 1280 -h 640 social-preview.svg -o social-preview.png
-# or: magick -density 144 social-preview.svg social-preview.png
+rsvg-convert -w 1280 -h 640 docs/media/social-preview.svg -o docs/media/social-preview.png
+# or: magick -density 144 docs/media/social-preview.svg docs/media/social-preview.png
 ```
 
-## `demo.gif` (to record — the #1 launch asset)
+## `demo.gif` (not present)
 
-A 20–30s screen capture of the core loop is the single biggest conversion lever for the README and
-the Reddit post. It does **not** exist yet because it needs a live Burp on `:8089`.
-
-Record it with [`vhs`](https://github.com/charmbracelet/vhs) using the tape checked into the
-launch notes (`burpctl-demo.tape`):
-
-```bash
-brew install vhs                 # pulls ttyd + ffmpeg
-# start Burp with burp-rest-extension loaded, proxy a couple of requests through it
-vhs burpctl-demo.tape            # → burpctl-demo.gif
-mv burpctl-demo.gif docs/media/demo.gif
-```
-
-Then uncomment the demo line near the top of the root `README.md`.
+A demo requires a running, version-matched Burp/extension pair and therefore cannot be produced by the
+current static release-documentation pass. No VHS tape is checked into this repository. If a reviewed
+tape is added later, run it from the repository root, write the result to `docs/media/demo.gif`, and
+then uncomment the demo line near the top of the root `README.md`. Do not present an unrecorded or
+unreviewed demo as release evidence.

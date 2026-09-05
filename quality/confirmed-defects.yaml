@@ -453,7 +453,7 @@
       "compatibility": "Reject an incompatible output request before dispatch; never retry or conceal an already-completed effect.",
       "status": "fixed",
       "fixEvidence": "The Python lane routed log and tag through the shared static output preflight, closing the paths that had bypassed the REST-command guard, and added a request-free matrix covering all ten proved-live effect sites. The complete Python suite passed 706 tests with 2 skipped while network access was denied, establishing that the local suite has no hidden live dependency. No live replay against the redeployed binary is recorded, so the record is fixed rather than verified.",
-      "verificationNotes": "D24 is not blocked on Collaborator. Collaborator is only two of the ten proved-live effect sites; its provider arm is authorized as of 2026-09-04, while the non-Collaborator arms remain independently reproducible on the allowed loopback destinations. VERIFY-D24 later observed bp --format raw send exit 0 with byte-empty stderr, an isolated ledger delta of +1, target HTTP 200, and new Burp history row 401 for http://127.0.0.1:9921/echo?marker=raw-send-effect-9Q. That is correct behavior, not a D24 PASS or FAIL: bp/src/bp/output.py:172 includes send among the four supported raw-HTTP commands, its preflight at line 231 admits those commands, and bp/tests/test_output.py:148-153 asserts response-only raw send rendering. The legitimate supported effect does not test D24's ordering invariant. D24's original confirmed defect remains established on its other documented incompatible-output and unknown-field effect sites; the record is now fixed on the Python lane's local preflight evidence but has no redeployed-binary replay. Its scanner-audit worst case has a three-link recovery dependency: rendering discards the task id; no service/REST enumeration exposes the handle while ScannerService's private registry survives; after reload loses that registry, pinned Montoya has no task-list primitive, so the handle cannot be rediscovered. Deferred scanner enumeration is therefore the only product recovery path while the private registry still exists, not merely a convenience feature.",
+      "verificationNotes": "D24 is not blocked on Collaborator. Collaborator is only two of the ten proved-live effect sites; its provider arm is authorized as of 2026-09-04, while the non-Collaborator arms remain independently reproducible on the allowed loopback destinations. VERIFY-D24 later observed bp --format raw send exit 0 with byte-empty stderr, an isolated ledger delta of +1, target HTTP 200, and new Burp history row 401 for http://127.0.0.1:9921/echo?marker=raw-send-effect-9Q. That is correct behavior, not a D24 PASS or FAIL: bp/src/bp/output.py:217 includes send among the four supported raw-HTTP commands, its preflight at line 276 admits those commands, and bp/tests/test_output.py:147-152 asserts response-only raw send rendering. The legitimate supported effect does not test D24's ordering invariant. D24's original confirmed defect remains established on its other documented incompatible-output and unknown-field effect sites; the record is now fixed on the Python lane's local preflight evidence but has no redeployed-binary replay. Its scanner-audit worst case has a three-link recovery dependency: rendering discards the task id; no service/REST enumeration exposes the handle while ScannerService's private registry survives; after reload loses that registry, pinned Montoya has no task-list primitive, so the handle cannot be rediscovered. Deferred scanner enumeration is therefore the only product recovery path while the private registry still exists, not merely a convenience feature.",
       "reproduction": [
         "bp --format raw intercept off",
         "bp --format raw send 8575 --path '/echo?marker=raw-send-effect-9Q'",
@@ -802,7 +802,7 @@
         "bp --format json collab generate"
       ],
       "observed": "Typer returned 'No such command generate' with exit 2.",
-      "expected": "The claim is rejected because it contradicts the product's own contract: bp/src/bp/commands/collaborator.py:19 defines new and docs/CLI.md:91 documents bp collab new; no collab generate command exists. The test brief invented generate, and an invalid brief is not a product defect.",
+      "expected": "The claim is rejected because it contradicts the product's own contract: bp/src/bp/commands/collaborator.py:19 defines new and docs/CLI.md:92 documents bp collab new; no collab generate command exists. The test brief invented generate, and an invalid brief is not a product defect.",
       "severity": null,
       "discoveringLane": "COLLAB",
       "evidence": {
@@ -810,7 +810,7 @@
         "cases": ["G18"],
         "contractRefs": [
           "bp/src/bp/commands/collaborator.py:19 — @sub.command(\"new\")",
-          "docs/CLI.md:91 — | `bp collab new [--count N]` | `POST /collaborator/generate[/batch]` | collaborator (Pro) |"
+          "docs/CLI.md:92 — | `bp collab new [--count N]` | `POST /collaborator/generate[/batch]` | collaborator (Pro) |"
         ]
       }
     },
@@ -965,7 +965,7 @@
         "bp --format json fuzz 8586 --pos query:a --pos query:b --payloads a=/tmp/burpctl-live/fuzz-work/payloads/two.txt --payloads b=/tmp/burpctl-live/fuzz-work/payloads/three.txt --type pitchfork"
       ],
       "observed": "The command sent (A1,B1) and (A2,B2), then stopped before unmatched B3.",
-      "expected": "This claim is rejected because it contradicts the product's own contract: docs/ALGORITHMS.md:129 defines m=min(|s_k|), and bp/tests/test_fuzz.py:86 locks shortest-list pitchfork pairing. The brief's required mismatch error was not a product contract, so the invalid brief is not a defect.",
+      "expected": "This claim is rejected because it contradicts the product's own contract: docs/ALGORITHMS.md:129 defines m=min(|s_k|), and bp/tests/test_fuzz.py:93 locks shortest-list pitchfork pairing. The brief's required mismatch error was not a product contract, so the invalid brief is not a defect.",
       "severity": null,
       "discoveringLane": "FUZZ",
       "evidence": {
@@ -973,7 +973,7 @@
         "cases": ["A03-PITCH-MISMATCH"],
         "contractRefs": [
           "docs/ALGORITHMS.md:129 — | `pitchfork` | `s_k`/position | `m=min(|s_k|)`; for `i∈0..m-1` ... | `m` |",
-          "bp/tests/test_fuzz.py:86-89 — test_pitchfork_lockstep_pairs_min_length; assert len(reqs) == 2  # min(3, 2)"
+          "bp/tests/test_fuzz.py:93-96 — test_pitchfork_lockstep_pairs_min_length; assert len(reqs) == 2  # min(3, 2)"
         ]
       }
     },
@@ -1103,14 +1103,14 @@
         "bp --format json intruder --help"
       ],
       "observed": "Typer returned 'No such command intruder' with exit 2.",
-      "expected": "The claim is rejected because it contradicts the product's own contract: docs/CLI.md:108 says 'bp fuzz ... never bp intruder', and ADR-0004 explicitly rejects a separate namespace. The invalid brief is not a product defect.",
+      "expected": "The claim is rejected because it contradicts the product's own contract: docs/CLI.md:109 says 'bp fuzz ... never bp intruder', and ADR-0004 explicitly rejects a separate namespace. The invalid brief is not a product defect.",
       "severity": null,
       "discoveringLane": "FUZZ",
       "evidence": {
         "artifact": "/tmp/burpctl-live/artifacts/fuzz.md",
         "cases": ["I00 CLI intruder help (json)", "I00 CLI intruder help (table)", "I00 CLI intruder help (raw)", "I00 CLI intruder help (quiet)", "I00 CLI intruder fields"],
         "contractRefs": [
-          "docs/CLI.md:108 — **`bp fuzz`** = the single Intruder verb (never `bp intruder`).",
+          "docs/CLI.md:109 — **`bp fuzz`** = the single Intruder verb (never `bp intruder`).",
           "docs/adr/0004-fuzz-async-lifecycle.md:54 — | Separate `bp intruder` namespace | `bp fuzz` is clearer and shorter. `intruder` is an implementation detail; `fuzz` is the user's intent. |"
         ]
       }
@@ -1311,7 +1311,7 @@
           "bp/src/bp/commands/scanner.py:53 — @sub.command(\"status\")",
           "bp/src/bp/commands/scanner.py:65 — @sub.command(\"issues\")",
           "bp/src/bp/commands/scanner.py:80 — @sub.command(\"defs\")",
-          "docs/CLI.md:93-94 — `bp scan crawl|audit|all <url>` and `bp scan status|issues <scanId>` · `bp scan defs`"
+          "docs/CLI.md:94-95 — `bp scan crawl|audit|all <url>` and `bp scan status|issues <scanId>` · `bp scan defs`"
         ]
       }
     },
@@ -1392,15 +1392,15 @@
         "bp --format json sitemap --host 127.0.0.1"
       ],
       "observed": "The command rejected --host locally as an unknown option.",
-      "expected": "The claim is rejected because it contradicts the product's own contract: docs/CLI.md:97 documents bp sitemap [prefix], while bp history sitemap alone defines --host. The brief conflated sibling commands, and an invalid brief is not a product defect.",
+      "expected": "The claim is rejected because it contradicts the product's own contract: docs/CLI.md:98 documents bp sitemap [prefix], while bp history sitemap alone defines --host. The brief conflated sibling commands, and an invalid brief is not a product defect.",
       "severity": null,
       "discoveringLane": "SCAN",
       "evidence": {
         "artifact": "/tmp/burpctl-live/artifacts/scan.md",
         "cases": ["SM-HOST"],
         "contractRefs": [
-          "docs/CLI.md:97 — | `bp sitemap [prefix]` | `GET /target/sitemap` | target |",
-          "bp/src/bp/commands/history.py:186-193 — @sub.command(name=\"sitemap\") defines host as typer.Option(None, \"--host\", help=\"Filter sitemap by host.\")"
+          "docs/CLI.md:98 — | `bp sitemap [prefix]` | `GET /target/sitemap` | target |",
+          "bp/src/bp/commands/history.py:227-235 — @sub.command(name=\"sitemap\") defines host as typer.Option(None, \"--host\", help=\"Filter sitemap by host.\")"
         ]
       }
     },
@@ -1789,26 +1789,29 @@
       "slice": "contracts-ci",
       "tests": [
         "bp/tests/test_cliutil.py",
-        "bp/tests/test_output.py"
+        "bp/tests/test_output.py",
+        "bp/tests/test_securityscan.py"
       ],
       "contracts": [
         "docs/OUTPUT.md",
+        "docs/PROOF-CEILINGS.md",
         "quality/README.md"
       ],
       "compatibility": "Preserve fail-closed containment when resource custody is genuinely unknown; repair the upstream oracle and consider isolation only for cases whose state and resources can be proved independent.",
       "status": "confirmed",
-      "verificationNotes": "The listed product output tests establish that raw send is currently supported, but they do not exercise or repair the external /tmp acceptance oracle. No durable in-repository harness regression is recorded for D72. D71 and D72 are separate records in one causal chain: stale release/contract inputs reached the harness, a stale exit-code oracle manufactured a false product failure, and correct containment then forfeited 37 downstream verifications.",
+      "verificationNotes": "The listed product output tests establish that raw send is currently supported, but they do not exercise or repair the external /tmp acceptance oracle. No durable in-repository harness regression is recorded for D72. D71 and D72 are separate records in one causal chain: stale release/contract inputs reached the harness, a stale exit-code oracle manufactured a false product failure, and correct containment then forfeited 37 downstream verifications. A later harness review found four stale constant-pinned oracles in total: VERIFY-D24, VERIFY-D58, VERIFY-D59, and VERIFY-D61. Exact standalone reproductions and a durable artifact path for the three later cases were not supplied; they are recorded at that evidence ceiling rather than attributed to the earlier acceptance artifact.",
       "reproduction": [
         "/usr/bin/python3 /tmp/burpctl-live/verify/run.py --execute --expected-version 2.1.0",
-        "BP_LEDGER_PATH=/tmp/burpctl-live/verify/ledger-verify.db bp --format raw send 8575 --path '/echo?marker=raw-send-effect-9Q'"
+        "BP_LEDGER_PATH=/tmp/burpctl-live/verify/ledger-verify.db bp --format raw send 8575 --path '/echo?marker=raw-send-effect-9Q'",
+        "Not established: the harness lane supplied no exact standalone reproduction command for the stale VERIFY-D58, VERIFY-D59, or VERIFY-D61 oracles."
       ],
-      "observed": "The causal chain was: current product source implemented raw send (bp/src/bp/output.py:172 and :231, locked by bp/tests/test_output.py:148-153); when the oracle was authored and run, docs/OUTPUT.md:11 and docs/CLI.md:10 still described that projection as unimplemented; VERIFY-D24 encoded the stale contract as expected exit 2; the live treatment correctly exited 0, added one isolated ledger row, reached 127.0.0.1:9921, and created Burp history row 401; the harness mislabeled that supported effect as a D24 failure and unknown custody; correct fail-closed containment then stopped the run, so 37 downstream D25-D61 cases received no live verdict. The abort was correct for the state the oracle reported; the stale document-to-oracle chain was the upstream defect.",
-      "expected": "Acceptance cases are derived from and pinned to the executable current contract. VERIFY-D24 uses a genuinely incompatible current format/field arm to test ordering and never treats a supported raw-send effect as a product failure. Correct containment remains mandatory. The observed 1-to-37 fan-out cost is a harness property to consider when deciding whether provably independent cases can continue, not evidence that this shared-state abort was wrong.",
+      "observed": "The causal chain was: current product source implemented raw send (bp/src/bp/output.py:217 and :276, locked by bp/tests/test_output.py:147-152); when the oracle was authored and run, parent commit 7e8b742 at docs/OUTPUT.md:11 and docs/CLI.md:10 still described raw as requiring an existing genuine artifact rather than the later deterministic reconstruction; VERIFY-D24 encoded the stale contract as expected exit 2; the live treatment correctly exited 0, added one isolated ledger row, reached 127.0.0.1:9921, and created Burp history row 401; the harness mislabeled that supported effect as a D24 failure and unknown custody; correct fail-closed containment then stopped the run, so 37 downstream D25-D61 cases received no live verdict. The abort was correct for the state the oracle reported; the stale document-to-oracle chain was the upstream defect. Subsequent harness review found the same species in VERIFY-D58, VERIFY-D59, and VERIFY-D61. D58's legitimate contract change made every no-marker substantive read inconclusive with exit 1, simultaneously invalidating VERIFY-D58's public no-marker clean/0 constant, VERIFY-D59's pinned classifier outcomes, and VERIFY-D61's default and long no-marker clean/0 constants. The shared root cause across all four cases is an oracle holding a constant that a legitimate contract change is entitled to move. VERIFY-D59 is also the mirror of vacuity: it asserted more than its invariant, which owned only verdict-to-published-exit representation, so an unrelated legitimate classifier change could fail it. Both vacuity and over-specification are assertions misaligned with their invariant, in opposite directions.",
+      "expected": "Acceptance cases are derived from and pinned to the executable current contract. VERIFY-D24 uses a genuinely incompatible current format/field arm to test ordering and never treats a supported raw-send effect as a product failure. VERIFY-D58 and VERIFY-D61 derive their no-marker outcome from the current classifier contract rather than hard-coding clean/0. VERIFY-D59 asserts only its owned relation from a returned verdict to the published exit category, not unrelated classifier outcomes. Every oracle changes only with its invariant: neither vacuous under-assertion nor over-specified constants may manufacture confidence or failure. Correct containment remains mandatory. The observed 1-to-37 fan-out cost is a harness property to consider when deciding whether provably independent cases can continue, not evidence that this shared-state abort was wrong.",
       "severity": "high",
       "discoveringLane": "Acceptance harness review",
       "evidence": {
         "artifact": "/tmp/burpctl-live/verify/acceptance-20260904T101852Z.md",
-        "cases": ["VERIFY-D24", "VERIFY-D25-D61 COULD-NOT-RUN"]
+        "cases": ["VERIFY-D24", "VERIFY-D58 stale no-marker clean/0", "VERIFY-D59 over-specified classifier outcomes", "VERIFY-D61 stale default/long no-marker clean/0", "VERIFY-D25-D61 COULD-NOT-RUN"]
       }
     },
     {
@@ -1823,8 +1826,8 @@
       ],
       "compatibility": "Apply one verified meaning to every evidence set; preserve historical fix evidence when a row is demoted for missing modern receipts, and exclude rejected/unconfirmed non-defects from the all-established-defects release gate.",
       "status": "fixed",
-      "fixEvidence": "The repaired validator requires exact nested receipt shapes; explicit live and post-fix pass outcomes; an assertion-failed pre-fix outcome; JSON receipt artifacts under quality/evidence/ whose embedded defect id, criterion kind, and evidence payload exactly match the ledger fields; matching SHA-256 bytes; timezone-bearing live, RED, and review times; a causal test that is one of the record's executable regression references; and substantive case, oracle, failure, RED-command, and GREEN-command text. Non-author review evidence at future promotion would record distinct attested author/reviewer lanes, exact implementation/review commits, and the correction's implementation paths; Git must verify that the implementation commit changes every declared implementation path and listed regression with exact current bytes, ancestry from implementation to review, and a receipt-only review commit that changes and contains the exact current receipt bytes while changing no correction or regression path. Only contracts-ci records may declare a test-only correction whose implementation paths are listed regressions. Git binds content and history here but, in this single-committer repository, does not cryptographically establish lane identity; non-authorship is explicitly attested and the lane identifiers must differ. A criterion must be checked for satisfiability against the actual repository before adoption: a gate that can never fire is as useless as one that always passes and harder to notice. Mandatory signatures and distinct commit-author emails were rejected because either would make verified unreachable in this repository. D01-D18 were demoted instead of grandfathered because their rows lack all three durable receipts. The exact mutation RED and restored GREEN are recorded in verificationNotes.",
-      "verificationNotes": "Discrimination run against the final receipt-, commit-, source-, and attestation-bound validator: D19 was temporarily changed from fixed to verified with no verificationEvidence, then `python -m pytest bp/tests/test_quality_ledger.py` exited 1. Verbatim decisive failure: `E       AssertionError: D19: verified requires verificationEvidence`; summary: `2 failed, 8 passed in 0.22s` (the second failure was the independently enforced README count drift). A finally block then reported `RESTORE=byte-for-byte original ledger restored`. A subsequent restored focused gate passed all 10 tests. No separate durable output artifact was created within this lane's write set. A fresh read-only judge returned ACCEPT at the explicit content-bound-attestation ceiling under reference J-QLEDGER-20260904-01; it confirmed that identity authenticity remains unproved and actual role separation remains a procedural obligation.",
+      "fixEvidence": "The repaired validator requires exact nested receipt shapes; explicit live and post-fix pass outcomes; an assertion-failed pre-fix outcome; JSON receipt artifacts under quality/evidence/ whose embedded defect id, criterion kind, and evidence payload exactly match the ledger fields; matching SHA-256 bytes; timezone-bearing live, RED, and review times; a causal test that is one of the record's executable regression references; and substantive case, oracle, failure, RED-command, and GREEN-command text. Live evidence must name the deployed binary artifact and its SHA-256; the gate hashes the file and compares it, proving that the named artifact currently has the receipt's exact identity, while run-to-binary attribution remains a content-bound receipt claim because the gate does not replay the process. Non-author review evidence at future promotion would record distinct attested author/reviewer lanes, exact resolvable and different implementation/review commits, and the correction's implementation paths; Git must verify that the implementation commit changes every declared implementation path and listed regression with exact current bytes, ancestry from implementation to review, and a receipt-only review commit that changes and contains the exact current receipt bytes while changing no correction or regression path. Only contracts-ci records may declare a test-only correction whose implementation paths are listed regressions. Git binds content and history here but, in this single-committer repository, does not cryptographically establish lane identity; non-authorship is explicitly attested and the lane identifiers must differ. A criterion must be checked for satisfiability against the actual repository before adoption: a gate that cannot fire is as useless as one that always passes and harder to notice. Mandatory signatures and distinct commit-author emails were rejected because either would make verified unreachable in this repository. D73 itself exposed three checks whose names looked stronger than their behavior: the original gate checked only status, the commit-identity lookup fetched and discarded identities, and binarySha256 accepted any 64 hex characters without hashing an artifact. The latter two now enforce distinct resolvable commits and an actual binary digest respectively. D01-D18 were demoted instead of grandfathered because their rows lack all three durable receipts. The exact mutation RED and restored GREEN are recorded in verificationNotes.",
+      "verificationNotes": "Discrimination run against the final receipt-, commit-, source-, and attestation-bound validator: D19 was temporarily changed from fixed to verified with no verificationEvidence, then `python -m pytest bp/tests/test_quality_ledger.py` exited 1. Verbatim decisive failure: `E       AssertionError: D19: verified requires verificationEvidence`; summary: `2 failed, 10 passed in 0.16s` (the second failure was the independently enforced README count drift). A finally block then reported `RESTORE=byte-for-byte original ledger restored`. A subsequent restored focused gate passed all 12 tests. No separate durable output artifact was created within this lane's write set. A fresh read-only judge returned ACCEPT at the explicit content-bound-attestation ceiling under reference J-QLEDGER-20260904-01; it confirmed that identity authenticity remains unproved and actual role separation remains a procedural obligation.",
       "reproduction": [
         "Temporarily change D19 status from fixed to verified without adding verificationEvidence; run python -m pytest bp/tests/test_quality_ledger.py; restore D19 immediately.",
         "python -m pytest bp/tests/test_quality_ledger.py"
@@ -1835,7 +1838,7 @@
       "discoveringLane": "Independent ledger contract review",
       "evidence": {
         "artifact": "bp/tests/test_quality_ledger.py",
-        "cases": ["PROMOTION-WITHOUT-RECEIPTS-RED", "RESTORED-LEDGER-GREEN", "J-QLEDGER-20260904-01 ACCEPT at content-bound-attestation ceiling"]
+        "cases": ["PROMOTION-WITHOUT-RECEIPTS-RED", "SAME-COMMIT-REVIEW-REJECTED", "BINARY-DIGEST-MISMATCH-REJECTED", "RESTORED-LEDGER-GREEN", "J-QLEDGER-20260904-01 ACCEPT at content-bound-attestation ceiling"]
       }
     }
   ]

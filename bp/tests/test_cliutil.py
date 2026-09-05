@@ -29,13 +29,23 @@ from bp.output import render
 runner = CliRunner()
 
 
-def _invoke_entrypoint(argv: list[str], *, agent: bool = False) -> subprocess.CompletedProcess[str]:
+def _invoke_entrypoint(
+    argv: list[str],
+    *,
+    agent: bool = False,
+    env_overrides: dict[str, str | None] | None = None,
+) -> subprocess.CompletedProcess[str]:
     script = f"import sys; sys.argv={['bp', *argv]!r}; from bp.cli import cli_main; cli_main()"
     env = os.environ.copy()
     if agent:
         env["BP_AGENT"] = "1"
     else:
         env.pop("BP_AGENT", None)
+    for name, value in (env_overrides or {}).items():
+        if value is None:
+            env.pop(name, None)
+        else:
+            env[name] = value
     return subprocess.run(
         [sys.executable, "-c", script],
         capture_output=True,
@@ -225,6 +235,97 @@ def test_repeater_local_errors_honor_json_under_direct_runner(argv: list[str]) -
     assert result.stdout == ""
     diagnostic = json.loads(result.stderr)
     assert diagnostic["error"]["code"] == "USAGE_ERROR"
+
+
+def test_fail_usage_honors_environment_redaction_opt_out(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """BP_REDACT=off is equivalent to --no-redact even on pre-request usage failures."""
+    secret = "Bearer ABCDEFGH"
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("BP_REDACT", "off")
+    monkeypatch.setenv("BP_AGENT", "1")
+    monkeypatch.setenv("BP_NO_LEDGER", "1")
+
+    result = runner.invoke(app, ["encode", "x", "--enc", secret])
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    assert secret in json.loads(result.stderr)["error"]["message"]
+
+
+def test_fail_usage_honors_config_file_redaction_opt_out(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A config-file redact=off selection reaches errors raised before run()."""
+    secret = "Bearer ABCDEFGH"
+    config_dir = tmp_path / ".bp"
+    config_dir.mkdir()
+    (config_dir / "config").write_text("redact=off\n", encoding="utf-8")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("BP_REDACT", raising=False)
+    monkeypatch.setenv("BP_AGENT", "1")
+    monkeypatch.setenv("BP_NO_LEDGER", "1")
+
+    result = runner.invoke(app, ["encode", "x", "--enc", secret])
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    assert secret in json.loads(result.stderr)["error"]["message"]
+
+
+@pytest.mark.parametrize("fmt", ["json", "table", "raw", "quiet"])
+@pytest.mark.parametrize("source", ["default", "environment", "config", "environment-over-config"])
+def test_parser_errors_never_leak_when_resolved_redaction_is_on(
+    fmt: str, source: str, tmp_path: Path
+) -> None:
+    """Every redaction-on source protects the pre-context Click error path in every mode."""
+    config_dir = tmp_path / ".bp"
+    config_dir.mkdir()
+    if source == "config":
+        (config_dir / "config").write_text("redact=on\n", encoding="utf-8")
+    elif source == "environment-over-config":
+        (config_dir / "config").write_text("redact=off\n", encoding="utf-8")
+
+    secret = "Bearer ABCDEFGH"
+    env_redact = "on" if source in {"environment", "environment-over-config"} else None
+    result = _invoke_entrypoint(
+        ["--format", fmt, "check", "cors", "https://example.test", "--probe-timeout-ms", secret],
+        env_overrides={
+            "HOME": str(tmp_path),
+            "BP_REDACT": env_redact,
+            "BP_NO_LEDGER": "1",
+        },
+    )
+
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert secret not in result.stderr
+    assert "ABCDEFGH" not in result.stderr
+
+
+@pytest.mark.parametrize(
+    "format_args",
+    [pytest.param([], id="agent-default"), pytest.param(["--format", "json"], id="explicit-json")],
+)
+def test_invalid_redaction_setting_does_not_pollute_machine_usage_error(
+    format_args: list[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Preliminary resolution emits no prose or duplicate warning before one JSON error."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("BP_REDACT", "invalid-Bearer ABCDEFGH")
+    monkeypatch.setenv("BP_AGENT", "1")
+    monkeypatch.setenv("BP_NO_LEDGER", "1")
+
+    result = runner.invoke(app, [*format_args, "encode", "x", "--enc", "rot13"])
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    lines = result.stderr.splitlines()
+    assert len(lines) == 1, result.stderr
+    record = json.loads(lines[0])
+    assert record["error"]["code"] == "USAGE_ERROR"
+    assert "ABCDEFGH" not in result.stderr
 
 
 def test_parse_header_splits_name_value() -> None:

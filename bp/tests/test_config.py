@@ -5,6 +5,7 @@ TDD protocol: RED tests are committed first; GREEN follows in config.py.
 
 from __future__ import annotations
 
+import base64
 import json as _json
 from pathlib import Path
 
@@ -16,6 +17,27 @@ from bp.config import load, redact, redact_data
 # ---------------------------------------------------------------------------
 # redact() — existing coverage (regression lock)
 # ---------------------------------------------------------------------------
+
+
+def test_fuzz_b64_representation_cannot_preserve_a_recoverable_secret() -> None:
+    secret = b"\xffpassword=fuzz-secret"
+    redacted = redact_data({"payloads": [{"b64": base64.b64encode(secret).decode("ascii")}]})
+
+    encoded = redacted["payloads"][0]["b64"]
+    decoded = base64.b64decode(encoded)
+    assert b"fuzz-secret" not in decoded
+    assert decoded == b"\xffpassword=***"
+
+
+def test_declared_body_base64_uses_structural_json_redaction() -> None:
+    marker = "encoded-json-body-secret"
+    body = _json.dumps({"token": marker, "safe": "visible"}).encode()
+
+    redacted = redact_data({"bodyBase64": base64.b64encode(body).decode("ascii")})
+    decoded = base64.b64decode(redacted["bodyBase64"])
+
+    assert marker.encode() not in decoded
+    assert _json.loads(decoded) == {"token": "***", "safe": "visible"}
 
 
 class TestRedactBearer:

@@ -1,51 +1,39 @@
-# ADR-0001 — REST API source of truth = `RestServer.kt` at `:8089`
+# ADR-0001 — REST routing and published-contract authorities
 
-**Status:** accepted — 2026-06-16
+**Status:** accepted 2026-06-16 · amended 2026-09-05
 **Criticality:** [CRITICAL][BLOCKS:critical]
-
----
 
 ## Decision
 
-The sole authoritative source for the `bp` CLI's API surface is `RestServer.kt` and `routes/*.kt`
-in the Burp extension (`configureRouting()`). The canonical port is **8089**. All 13 groups and
-69 endpoints are enumerated from that source; nothing is inferred from other documents.
+The implemented HTTP surface is the set registered by `RestServer.configureRouting()` and
+`routes/*.kt`. Service implementations and serializers determine behavior and representation; route
+registration alone is not a behavioral oracle.
 
-`spec.md` (the legacy document describing port 9876, Python wrappers, and MCP/SSE transport) is
-**DEPRECATED**: archived, not deleted, never consulted for new implementation work.
+`src/main/resources/openapi.json` is the published interface. An executable contract gate must keep its
+METHOD/path inventory and serializer schemas aligned with Kotlin. `docs/SPEC.md` is a reader-facing
+inventory derived from those sources, never a co-equal implementation authority.
 
----
+The default loopback origin is `http://127.0.0.1:8089`. The runtime port can be configured; clients use
+`--url`, `BURP_REST_URL`, configuration, then that default.
 
-## Rationale
+## Context and amendment
 
-Founder decision 2026-06-16. Three documents in the repo contradicted each other on fundamental
-facts (port, transport, which endpoints exist). Root-cause analysis (`docs/SPEC.md §2`) found:
+The original 2026-06-16 decision responded to three contradictory documents: a legacy `spec.md`
+described a different Python/MCP/SSE system on port 9876, the README had ghost/missing routes, and the
+then-embedded OpenAPI declaration was incomplete. The legacy `spec.md` was later deleted; it is not
+archived in the current tree.
 
-- `spec.md` describes the pre-rewrite architecture (port 9876, Python, MCP/PortSwigger SSE).
-  The reality is a Kotlin/Ktor REST server with no SSE and no MCP. Any client built from `spec.md`
-  targets the wrong port and fails immediately.
-- `README.md` lists phantom endpoints (`/sequencer/*`, `/comparer/*`, `/logger/*`, `/search`)
-  that have no handler in `configureRouting()`, and omits three real groups (`/session/*`,
-  `/scan/*`, `/utils/*`).
-- Only `RestServer.kt` reflects the actual routing table.
-
-A complete enumeration verified 69 handlers from source equals 69 enumerated — verdict COMPLETE,
-0 missed.
-
----
-
-## Alternatives Considered
-
-| Alternative | Rejection reason |
-|---|---|
-| Use `README.md` as primary reference | Lists 4 phantom endpoints; omits 3 real groups. Would produce a broken client. |
-| Use the embedded OpenAPI at `/docs` | Declares version 0.2.0, omits entire groups (session, scan, utils, history), inconsistent with `/health` version 0.1.0. Non-authoritative by its own incompleteness. |
-| Keep `spec.md` as co-equal source | Describes a different (deprecated) system. Co-equal status would introduce ambiguity on every API call (port, transport, endpoint names). |
-
----
+The current OpenAPI publication identifies as 2.1.0 and contains 69 operations in 13 groups. The Kotlin
+route inventory contains the same 69 METHOD/path pairs. This corrects the former incompleteness but does
+not make route count proof of semantics, runtime reachability, or real-Montoya behavior.
 
 ## Consequences
 
-- `bp` always connects to `http://127.0.0.1:8089` (or `$BURP_REST_URL`). Port 9876 must never appear in client code.
-- `spec.md` is kept in the repo for historical reference only; it carries a DEPRECATED header.
-- Any future API additions must originate in `RestServer.kt` before being reflected in `docs/SPEC.md`.
+- A route change updates Kotlin registration, service/DTO serializers, OpenAPI, contract tests, and
+  current documentation together.
+- Inventory checks compare exact METHOD/path pairs and unique operation IDs; behavior checks use the
+  component that makes the decision.
+- OpenAPI shape validation is necessary but cannot validate prose meaning or prove a live operation.
+- No legacy document may override the current source or publication.
+- Version-sensitive use requires a matched CLI/extension pair; see PC-06 in
+  [`../PROOF-CEILINGS.md`](../PROOF-CEILINGS.md).

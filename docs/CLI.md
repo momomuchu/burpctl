@@ -1,119 +1,203 @@
-# `bp` — Canonical CLI Grammar (contract)
+# `bp` CLI contract
 
-# Current CLI contract
+This document enumerates the implemented v2.1.0 Python command surface. `bp` is primary;
+`burpctl` is an equivalent installed entry point. An operation named here is not thereby proved against
+real Burp: the release-evidence status and limits are in
+[`quality/README.md`](../quality/README.md), [ADR-0014](adr/0014-state-preserving-reportable-operations.md),
+and [`PROOF-CEILINGS.md`](PROOF-CEILINGS.md).
 
-This section documents version 2.1.0 of the `bp` CLI and Burp REST extension contract. Historical v2.0.0 deviations are named as such below; confirmed defects are tracked in `quality/confirmed-defects.yaml`.
+## Root options
 
-- `bp` is primary and `burpctl` is an equivalent installed alias.
-- Global `--url`, `--format`, `--fields`, `--no-ledger`, and `--no-redact` may appear before or after a command, but option hoisting stops at `--`.
-- `-h` and `--help` are accepted. `BP_AGENT=1` selects JSON for successful output unless `--format` is explicit.
-- `--format` accepts `json`, `table`, `raw`, and `quiet`. `raw` is valid only for the single-record `req`, `send`, `history get`, and `history replay` commands, which reconstruct deterministic HTTP/1.1 bytes from structured fields; other commands reject it before execution.
-- Runtime/server failures and local usage/parser failures honor JSON mode. Exit codes are 0 success, 1 runtime/unsupported, 2 local usage, 3 transport, 4 Pro capability, and 5 confirmed security-check finding; fuzz `NO_RESPONSE` preserves its evidence row, stops remaining shots, and exits 3.
-- Output-mode and field compatibility are resolved at the shared command-execution chokepoint before config loading, ledger creation, client construction, or the REST callback. Invalid output options cannot cause a mutation, one-use poll, target request, configuration import, or task creation.
-- `--format quiet` emits only an essential value explicitly declared in `OUTPUT.md §1.5`; every other command emits no quiet stdout rather than inferring meaning from response key order. Those missing declarations remain a documented contract gap.
-- `history list` exposes only `--host`, `--method`, `--status`, and `--page` in v2.0.0. Although `GET /history` accepts `source`, `search`, `since`, `until`, and `pageSize`, the corresponding CLI options are absent (D25).
-- `scan audit URL` creates a task for that URL, and `scan all` reaches the discoverable HTTP 501 linked operation. Real task status, issues, and audit stop return HTTP 503 in v2.0.0 (D55). The CLI intentionally exposes `crawl|audit|all|status|issues|defs`; `start|stop|pause|resume|crawl-and-audit` were not promised spellings (D54 rejected).
-- `intercept forward|drop` and complete scope `show|set` are discoverable but unsupported, never acknowledged as completed. v2.0.0 scope help incorrectly describes `show|set` as usable (D52).
-- `config get|set` exports/imports nested Burp project/user JSON. A successful import reports `applied=true`; if the post-import export cannot verify resulting state, `config` is null and a do-not-retry warning is returned and always copied to stderr even under quiet or field-projected output. Wrong-typed or unknown nested settings are not an exact validated import contract (D49–D50), and `config set user` reloads the serving extension and destroys its in-memory state (D53).
-- `session clear` removes configured cookies/headers/origin but, in v2.0.0, leaves the captured cookie jar active and offers no CLI jar-clear command (D29). `session set --help` omits the accepted `origin` field (D32).
-- `check endpoints` reads extension-owned Repeater/session H2 history, not ordinary proxy-listener history. In v2.0.0, `check auth` marks three identical public 200 representations as vulnerable (D58); auth/headers/CORS/endpoints quiet output does not emit the promised word (D59); structured inconclusive results exit 0 (D60); and probes have no per-probe timeout below the aggregate REST-client deadline (D61).
-- Without a server-held marker, `check auth` cannot distinguish a cookie-only bypass where FULL, COOKIES_ONLY, and NONE all return the same representation from an intentionally public route; that case is not confirmed. The optional `--marker TEXT` modifier serializes that exact value as `protectedContentMarker` on the `/scan/auth-bypass` request; omitting it leaves the field absent.
-- A bounded check probe that returns no response is inconclusive and names only the budget it was given. Pinned Montoya signals a slow target, refused connection, and resolution failure identically as an absent response and exposes no timeout-specific type, so the extension cannot distinguish them.
+| Option | Meaning |
+|---|---|
+| `--url U` | Burp REST origin; precedence is option, `BURP_REST_URL`, `~/.bp/config`, default `http://127.0.0.1:8089` |
+| `--format json\|table\|raw\|quiet` | output representation; default table, or JSON when `BP_AGENT=1` |
+| `--fields A,B,…` | case-insensitive field projection for JSON/table; incompatible with raw/quiet |
+| `--no-ledger` | suppress the ordinary operation-ledger write; local `log`/`tag` then fail because their required ledger is disabled |
+| `--no-redact` | disable output redaction for this invocation |
+| `--version` | print the local CLI version; root position only |
+| `-h`, `--help` | help |
 
-See [ADR-0013](adr/0013-truthful-executable-contracts.md), [ADR-0014](adr/0014-state-preserving-reportable-operations.md), and the current-contract section of [SPEC.md](SPEC.md).
+The first five options are position-tolerant before or after a command until the literal `--`. They are
+not separate command-local flags. `--version` is not hoisted. No `-w`/`--write-out`, standalone
+`--quiet`, invocation-time `--tag`, schema, pretty, strict, meta, raw-part, or async-result option is
+implemented.
 
----
+## Implemented leaf commands
 
+There are **50** leaf commands. Arguments shown in capitals are positional. `…` means the option may
+repeat.
 
-> Single source of truth for the command surface.
-> All BDD scenarios must conform to it. Resolves divergences detected during the audit
-> (`--id` vs `--request-id`, `bp fuzz` vs `bp intruder`, `--url` vs positional).
-> See also: `SPEC.md` (API), `OUTPUT.md` (output formats).
+### Flat commands
 
-## Principle
-
-`bp <command> [subject] [flags]` — **POSIX sh**, ultra-short.
-- **Subject = positional argument** (id, url, data) — fast to type.
-- **Modifiers = flags**.
-- One spelling per concept. No synonyms.
-
-## Global flags (on ALL commands)  `[CRITICAL][BLOCKS:critical]`
-
-| Flag | Role | Default |
-|---|---|---|
-| `--url U` | Burp REST base URL | `$BURP_REST_URL` or `http://127.0.0.1:8089` |
-| `--format json\|table\|raw\|quiet` | rendering | `table` (all streams; pass `--format json` for agents/pipes) |
-| `--fields a,b,c` | column selection/order | all |
-| `-w, --write-out 'TPL'` | curl-style template (`%{status} %{payload}`…) | — _(historical design only; not shipped and has no target release)_ |
-| `--tag NAME` | tags the operation in the Run Ledger | — _(global invocation-time flag not shipped; use the shipped retroactive `bp tag` command)_ |
-| `--no-ledger` | do not record this operation in the Run Ledger | off — **shipped** (ADR-0005); env equivalent `BP_NO_LEDGER=1` |
-| `--no-redact` | do not mask secrets in output (e.g. to read a JWT you decode) | off — **shipped**; env equivalent `BP_REDACT=off` |
-| `--version` | print the bp CLI version and exit | — **shipped** |
-| `-h, --help` | help | — |
-
-> **NOTE — global flag placement (ADR-0009):** `--url`/`--format`/`--fields`/`--no-ledger` now work in **either** position — `bp health --format json` and `bp --format json health` are equivalent (a small argv pre-processor hoists them ahead of the subcommand).
-
-## `--pos` grammar (fuzzing)  `[CRITICAL][BLOCKS:high]`
-
-Selectors (the CLI resolves to byte-offset from the base request):
-
+```text
+bp health
+bp version
+bp proxy [--host H] [--limit N] [--offset N]
+bp req ID
+bp ws
+bp intercept on|off|forward|drop
+bp send ID [--set-header 'N: V']… [--body STR|@FILE] [--method M] [--path P]
+bp tab ID [--name N]
+bp fuzz ID --pos SELECTOR… --payloads NAME=FILE…
+             [--type sniper|battering-ram|pitchfork|cluster-bomb] [--anomalous-only]
+bp sitemap [PREFIX]
+bp encode DATA --enc ENCODING
+bp decode DATA [--enc ENCODING] [--smart]
+bp hash DATA --algo ALGORITHM
+bp ext
+bp diff A B [--method-a M] [--method-b M] [--body-a STR] [--body-b STR]
+bp endpoints DATA
+bp log [--since T] [--until T] [--target H] [--tag X] [--status S] [--limit N]
+bp tag OP_ID NAME
 ```
+
+`bp version` calls `/version`; `bp --version` is local. `intercept forward|drop` remain discoverable
+commands but return `UNSUPPORTED` because pinned Montoya cannot perform them. `fuzz` is synchronous and
+client-side; there are no `fuzz status|results|pause|resume|stop|summary` leaves. There is no
+`fuzz --throttle-ms` or request `--id` option.
+
+### Collaborator
+
+```text
+bp collab new [--count 1..100]
+bp collab poll [ID]
+```
+
+Collaborator requires Burp Suite Professional. Polling may consume one-use provider state, so statically
+invalid output selections are rejected before the REST call. Optional interaction leaves render as
+`null`/blank rather than becoming a post-poll unknown-field error.
+
+### Scanner
+
+```text
+bp scan crawl URL
+bp scan audit URL
+bp scan all URL
+bp scan status SCAN_ID
+bp scan issues SCAN_ID
+bp scan defs
+```
+
+Starting a scan requires Pro. Server pause/resume/stop routes are not CLI leaves; pause/resume and the
+linked crawl-and-audit capability are unavailable through pinned Montoya and return `UNSUPPORTED` where
+exposed.
+
+### Bounded checks
+
+Every check accepts `--probe-timeout-ms N` and `--deadline-ms N`.
+
+```text
+bp check auth URL [--endpoint PATH]… [--method M] [--marker TEXT] [timeouts]
+bp check idor URL --param NAME --own VALUE… --target VALUE…
+                  [--method M] [--body STR] [--header 'N: V']… [timeouts]
+bp check headers URL [--method M] [--body STR] [--marker TEXT] [timeouts]
+bp check cors URL [--method M] [timeouts]
+bp check endpoints HOST [--test NAME]… [--limit 1..1000] [timeouts]
+```
+
+`check headers` is a header-bypass probe, not a general response-security-header audit.
+`check endpoints` reads extension-owned Repeater/session history, not ordinary proxy-listener history.
+A no-response result reports only an inconclusive bounded observation; it cannot distinguish a slow
+server, refused connection, and resolution failure (PC-01).
+
+`--marker` supplies a candidate protected-content marker. The classifier refuses a finding when a
+supported equivalent appears in supplied method/URL/body or in the observed final headers/cookies. The
+method, URL, and body are not re-read from the `HttpRequest` handed to Montoya, so their post-override
+provenance is not established. This bounded rejection check also does not prove server-held marker
+origin or authorization policy. The relevant proof-ceiling sections are being corrected and must be
+re-verified before release; use the current limitation stated here in the meantime.
+
+A check exit 5 means the implemented classifier emitted a finding. For example, the IDOR check compares
+responses for caller-labelled values; it does not establish two principals, ownership, or a
+cross-principal protected read by itself.
+
+### Scope
+
+```text
+bp scope show
+bp scope set [--include URL]… [--exclude URL]… [--confirm|--no-confirm]
+bp scope add URL
+bp scope remove URL
+bp scope check URL
+```
+
+Complete scope `show`/`set` remain discoverable but unsupported through pinned Montoya. Add/remove/check
+operate on the available engine classification. Very long accepted mutation values may not fit through
+the GET check path; see PC-05.
+
+### Configuration
+
+```text
+bp config get project|user
+bp config set project|user --json JSON
+```
+
+A successful import reports its observed post-import representation when available. User-configuration
+import excludes `user_options.extender.extensions`—the path that can reload the serving extension—and
+returns that omission in `excludedPaths` while applying safe siblings. Do not retry an
+applied-but-unverifiable import after a returned warning.
+
+### Session
+
+```text
+bp session set --json JSON
+bp session get
+bp session clear
+bp session send URL [--method M|-X M] [--body STR] [--set-header 'N: V']…
+bp session cookies
+```
+
+`session clear` clears configured cookies/headers/origin **and** the captured cookie jar. The session is
+a singleton origin-bound credential snapshot, not a named multi-principal store.
+
+### History
+
+```text
+bp history list [--host H] [--method M] [--status N] [--source S]
+                [--search TEXT] [--since T] [--until T]
+                [--page P] [--page-size 1..1000]
+bp history get ID
+bp history sitemap [--host H]
+bp history replay ID
+bp history clear [--confirm|--no-confirm]
+```
+
+This is the extension's conditional H2 history, distinct from `bp proxy` (live Burp proxy history) and
+`bp log` (the local Python Run Ledger).
+
+## Fuzz selector grammar
+
+```text
 header:NAME   cookie:NAME   body:FIELD   query:NAME   path:INDEX   offset:START-END
 ```
 
-`--type` = `sniper` | `battering-ram` | `pitchfork` | `cluster-bomb`
-(`cluster-bomb` = Cartesian product = N-D matrix; `pitchfork` = lockstep).
-`--payloads NAME=FILE` binds a list to the named position `NAME` (≥1 per position for pitchfork/cluster-bomb).
+Positions are resolved to byte offsets in the reconstructed request and substitutions are applied from
+right to left. The subsequent structured REST/Montoya bridge is not a raw HTTP framing transport; do
+not use `send` or `fuzz` for an oracle that depends on request-line version, conflicting length fields,
+trailers, or exact wire framing.
 
-`--pos` is byte-precise only while selecting and replacing bytes in `bp`'s reconstructed HTTP/1
-request. It is **not raw-framing transport**: a substitution that touches the body recalculates
-`Content-Length` and collapses duplicate `Content-Length` fields; the REST bridge converts the result
-to structured method/URL/headers/body data; and Burp's Montoya client builds the outbound request.
-Consequently the original request-line HTTP version, conflicting length fields, transfer-coding and
-trailers, and non-UTF-8 body bytes are not preserved end to end. Do not use `bp send` or `bp fuzz`
-for request-smuggling, desynchronization, or any experiment whose oracle depends on exact wire
-framing.
+## Output and exit contract
 
-## Command map (1 verb → actual endpoints)
+`--format raw` is registered only for `req`, `send`, `history get`, and `history replay`; other commands
+reject it before their REST or state effect. Exact reconstructed shapes and quiet projections are in
+[`OUTPUT.md`](OUTPUT.md).
 
-| Command | REST endpoint(s) | Group |
-|---|---|---|
-| `bp health` · `bp version` | `GET /health` · `/version` | health |
-| `bp proxy [--host H --limit N --offset N]` | `GET /proxy/history` | proxy |
-| `bp req <id>` | `GET /proxy/history/{id}` | proxy |
-| `bp ws` | `GET /proxy/websocket/history` | proxy |
-| `bp intercept on\|off\|forward\|drop` | `POST /proxy/intercept/*` | proxy |
-| `bp send <id> [--set-header 'N: V']… [--body @f\|STR] [--method M] [--path P]` | `POST /repeater/send` | repeater |
-| `bp send --batch @file` | `POST /repeater/send/batch` | repeater | _(historical design only; not shipped and has no target release)_ |
-| `bp tab <id>` | `POST /repeater/tab/create` | repeater |
-| `bp fuzz <id> --pos SEL… [--payloads N=F]… [--type T] [--throttle-ms N] [--anomalous-only]` | client-side fire via `POST /repeater/send` (synchronous) | intruder |
-| `bp fuzz <id> --param NAME --payloads @f` | `POST /intruder/quick-fuzz` (1-param shortcut) | intruder | _(historical design only; not shipped and has no target release)_ |
-| `bp fuzz status\|results\|pause\|resume\|stop <attackId>` _(historical async design; not shipped and no target release is assigned)_ | `/intruder/attack/{id}/*` | intruder |
-| `bp collab new [--count N]` | `POST /collaborator/generate[/batch]` | collaborator (Pro) |
-| `bp collab poll [id]` | `GET /collaborator/poll[/{id}]` | collaborator (Pro) |
-| `bp scan crawl\|audit\|all <url>` | `POST /scanner/{crawl,audit,crawl-and-audit}` | scanner (Pro) |
-| `bp scan status\|issues <scanId>` · `bp scan defs` | `/scanner/{id}/*` · `/scanner/issue-definitions` | scanner (Pro); server pause/resume/stop routes are not CLI commands and are `UNSUPPORTED` on pinned Montoya |
-| `bp check auth <url> [--endpoint PATH]… [--method M] [--marker TEXT]` · `bp check idor\|headers\|cors\|endpoints <url>` | `POST /scan/*` | securityscan |
-| `bp scope show\|set\|add\|remove\|check [url]` | `GET/POST /target/scope*`; add/remove/check manage or classify Burp scope; complete `show`/`set` return HTTP 501 `UNSUPPORTED` | target |
-| `bp sitemap [prefix]` | `GET /target/sitemap` | target |
-| `bp encode\|decode\|hash <data> [--smart]` | `POST /decoder/*` | decoder |
-| `bp config get\|set project\|user` · `bp ext` | `GET/PUT /config/*` · `GET /extensions` | config |
-| `bp session set\|get\|clear` · `bp session send` · `bp session cookies` | `/session/*` | session |
-| `bp diff A B` · `bp endpoints <data>` | `POST /utils/{diff,extract-endpoints}` | utils |
-| `bp history list [--host --method --status --page]` · `bp history get <id>` · `bp history sitemap` · `bp history replay <id>` · `bp history clear --confirm` | `/history/*` (conditional DB); server-side `source/search/since/until/pageSize` list filters have no v2.0.0 CLI options | history |
-| `bp log [filters]` · `bp tag <opId> <name>` | Run Ledger (C4, local DB `~/.bp/`) | — observability |
+| Exit | Reachable meaning |
+|---:|---|
+| 0 | successful command or clean check; target HTTP failure statuses remain data, not CLI failure |
+| 1 | runtime/unsupported/service error, invalid response/render shape, unavailable local ledger, or check with only inconclusive probes |
+| 2 | invocation, option, local validation, field, selector, or confirmation error |
+| 3 | REST transport failure or fuzz `CONNECTION_REFUSED`, `TRANSPORT_ERROR`, or `NO_RESPONSE` |
+| 4 | `PRO_REQUIRED` |
+| 5 | security-check classifier finding |
 
-## Naming decisions (resolve the audit)  `[HIGH][BLOCKS:high]`
+Fuzz retains the attempted baseline/error row. A terminal `NO_RESPONSE` stops remaining shots and exits
+3. Findings outrank simultaneous inconclusive check results for process-exit selection.
 
-1. **`--id` everywhere** for a requestId (never `--request-id`).
-2. **`bp fuzz`** = the single Intruder verb (never `bp intruder`). Lifecycle as subcommands `bp fuzz status|results|…`.
-3. **Positional subject**: `bp scope add <url>`, `bp fuzz <id>`, `bp check idor <url>` (never `--url` for the primary subject). `--url` is reserved for the global flag (REST base URL).
-4. **3 distinct "history" concepts, 3 names**: `bp proxy` (live capture) · `bp history` (server DB /history) · `bp log` (Run Ledger C4, our observability).
-5. **Output**: a single global model (§ Global flags + `OUTPUT.md`), never re-specified per endpoint.
+## Surface diff rule
 
-## Output convention & errors (factored)  `[HIGH][BLOCKS:high]`
-
-- **Rendering** (json/table/raw/quiet/`-w`/`--fields`) is a **cross-cutting contract** proved **once** (`bdd/00-output.feature`), not per endpoint.
-- **Cross-cutting errors** (Burp unreachable → `CONNECTION_REFUSED`, invalid `--id`, unpacked `ApiResponse` envelope, `PRO_REQUIRED` on Community) are proved **once** (`bdd/00-common.feature`).
-- Each endpoint feature tests only its **distinct logic** + its **own contract** (specific pre/post/error conditions).
-- Exit codes: `0` ok · `1` generic error · `2` bad usage · `3` transport (`CONNECTION_REFUSED`, `TRANSPORT_ERROR`, fuzz `NO_RESPONSE`) · `4` `PRO_REQUIRED` · `5` confirmed findings (`bp check …` only, ADR-0010). Errors go to stderr; stdout remains parsable.
+The list above is generated by static inspection of Typer registrations, not by the historical
+`docs/bdd/*.feature` corpus. Those feature files have no runner and remain design history. A release
+must fail documentation review if the registered 50-leaf set or any option changes without updating
+this inventory.

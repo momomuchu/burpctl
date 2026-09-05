@@ -673,7 +673,8 @@ class SessionService internal constructor(
 
     private fun disallowedHeaders(context: SendContext): Collection<String> = when (context.credentialMode) {
         CredentialMode.NONE -> UNAUTHENTICATED_HEADER_DENYLIST + context.credentialHeaderNames
-        CredentialMode.COOKIES_ONLY -> AUTHORIZATION_HEADER_DENYLIST + context.credentialHeaderNames
+        CredentialMode.COOKIES_ONLY ->
+            AUTHORIZATION_HEADER_DENYLIST + (context.credentialHeaderNames - COOKIE_HEADER_NAME)
         CredentialMode.FULL -> emptySet()
     }
 
@@ -956,6 +957,12 @@ class SessionService internal constructor(
                         }
                         if (!domainMatches(target.origin.host, candidate, hostOnly = false)) {
                             invalid = true
+                        } else if ('.' !in candidate) {
+                            // Without a public-suffix database we can still reject every cross-host
+                            // single-label Domain (for example Domain=com). If the request host itself
+                            // is single-label, treat an equal attribute as host-only so it cannot widen.
+                            if (candidate != target.origin.host) invalid = true else hostOnly = true
+                            domain = candidate
                         } else {
                             domain = candidate
                             hostOnly = false
@@ -1093,5 +1100,6 @@ class SessionService internal constructor(
         val UNAUTHENTICATED_HEADER_DENYLIST = listOf("Cookie", "Authorization", "Proxy-Authorization")
         val AUTHORIZATION_HEADER_DENYLIST = listOf("Authorization", "Proxy-Authorization")
         val CREDENTIAL_HEADER_NAMES = UNAUTHENTICATED_HEADER_DENYLIST.map { it.lowercase(Locale.ROOT) }.toSet()
+        const val COOKIE_HEADER_NAME = "cookie"
     }
 }

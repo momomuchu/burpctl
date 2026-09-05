@@ -9,6 +9,39 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from typing import Any
+
+import pytest
+from typer.testing import CliRunner
+
+from bp.cli import app
+from bp.client import BurpClient
+
+
+@pytest.mark.parametrize("fmt", ["json", "table", "quiet"])
+def test_hostile_decoded_controls_never_reach_display_output(
+    fmt: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Human/machine display escapes target-authored C0/C1 bytes; raw stays explicitly exact."""
+    hostile = "\x1b]0;pwned\x07\x00\x85"
+
+    def fake_post(self: BurpClient, path: str, body: dict[str, Any]) -> dict[str, Any]:
+        assert path == "/decoder/decode"
+        return {"result": hostile, "encoding": "base64"}
+
+    monkeypatch.setattr(BurpClient, "post", fake_post)
+    monkeypatch.setenv("BP_NO_LEDGER", "1")
+
+    result = CliRunner().invoke(
+        app,
+        ["--format", fmt, "decode", "G10wO3B3bmVkBw==", "--enc", "base64"],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "\x1b" not in result.stdout
+    assert "\x07" not in result.stdout
+    assert "\x00" not in result.stdout
+    assert "\x85" not in result.stdout
 
 
 def test_decode_bad_enc_exits_usage() -> None:

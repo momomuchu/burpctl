@@ -31,9 +31,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -63,9 +60,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -97,9 +91,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -158,9 +149,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -237,9 +225,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -269,9 +254,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -303,9 +285,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -335,9 +314,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -379,11 +355,11 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "502": {
+            "$ref": "#/components/responses/NoResponse"
           },
           "503": {
             "$ref": "#/components/responses/ServiceUnavailable"
@@ -415,11 +391,11 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "502": {
+            "$ref": "#/components/responses/NoResponse"
           },
           "503": {
             "$ref": "#/components/responses/ServiceUnavailable"
@@ -460,9 +436,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -517,9 +490,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -553,9 +523,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -585,9 +552,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -629,11 +593,11 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "502": {
+            "$ref": "#/components/responses/NoResponse"
           },
           "503": {
             "$ref": "#/components/responses/ServiceUnavailable"
@@ -665,11 +629,11 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "502": {
+            "$ref": "#/components/responses/NoResponse"
           },
           "503": {
             "$ref": "#/components/responses/ServiceUnavailable"
@@ -711,9 +675,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -741,9 +702,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -785,9 +743,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -824,9 +779,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -867,9 +819,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -941,9 +890,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -973,9 +919,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -1017,9 +960,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1059,9 +999,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -1113,9 +1050,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1131,6 +1065,7 @@
     "/scanner/crawl": {
       "post": {
         "summary": "Start crawl (Burp Pro only)",
+        "description": "A non-null config.crawlStrategy or config.auditOptimization returns 501 UNSUPPORTED because Montoya 2025.3 does not expose either control.",
         "tags": [
           "Scanner"
         ],
@@ -1149,9 +1084,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1160,6 +1092,9 @@
           },
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "501": {
+            "$ref": "#/components/responses/Unsupported"
           }
         },
         "requestBody": {
@@ -1177,6 +1112,7 @@
     "/scanner/audit": {
       "post": {
         "summary": "Start active audit (Burp Pro only)",
+        "description": "A non-null config.crawlStrategy or config.auditOptimization returns 501 UNSUPPORTED because Montoya 2025.3 does not expose either control.",
         "tags": [
           "Scanner"
         ],
@@ -1195,9 +1131,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1206,6 +1139,9 @@
           },
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "501": {
+            "$ref": "#/components/responses/Unsupported"
           }
         },
         "requestBody": {
@@ -1222,7 +1158,8 @@
     },
     "/scanner/crawl-and-audit": {
       "post": {
-        "summary": "Start crawl + audit (Burp Pro only)",
+        "summary": "Unsupported: Montoya cannot start a linked crawl-and-audit task",
+        "description": "Montoya 2025.3 exposes no linked crawl-and-audit primitive; this operation returns HTTP 501 with code UNSUPPORTED.",
         "tags": [
           "Scanner"
         ],
@@ -1230,9 +1167,6 @@
         "responses": {
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -1335,7 +1269,8 @@
     },
     "/scanner/{id}/pause": {
       "post": {
-        "summary": "Pause scan",
+        "summary": "Unsupported: Montoya cannot pause scanner tasks",
+        "description": "Montoya 2025.3 exposes no scanner pause primitive; a valid invocation returns HTTP 501 with code UNSUPPORTED.",
         "tags": [
           "Scanner"
         ],
@@ -1343,9 +1278,6 @@
         "responses": {
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -1372,7 +1304,8 @@
     },
     "/scanner/{id}/resume": {
       "post": {
-        "summary": "Resume scan",
+        "summary": "Unsupported: Montoya cannot resume scanner tasks",
+        "description": "Montoya 2025.3 exposes no scanner resume primitive; a valid invocation returns HTTP 501 with code UNSUPPORTED.",
         "tags": [
           "Scanner"
         ],
@@ -1380,9 +1313,6 @@
         "responses": {
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -1471,9 +1401,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1504,9 +1431,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1536,9 +1460,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1561,9 +1482,6 @@
         "responses": {
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -1610,9 +1528,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1655,9 +1570,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -1702,9 +1614,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1734,9 +1643,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -1768,9 +1674,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1782,7 +1685,7 @@
     },
     "/decoder/encode": {
       "post": {
-        "summary": "Encode data (base64, url, html, hex, gzip)",
+        "summary": "Encode data (base64, url, hex, html)",
         "tags": [
           "Decoder"
         ],
@@ -1800,9 +1703,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -1847,9 +1747,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1874,7 +1771,7 @@
     },
     "/decoder/hash": {
       "post": {
-        "summary": "Hash data (md5, sha1, sha256, sha512)",
+        "summary": "Hash data (md5, sha1, sha256, sha384, sha512)",
         "tags": [
           "Decoder"
         ],
@@ -1892,9 +1789,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -1939,9 +1833,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -1985,9 +1876,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -2015,9 +1903,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -2063,9 +1948,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -2094,9 +1976,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -2122,7 +2001,7 @@
     },
     "/extensions": {
       "get": {
-        "summary": "List loaded extensions",
+        "summary": "Get this Burp REST extension's name, enabled status, and filename",
         "tags": [
           "Config"
         ],
@@ -2140,9 +2019,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -2249,9 +2125,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -2279,9 +2152,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -2338,7 +2208,8 @@
     },
     "/history/{id}/replay": {
       "post": {
-        "summary": "Replay a stored request and compare responses",
+        "summary": "Replay a stored request and return the original, persisted replay, and persistence outcome",
+        "description": "The replayed entry is null when no persisted history entry can be returned. Persistence reports the recording outcome and any do-not-retry warning.",
         "tags": [
           "History"
         ],
@@ -2363,6 +2234,9 @@
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
+          "502": {
+            "$ref": "#/components/responses/NoResponse"
+          },
           "503": {
             "$ref": "#/components/responses/ServiceUnavailable"
           }
@@ -2382,7 +2256,7 @@
     },
     "/history/sitemap": {
       "get": {
-        "summary": "Auto-built sitemap from all API requests",
+        "summary": "Get sitemap entries persisted by Repeater and Session sends",
         "tags": [
           "History"
         ],
@@ -2409,9 +2283,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -2486,9 +2357,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -2522,9 +2390,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -2548,9 +2413,6 @@
         "responses": {
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -2585,9 +2447,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -2633,9 +2492,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -2678,9 +2534,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -2726,9 +2579,6 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -2771,9 +2621,6 @@
           },
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -2818,11 +2665,11 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "502": {
+            "$ref": "#/components/responses/NoResponse"
           },
           "503": {
             "$ref": "#/components/responses/ServiceUnavailable"
@@ -2864,11 +2711,11 @@
           "400": {
             "$ref": "#/components/responses/InvalidRequest"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "502": {
+            "$ref": "#/components/responses/NoResponse"
           },
           "503": {
             "$ref": "#/components/responses/ServiceUnavailable"
@@ -5140,14 +4987,23 @@
         "additionalProperties": false,
         "required": [
           "original",
-          "replayed"
+          "replayed",
+          "persistence"
         ],
         "properties": {
           "original": {
             "$ref": "#/components/schemas/HistoryEntryResponse"
           },
           "replayed": {
-            "$ref": "#/components/schemas/HistoryEntryResponse"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HistoryEntryResponse"
+              }
+            ],
+            "nullable": true
+          },
+          "persistence": {
+            "$ref": "#/components/schemas/RepeaterPersistence"
           }
         }
       },
@@ -6975,6 +6831,16 @@
           }
         }
       },
+      "NoResponse": {
+        "description": "Target send completed without an upstream response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiResponse"
+            }
+          }
+        }
+      },
       "InternalError": {
         "description": "Internal Error",
         "content": {
@@ -6996,7 +6862,7 @@
         }
       },
       "UnsupportedMediaType": {
-        "description": "Request body media type is absent or unsupported",
+        "description": "Request Content-Type may be missing or unsupported, or the body may be unparseable",
         "content": {
           "application/json": {
             "schema": {

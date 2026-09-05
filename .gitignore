@@ -23,7 +23,9 @@ Thumbs.db
 # Logs
 logs/
 
-# Coverage / packaging output
+# Python generated files / coverage / packaging output
+__pycache__/
+*.py[cod]
 .coverage
 coverage.xml
 htmlcov/

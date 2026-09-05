@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "expected_extension_name": "Burp REST API",
+  "note": "The expected JAR SHA-256 is deliberately a required run input, never a maintained fixture constant."
+}

@@ -10,158 +10,181 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](bp/)
 [![Burp Suite](https://img.shields.io/badge/Burp%20Suite-Pro%20%2F%20Community-orange.svg)](https://portswigger.net/burp)
 
-> **Drive Burp Suite from the command line.** Mark captured request positions, fuzz through Burp,
-> and get compact successful JSON/NDJSON output.
->
-> A scriptable **Burp Suite CLI** and **Intruder alternative** for bug-bounty hunters and pentesters.
->
-> **v2.0.0 live-status notice:** a 2026-09-04 campaign against Burp Suite Professional 2026.3.3
-> confirmed 37 defects. In particular, populated WebSocket listing and real Scanner task lifecycle are
-> unusable, user-configuration import reloads the extension and erases its in-memory registries, and
-> invalid output selections may be rejected only after effects. See
-> [`quality/confirmed-defects.yaml`](quality/confirmed-defects.yaml) and do not treat a working-tree fix
-> as verified until its live reproduction passes after redeployment.
+`bp` is a Python CLI for the Kotlin `burp-rest-extension`. It drives Burp Suite through a local REST
+API, including captured-request replay, client-side positional fuzzing, proxy/history inspection,
+sessions, scope, Collaborator, Scanner, decoder utilities, and bounded security checks. The same CLI
+is installed under the `burpctl` alias.
 
-<!-- DEMO: once recorded (see docs/media/README.md), drop the GIF here:
-     ![burpctl demo — proxy to multi-position fuzz to anomaly, in one command](docs/media/demo.gif) -->
-
-The reason to reach for `bp` over `ffuf` or Turbo Intruder: those are fast, but they run *outside*
-Burp — you lose its HTTP stack, upstream configuration, and project context. `bp` builds the attack
-client-side and sends every shot through Burp's **Repeater** (`/repeater/send`), *not* Burp's
-Intruder engine — so your fuzzing inherits all of that context in one scriptable command instead of a
-UI full of clicks. And because it rides Repeater, it sidesteps the deliberate rate-throttle that
-**Burp Community** applies to Intruder: multi-position, matrix-style fuzzing at full speed while
-staying inside the proxy you're already using.
-
-It's two pieces:
-
-- **`bp`** — a fast, fully-typed **Python CLI** (the interface you'll use; also installed as `burpctl`).
-- **burp-rest-extension** — a **Kotlin** Burp extension that exposes Burp's [Montoya API](https://portswigger.net/burp/documentation/desktop/extensions/creating) as a local REST API for `bp` to drive.
-
-```
- you ──►  bp (CLI)  ──REST :8089──►  burp-rest-extension  ──Montoya──►  Burp Suite (Pro / Community)
+```text
+operator -> bp CLI -> REST on 127.0.0.1:8089 -> burp-rest-extension -> Montoya -> Burp Suite
 ```
 
-## Features
+## v2.1.0 release-candidate status
 
-- **Flexible client-side fuzzing** — selectors for `header:`, `cookie:`, `body:`, `query:`, `path:`, and raw `offset:`, plus sniper, battering-ram, pitchfork, and cluster-bomb expansion. v2.0.0 has confirmed request/payload preservation limits (D38–D45), so consult the live ledger before relying on byte identity.
-- **Bounded Burp control surface** — proxy history, Repeater, Scanner, target/scope, decoder, Collaborator, sitemap, and sessions; operations absent from pinned Montoya are intended to return typed `UNSUPPORTED`. The v2.0.0 exceptions and unusable live paths are recorded under D23, D48, D52, and D55.
-- **Security checks** — built-in probes for auth-bypass, IDOR, CORS, and security headers; exit code `5` is intended only for confirmed classifier findings. v2.0.0 still marks an identical public auth representation vulnerable (D58), uses exit 0 for structured inconclusive results (D60), and has no per-probe timeout (D61). Without a server-held marker, `check auth` cannot distinguish a cookie-only bypass where FULL, COOKIES_ONLY, and NONE all return the same representation from an intentionally public route; that case is not confirmed. A bounded no-response result also cannot distinguish a slow target from connection refusal or resolution failure because pinned Montoya exposes only the same absent-response signal.
-- **Run Ledger** — each bp-to-extension REST call is recorded locally with **sha256 fingerprints only** (never raw bodies), and **secret redaction is on by default**; it is not a curl/xh/browser traffic log. A REST row can be `status=ok` even when later rendering exits 2, so `exit_code` and an authoritative post-state still matter (D24).
-- **Works on Community too** — only `collaborator` and `scan` start need Pro (they exit `4` with a clear message); everything else runs on Community.
-- **Scriptable successful output** — `--format json` emits compact JSON/NDJSON and exit codes identify stable categories. v2.0.0 local validation/parser errors are still human/Rich text even in JSON/agent mode (D22).
-- **Spec-driven & tested** — hermetic Python/Kotlin suites, strict typing/linting, OpenAPI validation, package smoke tests, and CI on every push. ADR-0014 additionally requires real-Burp release proof for affected Montoya integration claims.
+The source tree identifies as **2.1.0**, but this candidate is **not release-verified**:
 
-## How it compares
+- [`quality/confirmed-defects.yaml`](quality/confirmed-defects.yaml) contains 73 records: **0
+  `verified`**, 51 `fixed`, 16 `confirmed`, one `unconfirmed`, and five `rejected`.
+- Live verification against the redeployed v2.1.0 binary has **not been completed**. Local tests and a
+  source-level fix do not promote a record to `verified`.
+- Four acceptance oracles were identified as pinned to superseded contracts. `VERIFY-D24` has a
+  recorded reproduction and causal artifact; `VERIFY-D58`, `VERIFY-D59`, and `VERIFY-D61` were
+  identified by source analysis without standalone reproductions or durable artifacts. All four were
+  repaired only in an unversioned harness under `/tmp/burpctl-live/verify/`; an unrelated reboot then
+  destroyed that harness before it was ever run. An in-repository replacement under `verify/` now
+  exists and has produced a non-clean retained run. Its current run selected all 30 REST/CLI behavior
+  cases but executed none: a system preflight proved the deployed binary predates the current release
+  source because its embedded OpenAPI differs, so all 30 behavior cases correctly became
+  `COULD_NOT_RUN`. That is not release verification.
+- D01–D18 were demoted from `verified` to `fixed` because `verified` now requires machine-validated
+  receipts for a redeployed live pass, an assertion-reaching causal RED, and content-bound non-author
+  review. The demotion records missing evidence under the new meaning; it does not claim those fixes
+  regressed.
+- The mandatory `BURPCTL_REQUIRE_ALL_VERIFIED=1` release gate currently fails on every established
+  record still at `fixed` or `confirmed`.
 
-Where `bp` fits next to the tools you already reach for when Burp's Intruder is too slow or too clicky:
+Do not present this candidate as verified or publish it as v2.1.0 until that gate passes. See the
+[quality evidence policy](quality/README.md), [ADR-0014](docs/adr/0014-state-preserving-reportable-operations.md),
+and the [proof ceilings](docs/PROOF-CEILINGS.md).
 
-| | Uses **Burp's HTTP stack** | All 4 attack types | Fast on **Community** | Shell-scriptable CLI |
-|---|:---:|:---:|:---:|:---:|
-| **`bp`** | ✅ | ✅ sniper · ram · pitchfork · cluster-bomb | ✅ (fires via Repeater) | ✅ |
-| Burp Intruder (Pro) | ✅ | ✅ | ✅ | ❌ GUI only |
-| Burp Intruder (Community) | ✅ | ✅ | ❌ deliberately throttled | ❌ GUI only |
-| [Turbo Intruder](https://github.com/PortSwigger/turbo-intruder) | ✅ (extension) | ⚠️ Python-scripted | ✅ very fast | ⚠️ in-Burp scripting |
-| [ffuf](https://github.com/ffuf/ffuf) | ❌ outside Burp | ✅ | ✅ | ✅ |
+## What the source implements
 
-Honest take: `ffuf` and Turbo Intruder win on raw throughput. `bp` wins when you want a **one-line,
-scriptable command that uses Burp's HTTP stack and project context** — and full-speed
-multi-position fuzzing on **Community** without the GUI throttle.
+- **Client-side fuzzing:** `header:`, `cookie:`, `body:`, `query:`, `path:`, and raw `offset:`
+  selectors with sniper, battering-ram, pitchfork, and cluster-bomb expansion. Substitution is
+  byte-indexed inside the reconstructed request, but the REST/Montoya bridge is not an exact raw-wire
+  transport.
+- **Burp control surface:** 69 OpenAPI operations in 13 groups. An operation that pinned Montoya
+  cannot perform remains discoverable and returns HTTP 501 `UNSUPPORTED` instead of a successful
+  no-op.
+- **Security checks:** auth-bypass, IDOR-style response comparison, header-bypass, CORS, and endpoint
+  probes. Exit 5 means the implemented classifier produced a finding; it is not by itself proof of
+  authorization, ownership, exploitability, or a protected read. The marker-provenance proof-ceiling
+  text is currently being corrected alongside a code regression and is not release evidence yet.
+- **Output:** table, compact JSON/NDJSON, quiet projections, and reconstructed raw HTTP for four
+  registered paths. Known incompatible modes and static field names are checked before REST dispatch,
+  but nested Scanner/sitemap and absent request-detail projections can still pass that preflight and
+  fail after a GET; full validation-before-effect remains a release blocker. Redaction is enabled by
+  default, but final review of utility/error-path disclosure fixes is still in progress, so this
+  candidate does not yet claim that every representation is covered. See [CLI.md](docs/CLI.md) and
+  [OUTPUT.md](docs/OUTPUT.md).
+- **Run Ledger:** one local SQLite metadata row per bp-to-extension REST call, with hashes rather than
+  raw target bodies. It does not observe browser, curl, or proxy-listener traffic and is not a target
+  request evidence store.
+- **Edition boundary:** source paths not using Collaborator or active Scanner starts are designed for
+  Community; Collaborator and starting scans require Pro. This v2.1.0 boundary still awaits the
+  incomplete redeployed-binary verification described above.
 
-## Quickstart
+## Install a matched source pair
 
-**Requirements:** Burp Suite (Pro or Community) · JDK 17+ (to build the extension) · Python 3.11+ (for `bp`).
+The CLI and extension do not enforce a general runtime version handshake. Build and install both from
+the same checkout, then compare the versions before consequential use.
 
-**1. Build & load the extension**
+Requirements: Burp Suite, JDK 17+ to build the extension, Python 3.11+, and
+[`uv`](https://docs.astral.sh/uv/) or an equivalent Python installer.
 
 ```bash
-./gradlew shadowJar     # → build/libs/burp-rest-extension.jar
+./gradlew shadowJar
+cd bp
+uv tool install --force .
+cd ..
+
+bp --version   # CLI version
+bp version     # version reported by the loaded extension
 ```
 
-In Burp: **Extensions → Add → Extension type: Java → select the JAR.**
-The REST server auto-starts — look for `Server started on http://127.0.0.1:8089` in the extension's Output tab.
+Load `build/libs/burp-rest-extension.jar` in Burp through **Extensions -> Add -> Java**. Stop if the
+two version commands do not report the same release. This is a caller check, not a runtime-enforced
+compatibility guarantee; see [PC-06](docs/PROOF-CEILINGS.md#pc-06--cliextension-version-pairing-is-required-but-not-runtime-enforced).
 
-> Prefer not to build? Grab the prebuilt jar from the [latest release](https://github.com/momomuchu/burpctl/releases/latest).
+There is no v2.1.0 tag or downloadable v2.1.0 artifact yet. The latest published release may therefore
+be a different version from this checkout.
 
-**2. Install & use `bp`**
+## Command-shape quickstart
+
+These examples use implemented command and option names. They still require a loaded matching
+extension, an authorized target, a captured request at index `42`, and caller-created payload files.
 
 ```bash
-cd bp && uv tool install .          # or: pipx install .   (installs `bp` + `burpctl` alias)
+bp health
+bp proxy --host target.example --limit 20
 
-bp health                                       # is the extension up?
-bp proxy --host target.example --limit 20       # captured history → request IDs
+printf '%s\n' '127.0.0.1' '10.0.0.1' > /tmp/bp-ips.txt
+printf '%s\n' 'user' 'admin' > /tmp/bp-roles.txt
+bp fuzz 42 \
+  --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=/tmp/bp-ips.txt \
+  --pos 'cookie:role' --payloads role=/tmp/bp-roles.txt \
+  --type cluster-bomb --anomalous-only
 
-# fuzz two positions at once, cluster-bomb, show only anomalies:
-bp fuzz 42 --pos 'header:X-Forwarded-For' --payloads X-Forwarded-For=ssrf.txt \
-           --pos 'cookie:role'            --payloads role=privesc.txt \
-           --type cluster-bomb --anomalous-only
-
-bp check idor 'https://target/api/user?id=1' --param id --own 1 --target 2   # exits 5 if vulnerable
+# A finding exit is classifier output, not proof of cross-principal access.
+bp check idor 'https://target.example/api/user?id=1' --param id --own 1 --target 2
 ```
 
-> **Output:** default is a human `table`; add `--format json` (JSON/NDJSON), `raw`, or `quiet`.
-> Global flags (`--url` / `--format` / `--fields`) work in either position, but in v2.0.0
-> output/field incompatibility is discovered after execution on several effectful commands (D24).
-> `burpctl` is a drop-in alias for `bp`.
+The default output is a human table. Use `--format json` for compact JSON/NDJSON or `--format quiet`
+for a documented essential projection. `--format raw` is limited to `req`, `send`, `history get`, and
+`history replay`. Global `--url`, `--format`, `--fields`, `--no-ledger`, and `--no-redact` options are
+position-tolerant until `--`.
 
-👉 **Full command reference: [`bp/README.md`](bp/README.md).**
+## Upgrade from v2.0.0
 
-## Repository layout
+Upgrade the CLI and JAR together; do not pair a 2.1.0 source install with the v2.0.0 release JAR.
+Observable source-contract changes include:
 
-| Path | What |
+- `session clear` now clears both configured session credentials and the captured cookie jar;
+- nullable WebSocket response-side values are represented as `null` instead of failing the whole list;
+- unsupported operations advertise and return 501 rather than impossible success responses;
+- request/output validation happens before effects, and raw HTTP rendering is limited to four named
+  commands;
+- missing optional Collaborator interaction leaves render as `null` rather than becoming a post-poll
+  usage failure;
+- client fuzzing treats `NO_RESPONSE` as terminal and exits 3;
+- marker-based security checks reject actor-supplied marker representations as inconclusive;
+- legacy line payload files remain supported, while `#!bp-payloads-json-v1` adds an explicit JSON form
+  for empty, whitespace, embedded-line-break, NUL, and Base64 byte payloads.
+
+Consumers of OpenAPI or generated models must regenerate from
+[`src/main/resources/openapi.json`](src/main/resources/openapi.json): response schemas and unsupported
+success responses changed broadly. These are source-level migration notes, not a claim that the
+redeployed live acceptance pass has completed.
+
+## Repository map
+
+| Path | Purpose |
 |---|---|
-| [`bp/`](bp/) | The `bp` CLI (Python) — [README](bp/README.md) · [CHANGELOG](bp/CHANGELOG.md) |
-| `src/main/kotlin/com/burprest/` | The Burp REST extension (Kotlin / Ktor / Montoya) |
-| [`docs/`](docs/) | Source-grounded contracts: [SPEC](docs/SPEC.md) · [CLI grammar](docs/CLI.md) · [OUTPUT](docs/OUTPUT.md) · [ALGORITHMS](docs/ALGORITHMS.md) · [ADRs](docs/adr/) |
+| [`bp/`](bp/) | Python CLI; [package README](bp/README.md) and [package changelog](bp/CHANGELOG.md) |
+| [`src/main/kotlin/com/burprest/`](src/main/kotlin/com/burprest/) | Kotlin/Ktor/Montoya extension |
+| [`src/main/resources/openapi.json`](src/main/resources/openapi.json) | published 2.1.0 OpenAPI contract: 69 operations |
+| [`docs/SPEC.md`](docs/SPEC.md) | current REST inventory and source boundaries |
+| [`docs/CLI.md`](docs/CLI.md) | implemented CLI command grammar |
+| [`docs/OUTPUT.md`](docs/OUTPUT.md) | output and exit contract |
+| [`docs/PROOF-CEILINGS.md`](docs/PROOF-CEILINGS.md) | limits on what observations prove |
+| [`quality/`](quality/) | defect ledger and verification policy |
+| [`verify/`](verify/) | in-repository live release harness and retained result schema |
+| [`docs/RELEASE-CHECKLIST.md`](docs/RELEASE-CHECKLIST.md) | evidence-backed v2.1.0 readiness checklist |
+| [`CHANGELOG.md`](CHANGELOG.md) | combined extension/CLI release notes |
 
-The REST surface is **13 route groups / 69 endpoints**, source-inventoried in `docs/SPEC.md`. Most
-responses use `{success, data, error}`; v2.0.0 media-type failures can return a bare HTTP 415 (D19).
+## Local checks
 
-## Build & test
+These checks are hermetic or source-level; they are not a substitute for the missing real-Burp pass.
 
 ```bash
-./gradlew test                                              # Kotlin extension
-cd bp && uv run pytest -q && uv run mypy --strict src && uv run ruff check src tests   # 440+ Python tests
+./gradlew build -PtestJvm=17
+cd bp
+uv sync --frozen
+uv run --frozen pytest -q
+uv run --frozen mypy --strict src tests
+uv run --frozen ruff check src tests
+uv run --frozen openapi-spec-validator ../src/main/resources/openapi.json
 ```
 
-## FAQ
+CI runs on pushes to `main` and pull requests targeting `main`. Its contracts job deliberately enables
+the all-verified release gate, so the current candidate is expected to fail until the required receipts
+exist.
 
-**Does it work on Burp Suite Community?**
-Yes. Every command runs on Community except `collaborator` and starting an active `scan` — those need
-Pro and exit `4` with a clear message. Fuzzing in particular is *not* subject to Community's Intruder
-throttle, because `bp` fires each request through Burp's Repeater.
+## Contributing and security
 
-**How is this different from ffuf?**
-`ffuf` is a great standalone fuzzer, but it runs *outside* Burp — it doesn't use Burp's HTTP stack,
-upstream configuration, or project context. `bp` drives Burp itself. Ordinary replay starts from a
-captured request, but v2.0.0 fuzz reconstruction is not a byte-faithful replay: live evidence found
-injected browser defaults and a collapsed duplicate Cookie header (D38–D39). Burp target scope is
-classification metadata, not a forwarding block. Use `ffuf` for raw speed on unauthenticated
-endpoints; use `bp` when you want Burp's configured HTTP stack and can accommodate the documented
-bridge limits.
-
-**Do I need Burp Suite Professional?**
-No, for almost everything. Only Collaborator (out-of-band payloads) and starting an active scan
-require Pro. Proxy history, Repeater, fuzzing, scope, decoder, sitemap, and the IDOR/CORS/auth-bypass
-checks all work on Community.
-
-**Can I drive it from a script or an AI agent?**
-Successful `--format json` output is compact JSON/NDJSON and exit codes are documented. In v2.0.0,
-local validation/parser failures are not JSON in agent mode (D22), and output selection can occur after
-an effect (D24); automation must account for those published limitations until live-verified fixes ship.
-
-**Is `bp` the same as `burpctl`?**
-Yes. `bp` is the primary command (short, one token); `burpctl` is an installed alias — identical
-behaviour.
-
-## Contributing
-
-Issues and PRs welcome — `bp` is spec-driven and test-first. Start with
-**[CONTRIBUTING.md](CONTRIBUTING.md)** (disciplines, dev setup, Definition of Done), see the
-**[ROADMAP](ROADMAP.md)** for what's planned, and report vulnerabilities privately per
-**[SECURITY.md](SECURITY.md)**.
-
-> ⚠️ **Authorized use only.** This drives a security proxy — use it solely against systems you own or are explicitly permitted to test.
+Read [CONTRIBUTING.md](CONTRIBUTING.md), the current [ROADMAP](ROADMAP.md), and
+[SECURITY.md](SECURITY.md). Use this security tooling only on systems you own or are explicitly
+authorized to test.
 
 ## License
 

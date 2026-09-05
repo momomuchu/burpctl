@@ -41,7 +41,10 @@ def _check_enc(ctx: typer.Context, enc: str) -> None:
 # Sub-application
 # ---------------------------------------------------------------------------
 
-sub = typer.Typer(no_args_is_help=True, help="Encoder / decoder / hasher (offline, pure JVM).")
+sub = typer.Typer(
+    no_args_is_help=True,
+    help="Encoder / decoder / hasher commands; all call the Burp REST extension.",
+)
 
 
 # ---------------------------------------------------------------------------

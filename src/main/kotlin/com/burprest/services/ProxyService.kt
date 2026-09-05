@@ -136,8 +136,7 @@ class ProxyService(private val api: MontoyaApi) {
     private fun normalizeHost(value: String): String? {
         val trimmed = value.trim()
         val bracketed = trimmed.startsWith('[') || trimmed.endsWith(']')
-        if (bracketed && !(trimmed.startsWith('[') && trimmed.endsWith(']'))) return null
-        val withoutBrackets = trimmed.removeSurrounding("[", "]").removeSuffix(".")
+        val withoutBrackets = hostText(trimmed) ?: return null
         if (withoutBrackets.isEmpty()) return null
         // Scoped IPv6 addresses are interface-local rather than stable host identities. Reject them
         // instead of silently dropping the zone and equating two distinct literals.
@@ -159,6 +158,20 @@ class ProxyService(private val api: MontoyaApi) {
             } catch (_: IllegalArgumentException) {
                 null
             }
+        }
+    }
+
+    private fun hostText(trimmed: String): String? {
+        val hasOpeningBracket = trimmed.startsWith('[')
+        val hasClosingBracket = trimmed.endsWith(']')
+        val unbracketed = trimmed.removeSurrounding("[", "]")
+        // A trailing root-label dot is a DNS spelling; accepting it on an IP literal silently repairs
+        // malformed IPv6 input into a different value.
+        return when {
+            hasOpeningBracket != hasClosingBracket -> null
+            unbracketed.contains(':') && unbracketed.endsWith('.') -> null
+            unbracketed.contains(':') -> unbracketed
+            else -> unbracketed.removeSuffix(".")
         }
     }
 

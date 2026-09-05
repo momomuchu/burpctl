@@ -1,0 +1,1091 @@
+{
+  "binary": {
+    "api_listener_pid": 58694,
+    "configured_auto_reload": false,
+    "deployed_jar_path": "/Users/maache/burp-wrapper/build/libs/burp-rest-extension.jar",
+    "embedded_openapi_operation_count": 69,
+    "embedded_openapi_schema_count": 40,
+    "embedded_openapi_sha256": "99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7",
+    "expected_hash_source": "explicit --expected-jar-sha256 run input",
+    "expected_jar_sha256": "15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27",
+    "jar_file_snapshot_after": {
+      "device": 16777234,
+      "inode": 169438128,
+      "mtime_ns": 1788516770709102260,
+      "sha256": "15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27",
+      "size": 19047861
+    },
+    "jar_file_snapshot_before": {
+      "device": 16777234,
+      "inode": 169438128,
+      "mtime_ns": 1788516770709102260,
+      "sha256": "15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27",
+      "size": 19047861
+    },
+    "jar_sha256_after": "15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27",
+    "jar_sha256_before": "15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27",
+    "jar_size": 19047861,
+    "openapi_structurally_aligned": false,
+    "process_command_sha256": "4d3bfa1c23385d909f35b6ded91e94acc56f4e7e21c1396ad20217d20c7b2aeb",
+    "process_started_at": "Sat Sep 5 08:14:24 2026",
+    "source_openapi_operation_count": 69,
+    "source_openapi_schema_count": 144,
+    "source_openapi_sha256": "50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2",
+    "uptime_samples": [
+      {
+        "label": "before-system-preflight",
+        "observed_at": "2026-09-05T08:29:11.331+00:00",
+        "uptime": 8076
+      },
+      {
+        "label": "after-behavior",
+        "observed_at": "2026-09-05T08:29:11.335+00:00",
+        "uptime": 8076
+      }
+    ],
+    "user_config_path": "/Users/maache/burp-wrapper/bin/burp-rest.config.json",
+    "user_config_sha256": "f3bac4718c736caa17a6286630c49d9d0b7da9350f1da3a2818a392562cc9275"
+  },
+  "cases": [
+    {
+      "assertion": "Parse the six product-owned identities and require exactly one common value.",
+      "case_id": "SYS-001",
+      "duration_ms": 0.024,
+      "group": "system",
+      "invariant": "All six shipped version identities denote one release.",
+      "layer": "harness",
+      "observed_evidence": {
+        "consensus": "2.1.0",
+        "sources": {
+          "BuildIdentity.kt": "2.1.0",
+          "bp/pyproject.toml": "2.1.0",
+          "bp/src/bp/__init__.py": "2.1.0",
+          "bp/uv.lock": "2.1.0",
+          "build.gradle.kts": "2.1.0",
+          "openapi.json": "2.1.0"
+        }
+      },
+      "outcome": "PASS",
+      "resource_disposition": {
+        "repository_files": {
+          "detail": "read only; no mutation attempted",
+          "status": "released"
+        }
+      },
+      "started_at": "2026-09-05T08:29:11.331+00:00"
+    },
+    {
+      "assertion": "Join the OS listener PID to Burp's startup config, hash that configured JAR, and require the independently supplied release hash.",
+      "case_id": "SYS-002",
+      "duration_ms": 0.01,
+      "group": "system",
+      "invariant": "The API listener is the Burp process configured to load the release artifact being verified.",
+      "layer": "Burp",
+      "observed_evidence": {
+        "configuredAutoReload": false,
+        "deployedJarPath": "/Users/maache/burp-wrapper/build/libs/burp-rest-extension.jar",
+        "embeddedOpenApiOperationCount": 69,
+        "embeddedOpenApiSchemaCount": 40,
+        "embeddedOpenApiSha256": "99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7",
+        "expectedSha256": "15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27",
+        "jarSize": 19047861,
+        "listenerPid": 58694,
+        "observedSha256": "15aca5175e936c492fdf0798d82a14bfdad9e3713bccc28beb22675a74be5d27",
+        "openApiStructurallyAligned": false,
+        "processCommandSha256": "4d3bfa1c23385d909f35b6ded91e94acc56f4e7e21c1396ad20217d20c7b2aeb",
+        "processStartedAt": "Sat Sep 5 08:14:24 2026",
+        "sourceOpenApiOperationCount": 69,
+        "sourceOpenApiSchemaCount": 144,
+        "sourceOpenApiSha256": "50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2",
+        "userConfigSha256": "f3bac4718c736caa17a6286630c49d9d0b7da9350f1da3a2818a392562cc9275"
+      },
+      "outcome": "PASS",
+      "resource_disposition": {
+        "api_listener": {
+          "detail": "OS metadata read only; listener unchanged",
+          "status": "released"
+        },
+        "deployed_jar": {
+          "detail": "read only; no mutation attempted",
+          "status": "released"
+        }
+      },
+      "started_at": "2026-09-05T08:29:11.331+00:00"
+    },
+    {
+      "assertion": "Require one current-extension-only entry whose enabled name/path match process configuration.",
+      "case_id": "SYS-003",
+      "duration_ms": 2.629,
+      "group": "system",
+      "invariant": "The responding extension self-identifies the enabled JAR path joined from the listener process.",
+      "layer": "extension",
+      "observed_evidence": {
+        "enabled": true,
+        "filename": "/Users/maache/burp-wrapper/build/libs/burp-rest-extension.jar",
+        "name": "Burp REST API",
+        "scope": "current-extension-only",
+        "total": 1
+      },
+      "outcome": "PASS",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": "2026-09-05T08:29:11.331+00:00"
+    },
+    {
+      "assertion": "Require a typed healthy response whose version equals the six-source consensus, with non-negative uptime and named Burp version.",
+      "case_id": "SYS-004",
+      "duration_ms": 0.905,
+      "group": "system",
+      "invariant": "Only after six version identities agree, live health reports that same release and a measurable uptime.",
+      "layer": "extension",
+      "observed_evidence": {
+        "burpVersion": "Burp Suite Professional 2026.3.3-47134",
+        "status": "ok",
+        "uptime": 8076,
+        "version": "2.1.0"
+      },
+      "outcome": "PASS",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": "2026-09-05T08:29:11.334+00:00"
+    },
+    {
+      "assertion": "Parse embedded and source OpenAPI JSON and require structural equality before any behavior case runs.",
+      "case_id": "SYS-005",
+      "duration_ms": 0.017,
+      "group": "system",
+      "invariant": "The deployed artifact embeds the same executable contract as the release source being verified.",
+      "layer": "harness",
+      "observed_evidence": {
+        "exception": {
+          "message": "deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+          "type": "VerificationFailure"
+        }
+      },
+      "outcome": "FAIL",
+      "resource_disposition": {
+        "deployed_jar": {
+          "detail": "read only; no mutation attempted",
+          "status": "released"
+        },
+        "repository_files": {
+          "detail": "read only; no mutation attempted",
+          "status": "released"
+        }
+      },
+      "started_at": "2026-09-05T08:29:11.335+00:00"
+    },
+    {
+      "assertion": "Require a typed success envelope, status ok, consensus version, non-negative integer uptime, and a named Burp version.",
+      "case_id": "REST-001",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Health proves a live extension with the release version and a measurable uptime.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Require the version endpoint's version to equal the six-source consensus and its product name to identify the extension.",
+      "case_id": "REST-002",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "The version resource identifies this release and product.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Parse both OpenAPI documents and require structural JSON equality.",
+      "case_id": "REST-003",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "The live API publishes the exact contract shipped in this repository.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "repository_files": {
+          "detail": "read only; no mutation attempted",
+          "status": "released"
+        },
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Require one current-extension-only entry whose enabled name/path match process configuration.",
+      "case_id": "REST-004",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Extension self-metadata identifies the enabled JAR tied to the listener process.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Compare encoding to independent RFC 4648 output and require decode to recover the original marker.",
+      "case_id": "REST-005",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Explicit Base64 encode/decode is reversible and standards-conformant.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Compare the API result to Python hashlib for a fresh inert marker.",
+      "case_id": "REST-006",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "SHA-256 hashing returns the standard digest of the supplied bytes.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Supply two Base64 layers absent from the result and require the original plus two reported transformations.",
+      "case_id": "REST-007",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Smart decode applies successive recognizable layers until the original value is recovered.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Send valid-looking JSON as text/plain and require the documented typed 415 error envelope.",
+      "case_id": "REST-008",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "JSON operations reject a non-JSON representation rather than silently interpreting it.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Add one inert unknown member and require a typed invalid-request response without acceptance.",
+      "case_id": "REST-009",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Closed request schemas reject undeclared members.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Request a fresh absent route and require the documented typed 404 envelope.",
+      "case_id": "REST-010",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Unknown routes fail through the API's typed error boundary.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Use a fresh target-held marker and require exactly one matching target observation plus the same response marker.",
+      "case_id": "REST-011",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Repeater sends the declared method, URL, headers, and body and returns the target response.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "extension_history_state": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        },
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        },
+        "target_a_connection": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Send two distinct methods and markers to two owned targets; require two ordered results and one observation per target.",
+      "case_id": "REST-012",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Repeater batch sends each request once and preserves request/result order.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "extension_history_state": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        },
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        },
+        "target_a_connection": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        },
+        "target_b_connection": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Exercise neither-source and both-source controls; require typed invalid-request outcomes for both.",
+      "case_id": "REST-013",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Repeater requires exactly one request source.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "From a clean baseline set inert cookies/headers/origin, read exact state, then clear and authoritatively re-read the clean baseline.",
+      "case_id": "REST-014",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Session configuration is readable as the state that was set and can be fully cleared.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "extension_session_state": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        },
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Have the target independently report headers/cookies, require each inert marker, then clear and re-read clean state.",
+      "case_id": "REST-015",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Session send injects configured credentials and per-request headers into the owned origin.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "extension_history_state": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        },
+        "extension_session_state": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        },
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        },
+        "target_a_connection": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Capture a fresh server-held cookie, read one jar entry, observe it at the target on the next send, then clear and re-read clean state.",
+      "case_id": "REST-016",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "A same-origin Set-Cookie response enters the session jar and is used on the next request.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "extension_history_state": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        },
+        "extension_session_state": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        },
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        },
+        "target_a_connection": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Serve distinct status/body arms, require their exact statuses, an unequal status classification and a reported body difference, and require one request per arm.",
+      "case_id": "REST-017",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Diff reports independently observable response differences without conflating its arms.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "extension_history_state": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        },
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        },
+        "target_a_connection": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        },
+        "target_b_connection": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Require the HTML endpoint; if scripts are reported fetched, also require the script-derived endpoint; require one page fetch.",
+      "case_id": "REST-018",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Endpoint extraction includes links present in fetched owned content and accounts for linked-script handling.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "extension_history_state": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        },
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        },
+        "target_a_connection": {
+          "detail": "not touched because containment prevented execution",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Request at most one row; require list cardinality and coherent total, recording no row content.",
+      "case_id": "REST-019",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Proxy history exposes bounded typed pagination without the verifier disclosing captured content.",
+      "layer": "Burp",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Request at most one row; require list cardinality and coherent total, recording no row content.",
+      "case_id": "REST-020",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "WebSocket history exposes bounded typed pagination without the verifier disclosing captured content.",
+      "layer": "Burp",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Require a boolean status from the read-only route and perform no enable/disable action.",
+      "case_id": "REST-021",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Intercept status is observable without changing Burp interception.",
+      "layer": "Burp",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Request one row and require bounded list, nonnegative coherent total, and integer pagination metadata without recording content.",
+      "case_id": "REST-022",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Extension-owned history returns coherent typed pagination.",
+      "layer": "extension",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Classify an owned loopback URL and require the echoed URL plus a boolean decision.",
+      "case_id": "REST-023",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Scope check classifies the exact supplied URL without mutating project scope.",
+      "layer": "Burp",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Request at most one row; require list cardinality and coherent total, recording no row content.",
+      "case_id": "REST-024",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Target sitemap exposes bounded typed pagination without the verifier disclosing captured content.",
+      "layer": "Burp",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Require an object; record only top-level keys and a canonical digest, never its potentially sensitive content.",
+      "case_id": "REST-025",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Project configuration is exportable as structured JSON without mutation.",
+      "layer": "Burp",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Require list type and exact total/list agreement without recording definition content.",
+      "case_id": "REST-026",
+      "duration_ms": 0.0,
+      "group": "rest",
+      "invariant": "Scanner issue definitions return a list whose declared total is its cardinality.",
+      "layer": "Burp",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Run bp --version and require clean success with exactly the consensus version.",
+      "case_id": "CLI-001",
+      "duration_ms": 0.0,
+      "group": "cli",
+      "invariant": "The primary executable identifies the six-source release version.",
+      "layer": "CLI",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "cli_process": {
+          "detail": "subprocess awaited; isolated XDG state and no ledger where API is contacted",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Run burpctl --version and require clean success with exactly the consensus version.",
+      "case_id": "CLI-002",
+      "duration_ms": 0.0,
+      "group": "cli",
+      "invariant": "The burpctl compatibility alias identifies the same release.",
+      "layer": "CLI",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "cli_process": {
+          "detail": "subprocess awaited; isolated XDG state and no ledger where API is contacted",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Run health with explicit loopback URL, JSON and no ledger; require one JSON object with ok/consensus version/uptime.",
+      "case_id": "CLI-003",
+      "duration_ms": 0.0,
+      "group": "cli",
+      "invariant": "CLI JSON health output carries the live release identity as one machine-readable document.",
+      "layer": "CLI",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "cli_process": {
+          "detail": "subprocess awaited; isolated XDG state and no ledger where API is contacted",
+          "status": "released"
+        },
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    },
+    {
+      "assertion": "Run both placements against version and require identical parsed JSON, not byte-for-byte presentation text.",
+      "case_id": "CLI-004",
+      "duration_ms": 0.0,
+      "group": "cli",
+      "invariant": "Documented global options have the same semantics before and after the subcommand.",
+      "layer": "CLI",
+      "missing_precondition": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+      "observed_evidence": {
+        "containmentAbort": true
+      },
+      "outcome": "COULD_NOT_RUN",
+      "resource_disposition": {
+        "cli_process": {
+          "detail": "subprocess awaited; isolated XDG state and no ledger where API is contacted",
+          "status": "released"
+        },
+        "rest_api_connection": {
+          "detail": "HTTP connection closes after response",
+          "status": "released"
+        }
+      },
+      "started_at": null
+    }
+  ],
+  "containment_abort": "SYS-005: deployed binary predates the current release source: embedded OpenAPI and source OpenAPI differ ({'embeddedOpenApiSha256': '99116230bbc7f088a69e2da792e953904ba282b28851560b2d55105b73f889b7', 'sourceOpenApiSha256': '50a51d54926a279fa8d3250427f71130b55f65bd1443be51d7a38e698e10a7e2', 'embeddedSchemaCount': 40, 'sourceSchemaCount': 144, 'embeddedOperationCount': 69, 'sourceOperationCount': 69})",
+  "finished_at": "2026-09-05T08:29:11.815+00:00",
+  "invocation": {
+    "api_url": "http://127.0.0.1:8089",
+    "case_ids": [],
+    "deferred_cases": {
+      "REST-003": "live OpenAPI publication cannot be judged because the deployed JAR embeds the pre-change contract; deployed binary predates the change",
+      "REST-005": "deployed binary predates the current decoder implementation and contract; deployed binary predates the change",
+      "REST-006": "deployed binary predates the current decoder implementation and contract; deployed binary predates the change",
+      "REST-007": "deployed binary predates the current decoder implementation and contract; deployed binary predates the change"
+    },
+    "exclusive_extension_custody": true,
+    "groups": [
+      "rest",
+      "cli"
+    ],
+    "target_ports": [
+      9931,
+      9932
+    ]
+  },
+  "proof_ceiling": [
+    "Only the configured extension JAR path and unchanged file hash, process/config join, self-metadata, and monotonic uptime tie observations to one candidate binary; the suite does not attest the already-loaded in-memory byte image independently of Burp.",
+    "No external host, DNS name, or Collaborator was contacted. Collaborator verification is excluded by this lane's assignment and remains a separate release gate.",
+    "No active Scanner or Intruder job was created, no proxy interception or project scope was changed, no history was cleared, and no project/user configuration was imported.",
+    "Read-only history/sitemap cases establish bounded typed representations, not the correctness, completeness, ownership, or secrecy of ambient Burp data.",
+    "CLI cases establish only the recorded editable source state and launcher; REST cases establish the frozen JAR independently of later CLI edits."
+  ],
+  "repository": {
+    "bp_launcher_sha256": "ab0d403a8ec424d9b2a5e41cee89bba9567bc4d5d9d7707a8d87231065c136cd",
+    "cli_source_files": {
+      "bp/src/bp/__init__.py": "b01a21ceda43915b5e28964697838ea0dad9515f9e95843c518674182d44b42a",
+      "bp/src/bp/cli.py": "96515e43216d75275558d02cdb71e0e598cc5f79b49e5c72402b642c5d4d12bd",
+      "bp/src/bp/client.py": "05623d6270831d2bc9fd0f6d594691ed1630caf2f35e8cfeb2cfdd9fe9ba9ecd",
+      "bp/src/bp/cliutil.py": "db217fa98fc977810b0629487eef68ab83ce00262f819a85e555444f492531a1",
+      "bp/src/bp/commands/__init__.py": "37c10f154e37eb1cfe31b501ad11862862b13e4de340ad500e3ea1e75044b535",
+      "bp/src/bp/commands/collaborator.py": "9c0fc0ad768db14551953d43b4becb83b4674a4e2a5c0f7132894d8811a09818",
+      "bp/src/bp/commands/config.py": "d6a44fe875b266357bb50f473adf89536dfd233ba8648ca60b7a365374d9bee6",
+      "bp/src/bp/commands/decoder.py": "97e6555b7e12cc916bbf69d82b7d896d971f978f65cb545bb358740128eddabf",
+      "bp/src/bp/commands/history.py": "c1877e4336c6d74d6fa88bc0131f29c0b0089f9a011b6d1955b73dabd87deed1",
+      "bp/src/bp/commands/obs.py": "6722d63e60b1956a9d2ef6dcf36de73faad2edeaec03fa1136445962cf33bcc4",
+      "bp/src/bp/commands/proxynav.py": "a18712b9311f2db815e71ec50eb0639fd5de45a1bd7e0406fcb9079174e81ae5",
+      "bp/src/bp/commands/repeater.py": "87656582ecde280bf075a6c89ad44eeb80bd00a5d6d58c74c0c0231f5e46ebc3",
+      "bp/src/bp/commands/scanner.py": "1e8df5c516d2898401081d2dc46e2f726eb884019c23b60b0f88f3ae550c09de",
+      "bp/src/bp/commands/securityscan.py": "7eccc2d5cd11f2c8f488e4d84b49c8b9d56b071158d07e8173d7b2f64299d164",
+      "bp/src/bp/commands/session.py": "686929f81efb21070b00c278da5377b787e94e5cd505976ceff2561785175f90",
+      "bp/src/bp/commands/target.py": "b2eaaaff6677b50f6506ff92a75c6a655f27b6e5a4cd1cde9ad6960c9360d6b6",
+      "bp/src/bp/commands/utils.py": "06c193c64037e95eb811baecf21dbed6c483705d0bf8cc06a491a6638d5c0132",
+      "bp/src/bp/config.py": "a67017a63e3e051b433fe0c80f8e6fe3d29002660b32384b8e1739ba8198072e",
+      "bp/src/bp/fuzz.py": "ab28337c722c172d69c6921286fcd9fce710bcf1b5d3537546adbfc44bdeea12",
+      "bp/src/bp/ledger.py": "0af7e7e3026c516d8982eae34f21e65402e98ab5cf99ff3e6002b3c2e0273635",
+      "bp/src/bp/models.py": "18c54f7a9ce2085c61385d91ae889a648c66f4375f95ba9373be6c85a79d7f79",
+      "bp/src/bp/output.py": "dcb2d33607753a624bc8a59d696ca9c987f8d7546fbda22eb0800ed0bed02901",
+      "bp/src/bp/pos.py": "eba5875c776f65eb3a2f1bcaf3ca07a51c783eeac31aab5cf489e680bac2b03e",
+      "bp/src/bp/rawhttp.py": "94ab29dd63fad5deddce305f6cbbdeda67e3210a48cb755b9beeacacb9ab2e66",
+      "bp/src/bp/runner.py": "aa13fade9cddf96b604d297b55a5b30bd1b943896221e3cdcb6ef4af807fa0e7",
+      "bp/src/bp/wire.py": "c296dac6bc710c51d665952943278fa2b603e8f6982a6dddc51b5307b593d215"
+    },
+    "cli_source_sha256": "73704c4d4328446dbe5e6ca483ffb7a10d44c645f3dcd86103f28bc0952323a7",
+    "documentation_file_count": 26,
+    "documentation_sha256": "6c36dc943f32b6270dd8ba71443bdb02e6de4d7b5dc870b972116a9a0174cc19",
+    "end_cli_source_sha256": "73704c4d4328446dbe5e6ca483ffb7a10d44c645f3dcd86103f28bc0952323a7",
+    "end_documentation_sha256": "6c36dc943f32b6270dd8ba71443bdb02e6de4d7b5dc870b972116a9a0174cc19",
+    "end_release_source_sha256": "4b50c5e27e859b276d869fcd99b0360242f0bc086fc669be52510648aaf42bab",
+    "end_verifier_sha256": "40fe75dfa160c2fde3aeebb3e15a0cb6bd121c0f47c075d9a1fbf5302d075d37",
+    "git_commit": "1f79cdbdba82a4b961f23deaddcae99b07b74e37",
+    "release_source_file_count": 79,
+    "release_source_sha256": "4b50c5e27e859b276d869fcd99b0360242f0bc086fc669be52510648aaf42bab",
+    "status_paths": [
+      "README.md",
+      "ROADMAP.md",
+      "bp/CHANGELOG.md",
+      "bp/pyproject.toml",
+      "bp/src/bp/cli.py",
+      "bp/src/bp/cliutil.py",
+      "bp/src/bp/commands/decoder.py",
+      "bp/src/bp/commands/history.py",
+      "bp/src/bp/commands/obs.py",
+      "bp/src/bp/commands/securityscan.py",
+      "bp/src/bp/config.py",
+      "bp/src/bp/output.py",
+      "bp/tests/test_behavior_hardening.py",
+      "bp/tests/test_cli_conformance.py",
+      "bp/tests/test_cliutil.py",
+      "bp/tests/test_config.py",
+      "bp/tests/test_decoder.py",
+      "bp/tests/test_entrypoints.py",
+      "bp/tests/test_output.py",
+      "bp/tests/test_proxy.py",
+      "bp/tests/test_quality_ledger.py",
+      "bp/uv.lock",
+      "docs/ALGORITHMS.md",
+      "docs/CLI.md",
+      "docs/OUTPUT.md",
+      "docs/SPEC.md",
+      "docs/STATE-AND-CONFIG.md",
+      "docs/adr/0001-rest-source-of-truth.md",
+      "docs/adr/0002-cli-name-bp.md",
+      "docs/adr/0003-pos-fuzzing-grammar.md",
+      "docs/adr/0004-fuzz-async-lifecycle.md",
+      "docs/adr/0005-run-ledger-observability.md",
+      "docs/adr/0006-methodology-sdd-tdd-ddd.md",
+      "docs/adr/0007-product-scope-full-functionality-configurable-safety.md",
+      "docs/adr/0008-implementation-language-python-fully-typed.md",
+      "docs/adr/0009-global-output-options-position-tolerant.md",
+      "docs/adr/0010-check-exit-on-findings.md",
+      "docs/adr/0013-truthful-executable-contracts.md",
+      "docs/adr/0014-state-preserving-reportable-operations.md",
+      "docs/adr/INDEX.md",
+      "docs/bdd/README.md",
+      "docs/media/README.md",
+      "quality/README.md",
+      "quality/confirmed-defects.yaml",
+      "src/main/kotlin/com/burprest/models/HistoryModels.kt",
+      "src/main/kotlin/com/burprest/routes/HistoryRoutes.kt",
+      "src/main/kotlin/com/burprest/services/ProxyService.kt",
+      "src/main/kotlin/com/burprest/services/RepeaterService.kt",
+      "src/main/kotlin/com/burprest/services/SessionService.kt",
+      "src/main/resources/openapi.json",
+      "src/test/kotlin/com/burprest/services/SessionServiceTest.kt",
+      "CHANGELOG.md",
+      "docs/RELEASE-CHECKLIST.md",
+      "src/test/kotlin/com/burprest/integration/",
+      "src/test/kotlin/com/burprest/routes/HistoryRoutesEdgeCaseTest.kt",
+      "src/test/kotlin/com/burprest/services/ProxyEdgeCaseTest.kt",
+      "src/test/kotlin/com/burprest/services/RepeaterEdgeCaseTest.kt",
+      "verify/"
+    ],
+    "verifier_fixture_sha256": "2ebec24881cfa863180ee07d87806514b0e4775b76dd3665456437e4dc45db6b",
+    "verifier_sha256": "40fe75dfa160c2fde3aeebb3e15a0cb6bd121c0f47c075d9a1fbf5302d075d37",
+    "worktree_dirty": true
+  },
+  "resources": [
+    {
+      "detail": "read only; pre/post hash attempted",
+      "final_disposition": "released",
+      "name": "deployed_jar"
+    },
+    {
+      "detail": "Burp process and listener were not stopped or reconfigured",
+      "final_disposition": "held",
+      "name": "api_listener"
+    },
+    {
+      "detail": "clean baseline re-read after every attempted session mutation; see per-case evidence",
+      "final_disposition": "released",
+      "name": "extension_session_state"
+    },
+    {
+      "detail": "empty baseline and owned-entry-only cleanup enforced for every target send; see per-case evidence",
+      "final_disposition": "released",
+      "name": "extension_history_state"
+    },
+    {
+      "detail": "server stopped, thread joined, and loopback port rebound successfully",
+      "final_disposition": "released",
+      "name": "target_a"
+    },
+    {
+      "detail": "server stopped, thread joined, and loopback port rebound successfully",
+      "final_disposition": "released",
+      "name": "target_b"
+    },
+    {
+      "detail": "removed after subprocesses",
+      "final_disposition": "released",
+      "name": "isolated_cli_work_dir"
+    },
+    {
+      "detail": "not acquired; excluded by lane ceiling",
+      "final_disposition": "released",
+      "name": "Collaborator"
+    },
+    {
+      "detail": "none created",
+      "final_disposition": "released",
+      "name": "Scanner/Intruder jobs"
+    }
+  ],
+  "result_schema": "verify/result-schema.json",
+  "run_id": "a9fda026-676f-485a-a271-b345141879a6",
+  "schema_version": "1.0",
+  "started_at": "2026-09-05T08:29:11.130+00:00",
+  "suite": "burpctl-live-release-verification",
+  "summary": {
+    "clean": false,
+    "could_not_run": 30,
+    "executed_behavior_cases": 0,
+    "exit_code": 1,
+    "fail": 0,
+    "pass": 0,
+    "registered_behavior_cases": 30,
+    "selected_behavior_cases": 30,
+    "system_failures": 1
+  },
+  "targets": [
+    {
+      "address": "127.0.0.1",
+      "detail": "server stopped, thread joined, and loopback port rebound successfully",
+      "final_disposition": "released",
+      "name": "target_a",
+      "port": 9931,
+      "request_count": 0
+    },
+    {
+      "address": "127.0.0.1",
+      "detail": "server stopped, thread joined, and loopback port rebound successfully",
+      "final_disposition": "released",
+      "name": "target_b",
+      "port": 9932,
+      "request_count": 0
+    }
+  ],
+  "versions": {
+    "consensus": "2.1.0",
+    "sources": {
+      "BuildIdentity.kt": "2.1.0",
+      "bp/pyproject.toml": "2.1.0",
+      "bp/src/bp/__init__.py": "2.1.0",
+      "bp/uv.lock": "2.1.0",
+      "build.gradle.kts": "2.1.0",
+      "openapi.json": "2.1.0"
+    }
+  }
+}

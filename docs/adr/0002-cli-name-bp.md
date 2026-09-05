@@ -44,6 +44,7 @@ Founder decision 2026-06-16. `docs/SPEC.md §3` documents the evaluation:
 
 ## Consequences
 
-- Build tooling must produce and install both `bp` and `burpctl` (symlink or second binary).
-- Documentation uses `bp` as the canonical name; `burpctl` is mentioned as an alias in the README.
-- Shell completion scripts must be provided for both names.
+- Build tooling installs both `bp` and `burpctl` as console entry points to the same function.
+- Documentation uses `bp` as the canonical name; `burpctl` is mentioned as an alias.
+- Automatic shell-completion installation is disabled (`add_completion=False`); no completion scripts
+  are promised or shipped for either name.

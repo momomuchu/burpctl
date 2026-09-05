@@ -20,7 +20,15 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import EXIT_GENERIC, EXIT_USAGE, State, emit_error, emit_warning, preflight_output
+from bp.cliutil import (
+    EXIT_GENERIC,
+    EXIT_USAGE,
+    State,
+    emit_error,
+    emit_warning,
+    preflight_output,
+    resolve_redaction,
+)
 from bp.config import ConfigError, load as load_config, redact_data
 from bp.ledger import Ledger, QueryFilters
 from bp.output import render
@@ -36,12 +44,12 @@ def _require_ledger(ctx: typer.Context) -> Any | None:
     state: State | None = ctx.obj
     ledger_override: bool | None = False if (state is not None and state.no_ledger) else None
     fmt, _fields = _resolve_fmt_fields(ctx)
-    redact_secrets = not (state is not None and state.no_redact)
     warnings: list[str] = []
+    redact_secrets = resolve_redaction(state, warn=warnings.append)
     try:
         conf = load_config(
             ledger=ledger_override,
-            redact=False if not redact_secrets else None,
+            redact=redact_secrets,
             burp_rest_url=state.url if state is not None else None,
             warn=warnings.append,
         )

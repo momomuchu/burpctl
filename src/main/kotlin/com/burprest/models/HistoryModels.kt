@@ -56,5 +56,7 @@ fun SitemapRow.toResponse() = SitemapEntryResponse(
 @Serializable
 data class ReplayResponse(
     val original: HistoryEntryResponse,
-    val replayed: HistoryEntryResponse,
+    val replayed: HistoryEntryResponse?,
+    /** Exact best-effort recording result for the completed target send. */
+    val persistence: RepeaterPersistence,
 )

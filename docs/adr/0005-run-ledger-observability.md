@@ -7,10 +7,11 @@
 
 ## Decision
 
-Every attempted HTTP operation from `bp` to `:8089` writes one **LedgerEntry** to a SQLite database
-at `~/.bp/` automatically. One CLI invocation may perform several REST operations and therefore
-write several rows. The ledger is **on by default**. To suppress recording for a single invocation,
-pass `--no-ledger`.
+Each HTTP operation from `bp` to the extension attempts one **LedgerEntry** in the local SQLite database
+at `~/.bp/`. One CLI invocation may perform several REST operations and therefore attempt several rows.
+The ledger is **on by default**; pass `--no-ledger` to suppress it for an invocation. Ledger
+construction/write failures are fail-open for the main operation and can therefore leave no row after a
+warning—“on by default” is not a guarantee that persistence succeeded.
 
 ### LedgerEntry schema
 

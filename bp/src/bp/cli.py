@@ -7,6 +7,7 @@ registered onto ``app`` below. Exit codes follow CLI.md (3=conn, 4=pro).
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import sys
@@ -22,7 +23,14 @@ from typer._click import ClickException
 
 from bp import __version__
 from bp.client import BurpClient
-from bp.cliutil import State, exit_code_for_error_code, fail_usage, run
+from bp.cliutil import (
+    State,
+    emit_error,
+    exit_code_for_error_code,
+    fail_usage,
+    resolve_redaction,
+    run,
+)
 from bp.fuzz import load_payload_file
 from bp.models import ProxyEntry
 from bp.output import FORMATS
@@ -306,10 +314,37 @@ def _json_error_mode(argv: list[str]) -> bool:
     return os.environ.get("BP_AGENT") == "1"
 
 
-def _emit_click_error(exc: ClickException, *, json_mode: bool) -> None:
+def _redaction_enabled(argv: list[str]) -> bool:
+    """Resolve redaction for errors raised before Typer constructs the root context."""
+    no_redact = False
+    for token in argv:
+        if token == "--":
+            break
+        if token == "--no-redact":
+            no_redact = True
+    return resolve_redaction(no_redact=no_redact)
+
+
+def _emit_click_error(
+    exc: ClickException,
+    *,
+    json_mode: bool,
+    redact_secrets: bool,
+) -> None:
     if json_mode:
-        detail = {"error": {"code": "USAGE_ERROR", "message": exc.format_message()}}
+        message = exc.format_message()
+        if redact_secrets:
+            from bp.config import redact
+
+            message = redact(message)
+        detail = {"error": {"code": "USAGE_ERROR", "message": message}}
         typer.echo(json.dumps(detail, separators=(",", ":")), err=True)
+    elif redact_secrets:
+        from bp.config import redact
+
+        stream = io.StringIO()
+        exc.show(file=stream)
+        typer.echo(redact(stream.getvalue()), nl=False, err=True)
     else:
         exc.show(file=sys.stderr)
 
@@ -328,7 +363,11 @@ def cli_main() -> None:
         if isinstance(result, int) and result != 0:
             raise SystemExit(result)
     except ClickException as exc:
-        _emit_click_error(exc, json_mode=_json_error_mode(args))
+        _emit_click_error(
+            exc,
+            json_mode=_json_error_mode(args),
+            redact_secrets=_redaction_enabled(args),
+        )
         raise SystemExit(exc.exit_code) from None
     except ClickExit as exc:
         raise SystemExit(exc.exit_code) from None
@@ -343,4 +382,15 @@ def cli_main() -> None:
             )
         else:
             typer.echo("Aborted!", err=True)
+        raise SystemExit(1) from None
+    except Exception:
+        # This is the final output boundary: never let Python print an exception
+        # traceback whose message can quote attacker-controlled or credential data.
+        fmt = "json" if _json_error_mode(args) else "table"
+        emit_error(
+            fmt,
+            "INTERNAL_ERROR",
+            "unexpected internal error",
+            redact_secrets=_redaction_enabled(args),
+        )
         raise SystemExit(1) from None

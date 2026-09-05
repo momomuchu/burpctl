@@ -8,6 +8,8 @@ text that have no reliable structure.
 
 from __future__ import annotations
 
+import base64
+import binascii
 import copy
 import json
 import os
@@ -97,6 +99,67 @@ def _parse_bool(value: str) -> bool | None:
     return None
 
 
+def _warning_handler(
+    warn: Callable[[str], None] | None,
+) -> Callable[[str, str, str], None]:
+    if warn is None:
+        return _warn_invalid
+
+    def handler(source: str, value: str, kind: str = "boolean") -> None:
+        warn(f"invalid {kind} for {source}={_redact_text_fallback(value)!r}; keeping default")
+
+    return handler
+
+
+def _resolve_bool(
+    key: str,
+    flag_value: bool | None,
+    file_values: Mapping[str, str],
+    warn_invalid: Callable[[str, str, str], None],
+    *,
+    invert_environment: bool = False,
+) -> bool:
+    if flag_value is not None:
+        return flag_value
+    env_name = _ENV_MAP[key]
+    env_value = os.environ.get(env_name)
+    if env_value is not None and env_value.strip():
+        parsed = _parse_bool(env_value)
+        if parsed is not None:
+            return not parsed if invert_environment else parsed
+        warn_invalid(env_name, env_value, "boolean")
+    if key in file_values:
+        parsed = _parse_bool(file_values[key])
+        if parsed is not None:
+            return parsed
+        warn_invalid(key, file_values[key], "boolean")
+    parsed_default = _parse_bool(_DEFAULTS[key])
+    assert parsed_default is not None
+    return parsed_default
+
+
+def resolve_redaction(
+    *,
+    redact: bool | None = None,
+    config_path: Path | None = None,
+    warn: Callable[[str], None] | None = None,
+    _file_values: Mapping[str, str] | None = None,
+) -> bool:
+    """Resolve flag, environment, file, and default redaction precedence once.
+
+    ``_file_values`` lets :func:`load` reuse the configuration file it already parsed;
+    direct callers omit it and resolve only this security setting.
+    """
+    if redact is not None:
+        return redact
+    env_value = os.environ.get(_ENV_MAP["redact"])
+    if env_value is not None and env_value.strip() and _parse_bool(env_value) is not None:
+        return bool(_parse_bool(env_value))
+    path = Path(config_path) if config_path is not None else _default_config_path()
+    file_values = _parse_config_file(path) if _file_values is None else _file_values
+    return _resolve_bool("redact", None, file_values, _warning_handler(warn))
+
+
 def _warn_invalid(source: str, value: str, kind: str = "boolean") -> None:
     safe_value = _redact_text_fallback(value)
     print(
@@ -151,13 +214,7 @@ def load(
     """Resolve and validate configuration using flag > env > file > default precedence."""
     path = Path(config_path) if config_path is not None else _default_config_path()
     file_values = _parse_config_file(path)
-    warn_invalid = (
-        _warn_invalid
-        if warn is None
-        else lambda source, value, kind="boolean": warn(
-            f"invalid {kind} for {source}={_redact_text_fallback(value)!r}; keeping default"
-        )
-    )
+    warn_invalid = _warning_handler(warn)
 
     def resolve_str(key: str, flag_value: str | None) -> str:
         if flag_value is not None:
@@ -168,27 +225,6 @@ def load(
         if key in file_values:
             return file_values[key]
         return _DEFAULTS[key]
-
-    def resolve_bool(
-        key: str, flag_value: bool | None, *, invert_environment: bool = False
-    ) -> bool:
-        if flag_value is not None:
-            return flag_value
-        env_name = _ENV_MAP[key]
-        env_value = os.environ.get(env_name)
-        if env_value is not None and env_value.strip():
-            parsed = _parse_bool(env_value)
-            if parsed is not None:
-                return not parsed if invert_environment else parsed
-            warn_invalid(env_name, env_value)
-        if key in file_values:
-            parsed = _parse_bool(file_values[key])
-            if parsed is not None:
-                return parsed
-            warn_invalid(key, file_values[key])
-        parsed_default = _parse_bool(_DEFAULTS[key])
-        assert parsed_default is not None
-        return parsed_default
 
     def resolve_int(key: str, flag_value: int | None) -> int:
         if flag_value is not None:
@@ -215,9 +251,14 @@ def load(
     return BpConfig(
         burp_rest_url=selected_url,
         enforce_scope=selected_scope,
-        envelope=resolve_bool("envelope", envelope),
-        redact=resolve_bool("redact", redact),
-        ledger=resolve_bool("ledger", ledger, invert_environment=True),
+        envelope=_resolve_bool("envelope", envelope, file_values, warn_invalid),
+        redact=resolve_redaction(
+            redact=redact,
+            config_path=path,
+            warn=warn,
+            _file_values=file_values,
+        ),
+        ledger=_resolve_bool("ledger", ledger, file_values, warn_invalid, invert_environment=True),
         throttle_ms=selected_throttle,
         anomaly_pct=selected_anomaly,
     )
@@ -483,6 +524,21 @@ def _redact_cookie_jar(value: list[Any]) -> list[Any]:
     return result
 
 
+def _redact_base64(value: Any) -> Any:
+    """Redact a schema-declared Base64 value while preserving unrelated binary bytes."""
+    if not isinstance(value, str):
+        return redact_data(value)
+    try:
+        decoded = base64.b64decode(value, validate=True)
+    except (binascii.Error, ValueError):
+        return _redact_text_fallback(value)
+    text = decoded.decode("utf-8", "surrogateescape")
+    redacted = redact(text)
+    if redacted == text:
+        return value
+    return base64.b64encode(redacted.encode("utf-8", "surrogateescape")).decode("ascii")
+
+
 def redact_data(value: Any) -> Any:
     """Return a recursively redacted copy while retaining structure and key order.
 
@@ -493,20 +549,25 @@ def redact_data(value: Any) -> Any:
     if isinstance(value, Mapping):
         result = _copy_mapping(value)
         header_name: Any = None
-        value_key: Any = None
         for key, item in value.items():
             canonical = _canonical_name(key)
             if canonical == "name":
                 header_name = item
-            elif canonical == "value":
-                value_key = key
         header_record = _is_sensitive_name(header_name)
 
         for key, item in value.items():
             canonical = _canonical_name(key)
-            if canonical == "cookies" and _is_cookie_jar(item):
+            if canonical.endswith("base64") or canonical == "b64":
+                result[key] = _redact_base64(item)
+            elif canonical in {"body", "reqbody", "resbody"} and isinstance(item, str):
+                result[key] = redact(item)
+            elif canonical == "cookies" and _is_cookie_jar(item):
                 result[key] = _redact_cookie_jar(item)
-            elif header_record and key == value_key:
+            elif (
+                header_record
+                and canonical != "name"
+                and (canonical.endswith("value") or canonical.endswith("values"))
+            ):
                 result[key] = _mask_sensitive_value(item)
             elif _is_sensitive_name(key):
                 result[key] = _mask_sensitive_value(item)

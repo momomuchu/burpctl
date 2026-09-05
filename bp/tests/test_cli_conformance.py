@@ -80,6 +80,27 @@ def test_command_reachable(cmd: list[str]) -> None:
     assert result.exit_code == 0, f"`bp {' '.join(cmd)}` not reachable (exit {result.exit_code})"
 
 
+def test_decoder_help_does_not_claim_network_commands_are_offline() -> None:
+    from bp.commands.decoder import sub as decoder_sub
+
+    assert "offline" not in str(decoder_sub.info.help).lower()
+    assert "REST" in str(decoder_sub.info.help)
+    for command in ("encode", "decode", "hash"):
+        text = _plain_help([command, "--help"])
+        assert "offline" not in text.lower()
+        assert "POST /decoder/" in text
+
+
+def test_history_help_matches_service_unavailable_and_transactional_contracts() -> None:
+    for command in ("list", "get", "sitemap", "replay", "clear"):
+        text = _plain_help(["history", command, "--help"]).lower()
+        assert "404" not in text
+        assert "service_unavailable" in text
+    clear_text = _plain_help(["history", "clear", "--help"]).lower()
+    assert "non-transactional" not in clear_text
+    assert "transactional" in clear_text
+
+
 def test_fuzz_help_discloses_raw_framing_limit() -> None:
     result = runner.invoke(app, ["fuzz", "--help"])
 

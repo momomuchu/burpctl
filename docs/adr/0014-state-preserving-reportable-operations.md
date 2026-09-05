@@ -29,9 +29,15 @@ Refusing an operation that cannot preserve its stated state boundary or report c
 
 ## Consequences
 
-- `PUT /config/user` must refuse while importing it can reload the serving extension. Its exact v2.0.0 round-trip is not a safe no-op.
+- `PUT /config/user` excludes and reports `user_options.extender.extensions`, the inventory whose
+  import can reload this responder; safe sibling options remain importable. A future design must still
+  refuse before acting if it cannot preserve the responder.
 - Output compatibility and field validation move ahead of all effectful calls, including Collaborator polls/generation and scanner task creation.
 - Created task/payload identifiers cannot be discarded by a renderer; either they are deliverable/recoverable or creation is refused.
 - Release evidence for affected Montoya paths includes a real-Burp smoke/replay. Hermetic suites remain necessary but no longer constitute the whole integration release gate.
 - ADR-0013's statement that mocked Montoya tests alone form the acceptance boundary is superseded for release claims. Its strict-input, typed-error, and truthful-unsupported decisions remain in force.
-- Existing unknown scanner tasks remain unknown; this decision does not infer their state or invent a recovery path.
+- Existing unknown scanner tasks remain unknown; this decision does not infer their state or invent a
+  recovery path. See [PC-04](../PROOF-CEILINGS.md#pc-04--a-scanner-task-cannot-be-recovered-after-its-handle-is-lost).
+- No current defect is `verified`; the final redeployed-binary replay and the other structured receipts
+  remain release prerequisites. The repaired external acceptance harness was destroyed before it ran,
+  which reinforces the requirement that both instrument and result have durable versioned identity.

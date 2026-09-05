@@ -83,6 +83,51 @@ def test_recursive_structural_redaction_masks_sensitive_values(
     assert result is not payload
 
 
+@pytest.mark.parametrize("body_key", ["body", "reqBody", "resBody"])
+def test_structural_redaction_parses_json_held_in_http_body_strings(body_key: str) -> None:
+    marker = "captured-json-body-secret"
+    payload = {
+        body_key: json.dumps(
+            {
+                "token": marker,
+                "refreshToken": marker,
+                "apiToken": marker,
+                "safe": "visible",
+            }
+        )
+    }
+
+    result = redact_data(payload)
+
+    assert marker not in json.dumps(result)
+    parsed_body = json.loads(result[body_key])
+    assert parsed_body == {
+        "token": "***",
+        "refreshToken": "***",
+        "apiToken": "***",
+        "safe": "visible",
+    }
+
+
+def test_sensitive_header_records_mask_every_value_bearing_shape() -> None:
+    """Header sensitivity follows the record's name, not one DTO's value-key spelling."""
+    secret = "header-diff-secret"
+    for header_name in ("Authorization", "Proxy-Authorization", "Cookie", "Set-Cookie"):
+        record = {
+            "name": header_name,
+            "value": f"Bearer {secret}",
+            "aValue": f"Bearer {secret}",
+            "bValue": f"sid={secret}",
+            "aValues": [f"Bearer {secret}"],
+            "bValues": [f"sid={secret}"],
+        }
+
+        output = json.dumps(redact_data(record))
+
+        assert secret not in output, (header_name, output)
+        assert output.count("***") == 5, (header_name, output)
+
+
 def test_structural_redaction_preserves_container_types_order_and_input() -> None:
     payload: OrderedDict[str, Any] = OrderedDict(
         [("safe", [1, True, None]), ("password", "secret-value"), ("tail", {"x": 2})]

@@ -1,699 +1,243 @@
-# `bp` — OUTPUT Contract Specification
+# `bp` output contract
 
-# Current output contract
+This document describes the implemented v2.1.0 serializer and process-exit behavior. It is a source
+contract, not a claim that the incomplete real-Burp acceptance pass succeeded. See
+[`quality/README.md`](../quality/README.md), [ADR-0014](adr/0014-state-preserving-reportable-operations.md),
+and [`PROOF-CEILINGS.md`](PROOF-CEILINGS.md).
 
-This section records the v2.1.0 executable contract. D-numbers refer to `quality/confirmed-defects.yaml`; a working-tree fix still requires the original live reproduction after redeployment before it is marked verified.
+## Selection and ordering
 
-- Successful JSON list output is compact NDJSON; every emitted record remains independently parseable after redaction.
-- Runtime/server failures and local usage failures honor JSON mode with one JSON diagnostic on stderr and empty stdout.
-- Redaction traverses structured data before serialization and protects nested secret keys, headers, cookies, authorization values, URL userinfo, and sensitive query values. Safe structural identifiers such as cookie name/domain/path remain visible while their values are masked.
-- Safe default views omit raw request/response bodies and credential-bearing header blobs.
-- `raw` is accepted only for `req`, `send`, `history get`, and `history replay`. These commands reconstruct a deterministic HTTP/1.1 byte representation from the extension's structured record; request and response are separated by `CRLF + 0x1e + CRLF`. This is a rendering representation, not proof of the original target wire bytes. Every other structured command rejects `raw` as a usage error.
-- Output mode and fields are resolved against a static per-command catalog at the shared execution chokepoint, before config loading, ledger creation, client construction, or the command callback. Incompatible `raw`, incompatible field/format combinations, and unknown fields therefore exit 2 without a REST, target, Burp-state, one-use poll, config-import, or scanner-task effect.
-- `quiet` emits only the command-specific essential values declared in §1.5: collaborator payload hosts or interaction ids (`none` when empty), scope classifications, documented HTTP statuses/record ids/severities, health state, and security-check verdicts. Scalar booleans use lowercase JSON spelling and nested generic rendering (used only when no CLI command path is supplied) uses compact JSON rather than Python representations. Every CLI command not listed in §1.5 emits no quiet stdout rather than guessing from response key order; defining essentials for those commands remains a contract gap.
-- Field selection is case-insensitive, preserves canonical casing/requested order, and accepts `all`/`*`. Collaborator generation additionally selects payload-record fields (`id`, `payload`, `interactionId`), while polling selects interaction-record fields (`id`/`interactionId`, `type`, `clientIp`, `timestamp`, `details`, `clientPort`); wrapper and record fields cannot be mixed.
-- Empty result sets produce empty stdout. Unknown fields and incompatible combinations exit 2 before command execution.
-- Fuzz retains its baseline/error evidence row and stops after terminal `CONNECTION_REFUSED`, `TRANSPORT_ERROR`, `NO_RESPONSE`, or `INVALID_RESPONSE`; these map to the published transport exit 3 where applicable.
-- A non-null top-level response `warning` is always copied to stderr before field selection or quiet rendering. An applied-but-unverifiable config import therefore tells the caller not to retry even when stdout is suppressed or projected.
+The root option `--format` accepts `table`, `json`, `raw`, or `quiet`; table is the ordinary default and
+`BP_AGENT=1` selects JSON when no format is explicit. `--fields` is supported for table and JSON and is
+incompatible with raw and quiet.
 
-Flags described later but absent from executable help—such as write-out, schema, pretty, strict, raw-part, and async-result designs—are historical proposals, not current or version-targeted promises.
+For commands routed through the shared `run()` helper, the implementation checks the selected format
+and static field names before loading configuration, opening the Run Ledger, constructing the REST
+client, or invoking the supplied REST callback. Local Typer callback work—argument parsing and, for
+some commands, local file reading—can occur before that chokepoint. Local `log` and `tag` commands call
+the same preflight before opening or mutating their ledger.
 
-See [ADR-0013](adr/0013-truthful-executable-contracts.md) and [ADR-0014](adr/0014-state-preserving-reportable-operations.md).
+This protects known incompatible selections from target, Burp-state, configuration-import, task, and
+one-use-poll effects. It does not make the static catalog an oracle for every later wrapper or optional
+field: current `scan issues --fields severity`, `sitemap --fields url`, and
+`req --fields listenerPort` selections pass preflight but can fail after their GET because the returned
+top-level shape does not contain that projected leaf. That is an implementation defect to fix, not a
+reason to document universal pre-effect safety.
 
----
+Unknown static fields and incompatible format/field combinations exit 2. Matching is
+case-insensitive; requested spelling/order controls projected JSON/table output. `all` and `*` disable
+projection and return the actual response shape rather than synthesizing a fixed full schema.
 
+## JSON
 
-> **DEEP output-contract spec for the `bp` CLI.**
-> Companion to `docs/SPEC.md` (grammar §5, intruder results §6.4, ledger §9, Kotlin contract §8).
-> Generated 2026-06-16.
+- A dictionary or scalar becomes one compact JSON value.
+- A list becomes compact NDJSON: one independently parseable value per line, no outer array.
+- Empty lists produce zero stdout bytes.
+- The renderer preserves actual returned keys and their order. It does not synthesize every field in a
+  model or promise that absent keys are always present as `null`.
+- Runtime JSON errors use `{"error":{"code":...,"message":...}}`; when known, `status`,
+  `http_status`, and `op` are additional keys.
 
----
+Data goes to stdout and diagnostics to stderr. Most local validation and parser failures honor JSON
+mode. Confirmation refusals in `history clear` and `scope set` remain human diagnostics at the current
+source boundary; they still leave stdout empty and exit 2.
 
-## Overview
+## Table
 
-**What this means** — This locks down exactly what every `bp` command *prints*, so a human and an AI agent read the same tool through one stable contract: four formats, a curl-style `-w` template, selectable fields, and a deterministic JSON schema for agents.
+Table output uses uppercase headers/keys, two spaces between columns, blank text for null, lowercase
+JSON spelling for booleans, and compact JSON for nested values. Values are not width-capped or
+right-aligned by the serializer. Empty lists produce zero stdout bytes.
 
-**The core loop** —
-1. Every `bp` command emits records (fuzz rows, history rows, issues, interactions…).
-2. `--format` picks the *shape*: `json` (agent), `table` (human), `raw` (Burp bytes), `quiet` (one value).
-3. `--fields` picks *which* columns and their order; `-w` builds a *custom line* from `%{tokens}`.
-4. Default format is `table` for all streams in v1; pass `--format json` for agents/pipes. _(v1.1 — TTY-aware auto-detect not yet implemented)_
-5. Runtime/server errors in JSON mode go to **stderr** as one JSON object and data goes to **stdout**; local validation/parser errors violate this in v2.0.0 (D22).
-6. Each attempted bp-to-extension REST call is written as one **Run Ledger** row (`~/.bp/`) unless
-   `--no-ledger`; this is operation metadata, not a mirror of every shown result or all proxy traffic.
-7. `bp fuzz ... -w '%{status} %{payload}'` prints ONLY the HTTP code + payload, one line per request.
+## Reconstructed raw HTTP
 
-**Terms** — *AX* = agent experience (machine-readable output). *Record* = one row/entry. *write-out* = a `-w` template line. *Anomalous* = a fuzz result that differs from baseline. *Ledger* = local SQLite audit log of every op.
+Raw output is supported only for:
 
-**Key design decisions** — The four-format model, the `-w` token grammar, the AX stable-schema rule, and the stderr/exit-code contract. The field catalog is *derived* from SPEC §6 models (not invented).
+- `bp req ID` — request and optional response;
+- `bp send ID` — returned response;
+- `bp history get ID` — stored request and optional response;
+- `bp history replay ID` — replayed record.
 
-**Open decisions** — (1) Default-`json`-when-piped vs always-`table`. (2) The `%{anomalous}` token only being meaningful for `quick-fuzz` (server only sets it there). (3) Whether `quiet` should exit non-zero when the single value is empty. (4) Token-efficiency cap defaults (50 rows, 256-byte body preview).
+When both request and response are present, the separator is `\r\n\x1e\r\n`. A valid Base64 body is
+used where supplied; otherwise the text projection is UTF-8 encoded. Missing `Host` and reason text are
+reconstructed from structured values.
 
-**Where to look** — §1 (four formats) and §3 (`-w` grammar) are the load-bearing sections. §4 is the agent contract.
+This is deterministic rendering of the extension's structured representation, not proof of the
+original request or response wire bytes. See PC-07 and the transport boundary in
+[`ALGORITHMS.md`](ALGORITHMS.md).
 
----
+## Quiet
 
-## 0 · Scope, axioms, and how to read this
+Quiet output is allowlisted. It never guesses an essential value from dictionary order. The
+implemented allowlist is:
 
-This document specifies **only output** — what bytes leave `bp` on stdout/stderr, in what shape,
-under which flags. It does **not** re-specify the API (see SPEC §6) or the `--pos` grammar (SPEC §5).
-
-Each requirement is tagged with a criticality scale: `[IMPORTANCE][BLOCKS:level]`.
-
-### 0.1 · Axioms (load-bearing, apply everywhere)
-
-- **[CRITICAL][BLOCKS:critical] A1 — One output model, every command.** The four global flags
-  (`--format`, `--fields`, `-w/--write-out`, `--quiet`) plus `--tag` / `--no-ledger` exist on
-  **every** `bp` subcommand. No command invents its own output flags.
-- **[CRITICAL][BLOCKS:high] A2 — Data to stdout, diagnostics to stderr.** Records, tables, and
-  `-w` lines go to **stdout**. Errors, warnings, Pro/Community degradation notices, and progress
-  go to **stderr**. A consumer reading stdout never sees a human warning mixed into data.
-- **[CRITICAL][BLOCKS:high] A3 — Stable JSON schema for agents.** In `--format json`, field
-  **names, types, and order are frozen** per the field catalog (§2). New fields may be *appended*
-  (never reordered, never renamed) — additive-only, mirroring the Kotlin `ignoreUnknownKeys` /
-  `encodeDefaults` contract (SPEC §8).
-- **[HIGH][BLOCKS:high] A4 — Default format is context-aware.** `table` when stdout is a TTY;
-  `json` when stdout is piped, redirected, or `BP_AGENT=1` is set. This is the single biggest
-  AX-friendliness lever: an agent piping `bp` gets parseable JSON with zero flags.
-  _(v1.1 — not yet implemented; the current default is `table` for all streams — pass `--format json` for agents/pipes)_
-- **[HIGH][BLOCKS:none] A5 — Never dump full bodies by default.** Response bodies are summarized
-  (preview-capped) unless the user explicitly asks (`--fields body` or `--format raw` on a single
-  record). Token efficiency is a contract, not a courtesy (SPEC handoff: "summarise, don't dump").
-- **[HIGH][BLOCKS:low] A6 — Determinism.** Same input → same byte output (modulo timing fields).
-  Field order, number formatting, and null rendering are fixed. No locale-dependent formatting.
-- **[MEDIUM][BLOCKS:none] A7 — Ledger is orthogonal to format.** What you *see* and what gets
-  *recorded* are decoupled: changing `--format` never changes what the ledger stores (§6).
-
-### 0.2 · Precedence of output flags (deterministic resolution)
-
-When multiple output flags are combined, resolve in this exact order:
-
-```
-1. --write-out / -w   → if present, it OWNS stdout. --format and --fields are ignored for
-                        record rendering. (-w is itself a format.)
-2. --quiet            → if present (and no -w), emit only the single essential value per record.
-3. --format           → json | table | raw  (explicit beats the A4 default).
-4. --fields           → applies ONLY to json and table; selects + orders columns.
-5. default (A4)        → table if TTY else json.
+```text
+health
+proxy
+req
+fuzz
+send
+collab new
+collab poll
+scan issues
+scope check
+history list
+history get
+log
+tag
+check auth
+check idor
+check headers
+check cors
+check endpoints
 ```
 
-- **[CRITICAL][BLOCKS:high] R-PREC** `-w` and `--quiet` are mutually exclusive with each other;
-  supplying both is a usage error (exit 2, stderr). `-w` + `--format` is *not* an error —
-  `--format` is simply ignored for rows (it may still affect the ledger-disabled banner, which is
-  stderr anyway).
-- `--fields` with `--format raw` is a usage error (raw has no columns) → exit 2.
+| Command | Quiet projection |
+|---|---|
+| `health` | successful response `status` |
+| `proxy`, `req`, `history list|get`, `log`, `tag` | record `id` |
+| `fuzz`, `send` | response/status value; fuzz error rows use sentinel `0` because no HTTP status exists |
+| `collab new` | each payload host |
+| `collab poll` | each interaction id, or `none` when there are no interactions |
+| `scan issues` | issue severity |
+| `scope check` | `in-scope` or `out-of-scope` |
+| `check *` | `vulnerable`, `clean`, or `inconclusive` |
 
----
+A command outside the allowlist emits zero quiet stdout bytes. An absent single essential value also
+emits zero bytes, not a fabricated value or a guaranteed blank line. Request failure does not
+synthesize `down`; it follows the ordinary error path.
 
-## 1 · The four formats
+## Field shapes that matter to automation
 
-Every command family below shows the same underlying records (`bp fuzz results`) rendered four ways,
-then per-family deltas. The canonical example record set is two intruder `quick-fuzz` results.
+These are renderer/input shapes, not a promise that every server key always appears.
 
-### 1.1 · `json` — agent-native, compact, stable
+### Client-side fuzz rows
 
-- **[CRITICAL][BLOCKS:critical] F-JSON** One **record per line** (NDJSON / JSON-Lines), compact
-  (no pretty-print, mirroring server `prettyPrint=false`, SPEC §8). Each line is a complete,
-  independently-parseable JSON object. **No outer array.** This lets an agent stream-parse line by
-  line and stop early without reading the whole set.
-- Field order is the catalog order (§2). All declared fields are present (`encodeDefaults=true`
-  parity) — nulls render as `null`, never omitted.
-- A single-record command (e.g. `bp repeater send`) emits exactly **one** line.
-- Numbers are JSON numbers (no quotes); booleans are `true`/`false`; strings are JSON-escaped.
-
-```
-$ bp fuzz results a1b2c3d4 --format json
-{"index":0,"payload":"admin","status":200,"length":1487,"time":42,"contentType":"application/json","anomalous":false,"location":null,"requestId":318}
-{"index":1,"payload":"' OR 1=1--","status":500,"length":622,"time":58,"contentType":"text/html","anomalous":true,"location":null,"requestId":319}
+```text
+index, payloads, status, length, duration_ms, anomalous, baseline, error, error_code
 ```
 
-- **Envelope handling:** the server wraps responses in `ApiResponse<T>` (SPEC §8). `bp` **unwraps**
-  it: on `success:true` it emits `data`'s records; on `success:false` it emits an error object to
-  **stderr** (§5) and prints nothing to stdout. The agent never has to parse the envelope.
-- **Optional metadata line:** with `--meta`, the FIRST stdout line is a single object
-  `{"_meta":{...}}` carrying counts/paging (`total`, `shown`, `truncated`, `attackId`). Off by
-  default to keep the stream pure records. `_meta` is the only key allowed to lead with `_`.
+The baseline has index `-1`. `payloads` may contain strings or a `{"b64":"..."}` member for a binary
+payload. Error rows are retained under `--anomalous-only`. A baseline error stops all payload shots;
+`CONNECTION_REFUSED`, `TRANSPORT_ERROR`, `NO_RESPONSE`, and `INVALID_RESPONSE` stop the remaining
+prepared corpus after the triggering row. `NO_RESPONSE` is terminal and maps to exit 3.
 
-### 1.2 · `table` — aligned human view
+Fuzz `length` uses exact decoded response bytes when the response model carries them. Text-only models
+cannot preserve arbitrary malformed UTF-8; PC-07 states that proof ceiling.
 
-- **[HIGH][BLOCKS:low] F-TABLE** Column-aligned, fixed header row, one record per line. Columns =
-  `--fields` selection or the family default set. Long values are **truncated with `…`** to keep
-  rows on one screen line (default terminal width, or `$COLUMNS`); the untruncated value is always
-  available in `json`/`raw`.
-- Header is uppercase field names. Null renders as empty cell (`-` is reserved; we use blank).
-- Numbers right-aligned, strings left-aligned. This is the **only** format that targets eyeballs.
+### Proxy list
 
-```
-$ bp fuzz results a1b2c3d4 --format table
-INDEX  PAYLOAD      STATUS  LENGTH  TIME  CONTENTTYPE        ANOMALOUS
-0      admin        200     1487    42    application/json   false
-1      ' OR 1=1--   500     622     58    text/html          true
+```text
+id, method, url, status
 ```
 
-### 1.3 · `raw` — deterministic single-record HTTP representation
+`id` remains the absolute Burp proxy-history index after filtering/pagination.
 
-> **v2.1.0 contract:** `bp req`, `bp send`, `bp history get`, and `bp history replay` reconstruct
-> the HTTP representation described below from the extension's structured fields. The result is not
-> evidence of original target wire bytes or framing; see `CLI.md`'s `--pos`/structured-bridge ceiling.
+### Extension history
 
-- **[HIGH][BLOCKS:none] F-RAW** Emits a deterministic reconstructed HTTP representation with no
-  wrapper or field selection. `bp send` emits its response; `bp req` emits request plus optional
-  response; `bp history get` emits its stored request plus optional response; and `bp history replay`
-  emits the replayed record rather than the original comparison record.
-- **[HIGH][BLOCKS:low] R-RAW-SINGLE** Every other command rejects `raw` before execution with a usage
-  error directing the caller to `--format json`. `--fields` is incompatible with `raw`.
-- When both request and response exist, they are separated by `\r\n\x1e\r\n`. Bodies use a valid
-  `bodyBase64` value when present and otherwise UTF-8 encode the text projection. Missing `Host` is
-  reconstructed from the absolute URL; the status reason phrase comes from the standard HTTP registry.
+List rows are:
 
-```
-$ bp --format raw send 42
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{"ok":true,...}
+```text
+id, method, url, statusCode
 ```
 
-### 1.4 · `quiet` — command-specific essential values
+A `history get` record may expose:
 
-> **v2.1.0 gap:** any CLI command not listed in §1.5 has no defined essential value and emits no
-> quiet stdout rather than guessing from response key order or leaking a container representation.
-
-- **[CRITICAL][BLOCKS:high] F-QUIET** Prints only the **one most essential value** per record,
-  one per line, nothing else — no header, alignment, or key. Select it with `--format quiet`.
-- Designed for shell composition: `if [ "$(bp --format quiet scope check URL)" = "in-scope" ]`.
-- Empty/absent essential value renders as an empty line. **[MEDIUM][BLOCKS:none] OPEN-Q1:** should
-  an empty essential value force exit≠0? Default: **no** (presence of the record is success).
-
-```
-$ bp fuzz results a1b2c3d4 --format quiet
-200
-500
+```text
+id, source, method, url, host, reqHeaders, reqBody,
+statusCode, resHeaders, resBody, durationMs, timestamp
 ```
 
-### 1.5 · Per-family essential value (what `quiet` prints)
+`history replay` returns `original`, nullable `replayed`, and `persistence`. A null replayed row means
+the target send completed but optional history recording produced no row; inspect persistence and do
+not retry merely to obtain an ID. The list, detail, and replay shapes are intentionally distinct. The
+output layer does not rename `statusCode` to `status`, invent `reqLength`/`length`, or flatten absent
+server fields.
 
-- **[HIGH][BLOCKS:low] R-ESSENTIAL** Each family declares its single `quiet` value:
+### Repeater send
 
-| Command family | `--format quiet` prints | Rationale |
-|---|---|---|
-| `bp fuzz` | `status` (HTTP code) | the headline triage signal |
-| `bp send` | response `statusCode` | did the replay land |
-| `bp proxy` / `bp history list|get` | `id` | feed the next command |
-| `bp scan issues` | `severity` | triage |
-| `bp collab poll` | `interactionId` (or `none`) | did OOB fire |
-| `bp collab new` | the payload host | the thing you paste into a target |
-| `bp scope check` | `in-scope` \| `out-of-scope` | branch a script |
-| `bp health` | `ok` \| `down` | liveness gate |
-| `bp log` / `bp tag` | `id` | identify a ledger row |
-| `bp check *` | `vulnerable` \| `clean` \| `inconclusive` | one-word verdict |
+The returned top-level shape is:
 
----
-
-## 2 · `--fields` selection + the FIELD CATALOG
-
-### 2.1 · `--fields` semantics
-
-- **[CRITICAL][BLOCKS:high] R-FIELDS** `--fields f1,f2,...` selects **which** fields appear and
-  **in what order** for `json` and `table`. The given order is honored exactly (overrides catalog
-  default order for display; the *stable* catalog order still defines the canonical schema when
-  `--fields` is absent — A3).
-- Unknown field name → usage error (exit 2, stderr lists valid fields). Case-insensitive match,
-  canonical-cased on output.
-- `--fields all` selects the full catalog in catalog order. `--fields '*'` is a synonym.
-- Field names are **stable identifiers** (camelCase, matching the Kotlin contract SPEC §8 where a
-  server field exists). Computed/CLI-only fields (e.g. `time` alias for `durationMs`) are documented
-  per catalog.
-- With `--format json`, omitting a field via `--fields` **does** remove it from the line (this is an
-  explicit user narrowing, not a schema break — A3 protects the *default* schema, not user-narrowed
-  output).
-
-### 2.2 · FIELD CATALOG — per command family
-
-Catalog order = canonical JSON order. `★` marks the `quiet` essential value. `srv:` notes the
-source Kotlin field (SPEC §6/§8); `cli:` marks a `bp`-computed field.
-
-#### 2.2.1 · `bp fuzz` synchronous client-side results
-
-| Field | Type | Source | Notes |
-|---|---|---|---|
-| `index` | int | cli | `-1` for the explicit fresh baseline; payload rows are 0-based |
-| `payloads` | list[string] | cli | empty for the baseline; values applied for a payload row |
-| `status` ★ | int | srv:`response.statusCode` | target HTTP status |
-| `length` | int | cli | UTF-8 byte length of the response text projection, not exact raw-byte length for malformed UTF-8 (PC-07) |
-| `duration_ms` | int | srv:`durationMs` | Burp send duration |
-| `anomalous` | bool | cli | status or byte-length divergence from the fresh baseline |
-| `baseline` | bool | cli | exactly one first row per valid fuzz invocation |
-| `error` | string\|null | cli | typed send/response-shape error; null when a target response exists |
-| `error_code` | string\|null | cli | stable Burp error code used for process exit mapping |
-
-All nine fields are emitted by default. `--anomalous-only` retains the baseline and every error row,
-removing only successful non-anomalous payload rows, so every filtered set carries its control and
-transport gaps.
-
-Malformed UTF-8 is replaced with U+FFFD before `length` is computed. The projection is therefore
-non-injective: two raw response bodies that differ only in malformed byte sequences can become the same
-text and the same `length`. Fuzz's length comparison cannot distinguish those responses; use an
-original-byte capture when that difference is part of the oracle (PC-07).
-
-#### 2.2.2 · `bp proxy history` (`ProxyHistoryEntry`, SPEC §6.2)
-
-| Field | Type | Source | Notes |
-|---|---|---|---|
-| `id` ★ | int | cli/srv | absolute index in current Burp proxy history, preserved across filtering and offsets |
-| `method` | string | cli:`request.method` | |
-| `url` | string | cli:`request.url` | full URL |
-| `status` | int\|null | cli:`response.statusCode` | null when no response is attached |
-
-Default fields: `id,method,url,status`. Other nested request/response fields are available only from
-`bp req <id> --format json`; they are not valid `bp proxy --fields` projections.
-
-#### 2.2.3 · `bp history` (DB-backed `HistoryEntryResponse`, SPEC §6.13)
-
-> **[HIGH][BLOCKS:high] R-HIST-404** This family 404s entirely if the SQLite DB failed to init
-> (SPEC §6.13). `bp` detects the 404 and prints to **stderr**: *"history unavailable: extension DB
-> not initialized"* and exits **1** (generic error). It does NOT emit an empty success.
-
-| Field | Type | Source | Notes |
-|---|---|---|---|
-| `id` ★ | long | srv:`id` | **Long** (SPEC §8) — stable DB key |
-| `method` | string | srv | |
-| `host` | string | srv | |
-| `url` | string | srv | |
-| `status` | int\|null | srv:`statusCode` | |
-| `source` | string | srv | proxy\|repeater\|replay\|intruder |
-| `reqLength` | int\|null | cli: len(reqBody) | |
-| `length` | int\|null | srv | response length |
-| `since` / `timestamp` | string\|null | srv | ISO8601 |
-| `reqBody` | string\|null | srv | capped; opt-in |
-| `resBody` | string\|null | srv | capped; opt-in |
-
-Default fields: `id,method,status,host,url,source,length`.
-
-#### 2.2.4 · `bp scanner issues` (`ScanIssue`, SPEC §6.6)
-
-| Field | Type | Source | Notes |
-|---|---|---|---|
-| `name` | string | srv | issue title |
-| `severity` ★ | string | srv | HIGH\|MEDIUM\|LOW\|INFORMATION\|FALSE_POSITIVE |
-| `confidence` | string | srv | CERTAIN\|FIRM\|TENTATIVE |
-| `url` | string | srv | affected URL |
-| `host` | string | cli: parsed from url | |
-| `typeIndex` | long | srv | **always 0L** (SPEC §6.6 flag) → render as-is but documented dead |
-| `detail` | string\|null | srv | capped; opt-in |
-
-Default fields: `severity,confidence,name,url`. Sorted by severity rank (HIGH→…) then confidence.
-
-#### 2.2.5 · `bp collaborator poll` / `new`
-
-> **[HIGH][BLOCKS:high] R-COLLAB-PRO** Pro-only. On Community / unconfigured → server 503. `bp`
-> prints to **stderr**: *"collaborator requires Burp Suite Professional"* and exits **4** (`PRO_REQUIRED`).
-
-An invocation without `--fields` preserves the response wrapper. Explicit wrapper fields and record
-fields are separate projections and cannot be mixed in one selection:
-
-| Command | Wrapper fields | Record fields selected from each nested record |
-|---|---|---|
-| `collab new` | `payloads` | `id`, `payload` ★, `interactionId` |
-| `collab poll` | `found`, `interactions`, `queriedPayloadId` | `id`/`interactionId` ★, `type`, `clientIp`, `timestamp`, `details`, `clientPort` |
-
-When a poll interaction carries the server field `id`, an `interactionId` projection aliases it to the
-documented output name. Every declared payload/interaction leaf is materialized before projection;
-an optional leaf absent from a returned record therefore renders as `null` in JSON or blank in a table,
-not as a post-poll unknown-field usage error. This remains true when the leaf is absent from every
-returned interaction. Record-field JSON output is NDJSON. Quiet generation prints each payload host;
-quiet polling prints each interaction id, or `none` when the interaction list is empty.
-
-#### 2.2.6 · `bp repeater send` (single record: req+resp+timing, SPEC §6.3)
-
-| Field | Type | Source | Notes |
-|---|---|---|---|
-| `status` ★ | int | srv | response code |
-| `length` | int | srv | response length |
-| `time` | int(ms) | srv | round-trip |
-| `method` | string | cli/srv | request method sent |
-| `host` | string | cli | |
-| `contentType` | string\|null | srv | |
-| `location` | string\|null | cli: `Location:` | |
-| `requestId` | int\|null | srv | history index if persisted |
-| `reqRaw` / `resRaw` | string | srv | raw bytes — surfaced via `--format raw`, not table |
-
-Default fields: `status,length,time,method,host,contentType`.
-
-#### 2.2.7 · `bp log` / `bp tag` (Run Ledger operation row)
-
-| Field | Type | Source | Notes |
-|---|---|---|---|
-| `id` ★ | string | ledger | time-prefixed local key |
-| `ts` | string | ledger | ISO-8601 operation time |
-| `command` | string\|null | ledger | subcommand name, not full argv |
-| `burp_op` | string\|null | ledger | REST method/path |
-| `target` | string\|null | ledger | Burp REST listener host[:port], not application host |
-| `program` / `tag` | string\|null | ledger | reserved workspace / retroactive label |
-| `status` | string | ledger | `ok`, `error`, or `refused` |
-| `exit_code` / `error_code` | int\|null / string\|null | ledger | process and typed-error outcome |
-| `req_sha256` / `resp_sha256` | string\|null | ledger | REST-envelope hashes; not raw bodies |
-| `resp_status` / `resp_len` / `duration_ms` | int\|null | ledger | REST exchange metadata |
-| `req_ref` / `resp_ref` | string\|null | ledger | reserved; currently null |
-
-Default fields: every field above in schema order. Use `--fields` to project an export.
-
-#### 2.2.8 · `bp config get|set project|user`
-
-`config get` exposes `config,excludedPaths`. `config set` exposes the response contract in canonical
-order: `applied,config,excludedPaths,warning`. `applied` is always true for a successful import;
-`config` is null when Burp cannot export the post-import state; `warning` is then the sanitized
-caller instruction not to retry. A non-null warning remains in structured stdout when selected and is
-also emitted as a diagnostic on stderr before rendering, so quiet and a projection such as
-`--fields applied` cannot conceal it. Config commands have no declared quiet essential value and emit
-no quiet stdout.
-
----
-
-## 3 · `-w` / `--write-out` template grammar
-
-The headline AX feature: a curl-style template that prints exactly the bytes you ask for, per record.
-
-### 3.1 · Headline example
-
-```
-$ bp fuzz --id 42 --pos 'body:q' --payloads xss.txt --type sniper -w '%{status} %{payload}'
-200 <script>alert(1)</script>
-403 ' OR '1'='1
-500 ../../etc/passwd
+```text
+request, response, durationMs, hasResponse, persistence
 ```
 
-Exactly one line per result: HTTP code, a space, the payload. No header, no envelope, no extra
-columns. `-w` owns stdout (R-PREC).
-
-### 3.2 · Token list (full)
-
-- **[CRITICAL][BLOCKS:high] R-WTOK** The template is literal text with `%{token}` substitutions.
-  Tokens resolve **per record**; the template is applied once per emitted record (one line of
-  output per record, unless the template itself contains no newline — see §3.4). See §3.1 for the headline example.
-
-| Token | Value | Source / notes |
-|---|---|---|
-| `%{status}` | HTTP status code (int) | `statusCode`; `0` on transport error |
-| `%{length}` | response byte length (int) | |
-| `%{time}` | round-trip ms (int) | `durationMs` |
-| `%{payload}` | injected payload (string) | empty for non-fuzz records |
-| `%{location}` | `Location:` header value | empty if absent |
-| `%{anomalous}` | `true`/`false`/empty | empty when not meaningful (R-ANOM); `true`/`false` only in quick-fuzz |
-| `%{contentType}` | response Content-Type | empty if absent |
-| `%{index}` | 0-based record index (int) | |
-| `%{requestId}` | history index (int) | empty if not persisted |
-| `%{host}` | target host (string) | parsed from request URL |
-| `%{method}` | request method (string) | GET/POST/… |
-
-- **[HIGH][BLOCKS:low] R-WCATALOG** A token that names a **catalog field** for the current family
-  but is not in the above core list resolves to that field's value (e.g. `%{severity}` on
-  `bp scanner issues`, `%{interactionId}` on `bp collaborator poll`, `%{tag}` on `bp log`).
-  The core 11 tokens above are guaranteed on **every** family (resolving to empty where the family
-  lacks them). This keeps the headline contract universal while letting power users reach any field.
-- **[MEDIUM][BLOCKS:none] R-WUNKNOWN** An unknown token (not core, not a catalog field) is a usage
-  error (exit 2) — fail loud, do not silently emit the literal `%{...}`. Rationale: a silent
-  passthrough hides agent typos.
-
-### 3.3 · Escaping & literals
-
-- **[HIGH][BLOCKS:low] R-WESC** Escape sequences in the template are interpreted: `\n` newline,
-  `\t` tab, `\r` CR, `\\` backslash, `\%` literal percent-not-a-token. A literal `{` or `}` outside
-  a `%{...}` needs no escaping. To emit a literal `%{` write `%%{`.
-- Values are inserted **verbatim** (no shell-quoting, no JSON-escaping) — `-w` is for building your
-  own line format; if you need safe quoting, use `--format json`. **[HIGH][BLOCKS:none] R-WSAFE:**
-  because payloads can contain newlines/control bytes, `bp` replaces raw `\n`/`\r` *inside a token
-  value* with their escaped forms (`\n`→`\\n`) so one record stays on one line — UNLESS `--raw-w`
-  is passed (then verbatim, caller owns parsing).
-- A trailing newline is appended after each record's rendered template unless the template already
-  ends in `\n` (no double newline). If the template ends with `\c` (curl-style), the trailing
-  newline is suppressed.
-
-### 3.4 · Defaults & interaction
-
-- `-w` with no `%{}` token prints the literal string once per record (rarely useful; allowed).
-- `-w` ignores `--fields` (it has its own field references) and ignores `--format` for rows
-  (R-PREC). It does **not** suppress stderr diagnostics or the ledger.
-- **Single-record commands** (`bp repeater send`, `bp scope check`) apply the template once.
-- `--meta` is incompatible with `-w` (no place to put it) → ignored with a stderr note.
-
-### 3.5 · Worked examples
-
-```
-# Triage table-free: code + length + payload, tab-separated
-bp fuzz --id 7 --pos 'header:X-Forwarded-For' --payloads ips.txt \
-        -w '%{status}\t%{length}\t%{payload}'
-
-# Only anomalous lines, CSV-ish, for a spreadsheet
-bp fuzz --id 7 --pos 'body:role' --payloads roles.txt --anomalous-only \
-        -w '%{index},%{status},%{anomalous},%{payload}'
-
-# Collaborator: print just the host you paste into a target
-bp collaborator new -w '%{payload}'        # one host, no decoration
-
-# History: build replay one-liners for a shell loop
-bp history --host t.com -w 'bp history replay --id %{id}  # %{method} %{url}'
-
-# Scanner: severity + url, ready to grep
-bp scanner issues SCAN_ID -w '%{severity}\t%{url}\t%{name}'
-```
-
----
-
-## 4 · Agent-mode (AX) contract
-
-This is the contract an AI agent (or `bb-fetch`-style harness) relies on. It is the reason `json` is
-the default when piped (A4).
-
-### 4.1 · Activation
-
-- **[CRITICAL][BLOCKS:high] AX-ACTIVATE** Agent mode is active when ANY of: `BP_AGENT=1` in env,
-  or `--format json` explicit. _(v1.1 — TTY-detection trigger not yet implemented; until then, always
-  pass `--format json` explicitly for agent/pipe use.)_ In agent mode the default format is `json`
-  and human niceties (color, spinners, progress bars) are **fully suppressed** (they would corrupt
-  stdout *and* stderr parsing).
-
-### 4.2 · The stable schema guarantee
-
-- **[CRITICAL][BLOCKS:critical] AX-SCHEMA** For a given command + version, JSON output is:
-  - **NDJSON**, one record per line, no outer array (F-JSON).
-  - **Fixed field set & order** = catalog default order (§2) when `--fields` is absent.
-  - **All fields present every time** (`encodeDefaults` parity) — agents may rely on key presence;
-    missing-data is `null`, never an absent key.
-  - **Types fixed** per catalog. `status` is always an int; `anomalous` always bool-or-null.
-  - **Additive evolution only.** A new release may append a new trailing field; it may never rename,
-    retype, or reorder existing fields without a major version bump. `bp --schema fuzz-results`
-    prints the JSON Schema for that record type for agent self-description.
-- **[HIGH][BLOCKS:low] AX-VERSION** Every command accepts `--schema-version` and `bp version
-  --format json` reports `{"bp":"x.y.z","schema":"N"}`. Agents pin `schema`.
-
-### 4.3 · Token-efficiency rules (anti-dump)
-
-- **[HIGH][BLOCKS:high] AX-CAP-ROWS** Multi-record output is **capped at 50 records by default**
-  (`--limit`, `--limit 0` = no cap). When capped, a `_meta` line (if `--meta`) reports
-  `{"total":N,"shown":50,"truncated":true}`; without `--meta` the cap is silent on stdout but noted
-  on **stderr** (`shown 50/318 — use --limit 0 for all`). Agents never get a surprise 10k-line dump.
-- **[HIGH][BLOCKS:high] AX-CAP-BODY** Response bodies are **never** in default output. `bodyPreview`
-  is capped at **256 bytes** (configurable `--preview-bytes`), control chars escaped. Full body only
-  via explicit `--fields resBody` / `bp history get <id> --format raw` / `--index N --format raw`.
-- **[HIGH][BLOCKS:none] AX-SUMMARIZE** For large fuzz sets, `bp fuzz summary <attackId>` emits a
-  single JSON object aggregating by status code + anomaly count, instead of N rows:
-  ```
-  {"attackId":"a1b2c3d4","total":318,"byStatus":{"200":300,"403":15,"500":3},"anomalous":3,"slowest":620}
-  ```
-  This is the **recommended first call** for an agent triaging a big attack — cheap, then drill in
-  with `--anomalous-only`.
-- **[MEDIUM][BLOCKS:none] AX-NO-PRETTY** Never pretty-print in agent mode (compact NDJSON). A human
-  wanting pretty JSON uses `bp ... --format json --pretty` (TTY only; `--pretty` is ignored/declined
-  in agent mode to protect line-parsers).
-
-### 4.4 · How an agent parses `bp` (target contract; local-error exception in v2.0.0)
-
-```
-1. Pass --format json (v2.0.0 does not auto-detect pipes).
-2. Read successful stdout line by line; json.loads(line) parses each record.
-3. On empty stdout + exit 0, treat it as zero records.
-4. On exit != 0, a runtime/server failure in JSON mode is one JSON object on stderr.
-   Local callback validation and Typer parser failures are human/Rich text in v2.0.0 (D22),
-   so stderr is not universally JSON-parseable.
-5. Treat unshipped schema/summary/index commands mentioned later in this historical document as
-   design material, not available recovery paths.
-```
-
-- **[HIGH][BLOCKS:high] AX-STDERR-JSON (partially shipped)** Runtime/server errors in JSON mode use one JSON object. Local validation/parser errors violate that representation in v2.0.0 (D22). Human mode uses prose.
-
-### 4.5 · Determinism for agents
-
-- **[HIGH][BLOCKS:none] AX-DETERMIN** Ordering is fixed: fuzz results by `index` asc; history by
-  `id` desc (matches server, SPEC §6.13); issues by severity rank then confidence; ledger by `id`
-  desc. Timing fields (`time`, `timestamp`) are the only non-deterministic values and are clearly
-  scoped so a diff-based agent can ignore them.
-
----
-
-## 5 · Exit codes, error routing, and `--quiet` interaction
-
-### 5.1 · Stream routing
-
-- **[CRITICAL][BLOCKS:high] E-STREAMS** **stdout = data only.** **stderr = everything else**
-  (errors, warnings, Pro/Community degradation, progress, the AX truncation note). Ordinarily a
-  command that fails before producing data prints nothing to stdout. **Fuzz partial-evidence
-  exception:** after any `/repeater/send` attempt, `bp fuzz` emits one data row for that attempt even
-  if a later shot fails, then writes a summary error to stderr and exits with the highest applicable
-  stable error category. This preserves request/result cardinality without turning a transport error
-  into `anomalous:true`.
-
-### 5.2 · Error object shape
-
-- **[HIGH][BLOCKS:low] E-SHAPE (runtime/server errors)** The server's `ApiError{code,message}` (SPEC §8) is surfaced. In
-  JSON mode, a runtime/server failure carries exactly one line. Local callback/parser failures are the
-  v2.0.0 exception (D22):
-  ```
-  {"error":{"code":"INVALID_REQUEST","message":"exactly one of request/requestId required","httpStatus":400,"burpOp":"POST /repeater/send"}}
-  ```
-  `code` is the server code (`INVALID_REQUEST` / `SERVICE_UNAVAILABLE` / `INTERNAL_ERROR` /
-  `INVALID_PARAM`) or a `bp`-side code (`BP_USAGE`, `BP_CONN_REFUSED`, `BP_PRO_REQUIRED`,
-  `BP_DB_UNAVAILABLE`). In human mode it is one prose line: `error: exactly one of request/requestId
-  required (INVALID_REQUEST)`.
-
-### 5.3 · Exit code table
-
-- **[CRITICAL][BLOCKS:high] E-EXIT** Exit codes are the shipped set, defined in `CLI.md §Output`
-  and implemented in `cliutil.py`. The earlier `sysexits.h` mapping (codes 64/65/68/69/70/76) was
-  superseded — agents and scripts must branch on the table below, not on `sysexits` values. In
-  v2.0.0 a structured inconclusive check still exits 0 (D60); callers must inspect
-  `inconclusiveCount` until a new nonzero, non-5 contract is implemented and documented.
-
-| Exit | Meaning | When |
-|---|---|---|
-| `0` | success | request ok (even if 0 records, even if HTTP 4xx/5xx *target* response — see E-TARGET) |
-| `1` | generic error | uncategorized `bp` error |
-| `2` | usage error | bad flag combo, unknown field/token |
-| `3` | transport failure | REST connection/transport failure and fuzz `NO_RESPONSE` |
-| `4` | `PRO_REQUIRED` | Pro-only feature (collaborator, scanner start) used on Community |
-| `5` | confirmed finding | a `bp check` classifier reports a confirmed finding, not an anomaly |
-
-- **[HIGH][BLOCKS:high] E-TARGET** Critical distinction: a **target** HTTP 403/500 (the thing you
-  fuzzed responded 500) is a **successful `bp` operation** → exit `0`, `status:500` in the record.
-  Exit codes describe whether **`bp` + Burp** worked, never the target's HTTP status. An agent reads
-  the target status from the `status` field, not the exit code. (This is why `--fail-on-anomalous`
-  is opt-in, for the narrow scripting case that wants a non-zero gate.)
-
-### 5.4 · `--quiet` × errors
-
-- **[HIGH][BLOCKS:low] E-QUIET** `--quiet` affects **stdout only**. Errors still go to **stderr**
-  and still set the exit code. So:
-  - Success → essential value(s) on stdout, exit 0.
-  - Failure before data → nothing on stdout, error on stderr, exit per §5.3.
-  - Fuzz partial failure after a shot attempt → essential values for retained baseline/error rows on
-    stdout, summary error on stderr, typed non-zero exit. Use `--format json`, not `quiet`, when the
-    error details themselves are evidence.
-  - This makes `V=$(bp scope check --url X --quiet) || handle_error` correct: on failure `$V` is
-    empty and the `||` branch fires.
-- **[MEDIUM][BLOCKS:none] E-QUIET-EMPTY** (re OPEN-Q1) A successful op that yields an empty
-  essential value prints an empty line, exit `0` by default. `--strict` upgrades empty-essential to
-  exit `1`.
-
----
-
-## 6 · Composition with the Run Ledger
-
-### 6.1 · Every bp REST call is recorded
-
-- **[MEDIUM][BLOCKS:none] L-RECORD** Every attempted call from `bp` to `:8089` writes one
-  **LedgerEntry** to `~/.bp/` SQLite, independent of `--format`. It stores operation metadata:
-  command name, REST listener, `burpOp`, REST request/response hashes, REST HTTP status/length,
-  duration, outcome, exit code, and optional tag. It does not store target bodies and does not
-  observe curl, xh, browser, or other proxy traffic.
-- **[MEDIUM][BLOCKS:none] L-GRAIN** Granularity is one row per REST call, not one row per CLI
-  invocation or rendered result. A fuzz with N payloads makes one history fetch plus N+1
-  `/repeater/send` calls (one explicit fresh baseline plus N payload sends) and therefore N+2 Run
-  Ledger rows. It makes N+1 target sends and returns N+1 result rows, preserving request/result
-  bijection. `req_ref` and `resp_ref` are currently null; no `bp show` command is shipped.
-  Target-request evidence remains caller-owned: `bp send` cannot safely auto-persist the exact target
-  URL because it may carry a credential, and Run Ledger hashes are not a substitute.
-
-### 6.2 · `bp tag` and `--no-ledger`
-
-- **[MEDIUM][BLOCKS:none] L-TAG** Global run-time `--tag NAME` is not shipped. After an operation,
-  `bp tag <opId> NAME` writes a retroactive metadata label; `bp log --tag NAME` then filters it.
-- **[HIGH][BLOCKS:none] L-NOLEDGER** `--no-ledger` suppresses the ledger write for that one
-  invocation. Use for dry-runs, health polls, or when an entry would be noise. It does **not** affect
-  stdout/stderr/exit at all. A `--no-ledger` op leaves **zero** trace in `~/.bp/` (verifiable: ledger
-  count unchanged).
-- **[LOW][BLOCKS:none] L-READONLY** Local `bp log` / `bp tag` operations do not call `:8089` and
-  do not create Run Ledger rows themselves. `bp --version` is likewise local; `bp version` calls the
-  extension and is recorded by default.
-
-### 6.3 · Stored references and re-rendering are not shipped
-
-- `req_ref` and `resp_ref` exist in the SQLite schema but current operations leave them null.
-  `bp show <id>` and result re-rendering are not commands in the shipped CLI. `bp log --format json`
-  exports the metadata rows that do exist; it cannot reconstruct a target request or response from
-  their hashes.
-
-### 6.4 · Ledger banner discipline
-
-- **[HIGH][BLOCKS:none] L-BANNER** When an op is recorded, `bp` may emit a one-line confirmation
-  (`recorded as ledger #17 [tag: ssrf-probe]`) — but **only to stderr**, never stdout, so it never
-  contaminates data or `-w` output. With `--no-ledger`, no banner. In agent mode the banner is
-  suppressed entirely (it's noise for a parser; the agent can run `bp log --limit 1` for the id).
-
----
-
-## 7 · Cross-cutting requirements summary (criticality-grouped)
-
-### CRITICAL
-
-- [CRITICAL][BLOCKS:critical] A1 — one output model (4 flags) on every command.
-- [CRITICAL][BLOCKS:critical] F-JSON / AX-SCHEMA — NDJSON, frozen field order, additive-only.
-- [CRITICAL][BLOCKS:critical] R-FIELDS catalog is source-grounded (SPEC §6/§8), no invented fields.
-- [CRITICAL][BLOCKS:high] A2 / E-STREAMS — data→stdout, errors→stderr, fail = empty stdout.
-- [CRITICAL][BLOCKS:high] A3 — stable agent schema, additive evolution only.
-- [CRITICAL][BLOCKS:high] F-QUIET — single essential value per family.
-- [CRITICAL][BLOCKS:high] R-WTOK — full 11-token `-w` grammar (see §3.1 for the headline example).
-- [CRITICAL][BLOCKS:high] E-EXIT / E-TARGET — shipped exit codes (0/1/2/3/4); target HTTP status ≠ exit code.
-- [CRITICAL][BLOCKS:high] AX-ACTIVATE — agent mode = non-TTY/BP_AGENT/explicit json.
-
-### HIGH
-
-- [HIGH][BLOCKS:high] A4 — context-aware default format (table TTY / json piped) _(v1.1 — not yet implemented; default is `table` for all streams)_.
-- [HIGH][BLOCKS:high] AX-CAP-ROWS / AX-CAP-BODY — anti-dump caps (50 rows, 256-byte preview).
-- [HIGH][BLOCKS:high] R-HIST-404 / R-COLLAB-PRO — degrade gracefully, exit 1 (R-HIST-404) / exit 4 PRO_REQUIRED (R-COLLAB-PRO), stderr.
-- [HIGH][BLOCKS:high] E-TARGET — exit code reflects bp+Burp, not target response.
-- [HIGH][BLOCKS:low] F-TABLE / F-RAW / R-RAW-SINGLE — human + raw-bytes shapes.
-- [HIGH][BLOCKS:low] R-WESC / R-WSAFE — escaping + control-byte safety in `-w`.
-- [HIGH][BLOCKS:none] A5 / AX-SUMMARIZE — never dump bodies; summary-first for big sets.
-- [HIGH][BLOCKS:none] R-ANOM — `anomalous` only meaningful in quick-fuzz; else null.
-- [HIGH][BLOCKS:none] L-NOLEDGER — clean local operation-log opt-out.
-
-### MEDIUM
-
-- [MEDIUM][BLOCKS:none] L-RECORD / L-GRAIN / L-TAG — one entry per REST call,
-  format-independent; global run-time tagging remains unshipped.
-- [MEDIUM][BLOCKS:none] AX-NO-PRETTY — compact in agent mode; `--pretty` TTY-only.
-- [MEDIUM][BLOCKS:none] R-WUNKNOWN — unknown token fails loud.
-- [MEDIUM][BLOCKS:none] OPEN-Q1 / E-QUIET-EMPTY — empty-essential exit policy (open decision, see §8).
-
-### LOW (convergence tail)
-
-- [LOW][BLOCKS:none] L-READONLY — read-only subcommands never record.
-- [LOW][BLOCKS:none] `--meta`, `--pretty`, `--strict`, `--raw-w`, `--raw-part` ergonomics.
-
----
-
-## 8 · Open decisions (output-specific)
-
-| # | Decision | Default proposed | State |
-|---|---|---|---|
-| **O1** | Empty essential value under `--quiet` → exit 0 or 1? | exit 0 (record exists = success); `--strict` for 1 | open |
-| **O2** | Which commands admit `raw`? | only `req`, `send`, `history get`, `history replay` | resolved in v2.1.0 |
-| **O3** | `--fail-on-anomalous` exit 2 — default on or opt-in? | opt-in (E-TARGET keeps exit clean) | open |
-| **O4** | Default row cap (50) and preview bytes (256). | 50 / 256, both flag-overridable | open |
-| **O5** | `%{anomalous}` for non-quick-fuzz results: empty vs literal `false`? | empty (R-ANOM) — don't fake a signal the server didn't set | open |
-| **O6** | Should `bp health` default to `--no-ledger`? | no (it's a real op); document as common opt-out | open |
-
----
-
-> Grounded against `docs/SPEC.md` §5 (grammar), §6.2/§6.4/§6.5/§6.6/§6.13 (result models),
-> §8 (Kotlin serialization contract), §9 (Run Ledger).
+Raw mode derives its response representation from that wrapper. The ordinary serializer does not
+replace it with invented top-level `status`, `length`, `time`, or `requestId` fields.
+
+### Scanner issues
+
+The current server result remains a wrapper containing `scanId`, `issues`, and `total`. Accepted issue
+leaves include `name`, `url`, `severity`, `confidence`, `detail`, and `remediation`; the generic output
+layer does not add `host` or `typeIndex` and does not promise issue sorting. The nested field-projection
+ordering defect described above remains a code issue.
+
+### Collaborator
+
+Generation wrapper fields are `payloads`; payload leaves are `id`, `payload`, and `interactionId`.
+Polling wrapper fields are `found`, `interactions`, and `queriedPayloadId`; interaction leaves are
+`id`/`interactionId`, `type`, `clientIp`, `timestamp`, `details`, and `clientPort`.
+
+For explicit record-field projection, the output layer materializes all declared leaves before
+rendering and aliases poll `id` to `interactionId`. An optional leaf absent from every returned record
+therefore becomes JSON `null` or a blank table cell instead of an unknown-field failure after a
+one-use poll.
+
+### Configuration
+
+`config get` returns `config` and `excludedPaths`. `config set` returns
+`applied, config, excludedPaths, warning`. A non-null top-level `warning` is copied to stderr before
+quiet or field projection can hide it. Do not retry an applied operation merely because its resulting
+state could not be exported.
+
+### Run Ledger
+
+`log`/`tag` rows expose local control-plane metadata such as `id`, `ts`, `command`, `burp_op`,
+`target`, `program`, `tag`, `status`, `exit_code`, error/response metadata, and request/response hashes.
+Raw target bodies are not stored. A REST call normally gets one row, but ledger construction is
+fail-open: if local storage cannot be opened, the call proceeds after a warning and has no row.
+`--no-ledger` disables the required data source for `log`/`tag`, so those commands exit 1.
+
+## Redaction
+
+Redaction is enabled by default and is intended to run on structured data before serialization.
+Recognized paths include secret keys, authorization/cookie forms, URL userinfo, sensitive query values,
+nested header/cookie structures, and matching Base64 duplicates. Safe cookie name/domain/path identifiers
+remain visible while values are masked.
+
+This release does **not yet claim redaction completeness**. Concurrent release review found paths in
+which utility diff output could expose authorization/Set-Cookie material and uncaught tracebacks could
+reach stderr without the ordinary redaction boundary; corrective work and final regression results are
+still being integrated. Until that work is settled, treat `--no-redact` as an explicit opt-out but do
+not infer that its absence proves every secret-bearing representation was masked.
+
+Redaction is also not the same as omission: a nested request/response wrapper may appear in default
+output even when recognized secrets are masked. Select a narrow field set when even redacted structure
+is not needed.
+
+## Exit codes
+
+The complete implemented numeric set is **0–5**; no other application-defined exit code exists.
+
+| Exit | Meaning and reachable examples |
+|---:|---|
+| 0 | successful operation, clean check, help/version, or zero records |
+| 1 | default/unmapped runtime error, `UNSUPPORTED`, `SERVICE_UNAVAILABLE`, invalid response/render shape, unavailable required ledger, or a check whose observations are only inconclusive |
+| 2 | Click/Typer syntax, callback/config/field/selector validation, or missing destructive confirmation |
+| 3 | `CONNECTION_REFUSED`, `TRANSPORT_ERROR`, or fuzz `NO_RESPONSE` |
+| 4 | `PRO_REQUIRED` |
+| 5 | a `check` result with classifier findings |
+
+A target HTTP 403/500 can still be a successful bp operation and exit 0: target status is data. A
+structured inconclusive check exits 1 and retains its result on stdout. If findings and inconclusive
+observations coexist, findings select exit 5.
+
+A partial fuzz failure emits all attempted evidence rows first, emits its diagnostic to stderr, and
+then uses the highest applicable stable category. It does not label absence of a target response as an
+anomaly.
+
+## Not implemented
+
+This release has no write-out template, standalone `--quiet`, meta line, fixed generated output schema,
+row/body cap options, schema command, pretty mode, strict empty-essential mode, raw-write mode,
+per-result index selector, or fuzz-summary command. Historical Gherkin and earlier output-design prose
+that name those surfaces are not executable contracts.

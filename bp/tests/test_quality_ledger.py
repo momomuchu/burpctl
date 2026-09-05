@@ -112,6 +112,19 @@ def _repository_file(value: Any, field: str, record_id: str, *, root: Path = ROO
     return resolved
 
 
+def _binary_artifact(value: Any, record_id: str, *, root: Path) -> Path:
+    text = _evidence_text(value, "live.binaryArtifact", record_id)
+    path = Path(text)
+    resolved_root = root.resolve()
+    resolved = path.resolve() if path.is_absolute() else (resolved_root / path).resolve()
+    if not path.is_absolute():
+        assert resolved.is_relative_to(resolved_root), (
+            f"{record_id}: live.binaryArtifact escapes artifact root"
+        )
+    assert resolved.is_file(), f"{record_id}: missing live.binaryArtifact: {text}"
+    return resolved
+
+
 def _verification_artifact(value: Any, field: str, record_id: str, *, root: Path) -> Path:
     text = _evidence_text(value, field, record_id)
     path = Path(text)
@@ -172,16 +185,13 @@ def _git_bytes(*args: str) -> bytes:
     return result.stdout
 
 
-def _commit_author_identity(commit: Any, field: str, record_id: str) -> tuple[str, str]:
+def _resolved_commit(commit: Any, field: str, record_id: str) -> str:
     assert isinstance(commit, str) and re.fullmatch(r"[0-9a-f]{40}", commit), (
         f"{record_id}: invalid {field}"
     )
-    lines = _git_bytes("show", "-s", "--format=%H%n%an%n%ae", commit).decode().splitlines()
-    assert len(lines) >= 3 and lines[0] == commit, f"{record_id}: {field} is not an exact commit"
-    name, email = lines[1:3]
-    assert name.strip(), f"{record_id}: {field} has no author name"
-    assert "@" in email, f"{record_id}: {field} has no author email"
-    return name.strip().casefold(), email.casefold()
+    lines = _git_bytes("rev-parse", "--verify", f"{commit}^{{commit}}").decode().splitlines()
+    assert lines == [commit], f"{record_id}: {field} is not an exact resolvable commit"
+    return lines[0]
 
 
 def _git_is_ancestor(ancestor: str, descendant: str) -> bool:
@@ -194,7 +204,7 @@ def _git_is_ancestor(ancestor: str, descendant: str) -> bool:
     return result.returncode == 0
 
 
-def _validate_non_author_review_identity(
+def _validate_review_separation(
     review: dict[str, Any],
     *,
     artifact: Path,
@@ -203,10 +213,15 @@ def _validate_non_author_review_identity(
     implementation_paths: list[str],
     regression_paths: list[str],
 ) -> None:
-    author_commit = review["authorCommit"]
-    review_commit = review["reviewCommit"]
-    _commit_author_identity(author_commit, "nonAuthorReview.authorCommit", record_id)
-    _commit_author_identity(review_commit, "nonAuthorReview.reviewCommit", record_id)
+    author_commit = _resolved_commit(
+        review["authorCommit"], "nonAuthorReview.authorCommit", record_id
+    )
+    review_commit = _resolved_commit(
+        review["reviewCommit"], "nonAuthorReview.reviewCommit", record_id
+    )
+    assert author_commit != review_commit, (
+        f"{record_id}: author and review commits must be distinct"
+    )
     author_lane = review["authorLane"]
     reviewer_lane = review["reviewerLane"]
     assert isinstance(author_lane, str) and len(author_lane.strip()) >= 3, (
@@ -267,6 +282,7 @@ def _validate_verification_evidence(record: dict[str, Any], *, artifact_root: Pa
         "artifactSha256",
         "case",
         "observedAt",
+        "binaryArtifact",
         "binarySha256",
         "oracle",
         "outcome",
@@ -276,9 +292,8 @@ def _validate_verification_evidence(record: dict[str, Any], *, artifact_root: Pa
     )
     _matching_sha256(live_artifact, live["artifactSha256"], "live.artifactSha256", record_id)
     _validate_receipt_content(live_artifact, kind="live", record_id=record_id, evidence=live)
-    assert isinstance(live["binarySha256"], str) and _SHA256.fullmatch(live["binarySha256"]), (
-        f"{record_id}: invalid live.binarySha256"
-    )
+    binary_artifact = _binary_artifact(live["binaryArtifact"], record_id, root=artifact_root)
+    _matching_sha256(binary_artifact, live["binarySha256"], "live.binarySha256", record_id)
     _evidence_text(live["case"], "live.case", record_id)
     _evidence_text(live["oracle"], "live.oracle", record_id)
     assert live["outcome"] == "pass", f"{record_id}: live outcome must be pass"
@@ -378,7 +393,7 @@ def _validate_verification_evidence(record: dict[str, Any], *, artifact_root: Pa
     assert isinstance(review["reviewedAt"], str)
     reviewed_at = datetime.fromisoformat(review["reviewedAt"].replace("Z", "+00:00"))
     assert reviewed_at.tzinfo is not None, f"{record_id}: nonAuthorReview.reviewedAt needs timezone"
-    _validate_non_author_review_identity(
+    _validate_review_separation(
         review,
         artifact=review_artifact,
         artifact_root=artifact_root,
@@ -542,6 +557,9 @@ def _test_receipt(
 
 def _complete_test_verification_record(root: Path) -> dict[str, Any]:
     record_id = "DXX"
+    binary_artifact = root / "deployed/burp-rest-api.jar"
+    binary_artifact.parent.mkdir(parents=True, exist_ok=True)
+    binary_artifact.write_bytes(b"controlled deployed binary fixture")
     return {
         "id": record_id,
         "status": "verified",
@@ -554,7 +572,8 @@ def _complete_test_verification_record(root: Path) -> dict[str, Any]:
                 payload={
                     "case": "VERIFY-DXX complete live acceptance case",
                     "observedAt": "2026-09-04T12:00:00+02:00",
-                    "binarySha256": "a" * 64,
+                    "binaryArtifact": "deployed/burp-rest-api.jar",
+                    "binarySha256": hashlib.sha256(binary_artifact.read_bytes()).hexdigest(),
                     "oracle": "Authoritative post-state contained the expected controlled marker.",
                     "outcome": "pass",
                 },
@@ -605,14 +624,7 @@ def test_complete_structured_verification_receipts_are_accepted(
     assert isinstance(review_artifact_value, str)
     review_artifact = tmp_path / review_artifact_value
 
-    identities = {
-        "1" * 40: ("implementation author", "author@example.test"),
-        "2" * 40: ("review attestor", "reviewer@example.test"),
-    }
-    monkeypatch.setattr(
-        f"{__name__}._commit_author_identity",
-        lambda commit, *_args: identities[commit],
-    )
+    monkeypatch.setattr(f"{__name__}._resolved_commit", lambda commit, *_args: commit)
     monkeypatch.setattr(f"{__name__}._git_is_ancestor", lambda *_args: True)
 
     def fake_git_bytes(*args: str) -> bytes:
@@ -633,37 +645,41 @@ def test_complete_structured_verification_receipts_are_accepted(
     _validate_verification_evidence(record, artifact_root=tmp_path)
 
 
-def test_review_identity_requires_exact_commits_and_distinct_attested_lanes(
+def test_review_requires_resolvable_distinct_commits_and_distinct_attested_lanes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     with pytest.raises(AssertionError, match="invalid nonAuthorReview.authorCommit"):
-        _commit_author_identity("implementation-lane", "nonAuthorReview.authorCommit", "DXX")
+        _resolved_commit("implementation-lane", "nonAuthorReview.authorCommit", "DXX")
 
     commit = "1" * 40
-    monkeypatch.setattr(
-        f"{__name__}._git_bytes",
-        lambda *_args: f"{commit}\nMohamed MAACHE\nauthor@example.test\n".encode(),
-    )
-    assert _commit_author_identity(commit, "nonAuthorReview.authorCommit", "DXX") == (
-        "mohamed maache",
-        "author@example.test",
-    )
+    monkeypatch.setattr(f"{__name__}._git_bytes", lambda *_args: f"{commit}\n".encode())
+    assert _resolved_commit(commit, "nonAuthorReview.authorCommit", "DXX") == commit
 
     artifact = tmp_path / "quality/evidence/nonAuthorReview.json"
     artifact.parent.mkdir(parents=True)
     artifact.write_text("{}", encoding="utf-8")
     review = {
-        "authorCommit": "1" * 40,
-        "authorLane": "same-lane",
-        "reviewCommit": "2" * 40,
-        "reviewerLane": "same-lane",
+        "authorCommit": commit,
+        "authorLane": "implementation-lane",
+        "reviewCommit": commit,
+        "reviewerLane": "independent-review-lane",
     }
-    monkeypatch.setattr(
-        f"{__name__}._commit_author_identity",
-        lambda *_args: ("same committer", "same@example.test"),
-    )
+    monkeypatch.setattr(f"{__name__}._resolved_commit", lambda value, *_args: value)
+    with pytest.raises(AssertionError, match="author and review commits must be distinct"):
+        _validate_review_separation(
+            review,
+            artifact=artifact,
+            artifact_root=tmp_path,
+            record_id="DXX",
+            implementation_paths=["bp/src/bp/output.py"],
+            regression_paths=["bp/tests/test_quality_ledger.py"],
+        )
+
+    review["reviewCommit"] = "2" * 40
+    review["authorLane"] = "same-lane"
+    review["reviewerLane"] = "same-lane"
     with pytest.raises(AssertionError, match="distinct attested lanes"):
-        _validate_non_author_review_identity(
+        _validate_review_separation(
             review,
             artifact=artifact,
             artifact_root=tmp_path,
@@ -685,17 +701,11 @@ def test_review_author_commit_must_contain_regressions(
         "reviewCommit": "2" * 40,
         "reviewerLane": "independent-review-lane",
     }
-    identities = iter(
-        [
-            ("implementation author", "author@example.test"),
-            ("review attestor", "reviewer@example.test"),
-        ]
-    )
-    monkeypatch.setattr(f"{__name__}._commit_author_identity", lambda *_args: next(identities))
+    monkeypatch.setattr(f"{__name__}._resolved_commit", lambda value, *_args: value)
     monkeypatch.setattr(f"{__name__}._git_is_ancestor", lambda *_args: True)
     monkeypatch.setattr(f"{__name__}._git_bytes", lambda *_args: b"unrelated/file.py\n")
     with pytest.raises(AssertionError, match="every implementation and regression path"):
-        _validate_non_author_review_identity(
+        _validate_review_separation(
             review,
             artifact=artifact,
             artifact_root=tmp_path,
@@ -703,6 +713,32 @@ def test_review_author_commit_must_contain_regressions(
             implementation_paths=["bp/src/bp/output.py"],
             regression_paths=["bp/tests/test_quality_ledger.py"],
         )
+
+
+def test_live_binary_artifact_cannot_escape_relative_root(tmp_path: Path) -> None:
+    outside = tmp_path.parent / "outside-deployed.jar"
+    outside.write_bytes(b"outside")
+    with pytest.raises(AssertionError, match="escapes artifact root"):
+        _binary_artifact("../outside-deployed.jar", "DXX", root=tmp_path)
+
+
+def test_live_binary_digest_must_match_named_artifact(tmp_path: Path) -> None:
+    """A plausible hash string cannot stand in for the binary that produced the live result."""
+    record = _complete_test_verification_record(tmp_path)
+    live = record["verificationEvidence"]["live"]
+    assert isinstance(live, dict)
+    live["binarySha256"] = "a" * 64
+
+    receipt_value = live["artifact"]
+    assert isinstance(receipt_value, str)
+    receipt_path = tmp_path / receipt_value
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt["evidence"]["binarySha256"] = "a" * 64
+    receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+    live["artifactSha256"] = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+
+    with pytest.raises(AssertionError, match="live.binarySha256 does not match artifact bytes"):
+        _validate_verification_evidence(record, artifact_root=tmp_path)
 
 
 def test_verification_artifact_content_is_bound_to_defect(tmp_path: Path) -> None:

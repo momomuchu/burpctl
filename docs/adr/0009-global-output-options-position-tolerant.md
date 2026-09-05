@@ -1,4 +1,4 @@
-# ADR-0009 — `--format` / `--fields` / `--url` must be position-tolerant
+# ADR-0009 — Global execution/output options are position-tolerant
 
 - **Status:** accepted — 2026-06-18
 - **Criticality:** `[HIGH]` (CLI contract / public interface)
@@ -20,18 +20,18 @@ Found only by running the real binary against the live `:8089` extension.
 
 ## Decision
 
-Make the three global output options **position-tolerant**: `bp <cmd> --format X` behaves
-identically to `bp --format X <cmd>`.
+Make the five current global execution/output options **position-tolerant**:
+`--format`, `--fields`, `--url`, `--no-ledger`, and `--no-redact`. For example,
+`bp health --format json` behaves identically to `bp --format json health`.
 
-Implementation: a conservative `argv` pre-processor in the console entrypoint that hoists the
-known value-taking global options (`--format`, `--fields`, `--url`, and their values) to the
-front, **before** Typer parses, when they appear after the subcommand. The single source of
-truth stays the `@app.callback()` declaration — no per-command duplication, no double-declared
-precedence.
+Implementation: a conservative `argv` pre-processor in the console entrypoint hoists those known
+value-taking or boolean options to the front before Typer parses when they appear after a subcommand.
+The single source of truth stays the root `@app.callback()` declaration—there is no per-command
+duplication or second precedence rule.
 
-Scope guard: only the three known global options are hoisted; only when they follow the first
-non-option token (the subcommand); `--opt=value` and `--opt value` forms both handled; unknown
-options are left untouched for Typer to reject as today.
+Scope guard: only those five options are hoisted, scanning stops at literal `--`, value options accept
+`--opt=value` and `--opt value`, and unknown options remain for Typer to reject. Root `--version` is not
+hoisted.
 
 ## Rationale
 

@@ -1,122 +1,142 @@
-# `bp` — Persistence (Run Ledger) & Configuration (spec)
+# State and configuration contract
 
-# Current state and configuration contract
+This document separates the Python CLI's local state from the Kotlin extension's state. It describes
+the v2.1.0 source contract, not completed live-release proof. See
+[`quality/README.md`](../quality/README.md), [ADR-0014](adr/0014-state-preserving-reportable-operations.md),
+and [`PROOF-CEILINGS.md`](PROOF-CEILINGS.md).
 
-This section supersedes stale implementation descriptions later in this historical document. It records v2.0.0 as exercised against Burp Suite Professional 2026.3.3 on 2026-09-04; D-numbers refer to `quality/confirmed-defects.yaml`. A working-tree fix is not live behavior until its original reproduction passes after redeployment.
+## Python configuration
 
-- Python configuration precedence is explicit flag > environment > `~/.bp/config` > default. The path is resolved at invocation time so isolated `HOME` values work.
-- REST base URLs must be valid HTTP(S) origins without userinfo, query, fragment, or a non-root path. `enforce_scope`, booleans, throttle, and anomaly percentage are validated.
-- The Python Run Ledger is SQLite under `~/.bp/`, owner-only, and stores fingerprints/metadata—not raw target request or response bodies. Complete encoded query identity affects the fingerprint but raw query/userinfo does not enter text columns. In v2.0.0 the REST exchange can be stored as `status=ok` before output rendering later sets `exit_code=2`; therefore ledger status alone is not proof that the caller received the result (D24).
-- Extension request/session/sitemap persistence is H2/MVStore under `~/.burp-rest/`, not SQLite. Its directory/files are tightened to owner-only modes where the filesystem supports them; unsafe symlink paths are rejected.
-- H2 operations use scoped connections and transactions. History+sitemap record/clear and complete configured-session persistence do not expose partial commits in the exercised paths.
-- The configured singleton session is an immutable snapshot bound to one origin; it is not a named multi-principal session store. Captured response cookies are a separate in-memory jar. In v2.0.0, `bp session clear` clears only configured cookies/headers/origin and leaves that jar active, with no CLI jar-clear command (D29). The 2.1.0 contract deliberately changes this observable behavior: session clear also clears the captured jar, but this remains unverified until live replay.
-- Captured-cookie output omits the `HttpOnly` attribute (D30), and default redaction masks safe domain/name/path metadata together with the secret value (D31).
-- Burp project/user configuration exports are nested JSON, but v2.0.0 import does not establish exact schema acceptance: a wrong-typed project value was coerced while sibling scope state reset (D49), and an unknown key was silently ignored under a success response (D50).
-- `PUT /config/user` is not a safe state operation in v2.0.0. Exact exported-document imports reloaded the serving extension twice, reset uptime, and destroyed extension-owned in-memory registries; project-only imports did not reset uptime in the observed sequence (D53). Because the reload occurs while the import request is in flight, ADR-0014 requires refusal unless a future authority can preserve state and report completion truthfully.
-- Scanner task handles are extension-owned in-memory state, while the underlying work is owned by Burp. v2.0.0 status/issues and audit stop can fail on real task accessors (D55), and no endpoint enumerates tasks. Six task states remain `unknown`; an extension reload, low CPU, or absence of fixture traffic does not prove that a task stopped or was deleted.
+Configuration precedence is explicit option, environment, `~/.bp/config`, then built-in default. The
+path is resolved at invocation time, so a changed `HOME` selects a different file.
 
-See [ADR-0013](adr/0013-truthful-executable-contracts.md) and [ADR-0014](adr/0014-state-preserving-reportable-operations.md).
+Recognized file keys and environment names are:
 
----
+| Key | Environment | Default | Current runtime use |
+|---|---|---|---|
+| `burp_rest_url` | `BURP_REST_URL` | `http://127.0.0.1:8089` | REST client origin |
+| `redact` | `BP_REDACT` | `on` | output and diagnostic redaction |
+| `ledger` | inverse `BP_NO_LEDGER` | `on` | local Run Ledger |
+| `enforce_scope` | `BP_ENFORCE_SCOPE` | `warn` | parsed/validated, not consumed by commands |
+| `envelope` | `BP_ENVELOPE` | `off` | parsed, not consumed by commands |
+| `throttle_ms` | `BP_THROTTLE_MS` | `0` | parsed/validated, not consumed by commands |
+| `anomaly_pct` | `BP_ANOMALY_PCT` | `5` | parsed/validated, not consumed by commands |
 
+The file syntax is `key=value`. URL values must be HTTP(S) origins with no userinfo, query, fragment,
+control/whitespace, or non-root path. Scope mode, booleans, nonnegative throttle, and anomaly percentage
+0–100 are validated.
 
-> Ref: `ADR-0005` (Ledger ON by default, SQLite `~/.bp/`),
-> `ADR-0007` (configurable security guards, non-blocking), `OUTPUT.md` (`bp log`).
+Only `--url`, `--no-redact`, and `--no-ledger` provide relevant root-option overrides. There are no
+implemented `--enforce-scope`, `--envelope`, `--redact`, or `--throttle-ms` root options. `BP_AGENT=1`
+is interpreted by output selection rather than this configuration object.
 
-## 1 · Run Ledger — SQLite schema (`~/.bp/ledger.db`)
+## Python Run Ledger
 
-ON by default (`--no-ledger` to opt out per operation). **We store fingerprints + refs, NOT raw
-bodies** by default — no leakage, lightweight ledger.
+The Run Ledger is SQLite at `BP_LEDGER_PATH` or `~/.bp/ledger.db`. It is enabled by default and can be
+disabled per invocation with `--no-ledger` or by configured precedence.
 
-```sql
-CREATE TABLE ops (
-  id          TEXT PRIMARY KEY,   -- short, temporally sortable (e.g. ULID)
-  ts          TEXT NOT NULL,      -- ISO-8601 UTC
-  command     TEXT,               -- bp subcommand name only (e.g. "bp check idor"); URL/header/payload args NOT stored
-  burp_op     TEXT,               -- e.g. "POST /intruder/attack/create"
-  target      TEXT,               -- targeted host/url
-  program     TEXT,               -- nullable (reserved, v1.1)
-  tag         TEXT,               -- nullable (--tag, user label)
-  status      TEXT NOT NULL,      -- ok | error | refused
-  exit_code   INTEGER,
-  req_sha256  TEXT,               -- fingerprint of sent request
-  resp_sha256 TEXT,               -- fingerprint of response
-  resp_status INTEGER,
-  resp_len    INTEGER,
-  duration_ms INTEGER,
-  error_code  TEXT,               -- nullable (CONNECTION_REFUSED, PRO_REQUIRED, …)
-  req_ref     TEXT,               -- nullable: Burp history id or blob path if bodies are stored
-  resp_ref    TEXT
-);
-CREATE INDEX idx_ops_ts     ON ops(ts);
-CREATE INDEX idx_ops_target ON ops(target);
-CREATE INDEX idx_ops_tag    ON ops(tag);
+Each successful attempt to record a bp-to-extension REST operation stores local control-plane metadata:
+
+```text
+id, ts, command, burp_op, target, program, tag, status, exit_code,
+req_sha256, resp_sha256, resp_status, resp_len, duration_ms,
+error_code, req_ref, resp_ref
 ```
 
-- **Bodies**: not stored by default. `--ledger-bodies` (opt-in) → writes to `~/.bp/blobs/<sha256>`, **after redaction** if `redact=on`.
-- `bp log [--since T --until T --target H --tag X --status S --limit N]` → SELECT on `ops`.
-- `bp tag <opId> <name>` → UPDATE tag. (Query surface = `OUTPUT.md`.)
+Request/response bodies are used only to calculate SHA-256 values and are not stored. `target` is reduced
+to the REST listener's `host[:port]`; `burp_op` drops raw query/authority content; command text is the
+subcommand path rather than full target/payload arguments. Current `req_ref`/`resp_ref` values are null.
 
-The Run Ledger records `bp`'s control-plane REST operations, not Burp's complete target traffic.
-For example, `bp send` produces an `ops` row whose `burp_op` is `POST /repeater/send`, whose
-`target` is the REST listener host (not the target application), and whose request/response
-fingerprints cover that REST exchange. Plain `curl`, `xh`, and browser traffic produces no Run
-Ledger row. Use Burp proxy history for traffic that traverses its proxy listener.
+Granularity is one row per REST call, not one row per CLI invocation or target send. Browser, curl,
+proxy-listener, and other non-`bp` traffic produces no row. The ledger is operational evidence, not an
+exact target-request capture or proof that a target effect occurred.
 
-### 1.1 · Workspace request ledgers remain caller-owned
+Ledger opening/record/update failures are nonfatal for ordinary REST commands: the operation can proceed
+with a warning and no complete row. `exit_code` is backfilled after rendering/exit selection, and
+`bp tag` mutates the tag; rows are therefore not immutable after insertion. `bp log` and `bp tag` are
+local and normally do not record themselves, but they require the ledger and exit 1 when it is disabled
+or unavailable.
 
-`bp send` does not append a workspace `requests.jsonl` row. The target URL returned by Burp may
-contain userinfo, OAuth codes, reset/invitation capabilities, signed-query credentials, path tokens,
-or application-specific secrets; writing it automatically cannot satisfy both exact-request and
-no-secret-at-rest contracts without a caller-supplied safe representation and an explicit schema.
-The local Run Ledger row and extension DB history do not substitute for that workspace evidence.
+`bp send` does not append a workspace `requests.jsonl` row. Exact target evidence remains caller-owned;
+a returned URL may itself contain a credential and a hash cannot replace a safe exact representation.
 
-## 2 · Configuration — file + env + flags
+## Extension H2 persistence
 
-**Precedence (strongest wins):** CLI flag > env variable > `~/.bp/config` > built-in default.
+The extension uses H2/MVStore at `~/.burp-rest/burpdata`, not the Python SQLite ledger. The database
+manager rejects unsafe symbolic-link locations and tightens directory/file modes to owner-only where
+the filesystem supports POSIX permissions.
 
-**`~/.bp/config`** — `KEY=value` format (sh-sourceable, simple):
-```
-burp_rest_url   = http://127.0.0.1:8089
-enforce_scope   = warn        # warn | block | off   (default warn — NEVER enforced, ADR-0007)
-envelope        = off         # on | off  (anti-injection envelope around surfaced response bodies)
-redact          = on          # on | off  (masks JWT/cookies/Authorization/keys in log+output)
-ledger          = on          # on | off
-throttle_ms     = 0
-anomaly_pct     = 5           # length anomaly threshold (see ALGORITHMS A2)
-agent_mode      = auto        # auto | on | off (NDJSON for AI agent, see OUTPUT.md)
-```
+Connections are scoped to top-level operations. Nested DAO work on one thread joins the same
+transaction. Session replacement/clear and combined history+sitemap clear are transactional in the
+exercised source paths. History routes stay registered if database initialization fails and report
+service unavailability rather than becoming an apparent empty success or silently disappearing.
 
-**Env variables** (prefix `BP_`, plus legacy `BURP_REST_URL`):
-`BURP_REST_URL`, `BP_ENFORCE_SCOPE`, `BP_ENVELOPE`, `BP_REDACT`, `BP_NO_LEDGER`, `BP_THROTTLE_MS`,
-and `BP_AGENT` (see OUTPUT.md).
+Repeater and session target sends populate extension history/sitemap when those stores are available.
+Persistence is secondary to the target send: responses report persisted/partial/failed/not-configured
+state rather than pretending a completed send did not occur or inviting an unsafe retry.
 
-**Equivalent flags** (per command): `--url`, `--enforce-scope`, `--envelope`, `--redact`, `--no-ledger`, `--throttle-ms`. Each flag overrides env+config for that invocation.
+## Session state
 
-> **Implementation status.** `--url`, `--no-ledger`, `--format`, `--fields` and `--version` are
-> wired flags; `redact` and `ledger` are consumed at runtime (the chokepoint reads exactly those
-> two knobs). `enforce_scope`, `envelope`, `throttle_ms`, `anomaly_pct` and the
-> `--enforce-scope`/`--envelope`/`--redact`/`--throttle-ms` flags are **parsed but NOT yet wired**
-> — reserved for v1.1; use the env vars (`BP_REDACT=off`, …) for those. `agent_mode=auto` TTY
-> detection is likewise v1.1 (default format is `table`; pass `--format json` for agents).
+The configured session is one immutable, origin-bound credential snapshot. It is not a named
+multi-principal session store. Configured headers/cookies and automatically captured response cookies
+are distinct stores.
 
-**Guard semantics (non-blocking by default — ADR-0007):**
-- `enforce_scope=warn` (default): fires anyway, **warns** if the target is out of scope. _(v1.1 — not yet wired; no warning is emitted in v1.)_
-- `enforce_scope=block`: intended to refuse (exit 4) if out of scope. **Opt-in**, never enforced by default. _(v1.1 — NOT yet implemented: `block` does NOT currently refuse out-of-scope targets.)_
-- `enforce_scope=off`: no scope check.
-- `envelope=on`: wraps `<BP_TARGET_DATA>…</BP_TARGET_DATA>` around surfaced target bodies (agent anti-injection). Default off. _(v1.1 — not yet wired.)_
-- `redact=on` (default): masks known secrets before logging/display — protects **your own** secrets, low downside. **(active in v1.)**
+`session set` validates then replaces configured fields under `sessionMutationLock`. A send snapshots
+its credential state and captured-cookie epoch atomically under the fixed order
+`sessionMutationLock -> cookieMutationLock`. Batched sends preflight every target origin and hold the
+session mutation lock across their sequential execution so a concurrent replacement cannot make a
+later item fail only after earlier target effects.
 
-## 3 · RED test cases (TDD)
+`session clear`:
 
-- Precedence: flag > env > config > default (4 levels, one test each). _(active in v1)_
-- `redact=on` → an `Authorization: Bearer X` does not appear in `ops.command` or in the output. _(active in v1)_
-- Ledger: an `ok` op inserts 1 row with a non-null `resp_sha256` and **no raw body** stored (without `--ledger-bodies`). _(active in v1)_
-- `BP_NO_LEDGER=1` **or** `--no-ledger` → 0 rows inserted.
-- _(v1.1, not yet implemented)_ `enforce_scope=warn` + out-of-scope target → fires **and** emits the warning (does not fail).
-- _(v1.1, not yet implemented)_ `enforce_scope=block` + out of scope → exit 4, does not fire.
+1. clears persisted/configured cookies, headers, name/origin state;
+2. increments the captured-cookie epoch;
+3. empties the captured cookie jar; and
+4. publishes the empty session before returning.
 
-## Status
+The explicit cookie-jar clear uses the same lock order and epoch invalidation while leaving configured
+session credentials/origin unchanged. An older in-flight response cannot repopulate cookies after
+either clear. A clear does not retroactively cancel a target request that already snapshotted and sent
+old credentials; callers needing that stronger boundary must quiesce sends first.
 
-`[HIGH][BLOCKS:high]` — completes the *driver* surface (persistence + config). Together with
-`A1/A2` (ALGORITHMS) and this doc, the **driver is spec-complete**.
+Cookie-jar output includes domain, name, redacted value by default, path, `secure`, `httpOnly`, expiry,
+and host-only state. The in-memory jar is lost on extension reload.
+
+## Burp project and user configuration
+
+`GET /config/project` and `GET /config/user` export Burp's nested JSON object. Imports require a JSON
+object and validate every supplied node against the exported structure and JSON kind; unknown options,
+wrong kinds, and uncheckable nonempty arrays are rejected before import.
+
+Project import applies the validated subset. User import first excludes only
+`user_options.extender.extensions`, because re-importing extension inventory can reload the responder
+mid-request. Safe siblings remain importable and the returned `excludedPaths` identifies the omission.
+
+After an import, the extension re-exports the resulting state. If that observation succeeds, the
+response includes `applied=true`, the observed `config`, exclusions, and no warning. If the primary
+import completed but re-export fails, `applied` remains true, `config` is null, and a do-not-retry
+warning is returned and logged. Retrying an effect merely because its secondary observation failed is
+unsafe.
+
+`GET /extensions` can inspect only the current extension through pinned Montoya. It returns exactly that
+one record and must not be interpreted as an inventory of every loaded extension.
+
+## Scanner state and recovery
+
+Scanner task handles live in an extension-owned in-memory registry while underlying work belongs to
+Burp. Status/count values that Montoya cannot provide are nullable rather than fabricated. Stop reports
+completion only after the deletion primitive succeeds; pause/resume and linked crawl-and-audit remain
+unsupported.
+
+No API enumerates Scanner task handles. A handle discarded by a caller or lost on extension reload
+cannot be rediscovered through pinned Montoya. Such task state remains unknown until an authoritative
+oracle settles it; elapsed time, low CPU, or absent fixture traffic is not proof of deletion or
+completion. See PC-04.
+
+## Evidence status
+
+No defect record is `verified`. Live verification against the final redeployed v2.1.0 pair remains
+incomplete. The previous unversioned harness was destroyed before its repaired cases ran; its
+in-repository replacement has produced non-clean retained runs, not release proof. Source tests
+establish the local transaction, lock, shape-validation, and reporting mechanisms above; they do not
+substitute for the receipt-bearing release gate.

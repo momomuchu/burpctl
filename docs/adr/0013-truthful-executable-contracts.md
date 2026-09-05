@@ -1,6 +1,6 @@
 # ADR-0013 — Truthful executable contracts and bounded unsupported behavior
 
-**Status:** accepted — 2026-09-03
+**Status:** accepted 2026-09-03 · amended 2026-09-05 for non-executable BDD removal
 **Criticality:** [HIGH][BLOCKS:high]
 
 ---
@@ -20,8 +20,17 @@ A security tool must distinguish an observed effect from an acknowledgement, an 
 5. Security-check output keeps observations and anomalies separate from confirmed classifier fields. Exit 5 follows only the latter.
 6. JSON and NDJSON data are redacted structurally before serialization. Machine-readable errors use the selected machine format, and `raw` is available only when genuine raw/scalar content exists.
 7. OpenAPI and CLI-to-route contracts become executable gates. Current behavior documentation is maintained separately from historical design material.
-8. `docs/bdd/` is retained as historical scenario material until scenarios are either rewritten against the executable contract and bound to a runner, or removed. Its presence is not evidence that those scenarios pass.
-9. Each confirmed defect in the 2026-09-03 repair is tracked in `quality/confirmed-defects.yaml` with regression evidence and an explicit verification state.
+8. `docs/bdd/` is non-normative historical material, not an executable contract or evidence source. A
+   2026-09-05 release audit counted 641 scenarios across 16 files and found no runner, step bindings,
+   CI step, or test that has ever executed them; independent static audits found all 16 files false
+   overall against the current implementation. Current documentation must not cite this
+   prose-with-Gherkin-formatting as proof.
+9. The existing false corpus should be removed from the release documentation tree rather than quietly
+   edited into temporary agreement. If scenario contracts are wanted later, create a new suite from the
+   current executable contract, bind it to step definitions, run it in CI, and retain its results. A
+   non-executed rewrite would recreate the drift mechanism this ADR rejects.
+10. Each confirmed defect in the 2026-09-03 repair is tracked in `quality/confirmed-defects.yaml` with
+    regression evidence and an explicit verification state.
 
 ## Compatibility policy
 
@@ -31,7 +40,9 @@ No release number is invented by this decision. Source revision, build provenanc
 
 ## Consequences
 
-- Route, DTO, OpenAPI, CLI, and output changes land with RED-first contract tests.
+- Route, DTO, OpenAPI, CLI, and output changes require contract tests; a RED is cited only when an
+  assertion-reaching artifact or record survives. This is a method requirement, not a claim that every
+  historical correction retained such evidence.
 - Mocked Montoya and temporary-storage tests remain a necessary pull-request boundary. [ADR-0014](0014-state-preserving-reportable-operations.md) supersedes their use as the sole release authority: affected Montoya integration claims require comparable proof against a real supported Burp build.
 - ADR-0004's unshipped async CLI design remains historical rather than an executable contract.
 - ADR-0006 remains the methodology decision, but its references to `docs/bdd-clean/` and exit 69 are superseded by this ADR and the executable gates.
