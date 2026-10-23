@@ -14,6 +14,7 @@ from typing import Any, Literal, cast, overload
 
 import typer
 
+from bp.client import BurpError
 from bp.cliutil import EXIT_VULN, parse_headers, run
 
 
@@ -112,6 +113,39 @@ def _has_findings(data: dict[str, Any]) -> bool:
     return False
 
 
+def _validate_scan_verdict(
+    data: dict[str, Any], finding_field: Literal["vulnerableCount", "findings"]
+) -> dict[str, Any]:
+    """Reject malformed fields that determine a security-scan verdict.
+
+    Scan responses have two finding indicators: a non-negative ``vulnerableCount``
+    for individual probes, or a ``findings`` list for the endpoint sweep. Optional
+    inconclusive fields are validated too because they distinguish an uncertain
+    scan from a clean one.
+    """
+
+    def invalid() -> None:
+        raise BurpError(
+            "INVALID_RESPONSE",
+            "server returned an unexpected response shape",
+        )
+
+    if finding_field not in data:
+        invalid()
+
+    for field in ("vulnerableCount", "anomalousCount", "inconclusiveCount"):
+        if field in data:
+            value = data[field]
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                invalid()
+
+    for field in ("findings", "errors"):
+        if field in data and not isinstance(data[field], list):
+            invalid()
+
+    return data
+
+
 def _is_inconclusive(data: dict[str, Any]) -> bool:
     """Return True when at least one probe did not complete well enough to judge.
 
@@ -175,7 +209,7 @@ def check_auth(
     }
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/auth-bypass", body)
+        return _validate_scan_verdict(client.post("/scan/auth-bypass", body), "vulnerableCount")
 
     run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
 
@@ -239,7 +273,7 @@ def check_idor(
     success_notes: list[tuple[str, str]] = []
 
     def _do(client: Any) -> Any:
-        raw = client.post("/scan/idor", req_body)
+        raw = _validate_scan_verdict(client.post("/scan/idor", req_body), "vulnerableCount")
         # [02] Strip bodyPreview (AX-CAP-BODY) and [13] route note to stderr.
         projected, note = _project_for_display(raw, return_note=True)
         if note:
@@ -292,7 +326,7 @@ def check_headers(
         req_body["protectedContentMarker"] = marker
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/headers", req_body)
+        return _validate_scan_verdict(client.post("/scan/headers", req_body), "vulnerableCount")
 
     run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
 
@@ -320,7 +354,7 @@ def check_cors(
     }
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/cors", req_body)
+        return _validate_scan_verdict(client.post("/scan/cors", req_body), "vulnerableCount")
 
     run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
 
@@ -361,7 +395,7 @@ def check_endpoints(
     }
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/endpoints", req_body)
+        return _validate_scan_verdict(client.post("/scan/endpoints", req_body), "findings")
 
     run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
 
