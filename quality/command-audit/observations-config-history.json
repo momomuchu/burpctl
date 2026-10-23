@@ -1,0 +1,2006 @@
+[
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:00.764347Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp collab [OPTIONS] COMMAND [ARGS]...                                   \n                                                                                \n Burp Collaborator OAST payloads (Pro only).                                    \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 new   Generate one or more Burp Collaborator OAST payloads.                  \u2502\n\u2502 poll  Poll all interactions or one authoritative generated payload ID.       \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "collab",
+        "--help"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:29:58.609400Z",
+        "sha256": "a1e2e0ac0cd6716ce247f97dc192d491cc80665c8ea1d43aa997bf76fa62d9fc"
+      },
+      "verdict": "PASS"
+    },
+    "id": "G01",
+    "normal": {
+      "actual": {
+        "exit": 2,
+        "observedAt": "2026-10-23T11:29:44.031736Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp collab [OPTIONS] COMMAND [ARGS]...                                   \n                                                                                \n Burp Collaborator OAST payloads (Pro only).                                    \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 new   Generate one or more Burp Collaborator OAST payloads.                  \u2502\n\u2502 poll  Poll all interactions or one authoritative generated payload ID.       \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "collab"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:29:42.962912Z",
+        "sha256": "0df86da547b3946334be7903246575cf95e67d74cc385670b0fb0a838e286f41"
+      },
+      "verdict": "PASS"
+    },
+    "oracleHash": "60227a5be148c6f34c0161ae4c1ef9d1ec2e515e94e64e121c25d75501801f6d"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:03.712441Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp scan [OPTIONS] COMMAND [ARGS]...                                     \n                                                                                \n Scanner commands (Pro-only for crawl/audit/start). See \u00a76.6.                   \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 crawl   Spider the target app and map its endpoints (Pro-only).              \u2502\n\u2502 audit   Start active checks seeded with the supplied target URL (Pro-only).  \u2502\n\u2502 all     Request linked crawl+audit; Montoya 2025.3 reports this unsupported. \u2502\n\u2502 status  Show authoritative task status, request/error counts, and issue      \u2502\n\u2502         count.                                                               \u2502\n\u2502 issues  List vulnerabilities found by a scan (Pro-only).                     \u2502\n\u2502 defs    List issue definitions from the Burp sitemap.                        \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "scan",
+        "--help"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:01.628248Z",
+        "sha256": "7ea3d993a64d6a5001c1088b0a757ede3419f40903e4b0c45b6bb5f17a8f142c"
+      },
+      "verdict": "PASS"
+    },
+    "id": "G02",
+    "normal": {
+      "actual": {
+        "exit": 2,
+        "observedAt": "2026-10-23T11:29:46.115570Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp scan [OPTIONS] COMMAND [ARGS]...                                     \n                                                                                \n Scanner commands (Pro-only for crawl/audit/start). See \u00a76.6.                   \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 crawl   Spider the target app and map its endpoints (Pro-only).              \u2502\n\u2502 audit   Start active checks seeded with the supplied target URL (Pro-only).  \u2502\n\u2502 all     Request linked crawl+audit; Montoya 2025.3 reports this unsupported. \u2502\n\u2502 status  Show authoritative task status, request/error counts, and issue      \u2502\n\u2502         count.                                                               \u2502\n\u2502 issues  List vulnerabilities found by a scan (Pro-only).                     \u2502\n\u2502 defs    List issue definitions from the Burp sitemap.                        \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "scan"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:29:44.987829Z",
+        "sha256": "18016c3b9c8c6190070c5b8a5f557569804ab99b7bdc11ba5ac8156973d53b72"
+      },
+      "verdict": "PASS"
+    },
+    "oracleHash": "f17fd25f829534b3b2916e4f0a47cec3be22e850dda59093eadd50f6e19706ba"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:06.221267Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp check [OPTIONS] COMMAND [ARGS]...                                    \n                                                                                \n Security-scan probes: auth-bypass, IDOR, headers, CORS, endpoint sweep.        \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 auth       Triple-probe auth-bypass: with-auth / without-auth / cookie-only. \u2502\n\u2502 idor       Cross-account IDOR probe: flags a target when its full response   \u2502\n\u2502            body differs from the                                             \u2502\n\u2502            own-resource baseline (content-primary, with an                   \u2502\n\u2502            empty-vs-non-empty guard) AND both return 2xx                     \u2502\n\u2502            and the baseline itself succeeded. Catches same-length,           \u2502\n\u2502            different-content records.                                        \u2502\n\u2502 headers    Probe IP-spoof and URL-override headers against a denial          \u2502\n\u2502            baseline.                                                         \u2502\n\u2502 cors       8 crafted origins \u2192 credentialed CORS-exploit probe.              \u2502\n\u2502 endpoints  Scan requests recorded by extension-driven Repeater/session       \u2502\n\u2502            sends.                                                            \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "check",
+        "--help"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:04.145541Z",
+        "sha256": "62004175481e1fe339e28f38bb6128e2f755f7a947cfa887545e98bc1c7642c4"
+      },
+      "verdict": "PASS"
+    },
+    "id": "G03",
+    "normal": {
+      "actual": {
+        "exit": 2,
+        "observedAt": "2026-10-23T11:29:49.051327Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp check [OPTIONS] COMMAND [ARGS]...                                    \n                                                                                \n Security-scan probes: auth-bypass, IDOR, headers, CORS, endpoint sweep.        \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 auth       Triple-probe auth-bypass: with-auth / without-auth / cookie-only. \u2502\n\u2502 idor       Cross-account IDOR probe: flags a target when its full response   \u2502\n\u2502            body differs from the                                             \u2502\n\u2502            own-resource baseline (content-primary, with an                   \u2502\n\u2502            empty-vs-non-empty guard) AND both return 2xx                     \u2502\n\u2502            and the baseline itself succeeded. Catches same-length,           \u2502\n\u2502            different-content records.                                        \u2502\n\u2502 headers    Probe IP-spoof and URL-override headers against a denial          \u2502\n\u2502            baseline.                                                         \u2502\n\u2502 cors       8 crafted origins \u2192 credentialed CORS-exploit probe.              \u2502\n\u2502 endpoints  Scan requests recorded by extension-driven Repeater/session       \u2502\n\u2502            sends.                                                            \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "check"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:29:47.013226Z",
+        "sha256": "431d1a77da9f2de94f5a7c646bde18e1b4728440ba3b57526598f0aedc9a9912"
+      },
+      "verdict": "PASS"
+    },
+    "oracleHash": "eff23b82e415636a57cd8b9cf03fa51e24ff741a0536fe48a666afc8a5f08f16"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:09.778362Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp scope [OPTIONS] COMMAND [ARGS]...                                    \n                                                                                \n Classify Burp target scope; this does not block proxy traffic.                 \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 show    Show scope entries changed through this extension process.           \u2502\n\u2502 set     Replace entries tracked by this extension process, then add them to  \u2502\n\u2502         Burp.                                                                \u2502\n\u2502 add     Add a URL to the in-memory scope.                                    \u2502\n\u2502 remove  Remove/exclude a URL from the in-memory scope.                       \u2502\n\u2502 check   Check whether a URL is in scope (authoritative Burp-engine verdict). \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "scope",
+        "--help"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:07.164174Z",
+        "sha256": "39f428007fb22090cd8cc83a19660fc3c214b03578f64a90316001f00e3bbdca"
+      },
+      "verdict": "PASS"
+    },
+    "id": "G04",
+    "normal": {
+      "actual": {
+        "exit": 2,
+        "observedAt": "2026-10-23T11:29:51.841206Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp scope [OPTIONS] COMMAND [ARGS]...                                    \n                                                                                \n Classify Burp target scope; this does not block proxy traffic.                 \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 show    Show scope entries changed through this extension process.           \u2502\n\u2502 set     Replace entries tracked by this extension process, then add them to  \u2502\n\u2502         Burp.                                                                \u2502\n\u2502 add     Add a URL to the in-memory scope.                                    \u2502\n\u2502 remove  Remove/exclude a URL from the in-memory scope.                       \u2502\n\u2502 check   Check whether a URL is in scope (authoritative Burp-engine verdict). \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "scope"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:29:50.029247Z",
+        "sha256": "441663905b6d192fda2d17c31dbda9897074ae0d534bc47f88087e8fe3e777b0"
+      },
+      "verdict": "PASS"
+    },
+    "oracleHash": "942e2bf234467b49241077a5c25066d702767d44651a71ca696c90dcc40ea99f"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:12.984253Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp config [OPTIONS] COMMAND [ARGS]...                                   \n                                                                                \n Read or update Burp project and user configuration.                            \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 get  Export current project or user configuration.                           \u2502\n\u2502 set  Import a complete project or user JSON configuration object.            \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "config",
+        "--help"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:10.698825Z",
+        "sha256": "c772ca84a933e7d7d93b6efce26445803a4704d79d7e4ccf2f055d68ef4b9958"
+      },
+      "verdict": "PASS"
+    },
+    "id": "G05",
+    "normal": {
+      "actual": {
+        "exit": 2,
+        "observedAt": "2026-10-23T11:29:53.655499Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp config [OPTIONS] COMMAND [ARGS]...                                   \n                                                                                \n Read or update Burp project and user configuration.                            \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 get  Export current project or user configuration.                           \u2502\n\u2502 set  Import a complete project or user JSON configuration object.            \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "config"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:29:52.047270Z",
+        "sha256": "7778c21e8832d8d11d43408df52d14e2dc6515a3b3d22be71e28cadc3d6c15f6"
+      },
+      "verdict": "PASS"
+    },
+    "oracleHash": "894d959d75a5e4fe743c0bcf7a3e172541c87aec41784bb3ae0503e7eacc4696"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:15.088491Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp session [OPTIONS] COMMAND [ARGS]...                                  \n                                                                                \n Session cookie/header management and authenticated requests.                   \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 set      Load session cookies and headers (POST /session/set).               \u2502\n\u2502 get      Inspect the active session (GET /session/get).                      \u2502\n\u2502 clear    Reset session cookies and headers (DELETE /session/clear).          \u2502\n\u2502 send     Send an authenticated request via the active session (POST          \u2502\n\u2502          /session/send).                                                     \u2502\n\u2502 cookies  Show the auto-captured cookie-jar (GET /session/cookie-jar).        \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "session",
+        "--help"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:13.218122Z",
+        "sha256": "8e3311fa7db935a55272c2636c8fa6fa466fc0c4c71a84c3b837c2736c6df89e"
+      },
+      "verdict": "PASS"
+    },
+    "id": "G06",
+    "normal": {
+      "actual": {
+        "exit": 2,
+        "observedAt": "2026-10-23T11:29:55.987597Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp session [OPTIONS] COMMAND [ARGS]...                                  \n                                                                                \n Session cookie/header management and authenticated requests.                   \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 set      Load session cookies and headers (POST /session/set).               \u2502\n\u2502 get      Inspect the active session (GET /session/get).                      \u2502\n\u2502 clear    Reset session cookies and headers (DELETE /session/clear).          \u2502\n\u2502 send     Send an authenticated request via the active session (POST          \u2502\n\u2502          /session/send).                                                     \u2502\n\u2502 cookies  Show the auto-captured cookie-jar (GET /session/cookie-jar).        \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "session"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:29:54.061082Z",
+        "sha256": "3351fc5512cf8cdeb59ef6f4437f1c6bdc39fd8f0d0e25396abc6c4aeee02a28"
+      },
+      "verdict": "PASS"
+    },
+    "oracleHash": "516c858192beaa2a30a22db5692d5871d819d7870ce673231015a170876c79ea"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:17.483820Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp history [OPTIONS] COMMAND [ARGS]...                                  \n                                                                                \n Extension-owned H2 request history and sitemap.                                \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 list     List paginated request history from the server DB (GET /history).   \u2502\n\u2502 get      Fetch a single history entry by id (GET /history/{id}).             \u2502\n\u2502 sitemap  List unique host+path+method tuples from the history DB (GET        \u2502\n\u2502          /history/sitemap).                                                  \u2502\n\u2502 replay   Replay a history entry verbatim via Burp (POST                      \u2502\n\u2502          /history/{id}/replay).                                              \u2502\n\u2502 clear    DESTRUCTIVE: delete all history and sitemap entries (DELETE         \u2502\n\u2502          /history).                                                          \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "--help"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:15.248419Z",
+        "sha256": "95e0e4b08edffa53e036a8fcd23598df1ff69351c3f7402662a0cf283724de86"
+      },
+      "verdict": "PASS"
+    },
+    "id": "G07",
+    "normal": {
+      "actual": {
+        "exit": 2,
+        "observedAt": "2026-10-23T11:29:57.680451Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp history [OPTIONS] COMMAND [ARGS]...                                  \n                                                                                \n Extension-owned H2 request history and sitemap.                                \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 list     List paginated request history from the server DB (GET /history).   \u2502\n\u2502 get      Fetch a single history entry by id (GET /history/{id}).             \u2502\n\u2502 sitemap  List unique host+path+method tuples from the history DB (GET        \u2502\n\u2502          /history/sitemap).                                                  \u2502\n\u2502 replay   Replay a history entry verbatim via Burp (POST                      \u2502\n\u2502          /history/{id}/replay).                                              \u2502\n\u2502 clear    DESTRUCTIVE: delete all history and sitemap entries (DELETE         \u2502\n\u2502          /history).                                                          \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": null,
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "help"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:29:56.087928Z",
+        "sha256": "83e0f57aea0d3e893ff81c2c5ba248761c86097807fff9b28243aa02efccb9d6"
+      },
+      "verdict": "PASS"
+    },
+    "oracleHash": "4284eabe30f3b5962ee49ab7d9ce4b6da09ef17673f81cf0e1dd2f6e77e4e213"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:31:08.469476Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/history",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"id\":1,\"method\":\"GET\",\"url\":\"http://127.0.0.1:18080/audit\",\"statusCode\":200}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "list"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": {
+          "method": "GET",
+          "path": "/history",
+          "requestBodySha256": null,
+          "status": 200
+        },
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": {
+            "id": 1,
+            "method": "GET",
+            "statusCode": 200,
+            "url": "http://127.0.0.1:18080/audit"
+          },
+          "kind": "json"
+        }
+      },
+      "limits": "Explicit list control reached GET /history on the same fixture contract.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:31:06.168939Z",
+        "sha256": "f799bc79671532340f89dc36e06610343767c9eee465698497193658cbfedcaa"
+      },
+      "verdict": "PASS"
+    },
+    "id": "H01",
+    "normal": {
+      "actual": {
+        "exit": 2,
+        "observedAt": "2026-10-23T11:33:52.589246Z",
+        "restLog": [],
+        "stderr": "",
+        "stdout": "                                                                                \n Usage: bp history [OPTIONS] COMMAND [ARGS]...                                  \n                                                                                \n Extension-owned H2 request history and sitemap.                                \n                                                                                \n\u256d\u2500 Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 --help  -h        Show this message and exit.                                \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\u256d\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 list     List paginated request history from the server DB (GET /history).   \u2502\n\u2502 get      Fetch a single history entry by id (GET /history/{id}).             \u2502\n\u2502 sitemap  List unique host+path+method tuples from the history DB (GET        \u2502\n\u2502          /history/sitemap).                                                  \u2502\n\u2502 replay   Replay a history entry verbatim via Burp (POST                      \u2502\n\u2502          /history/{id}/replay).                                              \u2502\n\u2502 clear    DESTRUCTIVE: delete all history and sitemap entries (DELETE         \u2502\n\u2502          /history).                                                          \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history"
+      ],
+      "expected": {
+        "authority": [
+          "caller H01 pre-execution oracle",
+          "bp/src/bp/commands/history.py:289-295"
+        ],
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": {
+          "method": "GET",
+          "path": "/history",
+          "requestBodySha256": null,
+          "status": 200
+        },
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": {
+            "id": 1,
+            "method": "GET",
+            "statusCode": 200,
+            "url": "http://127.0.0.1:18080/audit"
+          },
+          "kind": "json"
+        }
+      },
+      "limits": "Preserves the caller's H01 oracle and bp/src/bp/commands/history.py:289-295 default-list claim.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:33:50.029825Z",
+        "sha256": "3952eb131d81d809562e84658171ece7962e9ce38be9efe23614cc082e16fe4e"
+      },
+      "reopenedFrom": {
+        "preRunSeal": {
+          "sealedAt": "2026-10-23T11:31:03.151562Z",
+          "sha256": "37bdf4bf12cc2e3546674172f7c2e6a615aa86fb4cffb75940f09c3ea7147a0c"
+        },
+          "reason": "The caller's preexisting H01 oracle was restored without changing its observed result."
+      },
+      "verdict": "FAIL"
+    },
+    "oracleHash": "caller-H01-preexisting-oracle"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "observedAt": "2026-10-23T11:30:28.629320Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/config/project",
+            "status": 200
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"INVALID_RESPONSE\",\"message\":\"server returned non-JSON (HTTP 200)\",\"status\":200,\"http_status\":200,\"op\":\"GET /config/project\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "config",
+        "get",
+        "project"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": {
+          "method": "GET",
+          "path": "/config/project",
+          "requestBodySha256": null,
+          "status": 200
+        },
+        "stderr": {
+          "code": "INVALID_RESPONSE",
+          "fragment": null,
+          "kind": "json"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "empty"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:26.842853Z",
+        "sha256": "123fd1f4ee656346f13c916f7a4cab273b8812b67bde17fee7df26d14eb81941"
+      },
+      "verdict": "PASS"
+    },
+    "id": "L19",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:19.881595Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/config/project",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"config\":{\"audit\":{\"enabled\":true},\"threshold\":3}}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "config",
+        "get",
+        "project"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": {
+          "method": "GET",
+          "path": "/config/project",
+          "requestBodySha256": null,
+          "status": 200
+        },
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": {
+            "config": {
+              "audit": {
+                "enabled": true
+              },
+              "threshold": 3
+            }
+          },
+          "kind": "json"
+        }
+      },
+      "limits": "Nested CLI output and GET route observed; live Montoya config was not read.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:17.761870Z",
+        "sha256": "fa2eb4a4d392649fca791029d9f35ef24931555475387bc3ec7bcd32423c3dad"
+      },
+      "verdict": "PASS"
+    },
+    "oracleHash": "a0eee5714c5929f7730fc145ba7f669852b8d1a3ba139b85674185a92b90cd74"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "observedAt": "2026-10-23T11:30:30.965885Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/config/user",
+            "status": 200
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"INVALID_RESPONSE\",\"message\":\"server returned non-JSON (HTTP 200)\",\"status\":200,\"http_status\":200,\"op\":\"GET /config/user\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "config",
+        "get",
+        "user"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": {
+          "method": "GET",
+          "path": "/config/user",
+          "requestBodySha256": null,
+          "status": 200
+        },
+        "stderr": {
+          "code": "INVALID_RESPONSE",
+          "fragment": null,
+          "kind": "json"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "empty"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:29.359055Z",
+        "sha256": "c2e2281bd0a7c7f0431e74a2ba4b8338fb86bb86ea17a3f20c9013a319438d34"
+      },
+      "verdict": "PASS"
+    },
+    "id": "L20",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:21.903091Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/config/user",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"config\":{\"audit\":{\"enabled\":true},\"threshold\":3}}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "config",
+        "get",
+        "user"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": {
+          "method": "GET",
+          "path": "/config/user",
+          "requestBodySha256": null,
+          "status": 200
+        },
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": {
+            "config": {
+              "audit": {
+                "enabled": true
+              },
+              "threshold": 3
+            }
+          },
+          "kind": "json"
+        }
+      },
+      "limits": "Nested CLI output and GET route observed; live Montoya config was not read.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:20.277795Z",
+        "sha256": "edd0b01bf5ab8e22f5da3d947157495dd1bac4f474f948f4f69ff3c672bf95a9"
+      },
+      "verdict": "PASS"
+    },
+    "oracleHash": "2cc676b34fe51559670d0bf260929d633fc6097f2ff4baf39ec264a63face6de"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 2,
+        "observedAt": "2026-10-23T11:33:43.678250Z",
+        "restLog": [],
+        "stderr": "error: --json is not valid JSON: Expecting value: line 1 column 10 (char 9)\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "config",
+        "set",
+        "project",
+        "--json",
+        "{\"audit\":"
+      ],
+      "expected": {
+        "authority": [
+          "docs/OUTPUT.md:5-15",
+          "docs/adr/0013-truthful-executable-contracts.md:16-23"
+        ],
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": null,
+        "stderr": {
+          "code": "USAGE_ERROR",
+          "fragment": null,
+          "kind": "json"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "empty"
+        }
+      },
+      "limits": "Zero PUT observed, but BP_AGENT=1 received plain text; docs/OUTPUT.md:5-15 requires one JSON stderr object.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:33:41.473027Z",
+        "sha256": "654929aa7a25fe79ffb842ca79b86569ae2e6222379cf60b2e9d6ed7c5d41a13"
+      },
+      "reopenedFrom": {
+        "preRunSeal": {
+          "sealedAt": "2026-10-23T11:30:31.376028Z",
+          "sha256": "68d9b9bac74ff2a7daa110bd364e7035c03796cb84c7c5501b23dfc4810fb801"
+        },
+        "reason": "Current docs/OUTPUT.md:5-15 authority supplied during execution; original evidence retained."
+      },
+      "verdict": "FAIL"
+    },
+    "id": "L21",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:23.640138Z",
+        "restLog": [
+          {
+            "bodyLength": 37,
+            "bodySha256": "1f38a504ddedbb4a46b5c8251520db539fc197f719ba3d72b58bf395ce25ce45",
+            "method": "PUT",
+            "path": "/config/project",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"config\":{\"audit\":{\"enabled\":true},\"threshold\":3}}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "config",
+        "set",
+        "project",
+        "--json",
+        "{\"audit\":{\"enabled\":true}}"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": {
+          "method": "PUT",
+          "path": "/config/project",
+          "requestBodySha256": "1f38a504ddedbb4a46b5c8251520db539fc197f719ba3d72b58bf395ce25ce45",
+          "status": 200
+        },
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": {
+            "config": {
+              "audit": {
+                "enabled": true
+              },
+              "threshold": 3
+            }
+          },
+          "kind": "json"
+        }
+      },
+      "limits": "Exact nested PUT body observed; live Montoya project config mutation was not observed.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:22.298675Z",
+        "sha256": "b915ce3b4b208929cf1db4026623ee446f6bacd092f0af4400d0b8e0349726a8"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "0c93f914b4fbacb345344a09d7019cae97bbc0eb840d5b0616657997358f1392"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 2,
+        "observedAt": "2026-10-23T11:33:46.583275Z",
+        "restLog": [],
+        "stderr": "error: --json is not valid JSON: Expecting value: line 1 column 10 (char 9)\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "config",
+        "set",
+        "user",
+        "--json",
+        "{\"audit\":"
+      ],
+      "expected": {
+        "authority": [
+          "docs/OUTPUT.md:5-15",
+          "docs/adr/0013-truthful-executable-contracts.md:16-23"
+        ],
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": null,
+        "stderr": {
+          "code": "USAGE_ERROR",
+          "fragment": null,
+          "kind": "json"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "empty"
+        }
+      },
+      "limits": "Zero PUT observed, but BP_AGENT=1 received plain text; docs/OUTPUT.md:5-15 requires one JSON stderr object.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:33:43.987467Z",
+        "sha256": "c1b669876a37b714f41bfe11919c6114544bd1632e9ade869bdac03fb9703afd"
+      },
+      "reopenedFrom": {
+        "preRunSeal": {
+          "sealedAt": "2026-10-23T11:30:32.916378Z",
+          "sha256": "67324df877031fc5930e192cd57e2f77ba7a2d427a38886f71308df2f67690cd"
+        },
+        "reason": "Current docs/OUTPUT.md:5-15 authority supplied during execution; original evidence retained."
+      },
+      "verdict": "FAIL"
+    },
+    "id": "L22",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:26.350543Z",
+        "restLog": [
+          {
+            "bodyLength": 37,
+            "bodySha256": "1f38a504ddedbb4a46b5c8251520db539fc197f719ba3d72b58bf395ce25ce45",
+            "method": "PUT",
+            "path": "/config/user",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"config\":{\"audit\":{\"enabled\":true},\"threshold\":3}}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "config",
+        "set",
+        "user",
+        "--json",
+        "{\"audit\":{\"enabled\":true}}"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": {
+          "method": "PUT",
+          "path": "/config/user",
+          "requestBodySha256": "1f38a504ddedbb4a46b5c8251520db539fc197f719ba3d72b58bf395ce25ce45",
+          "status": 200
+        },
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": {
+            "config": {
+              "audit": {
+                "enabled": true
+              },
+              "threshold": 3
+            }
+          },
+          "kind": "json"
+        }
+      },
+      "limits": "Exact nested PUT body observed; live Montoya user config mutation was not observed.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:24.325291Z",
+        "sha256": "9681e47e5c5e58b219d13453a42b821d0b94dfa1d1bc2bc87584e83385689068"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "de79416923c457bea0c0fd69b2b091f09e7d0c149de085fbed7f68f0be0bb3b1"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "observedAt": "2026-10-23T11:30:49.467285Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/history?page=0",
+            "status": 503
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"history storage is unavailable\",\"status\":503,\"http_status\":503,\"op\":\"GET /history\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "list",
+        "--page",
+        "0"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": {
+          "method": "GET",
+          "path": "/history?page=0",
+          "requestBodySha256": null,
+          "status": 503
+        },
+        "stderr": {
+          "code": "SERVICE_UNAVAILABLE",
+          "fragment": null,
+          "kind": "json"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "empty"
+        }
+      },
+      "limits": "CLI 503 SERVICE_UNAVAILABLE mapping observed. Current docs/SPEC.md:26 and UnavailableRoutes.kt:14-25 supersede historical 404 prose in docs/SPEC.md:669-701 and docs/bdd/13-history.feature.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:47.024610Z",
+        "sha256": "25eddcb7f6b14a1e4b1450b79f8555810203bde616d95ec45a2fc2a0790a3aa5"
+      },
+      "verdict": "PASS"
+    },
+    "id": "L28",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:36.663877Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/history?page=0",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"id\":1,\"method\":\"GET\",\"url\":\"http://127.0.0.1:18080/audit\",\"statusCode\":200}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "list",
+        "--page",
+        "0"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": {
+          "method": "GET",
+          "path": "/history?page=0",
+          "requestBodySha256": null,
+          "status": 200
+        },
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": {
+            "id": 1,
+            "method": "GET",
+            "statusCode": 200,
+            "url": "http://127.0.0.1:18080/audit"
+          },
+          "kind": "json"
+        }
+      },
+      "limits": "CLI list route/output observed; actual H2 rows were not read through this fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:34.924244Z",
+        "sha256": "758313459d8dcdccce6a653e946074b4d3519b04dca3f17cf1e0d3c789d669d8"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "f732c0ff4785b0ba57b80ca1b6dacb68866c5d3ddea617c3f92ac507bab6a75f"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "observedAt": "2026-10-23T11:30:52.744258Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/history/1",
+            "status": 400
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"INVALID_REQUEST\",\"message\":\"History entry 1 not found\",\"status\":400,\"http_status\":400,\"op\":\"GET /history/1\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "get",
+        "1"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": {
+          "method": "GET",
+          "path": "/history/1",
+          "requestBodySha256": null,
+          "status": 400
+        },
+        "stderr": {
+          "code": "INVALID_REQUEST",
+          "fragment": null,
+          "kind": "json"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "empty"
+        }
+      },
+      "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:50.040485Z",
+        "sha256": "0efe71e47fe2507629260a8bf519496726885eff8059780ba911647bc69c8635"
+      },
+      "verdict": "PASS"
+    },
+    "id": "L29",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:38.772790Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/history/1",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"id\":1,\"source\":\"fixture\",\"method\":\"GET\",\"url\":\"http://127.0.0.1:18080/audit\",\"host\":\"127.0.0.1\",\"reqHeaders\":[],\"reqBody\":null,\"statusCode\":200,\"resHeaders\":[],\"resBody\":\"ok\",\"durationMs\":2,\"timestamp\":\"2026-10-23T10:00:00Z\"}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "get",
+        "1"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": {
+          "method": "GET",
+          "path": "/history/1",
+          "requestBodySha256": null,
+          "status": 200
+        },
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": {
+            "durationMs": 2,
+            "host": "127.0.0.1",
+            "id": 1,
+            "method": "GET",
+            "reqBody": null,
+            "reqHeaders": [],
+            "resBody": "ok",
+            "resHeaders": [],
+            "source": "fixture",
+            "statusCode": 200,
+            "timestamp": "2026-10-23T10:00:00Z",
+            "url": "http://127.0.0.1:18080/audit"
+          },
+          "kind": "json"
+        }
+      },
+      "limits": "CLI get route/output observed; actual H2 lookup was not exercised here.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:36.938850Z",
+        "sha256": "c70a3c02f57138896c350a580d40fcebe2565c93df2d772c59347cf4bf13ae65"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "171f5e20f29f4550395a8016cb9292f246597ea13e78ddcbd2e85d3585519c7e"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "observedAt": "2026-10-23T11:30:56.577507Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/history/sitemap",
+            "status": 503
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"history storage is unavailable\",\"status\":503,\"http_status\":503,\"op\":\"GET /history/sitemap\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "sitemap"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": {
+          "method": "GET",
+          "path": "/history/sitemap",
+          "requestBodySha256": null,
+          "status": 503
+        },
+        "stderr": {
+          "code": "SERVICE_UNAVAILABLE",
+          "fragment": null,
+          "kind": "json"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "empty"
+        }
+      },
+      "limits": "CLI 503 SERVICE_UNAVAILABLE mapping observed. Current docs/SPEC.md:26 and UnavailableRoutes.kt:14-25 supersede historical 404 prose in docs/SPEC.md:669-701 and docs/bdd/13-history.feature.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:53.564157Z",
+        "sha256": "6e5de338d8c8efd99be135458c45adb873d1815b7bd03bd3b2aa6a7267a22d7d"
+      },
+      "verdict": "PASS"
+    },
+    "id": "L30",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:41.348778Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/history/sitemap",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"entries\":[{\"host\":\"127.0.0.1\",\"path\":\"/audit\",\"method\":\"GET\",\"lastSeen\":\"2026-10-23T10:00:00Z\",\"hitCount\":1}],\"total\":1}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "sitemap"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": {
+          "method": "GET",
+          "path": "/history/sitemap",
+          "requestBodySha256": null,
+          "status": 200
+        },
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": {
+            "entries": [
+              {
+                "hitCount": 1,
+                "host": "127.0.0.1",
+                "lastSeen": "2026-10-23T10:00:00Z",
+                "method": "GET",
+                "path": "/audit"
+              }
+            ],
+            "total": 1
+          },
+          "kind": "json"
+        }
+      },
+      "limits": "CLI sitemap route/output observed; actual H2 sitemap was not read here.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:39.454766Z",
+        "sha256": "69cd5ecbb1d5cd1eb8751db4076692fbbcac260e06843c43445db24828b0ea60"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "257c5c6165ee54447ecc39b61870d774b95ff4ffd5f5a222e00bab4c56f5d154"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "observedAt": "2026-10-23T11:30:59.634519Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "POST",
+            "path": "/history/1/replay",
+            "status": 400
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"INVALID_REQUEST\",\"message\":\"History entry 1 not found\",\"status\":400,\"http_status\":400,\"op\":\"POST /history/1/replay\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "replay",
+        "1"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": {
+          "method": "POST",
+          "path": "/history/1/replay",
+          "requestBodySha256": null,
+          "status": 400
+        },
+        "stderr": {
+          "code": "INVALID_REQUEST",
+          "fragment": null,
+          "kind": "json"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "empty"
+        }
+      },
+      "limits": "Typed missing-ID error and zero fixture target effects observed.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:57.098682Z",
+        "sha256": "e218d50c99a3890d8014baa8d6fc95de670a907c5fb115a0e46c2feb41b2f65c"
+      },
+      "verdict": "PASS"
+    },
+    "id": "L31",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:43.895328Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "POST",
+            "path": "/history/1/replay",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"original\":{\"id\":1,\"source\":\"fixture\",\"method\":\"GET\",\"url\":\"http://127.0.0.1:18080/audit\",\"host\":\"127.0.0.1\",\"reqHeaders\":[],\"reqBody\":null,\"statusCode\":200,\"resHeaders\":[],\"resBody\":\"ok\",\"durationMs\":2,\"timestamp\":\"2026-10-23T10:00:00Z\"},\"replayed\":{\"id\":0,\"source\":\"replay\",\"method\":\"GET\",\"url\":\"http://127.0.0.1:18080/audit\",\"host\":\"127.0.0.1\",\"reqHeaders\":[],\"reqBody\":null,\"statusCode\":201,\"resHeaders\":[],\"resBody\":\"ok\",\"durationMs\":2,\"timestamp\":\"2026-10-23T10:00:00Z\"}}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "replay",
+        "1"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": {
+          "method": "POST",
+          "path": "/history/1/replay",
+          "requestBodySha256": null,
+          "status": 200
+        },
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": {
+            "original": {
+              "durationMs": 2,
+              "host": "127.0.0.1",
+              "id": 1,
+              "method": "GET",
+              "reqBody": null,
+              "reqHeaders": [],
+              "resBody": "ok",
+              "resHeaders": [],
+              "source": "fixture",
+              "statusCode": 200,
+              "timestamp": "2026-10-23T10:00:00Z",
+              "url": "http://127.0.0.1:18080/audit"
+            },
+            "replayed": {
+              "durationMs": 2,
+              "host": "127.0.0.1",
+              "id": 0,
+              "method": "GET",
+              "reqBody": null,
+              "reqHeaders": [],
+              "resBody": "ok",
+              "resHeaders": [],
+              "source": "replay",
+              "statusCode": 201,
+              "timestamp": "2026-10-23T10:00:00Z",
+              "url": "http://127.0.0.1:18080/audit"
+            }
+          },
+          "kind": "json"
+        }
+      },
+      "limits": "CLI POST/output observed; the server-side Montoya target send was not observed.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:41.972882Z",
+        "sha256": "3f89f5e111e04bbe492e191dcee85e3cfe876ef63a551243af08ae02eb12de49"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "5a39d49e2edbddcada8549144e66dadbe97262619364dce8a509b1567de9c296"
+  },
+  {
+    "candidate": {
+      "branch": "codex/qa-config-history",
+      "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+      "oracleSourceRevision": "7e8b742",
+      "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 2,
+        "observedAt": "2026-10-23T11:33:49.371799Z",
+        "restLog": [],
+        "stderr": "warning: 'bp history clear' irreversibly wipes the history and sitemap tables.\n         Pass --confirm to proceed.\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "clear"
+      ],
+      "expected": {
+        "authority": [
+          "docs/OUTPUT.md:5-15",
+          "docs/adr/0013-truthful-executable-contracts.md:16-23"
+        ],
+        "effect": {
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": null,
+        "stderr": {
+          "code": "USAGE_ERROR",
+          "fragment": null,
+          "kind": "json"
+        },
+        "stdout": {
+          "json": null,
+          "kind": "empty"
+        }
+      },
+      "limits": "Zero DELETE observed, but BP_AGENT=1 received plain text; docs/OUTPUT.md:5-15 requires one JSON stderr object.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:33:47.512490Z",
+        "sha256": "177e0f517487fc38ea7ab5eca916dd22c5d6fd9ca0726963c818848f42031fc8"
+      },
+      "reopenedFrom": {
+        "preRunSeal": {
+          "sealedAt": "2026-10-23T11:31:00.134039Z",
+          "sha256": "2164735b8c71abe73ffeb66aa19bc2aa0b312b8e8360c7ed526bf8eb1ae8a564"
+        },
+        "reason": "Current docs/OUTPUT.md:5-15 authority supplied during execution; original evidence retained."
+      },
+      "verdict": "FAIL"
+    },
+    "id": "L32",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "observedAt": "2026-10-23T11:30:46.141048Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "DELETE",
+            "path": "/history",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"cleared\":true}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/config_history/bp",
+        "bp",
+        "history",
+        "clear",
+        "--confirm"
+      ],
+      "expected": {
+        "effect": {
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": {
+          "method": "DELETE",
+          "path": "/history",
+          "requestBodySha256": null,
+          "status": 200
+        },
+        "stderr": {
+          "code": null,
+          "fragment": null,
+          "kind": "empty"
+        },
+        "stdout": {
+          "json": {
+            "cleared": true
+          },
+          "kind": "json"
+        }
+      },
+      "limits": "CLI DELETE observed; transactional H2 history+sitemap clearing was not observed here. HistoryRoutes.kt:116-119 supersedes stale nontransactional prose in docs/SPEC.md:669-701 and the Python command docstring.",
+      "preRunSeal": {
+        "sealedAt": "2026-10-23T11:30:43.992216Z",
+        "sha256": "44eb5a38e4ad954830a8c5a56adf280712bed3625e9760feb9c8725c3f5fd708"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "ed046a72310e6cb651d07205e961f8d90f8e771f2a2c5132569ea48e2abf0349"
+  }
+]
