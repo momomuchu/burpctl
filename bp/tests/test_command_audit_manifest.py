@@ -1,4 +1,5 @@
 """Validator for the frozen command audit oracle manifest."""
+
 from __future__ import annotations
 
 import hashlib
@@ -11,7 +12,9 @@ from typing import Final, Mapping, cast
 
 import pytest
 
-MANIFEST: Final[Path] = Path(__file__).resolve().parents[2] / "quality" / "command-audit" / "oracles.json"
+MANIFEST: Final[Path] = (
+    Path(__file__).resolve().parents[2] / "quality" / "command-audit" / "oracles.json"
+)
 KINDS: Final[set[str]] = {"F", "G", "L"}
 TOKEN_RE: Final[re.Pattern[str]] = re.compile(r"\{\{(?:PORT|PAYLOAD_FILE|CID|SID|OPID)\}\}")
 
@@ -78,7 +81,13 @@ def validate_manifest(path: Path) -> tuple[int, int, int, int]:
         raise ManifestError("unrealistic manifest sealed_at")
     ids: set[str] = set()
     counts = {"F": 0, "G": 0, "L": 0}
-    bindings = {"PORT": "18089", "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE", "CID": "cid-001", "SID": "sid-001", "OPID": "op-001"}
+    bindings = {
+        "PORT": "18089",
+        "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+        "CID": "cid-001",
+        "SID": "sid-001",
+        "OPID": "op-001",
+    }
     for row in rows:
         if not isinstance(row, dict):
             raise ManifestError("row is not an object")
@@ -91,33 +100,55 @@ def validate_manifest(path: Path) -> tuple[int, int, int, int]:
         counts[kind] += 1
         authority = row.get("authority")
         sources = authority.get("sources", []) if isinstance(authority, dict) else []
-        if not isinstance(sources, list) or not sources or not all(isinstance(source, str) and re.fullmatch(r"[^:]+:\d+", source) for source in sources):
+        if (
+            not isinstance(sources, list)
+            or not sources
+            or not all(
+                isinstance(source, str) and re.fullmatch(r"[^:]+:\d+", source) for source in sources
+            )
+        ):
             raise ManifestError(f"{row_id}: missing source citation")
         expected = row.get("expected")
-        if not isinstance(expected, dict) or not all(key in expected for key in ("exit", "stdout", "stderr", "effect")):
+        if not isinstance(expected, dict) or not all(
+            key in expected for key in ("exit", "stdout", "stderr", "effect")
+        ):
             raise ManifestError(f"{row_id}: incomplete expected exit/streams/effect")
         if not all(isinstance(expected[key], dict) for key in ("stdout", "stderr", "effect")):
             raise ManifestError(f"{row_id}: malformed expected streams/effect")
         seal = row.get("seal")
-        if not isinstance(seal, dict) or seal.get("sealed") is not True or not isinstance(seal.get("expected_at"), str) or not seal.get("hash"):
+        if (
+            not isinstance(seal, dict)
+            or seal.get("sealed") is not True
+            or not isinstance(seal.get("expected_at"), str)
+            or not seal.get("hash")
+        ):
             raise ManifestError(f"{row_id}: unsealed expectation")
         if seal["expected_at"] != sealed_at:
             raise ManifestError(f"{row_id}: seal timestamp differs from manifest seal")
         actual = row.get("actual")
-        if isinstance(actual, dict) and isinstance(actual.get("observed_at"), str) and actual["observed_at"] < seal["expected_at"]:
+        if (
+            isinstance(actual, dict)
+            and isinstance(actual.get("observed_at"), str)
+            and actual["observed_at"] < seal["expected_at"]
+        ):
             raise ManifestError(f"{row_id}: actual timestamp precedes expected timestamp")
         materialize_argv(row, bindings)
         contrast = row.get("contrast")
         if not isinstance(contrast, dict):
             raise ManifestError(f"{row_id}: missing contrast")
         contrast_template = contrast.get("argv_template")
-        if row["kind"] == "G" and (not isinstance(contrast_template, list) or contrast_template == row["argv_template"]):
+        if row["kind"] == "G" and (
+            not isinstance(contrast_template, list) or contrast_template == row["argv_template"]
+        ):
             raise ManifestError(f"{row_id}: contrast must be a distinct argv")
         if isinstance(contrast_template, list):
             contrast_row: dict[str, object] = {"id": row_id, "argv_template": contrast_template}
             materialize_argv(contrast_row, bindings)
         expected_hash = seal["hash"]
-        if not isinstance(expected_hash, str) or expected_hash != hashlib.sha256(_canonical_without_hash(row)).hexdigest():
+        if (
+            not isinstance(expected_hash, str)
+            or expected_hash != hashlib.sha256(_canonical_without_hash(row)).hexdigest()
+        ):
             raise ManifestError(f"{row_id}: invalid seal hash")
     if counts != {"F": 18, "G": 7, "L": 32}:
         raise ManifestError(f"wrong inventory counts: {counts}")
@@ -133,7 +164,16 @@ def test_manifest_is_complete_and_sealed() -> None:
 def test_materialization_replaces_templates_before_seal() -> None:
     data = json.loads(MANIFEST.read_text())
     row = next(item for item in data["rows"] if item["id"] == "F04")
-    sealed = seal_for_invocation(row, {"PORT": "19123", "PAYLOAD_FILE": "/tmp/fixture/payloads.txt", "CID": "cid-002", "SID": "sid-002", "OPID": "op-002"})
+    sealed = seal_for_invocation(
+        row,
+        {
+            "PORT": "19123",
+            "PAYLOAD_FILE": "/tmp/fixture/payloads.txt",
+            "CID": "cid-002",
+            "SID": "sid-002",
+            "OPID": "op-002",
+        },
+    )
     argv = sealed["argv"]
     assert isinstance(argv, list)
     assert argv[6] == "id=/tmp/fixture/payloads.txt"
@@ -145,7 +185,10 @@ def test_materialization_replaces_templates_before_seal() -> None:
 
 def test_token_materialization_does_not_replace_substrings() -> None:
     row: dict[str, object] = {"id": "collision", "argv_template": ["PAYLOAD_FILE", "{{PORT}}"]}
-    assert materialize_argv(row, {"PORT": "19123", "PAYLOAD_FILE": "/tmp/payloads.txt"}) == ["PAYLOAD_FILE", "19123"]
+    assert materialize_argv(row, {"PORT": "19123", "PAYLOAD_FILE": "/tmp/payloads.txt"}) == [
+        "PAYLOAD_FILE",
+        "19123",
+    ]
 
 
 def test_tampered_expected_or_hash_is_rejected(tmp_path: Path) -> None:
@@ -207,7 +250,9 @@ def test_missing_source_is_rejected(tmp_path: Path) -> None:
 
 def test_actual_before_expected_is_rejected(tmp_path: Path) -> None:
     data = json.loads(MANIFEST.read_text())
-    next(item for item in data["rows"] if item["id"] == "F01")["actual"] = {"observed_at": "2026-10-22T23:59:59Z"}
+    next(item for item in data["rows"] if item["id"] == "F01")["actual"] = {
+        "observed_at": "2026-10-22T23:59:59Z"
+    }
     path = tmp_path / "late-oracle.json"
     path.write_text(json.dumps(data))
     with pytest.raises(ManifestError, match="actual timestamp precedes"):
