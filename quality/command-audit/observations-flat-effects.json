@@ -1337,6 +1337,20 @@
           "effect": "NOT_APPLICABLE"
         },
         "basis": "The preserved relative-target case is not the sealed non-loopback-target contrast and cannot receive a verdict against the original oracleHash."
+      },
+      "exactManifestContrast": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "PRODUCT_FAILURE"
+        ],
+        "manifestVsActual": {
+          "exit": "MISMATCH",
+          "stdout": "MATCH",
+          "stderr": "MISMATCH",
+          "route": "MISMATCH",
+          "effect": "ADAPTER_ZERO_PROVEN"
+        },
+        "basis": "With the non-loopback URL confined to POST data by two process guards, the CLI performed one REST/ledger effect and returned exit 1 plus mixed note/JSON stderr instead of the sealed local exit 2, zero route, and single typed JSON error. The historical pre-subprocess SAFETY_LIMITED record remains intact."
       }
     },
     "manifestCases": [
@@ -1389,6 +1403,110 @@
         "evidence": {
           "expected": "task-7-provenance-r1-F15-manifest-contrast-expected.json",
           "actual": "task-7-provenance-r1-F15-manifest-contrast-actual.json"
+        }
+      },
+      {
+        "case": "contrast-guarded-data-only",
+        "preRunSeal": "2026-10-23T13:17:35.929255+00:00",
+        "sealSha256": "77f5c5454f587935994a308563b41b9f14be4c1eb702f3663264fd2b3b13e0e1",
+        "argv": [
+          "bp",
+          "diff",
+          "https://example.invalid/a",
+          "http://127.0.0.1:55927/b"
+        ],
+        "launcherArgv": [
+          "/usr/bin/sandbox-exec",
+          "-f",
+          "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-314/test_diff_manifest_non_loopbac0/bp-audit-uuccso1r/process-network-guard/network.sb",
+          "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp/.venv/bin/bp",
+          "diff",
+          "https://example.invalid/a",
+          "http://127.0.0.1:55927/b"
+        ],
+        "expected": {
+          "exit": 2,
+          "ledger_delta": 0,
+          "rest": [],
+          "stderr": "typed-json",
+          "stdout": "empty",
+          "target_count": 0,
+          "target_effect": "original manifest non-loopback usage rejection"
+        },
+        "networkGuard": {
+          "allowed": "127.0.0.1:55922",
+          "denied": "all other network and external DNS",
+          "sandboxProfile": "(version 1)\n(allow default)\n(deny network*)\n(allow network-outbound (remote tcp \"localhost:55922\"))\n",
+          "sandboxProfileSha256": "65b1dbc304d38d279ce1a19fd0936bb91a210fa3755bf4fca7f7816b4152ed1e",
+          "sitecustomizeSha256": "0ac030640d194b927e87cc8e26b2acc1edcd1486570df17e6215c7e9127cba22"
+        },
+        "actual": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "note: /utils/diff body comparison is set-based (not unified diff); only status/length/header deltas are returned.\n{\"error\":{\"code\":\"INVALID_REQUEST\",\"message\":\"non-loopback target denied\",\"status\":400,\"http_status\":400,\"op\":\"POST /utils/diff\"}}\n",
+          "REST log": [
+            {
+              "body_length": 110,
+              "body_sha256": "a9ead53c3e22f115adae2774e7b394f275570db8c2b70e27f64c7ef83a741e06",
+              "method": "POST",
+              "path": "/utils/diff",
+              "status": 400
+            }
+          ],
+          "target log": [],
+          "ledgerDelta": 1,
+          "CLI guard trace": [
+            {
+              "event": "GUARD_LOADED",
+              "host": "127.0.0.1",
+              "port": 55922
+            },
+            {
+              "event": "ALLOW_RESOLVE",
+              "host": "127.0.0.1",
+              "port": 55922
+            },
+            {
+              "event": "ALLOW_CONNECT",
+              "host": "127.0.0.1",
+              "port": 55922
+            }
+          ],
+          "DNS guard probe": {
+            "exit": 1,
+            "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import socket; socket.getaddrinfo('example.invalid', 443)\n                   ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-314/test_diff_manifest_non_loopbac0/bp-audit-uuccso1r/process-network-guard/sitecustomize.py\", line 29, in guarded_getaddrinfo\n    raise PermissionError(1, \"network guard denied DNS\")\nPermissionError: [Errno 1] network guard denied DNS\n",
+            "stdout": ""
+          },
+          "OS sandbox target probe": {
+            "exit": 0,
+            "stderr": "",
+            "stdout": "DENIED:1\n"
+          },
+          "postProbeTargetLog": [],
+          "observedAt": "2026-10-23T13:17:37.860760+00:00"
+        },
+        "verdict": "ORACLE_MISMATCH",
+        "classifications": [
+          "FALSE_ORACLE",
+          "PRODUCT_FAILURE"
+        ],
+        "manifestVsActual": {
+          "exit": "MISMATCH",
+          "stdout": "MATCH",
+          "stderr": "MISMATCH",
+          "route": "MISMATCH",
+          "effect": "ADAPTER_ZERO_PROVEN"
+        },
+        "limits": [
+          "The installed bp console script ran inside a macOS sandbox permitting only the owned REST socket. A Python startup guard independently denied all other host/port resolution and connection attempts.",
+          "The CLI trace contains only REST resolution/connection. The external URL was present only in the exact POST body; no target request occurred. A separate no-sitecustomize probe proves the OS sandbox denied the owned target port, and the guarded DNS probe denied example.invalid before resolver access.",
+          "The REST server is still a strict stub and does not prove the Kotlin service rejection path. This case proves real CLI data handling, adapter exit/streams/route/ledger, and zero client-side target traffic."
+        ],
+        "evidence": {
+          "expected": "task-7-data-guard-r1-F15-manifest-contrast-guarded-data-only-expected.json",
+          "expectedSha256": "8f130fffb50fc9ed3d0bc693d81ec81d9c304a840d2108560b17e59a65b22156",
+          "actual": "task-7-data-guard-r1-F15-manifest-contrast-guarded-data-only-actual.json",
+          "actualSha256": "c09b2ef2cd81e0a5253e7e328cd03ec34b427a25d9e2719c7facbca1269252f0"
         }
       }
     ]

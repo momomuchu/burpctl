@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import sqlite3
+import subprocess
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -320,6 +321,185 @@ def _invoke_safety_limited(fixture: AuditFixture, case: Case) -> JsonObject:
     observation["actual"] = actual
     observation["comparison"] = {"safetyPreflight": True, "zeroEffects": True}
     observation["verdict"] = "SAFETY_LIMITED"
+    _write_evidence(f"{stem}-actual.json", observation)
+    return observation
+
+
+def _guarded_diff_data_only(fixture: AuditFixture, external: str, loopback: str) -> JsonObject:
+    guard_dir = fixture.root / "process-network-guard"
+    guard_dir.mkdir(mode=0o700)
+    trace = guard_dir / "trace.jsonl"
+    profile = guard_dir / "network.sb"
+    sitecustomize = guard_dir / "sitecustomize.py"
+    rest_port = fixture.manifest.rest_url.rsplit(":", 1)[1]
+    profile_text = "\n".join(
+        (
+            "(version 1)",
+            "(allow default)",
+            "(deny network*)",
+            f'(allow network-outbound (remote tcp "localhost:{rest_port}"))',
+            "",
+        )
+    )
+    guard_text = '''import json
+import os
+import socket
+
+_HOST = os.environ["BP_GUARD_HOST"]
+_PORT = int(os.environ["BP_GUARD_PORT"])
+_TRACE = os.environ["BP_GUARD_TRACE"]
+_getaddrinfo = socket.getaddrinfo
+_connect = socket.socket.connect
+_connect_ex = socket.socket.connect_ex
+
+def _host(value):
+    return value.decode("ascii") if isinstance(value, bytes) else str(value)
+
+def _record(event, host, port):
+    with open(_TRACE, "a", encoding="utf-8") as output:
+        output.write(json.dumps({"event": event, "host": _host(host), "port": port}, sort_keys=True) + "\\n")
+
+def _allowed(host, port):
+    try:
+        normalized_port = int(port)
+    except (TypeError, ValueError):
+        return False
+    return _host(host) == _HOST and normalized_port == _PORT
+
+def guarded_getaddrinfo(host, port, *args, **kwargs):
+    if not _allowed(host, port):
+        _record("DENY_DNS", host, port)
+        raise PermissionError(1, "network guard denied DNS")
+    _record("ALLOW_RESOLVE", host, port)
+    return _getaddrinfo(host, port, *args, **kwargs)
+
+def guarded_connect(sock, address):
+    if not isinstance(address, tuple) or len(address) < 2 or not _allowed(address[0], address[1]):
+        host, port = address[:2] if isinstance(address, tuple) and len(address) >= 2 else (address, None)
+        _record("DENY_CONNECT", host, port)
+        raise PermissionError(1, "network guard denied connection")
+    _record("ALLOW_CONNECT", address[0], address[1])
+    return _connect(sock, address)
+
+def guarded_connect_ex(sock, address):
+    if not isinstance(address, tuple) or len(address) < 2 or not _allowed(address[0], address[1]):
+        host, port = address[:2] if isinstance(address, tuple) and len(address) >= 2 else (address, None)
+        _record("DENY_CONNECT_EX", host, port)
+        return 1
+    _record("ALLOW_CONNECT_EX", address[0], address[1])
+    return _connect_ex(sock, address)
+
+socket.getaddrinfo = guarded_getaddrinfo
+socket.socket.connect = guarded_connect
+socket.socket.connect_ex = guarded_connect_ex
+_record("GUARD_LOADED", _HOST, _PORT)
+'''
+    profile.write_text(profile_text, encoding="utf-8")
+    sitecustomize.write_text(guard_text, encoding="utf-8")
+    cli = Path(__file__).resolve().parents[1] / ".venv" / "bin" / "bp"
+    python = Path(__file__).resolve().parents[1] / ".venv" / "bin" / "python"
+    argv = ["/usr/bin/sandbox-exec", "-f", str(profile), str(cli), "diff", external, loopback]
+    env = dict(os.environ)
+    env.update(
+        {
+            "HOME": str(fixture.manifest.home),
+            "BURP_REST_URL": fixture.manifest.rest_url,
+            "BP_LEDGER_PATH": str(fixture.manifest.ledger_path),
+            "BP_CONFIG_PATH": str(fixture.manifest.config_path),
+            "BP_PAYLOAD_DIR": str(fixture.manifest.payload_dir),
+            "BP_AGENT": "1",
+            "NO_COLOR": "1",
+            "TERM": "dumb",
+            "PYTHONPATH": str(guard_dir),
+            "BP_GUARD_HOST": "127.0.0.1",
+            "BP_GUARD_PORT": rest_port,
+            "BP_GUARD_TRACE": str(trace),
+        }
+    )
+    before = fixture.snapshot()
+    ledger_before = _ledger_count(fixture.manifest.ledger_path)
+    pre_run: JsonObject = {
+        "id": "F15",
+        "variant": "manifest-contrast-guarded-data-only",
+        "candidate": os.environ.get("BP_AUDIT_CANDIDATE", "3af139dc0b4020923f831099338c92af3265d7e2"),
+        "oracleHash": ORACLE_HASHES["F15"],
+        "oracleCase": "contrast",
+        "preRunSeal": datetime.now(timezone.utc).isoformat(),
+        "manifestArgv": ["bp", "diff", external, loopback],
+        "argv": argv,
+        "env": {key: env[key] for key in ("HOME", "BURP_REST_URL", "BP_LEDGER_PATH", "BP_AGENT", "PYTHONPATH", "BP_GUARD_HOST", "BP_GUARD_PORT", "BP_GUARD_TRACE")},
+        "networkGuard": {
+            "sandboxProfile": profile_text,
+            "sandboxProfileSha256": hashlib.sha256(profile_text.encode()).hexdigest(),
+            "sitecustomizeSha256": hashlib.sha256(guard_text.encode()).hexdigest(),
+            "allowed": f"127.0.0.1:{rest_port}",
+            "denied": "all other network and external DNS",
+        },
+        "prestate": {"rest": _effect_rows(before.rest_effects), "target": _effect_rows(before.target_effects)},
+        "expected": {
+            "exit": 2,
+            "stdout": "empty",
+            "stderr": "typed-json",
+            "rest": [],
+            "target_count": 0,
+            "ledger_delta": 0,
+            "target_effect": "original manifest non-loopback usage rejection",
+        },
+    }
+    seal_input = json.dumps(pre_run, sort_keys=True, separators=(",", ":")).encode()
+    pre_run["sealSha256"] = hashlib.sha256(seal_input).hexdigest()
+    prefix = os.environ.get("BP_AUDIT_RUN_ID", "local")
+    stem = f"task-7-{prefix}-F15-manifest-contrast-guarded-data-only"
+    _write_evidence(f"{stem}-expected.json", pre_run)
+
+    result = subprocess.run(argv, env=env, capture_output=True, text=True, check=False)
+    after_cli = fixture.snapshot()
+    cli_trace = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines()]
+    target_port = fixture.manifest.target_url.rsplit(":", 1)[1]
+    os_probe_code = "\n".join(
+        (
+            "import socket",
+            "s = socket.socket(); s.settimeout(0.2)",
+            f"try: s.connect(('127.0.0.1', {target_port}))",
+            "except PermissionError as error: print(f'DENIED:{error.errno}')",
+            "else: raise SystemExit('sandbox unexpectedly allowed target socket')",
+        )
+    )
+    os_probe = subprocess.run(
+        ["/usr/bin/sandbox-exec", "-f", str(profile), str(python), "-S", "-c", os_probe_code],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    dns_probe = subprocess.run(
+        ["/usr/bin/sandbox-exec", "-f", str(profile), str(python), "-c", "import socket; socket.getaddrinfo('example.invalid', 443)"],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    full_trace = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines()]
+    after_probes = fixture.snapshot()
+    rest_delta = after_cli.rest_effects[len(before.rest_effects) :]
+    target_delta = after_cli.target_effects[len(before.target_effects) :]
+    actual: JsonObject = {
+        "observedAt": datetime.now(timezone.utc).isoformat(),
+        "exit": result.returncode,
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "REST log": _effect_rows(rest_delta),
+        "target log": _effect_rows(target_delta),
+        "ledgerDelta": _ledger_count(fixture.manifest.ledger_path) - ledger_before,
+        "CLI guard trace": cli_trace,
+        "DNS guard probe": {"exit": dns_probe.returncode, "stdout": dns_probe.stdout, "stderr": dns_probe.stderr},
+        "OS sandbox target probe": {"exit": os_probe.returncode, "stdout": os_probe.stdout, "stderr": os_probe.stderr},
+        "full guard trace": full_trace,
+        "postProbeTargetLog": _effect_rows(after_probes.target_effects[len(before.target_effects) :]),
+    }
+    observation: JsonObject = dict(pre_run)
+    observation["actual"] = actual
+    observation["verdict"] = "ORACLE_MISMATCH"
     _write_evidence(f"{stem}-actual.json", observation)
     return observation
 
@@ -797,6 +977,40 @@ def test_diff_manifest_non_loopback_target_is_safety_limited(tmp_path: Path) -> 
         assert isinstance(actual, Mapping)
         assert actual["subprocessStarted"] is False
         assert actual["rest"] == [] and actual["target"] == [] and actual["ledgerDelta"] == 0
+
+
+def test_diff_manifest_non_loopback_is_guarded_data_only(tmp_path: Path) -> None:
+    with FixtureRoot(tmp_path) as fixture:
+        external = "https://example.invalid/a"
+        loopback = f"{fixture.manifest.target_url}/b"
+        fixture.expect_rest_route(
+            "POST",
+            "/utils/diff",
+            expected_body=_json_body(
+                {"a": {"url": external, "method": "GET"}, "b": {"url": loopback, "method": "GET"}}
+            ),
+            status=400,
+            body=_error("INVALID_REQUEST", "non-loopback target denied"),
+        )
+        observation = _guarded_diff_data_only(fixture, external, loopback)
+        _assert_verdict(observation, "ORACLE_MISMATCH")
+        actual = observation["actual"]
+        assert isinstance(actual, Mapping)
+        assert actual["exit"] == 1 and actual["stdout"] == "" and actual["ledgerDelta"] == 1
+        assert isinstance(actual["stderr"], str) and actual["stderr"].startswith("note:")
+        assert isinstance(actual["REST log"], Sequence) and len(actual["REST log"]) == 1
+        assert actual["target log"] == [] and actual["postProbeTargetLog"] == []
+        cli_trace = actual["CLI guard trace"]
+        assert isinstance(cli_trace, Sequence)
+        events = [item["event"] for item in cli_trace if isinstance(item, Mapping)]
+        assert "GUARD_LOADED" in events and "ALLOW_CONNECT" in events
+        assert not any("DENY" in str(event) for event in events)
+        dns_probe = actual["DNS guard probe"]
+        os_probe = actual["OS sandbox target probe"]
+        assert isinstance(dns_probe, Mapping) and dns_probe["exit"] != 0
+        assert "network guard denied DNS" in str(dns_probe["stderr"])
+        assert isinstance(os_probe, Mapping) and os_probe["exit"] == 0
+        assert os_probe["stdout"] == "DENIED:1\n"
 
 
 def test_endpoints_normal_and_external_bundle_report(tmp_path: Path) -> None:
