@@ -11,7 +11,7 @@ from typing import Annotated, Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, run
+from bp.cliutil import fail_usage, run
 
 # ---------------------------------------------------------------------------
 # config sub-typer  (bp config get … / bp config set …)
@@ -52,16 +52,14 @@ config_set = typer.Typer(
 sub.add_typer(config_set, name="set")
 
 
-def _parse_config_json(raw: str) -> dict[str, Any]:
+def _parse_config_json(raw: str, fmt: str = "table") -> dict[str, Any]:
     """Parse --json as an object while preserving nested JSON value types."""
     try:
         parsed = _json.loads(raw)
     except _json.JSONDecodeError as exc:
-        typer.echo(f"error: --json is not valid JSON: {exc}", err=True)
-        raise typer.Exit(EXIT_USAGE) from exc
+        fail_usage(fmt, f"--json is not valid JSON: {exc}")
     if not isinstance(parsed, dict):
-        typer.echo("error: --json must be a JSON object.", err=True)
-        raise typer.Exit(EXIT_USAGE)
+        fail_usage(fmt, "--json must be a JSON object.")
     return parsed
 
 
@@ -78,7 +76,7 @@ def config_set_project(
     ],
 ) -> None:
     """Import a complete Burp project configuration object."""
-    config_map = _parse_config_json(json_str)
+    config_map = _parse_config_json(json_str, ctx.obj.fmt)
     body: dict[str, Any] = {"config": config_map}
 
     def _do(c: Any) -> Any:
@@ -100,7 +98,7 @@ def config_set_user(
     ],
 ) -> None:
     """Import a complete Burp user configuration object."""
-    config_map = _parse_config_json(json_str)
+    config_map = _parse_config_json(json_str, ctx.obj.fmt)
     body: dict[str, Any] = {"config": config_map}
 
     def _do(c: Any) -> Any:
@@ -127,8 +125,13 @@ def register(app: typer.Typer) -> None:
         Montoya only allows inspection of the currently-active extension, so
         'total' is always 1 regardless of how many extensions are loaded in Burp.
         """
-        typer.echo(
-            "note: /extensions only reports the active extension; total is always 1.",
-            err=True,
+        run(
+            ctx,
+            lambda c: c.get("/extensions"),
+            success_notes=[
+                (
+                    "EXTENSIONS_SELF_ONLY",
+                    "/extensions only reports the active extension; total is always 1.",
+                )
+            ],
         )
-        run(ctx, lambda c: c.get("/extensions"))

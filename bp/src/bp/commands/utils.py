@@ -54,12 +54,6 @@ def diff(
     Example:
       bp diff https://api.example.com/v1/resource https://api.example.com/v2/resource
     """
-    typer.echo(
-        "note: /utils/diff body comparison is set-based (not unified diff);"
-        " only status/length/header deltas are returned.",
-        err=True,
-    )
-
     target_a: dict[str, Any] = {"url": a, "method": method_a}
     if body_a is not None:
         target_a["body"] = body_a
@@ -69,7 +63,17 @@ def diff(
         target_b["body"] = body_b
 
     body: dict[str, Any] = {"a": target_a, "b": target_b}
-    run(ctx, lambda c: c.post("/utils/diff", body))
+    run(
+        ctx,
+        lambda c: c.post("/utils/diff", body),
+        success_notes=[
+            (
+                "DIFF_SET_BASED",
+                "/utils/diff body comparison is set-based (not unified diff);"
+                " only status/length/header deltas are returned.",
+            )
+        ],
+    )
 
 
 # ---------------------------------------------------------------------------

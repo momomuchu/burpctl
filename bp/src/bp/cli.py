@@ -11,13 +11,25 @@ import json
 import os
 import sys
 from dataclasses import asdict
-from typing import Any
+from importlib import import_module
+from importlib.metadata import version as distribution_version
+from typing import TYPE_CHECKING, Any
 
 import typer
 
+if TYPE_CHECKING:
+    from typer._click.exceptions import ClickException
+else:
+    _click_exceptions_module = (
+        "typer._click.exceptions"
+        if tuple(int(part) for part in distribution_version("typer").split(".")[:2]) >= (0, 26)
+        else "click.exceptions"
+    )
+    ClickException = getattr(import_module(_click_exceptions_module), "ClickException")
+
 from bp import __version__
 from bp.client import BurpClient
-from bp.cliutil import EXIT_USAGE, State, exit_code_for_error_code, run
+from bp.cliutil import EXIT_USAGE, State, emit_error, exit_code_for_error_code, run
 from bp.models import ProxyEntry
 from bp.output import FORMATS
 from bp.runner import FuzzResult, run_fuzz
@@ -180,13 +192,23 @@ def fuzz(
     for spec in payloads:
         name, sep, path = spec.partition("=")
         if not sep:
-            typer.echo(f"error: --payloads must be NAME=FILE, got {spec!r}", err=True)
+            emit_error(
+                ctx.obj.fmt,
+                "USAGE_ERROR",
+                f"--payloads must be NAME=FILE, got {spec!r}",
+                redact_secrets=not ctx.obj.no_redact,
+            )
             raise typer.Exit(EXIT_USAGE)
         try:
             with open(path, "rb") as fh:
                 payload_map[name] = [ln.rstrip(b"\r\n") for ln in fh if ln.strip()]
         except OSError as exc:
-            typer.echo(f"error: cannot read payload file {path}: {exc}", err=True)
+            emit_error(
+                ctx.obj.fmt,
+                "USAGE_ERROR",
+                f"cannot read payload file {path}: {exc}",
+                redact_secrets=not ctx.obj.no_redact,
+            )
             raise typer.Exit(EXIT_USAGE) from None
 
     def _do(client: BurpClient) -> Any:
@@ -285,4 +307,33 @@ def cli_main() -> None:
     ADR-0012: ``bp`` is primary, ``burpctl`` is the alias).
     """
     prog = os.path.basename(sys.argv[0]) or "bp"
-    app(args=_hoist_global_opts(sys.argv[1:]), prog_name=prog)
+    args = _hoist_global_opts(sys.argv[1:])
+    boundary = args.index("--") if "--" in args else len(args)
+    parser_args = args[:boundary]
+    formats: list[str] = []
+    i = 0
+    while i < len(parser_args):
+        arg = parser_args[i]
+        if arg == "--format" and i + 1 < len(parser_args):
+            formats.append(parser_args[i + 1])
+            i += 2
+        elif arg.startswith("--format="):
+            formats.append(arg.partition("=")[2])
+            i += 1
+        else:
+            i += 1
+    error_format = (
+        formats[-1]
+        if formats and formats[-1] in FORMATS
+        else ("json" if os.environ.get("BP_AGENT") == "1" else "table")
+    )
+    if error_format != "json":
+        app(args=args, prog_name=prog)
+        return
+    try:
+        exit_code = app(args=args, prog_name=prog, standalone_mode=False)
+    except ClickException as exc:
+        emit_error("json", "USAGE_ERROR", exc.format_message(), redact_secrets=True)
+        raise SystemExit(exc.exit_code) from None
+    if exit_code is not None:
+        raise SystemExit(exit_code)

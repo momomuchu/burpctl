@@ -12,7 +12,7 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, run
+from bp.cliutil import fail_usage, run
 from bp.models import HistoryEntryResponse, ReplayResponse
 
 
@@ -78,6 +78,10 @@ def _replay_display(response: dict[str, Any]) -> dict[str, Any]:
     return {
         "original": _history_entry_display(rr.original.model_dump()),
         "replayed": _history_entry_display(rr.replayed.model_dump()),
+        "persistence": {
+            "status": rr.persistence.status,
+            "warning": rr.persistence.warning,
+        },
     }
 
 
@@ -267,12 +271,12 @@ def history_clear(
     NOTE: returns 404 if the Burp extension DB failed to initialise.
     """
     if not confirm:
-        typer.echo(
-            "warning: 'bp history clear' irreversibly wipes the history and sitemap tables.\n"
+        fail_usage(
+            ctx.obj.fmt,
+            "'bp history clear' irreversibly wipes the history and sitemap tables.\n"
             "         Pass --confirm to proceed.",
-            err=True,
+            human_label="warning",
         )
-        raise typer.Exit(EXIT_USAGE)
 
     def _do(c: Any) -> Any:
         return c._request("DELETE", "/history")
@@ -288,8 +292,7 @@ def history_clear(
 def register(app: typer.Typer) -> None:
     """Register the 'history' command group onto the root app.
 
-    The default sub-command (bare 'bp history') maps to 'list'.
+    Bare 'bp history' has no default sub-command: Typer prints help and exits with usage code 2.
     """
-    # Make bare 'bp history' invoke the list command by registering it both
-    # as a sub-command and as the callback via invoke_without_command.
+    # Register the group only; bare 'bp history' remains a help/usage invocation.
     app.add_typer(sub, name="history")
