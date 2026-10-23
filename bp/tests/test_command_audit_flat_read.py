@@ -13,12 +13,13 @@ import sqlite3
 import time
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
-from typing import Final
+from typing import Final, Literal, TypeAlias, cast
+from collections.abc import Mapping, Sequence
 from urllib.parse import quote
 
 import pytest
 
-from audit_fixture import AuditFixture, FixtureRoot
+from audit_fixture import AuditFixture, FixtureRoot, FixtureSnapshot
 from bp import __version__
 from bp.ledger import Ledger, OpRecord
 
@@ -27,6 +28,9 @@ ROOT: Final = Path(__file__).resolve().parents[2]
 ORACLES: Final = ROOT / "quality" / "command-audit" / "oracles.json"
 ASSIGNED: Final = ("F01", "F02", "F06", "F10", "F11", "F12", "F13", "F14", "F17", "F18")
 EMPTY_SHA256: Final = hashlib.sha256(b"").hexdigest()
+JsonScalar: TypeAlias = str | int | float | bool | None
+JsonValue: TypeAlias = JsonScalar | Sequence["JsonValue"] | Mapping[str, "JsonValue"]
+JsonObject: TypeAlias = dict[str, JsonValue]
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,8 +39,8 @@ class Case:
     argv: tuple[str, ...]
     method: str | None
     path: str | None
-    response_data: dict[str, object] | None
-    expected_stdout: dict[str, object] | tuple[dict[str, object], ...] | None
+    response_data: JsonObject | None
+    expected_stdout: JsonValue
     expected_verdict: str
 
 
@@ -186,8 +190,8 @@ NORMAL_CASES: Final = (
 )
 
 
-def _envelope(data: dict[str, object] | None = None, *, code: str | None = None) -> bytes:
-    value: dict[str, object]
+def _envelope(data: Mapping[str, JsonValue] | None = None, *, code: str | None = None) -> bytes:
+    value: JsonObject
     if code is None:
         value = {"success": True, "data": data, "error": None}
     else:
@@ -199,11 +203,14 @@ def _envelope(data: dict[str, object] | None = None, *, code: str | None = None)
     return json.dumps(value, separators=(",", ":")).encode()
 
 
-def _effects(snapshot: object, name: str) -> list[dict[str, object]]:
-    return [asdict(effect) for effect in getattr(snapshot, name)]
+def _effects(
+    snapshot: FixtureSnapshot, name: Literal["rest_effects", "target_effects"]
+) -> list[JsonObject]:
+    effects = snapshot.rest_effects if name == "rest_effects" else snapshot.target_effects
+    return [cast(JsonObject, asdict(effect)) for effect in effects]
 
 
-def _ledger(path: Path) -> list[dict[str, object]]:
+def _ledger(path: Path) -> list[JsonObject]:
     if not path.exists():
         return []
     with sqlite3.connect(path) as connection:
@@ -211,20 +218,36 @@ def _ledger(path: Path) -> list[dict[str, object]]:
         rows = connection.execute(
             "SELECT id, ts, command, burp_op, target, tag, status, exit_code FROM ops ORDER BY ts, id"
         ).fetchall()
-    return [dict(row) for row in rows]
+    return [cast(JsonObject, dict(row)) for row in rows]
 
 
-def _oracle(audit_id: str) -> dict[str, object]:
-    document = json.loads(ORACLES.read_text())
-    return next(row for row in document["rows"] if row["id"] == audit_id)
+def _json_object(value: JsonValue) -> JsonObject:
+    assert isinstance(value, dict)
+    return cast(JsonObject, value)
 
 
-def _parse_stdout(stdout: str) -> dict[str, object] | tuple[dict[str, object], ...] | str | None:
+def _json_list(value: JsonValue) -> list[JsonValue]:
+    assert isinstance(value, list)
+    return cast(list[JsonValue], value)
+
+
+def _json_int(value: JsonValue) -> int:
+    assert isinstance(value, int) and not isinstance(value, bool)
+    return value
+
+
+def _oracle(audit_id: str) -> JsonObject:
+    document = cast(JsonObject, json.loads(ORACLES.read_text()))
+    rows = _json_list(document["rows"])
+    return next(row for value in rows if (row := _json_object(value))["id"] == audit_id)
+
+
+def _parse_stdout(stdout: str) -> JsonValue:
     lines = stdout.splitlines()
     if not lines:
         return None
     try:
-        parsed = tuple(json.loads(line) for line in lines)
+        parsed = [cast(JsonValue, json.loads(line)) for line in lines]
     except json.JSONDecodeError:
         return stdout.rstrip("\n")
     return parsed[0] if len(parsed) == 1 else parsed
@@ -237,19 +260,19 @@ def _evidence_dir(tmp_path: Path) -> Path:
     return directory
 
 
-def _write_once(path: Path, value: dict[str, object]) -> None:
+def _write_once(path: Path, value: Mapping[str, JsonValue]) -> None:
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w") as stream:
         json.dump(value, stream, indent=2, sort_keys=True)
         stream.write("\n")
 
 
-def _save_observation(observation: dict[str, object], case_name: str) -> None:
+def _save_observation(observation: JsonObject, case_name: str) -> None:
     configured = os.environ.get("BP_AUDIT_OBSERVATIONS_PATH")
     if configured is None or case_name not in {"normal", "contrast"}:
         return
     path = Path(configured)
-    rows = json.loads(path.read_text()) if path.exists() else []
+    rows = cast(list[JsonObject], json.loads(path.read_text())) if path.exists() else []
     audit_id = str(observation["id"])
     row = next((item for item in rows if item["id"] == audit_id), None)
     if row is None:
@@ -274,21 +297,23 @@ def _invoke(
     audit_id: str,
     case_name: str,
     argv: tuple[str, ...],
-    expected: dict[str, object],
+    expected: Mapping[str, JsonValue],
     *,
     executable: str = "bp",
-) -> dict[str, object]:
+) -> JsonObject:
     oracle = _oracle(audit_id)
     before = fixture.snapshot()
     ledger_before = _ledger(fixture.manifest.ledger_path)
     sequence = time.time_ns()
     expected_at = time.time_ns()
     full_argv = [*fixture.command(executable), *argv]
-    pre = {
+    oracle_seal = _json_object(oracle["seal"])
+    expected_object = dict(expected)
+    pre: JsonObject = {
         "id": audit_id,
         "case": case_name,
         "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
-        "oracleHash": oracle["seal"]["hash"],
+        "oracleHash": oracle_seal["hash"],
         "source": oracle["authority"],
         "expectedAtNs": expected_at,
         "argv": full_argv,
@@ -307,7 +332,7 @@ def _invoke(
             "target": _effects(before, "target_effects"),
             "ledger": ledger_before,
         },
-        "expected": expected,
+        "expected": expected_object,
     }
     canonical = json.dumps(pre, separators=(",", ":"), sort_keys=True).encode()
     pre["preRunSeal"] = hashlib.sha256(canonical).hexdigest()
@@ -317,7 +342,7 @@ def _invoke(
     result = fixture.run(argv, executable=executable)
     actual_at = time.time_ns()
     after = fixture.snapshot()
-    actual = {
+    actual: JsonObject = {
         "exit": result.returncode,
         "stdout": result.stdout,
         "stderr": result.stderr,
@@ -325,24 +350,25 @@ def _invoke(
         "targetLog": _effects(after, "target_effects"),
         "ledger": _ledger(fixture.manifest.ledger_path),
     }
-    checks = {
-        "exit": result.returncode == expected["exit"],
-        "stdout": _parse_stdout(result.stdout) == expected["stdout"],
-        "stderr": _stderr_matches(result.stderr, str(expected["stderr"])),
-        "rest": _effects(after, "rest_effects") == expected["restLog"],
-        "target": _effects(after, "target_effects") == expected["targetLog"],
-        "ledger": _ledger_matches(_ledger(fixture.manifest.ledger_path), expected["ledger"]),
+    checks_bool = {
+        "exit": result.returncode == expected_object["exit"],
+        "stdout": _parse_stdout(result.stdout) == expected_object["stdout"],
+        "stderr": _stderr_matches(result.stderr, str(expected_object["stderr"])),
+        "rest": _effects(after, "rest_effects") == expected_object["restLog"],
+        "target": _effects(after, "target_effects") == expected_object["targetLog"],
+        "ledger": _ledger_matches(_ledger(fixture.manifest.ledger_path), expected_object["ledger"]),
     }
-    verdict = "PASS" if all(checks.values()) else "FAIL"
-    observation = {
+    verdict = "PASS" if all(checks_bool.values()) else "FAIL"
+    checks = cast(JsonObject, checks_bool)
+    observation: JsonObject = {
         "id": audit_id,
-        "oracleHash": oracle["seal"]["hash"],
+        "oracleHash": oracle_seal["hash"],
         "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
         "preRunSeal": pre["preRunSeal"],
         "expectedAtNs": expected_at,
         "actualAtNs": actual_at,
         "argv": full_argv,
-        "expected": expected,
+        "expected": expected_object,
         "actual": actual,
         "verdict": verdict,
         "checks": checks,
@@ -355,10 +381,11 @@ def _invoke(
 
 def _typed_error(stderr: str, code: str) -> bool:
     try:
-        value = json.loads(stderr)
+        value = _json_object(cast(JsonValue, json.loads(stderr)))
     except json.JSONDecodeError:
         return False
-    return value.get("error", {}).get("code") == code
+    error = value.get("error")
+    return isinstance(error, dict) and error.get("code") == code
 
 
 def _stderr_matches(stderr: str, expected: str) -> bool:
@@ -369,7 +396,7 @@ def _stderr_matches(stderr: str, expected: str) -> bool:
     return _typed_error(stderr, expected)
 
 
-def _ledger_matches(actual: list[dict[str, object]], expected: object) -> bool:
+def _ledger_matches(actual: list[JsonObject], expected: JsonValue) -> bool:
     if isinstance(expected, list):
         return actual == expected
     if not isinstance(expected, dict):
@@ -384,12 +411,12 @@ def _network_expected(
     *,
     method: str,
     path: str,
-    stdout: dict[str, object] | None,
+    stdout: JsonValue,
     exit_code: int = 0,
     stderr: str = "empty",
     request_body: bytes = b"",
     ledger_status: str = "ok",
-) -> dict[str, object]:
+) -> JsonObject:
     return {
         "exit": exit_code,
         "stdout": stdout,
@@ -413,10 +440,10 @@ def _network_expected(
     }
 
 
-def _assert_observed(observation: dict[str, object], verdict: str) -> None:
-    assert observation["actualAtNs"] > observation["expectedAtNs"]
+def _assert_observed(observation: JsonObject, verdict: str) -> None:
+    assert _json_int(observation["actualAtNs"]) > _json_int(observation["expectedAtNs"])
     assert observation["verdict"] == verdict, observation
-    assert observation["actual"]["targetLog"] == []
+    assert _json_object(observation["actual"])["targetLog"] == []
 
 
 @pytest.mark.parametrize("case", NORMAL_CASES, ids=lambda case: case.audit_id)
@@ -473,9 +500,9 @@ def test_f17_normal_uses_two_newest_seeded_rows(tmp_path: Path) -> None:
             third = ledger.record(
                 OpRecord(status="refused", command="bp third", target="http://fixture.invalid")
             )
-            expected_rows = tuple(row.as_dict() for row in ledger.query())[:2]
+            expected_rows = [cast(JsonObject, row.as_dict()) for row in ledger.query()][:2]
         seeded = _ledger(fixture.manifest.ledger_path)
-        expected = {
+        expected: JsonObject = {
             "exit": 0,
             "stdout": expected_rows,
             "stderr": "empty",
@@ -486,7 +513,7 @@ def test_f17_normal_uses_two_newest_seeded_rows(tmp_path: Path) -> None:
         observation = _invoke(fixture, tmp_path, "F17", "normal", ("log", "--limit", "2"), expected)
         _assert_observed(observation, "PASS")
         assert first not in {second, third}
-        assert "secret" not in observation["actual"]["stdout"]
+        assert "secret" not in str(_json_object(observation["actual"])["stdout"])
 
 
 def test_f18_normal_updates_only_seeded_opid(tmp_path: Path) -> None:
@@ -495,7 +522,7 @@ def test_f18_normal_updates_only_seeded_opid(tmp_path: Path) -> None:
             op_id = ledger.record(OpRecord(status="ok", command="bp seeded"))
         before = _ledger(fixture.manifest.ledger_path)
         after = [dict(row, tag="audit") if row["id"] == op_id else row for row in before]
-        expected = {
+        expected: JsonObject = {
             "exit": 0,
             "stdout": {"id": op_id, "tag": "audit", "status": "tagged"},
             "stderr": "empty",
@@ -518,7 +545,7 @@ def _refused_fixture(fixture: AuditFixture) -> None:
 def test_contrast_transport_refusal(audit_id: str, argv: tuple[str, ...], tmp_path: Path) -> None:
     with FixtureRoot(tmp_path) as fixture:
         _refused_fixture(fixture)
-        expected = {
+        expected: JsonObject = {
             "exit": 3,
             "stdout": None,
             "stderr": "CONNECTION_REFUSED",
@@ -537,7 +564,7 @@ def test_contrast_transport_refusal(audit_id: str, argv: tuple[str, ...], tmp_pa
 
 def test_f02_contrast_local_version_is_not_extension_version(tmp_path: Path) -> None:
     with FixtureRoot(tmp_path) as fixture:
-        sealed = {
+        sealed: JsonObject = {
             "exit": 0,
             "stdout": None,
             "stderr": "typed_error",
@@ -547,7 +574,7 @@ def test_f02_contrast_local_version_is_not_extension_version(tmp_path: Path) -> 
         }
         observation = _invoke(fixture, tmp_path, "F02", "contrast", ("--version",), sealed)
         _assert_observed(observation, "FAIL")
-        assert observation["actual"]["stdout"] == f"{__version__}\n"
+        assert _json_object(observation["actual"])["stdout"] == f"{__version__}\n"
 
 
 @pytest.mark.parametrize(
@@ -563,7 +590,7 @@ def test_f02_contrast_local_version_is_not_extension_version(tmp_path: Path) -> 
     ],
 )
 def test_contrast_empty_result_still_reads_route(
-    audit_id: str, argv: tuple[str, ...], path: str, data: dict[str, object], tmp_path: Path
+    audit_id: str, argv: tuple[str, ...], path: str, data: JsonObject, tmp_path: Path
 ) -> None:
     with FixtureRoot(tmp_path) as fixture:
         if audit_id == "F10":
@@ -571,7 +598,7 @@ def test_contrast_empty_result_still_reads_route(
             argv = ("sitemap", target)
             path = f"/target/sitemap?url={quote(target, safe='')}"
         fixture.add_rest_route("GET", path, body=_envelope(data))
-        sealed = {
+        sealed: JsonObject = {
             "exit": 0,
             "stdout": None,
             "stderr": "typed_error",
@@ -586,12 +613,13 @@ def test_contrast_empty_result_still_reads_route(
         }
         observation = _invoke(fixture, tmp_path, audit_id, "contrast", argv, sealed)
         _assert_observed(observation, "FAIL")
-        assert observation["actual"]["restLog"][0]["path"] == path
+        rest_log = _json_list(_json_object(observation["actual"])["restLog"])
+        assert _json_object(rest_log[0])["path"] == path
 
 
 def test_f11_contrast_invalid_encoding_is_usage_without_http(tmp_path: Path) -> None:
     with FixtureRoot(tmp_path) as fixture:
-        sealed = {
+        sealed: JsonObject = {
             "exit": 2,
             "stdout": None,
             "stderr": "USAGE_ERROR",
@@ -603,7 +631,7 @@ def test_f11_contrast_invalid_encoding_is_usage_without_http(tmp_path: Path) -> 
             fixture, tmp_path, "F11", "contrast", ("encode", "a b", "--enc", "rot13"), sealed
         )
         _assert_observed(observation, "FAIL")
-        assert observation["actual"]["stderr"].startswith("error: --enc")
+        assert str(_json_object(observation["actual"])["stderr"]).startswith("error: --enc")
 
 
 @pytest.mark.parametrize(
@@ -618,7 +646,7 @@ def test_contrast_server_rejection_has_one_post(
 ) -> None:
     with FixtureRoot(tmp_path) as fixture:
         fixture.add_rest_route("POST", path, status=400, body=_envelope(code="INVALID_REQUEST"))
-        sealed = {
+        sealed: JsonObject = {
             "exit": 1,
             "stdout": None,
             "stderr": "INVALID_REQUEST",
@@ -628,12 +656,13 @@ def test_contrast_server_rejection_has_one_post(
         }
         observation = _invoke(fixture, tmp_path, audit_id, "contrast", argv, sealed)
         _assert_observed(observation, "FAIL")
-        assert observation["actual"]["restLog"][0]["path"] == path
+        rest_log = _json_list(_json_object(observation["actual"])["restLog"])
+        assert _json_object(rest_log[0])["path"] == path
 
 
 def test_f17_contrast_invalid_status_is_typed_usage(tmp_path: Path) -> None:
     with FixtureRoot(tmp_path) as fixture:
-        expected = {
+        expected: JsonObject = {
             "exit": 2,
             "stdout": None,
             "stderr": "USAGE_ERROR",
@@ -652,7 +681,7 @@ def test_unknown_opid_contrast_has_no_effect(tmp_path: Path) -> None:
         with Ledger(fixture.manifest.ledger_path) as ledger:
             known = ledger.record(OpRecord(status="ok", command="bp seed"))
         unchanged = _ledger(fixture.manifest.ledger_path)
-        expected = {
+        expected: JsonObject = {
             "exit": 1,
             "stdout": None,
             "stderr": "NOT_FOUND",
@@ -669,7 +698,7 @@ def test_unknown_opid_contrast_has_no_effect(tmp_path: Path) -> None:
 
 def test_alias_parity_and_global_placement(tmp_path: Path) -> None:
     with FixtureRoot(tmp_path) as fixture:
-        data = {
+        data: JsonObject = {
             "result": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
             "algorithm": "sha256",
         }
@@ -690,7 +719,8 @@ def test_alias_parity_and_global_placement(tmp_path: Path) -> None:
             expected,
             executable="bp",
         )
-        expected["restLog"] = [*expected["restLog"], expected["restLog"][0]]
+        first_rest_log = _json_list(expected["restLog"])
+        expected["restLog"] = [*first_rest_log, first_rest_log[0]]
         alias = _invoke(
             fixture,
             tmp_path,
@@ -700,16 +730,18 @@ def test_alias_parity_and_global_placement(tmp_path: Path) -> None:
             expected,
             executable="burpctl",
         )
-        assert (bp["actual"]["exit"], bp["actual"]["stdout"], bp["actual"]["stderr"]) == (
-            alias["actual"]["exit"],
-            alias["actual"]["stdout"],
-            alias["actual"]["stderr"],
+        bp_actual = _json_object(bp["actual"])
+        alias_actual = _json_object(alias["actual"])
+        assert (bp_actual["exit"], bp_actual["stdout"], bp_actual["stderr"]) == (
+            alias_actual["exit"],
+            alias_actual["stdout"],
+            alias_actual["stderr"],
         )
 
 
 def test_invalid_format_has_usage_exit_and_zero_effects(tmp_path: Path) -> None:
     with FixtureRoot(tmp_path) as fixture:
-        expected = {
+        expected: JsonObject = {
             "exit": 2,
             "stdout": None,
             "stderr": "typed_error",
@@ -720,8 +752,9 @@ def test_invalid_format_has_usage_exit_and_zero_effects(tmp_path: Path) -> None:
         observation = _invoke(
             fixture, tmp_path, "F01", "invalid-format", ("health", "--format", "yaml"), expected
         )
-        assert observation["actual"]["exit"] == 2
-        assert observation["actual"]["restLog"] == observation["actual"]["targetLog"] == []
+        actual = _json_object(observation["actual"])
+        assert actual["exit"] == 2
+        assert actual["restLog"] == actual["targetLog"] == []
 
 
 def test_raw_rejects_structured_output_after_one_local_read(tmp_path: Path) -> None:
