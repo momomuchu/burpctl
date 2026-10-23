@@ -181,6 +181,11 @@ def test_history_rows_accepts_complete_empty_response_wrapper() -> None:
     assert _history_rows_from_response({"entries": [], "total": 0, "page": 0, "pageSize": 50}) == []
 
 
+def test_history_rows_rejects_coerced_wrapper_types() -> None:
+    with pytest.raises(ValidationError):
+        _history_rows_from_response({"entries": [], "total": "0", "page": 0, "pageSize": 50})
+
+
 # ---------------------------------------------------------------------------
 # [37] history get default projection excludes blob fields
 # ---------------------------------------------------------------------------

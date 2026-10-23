@@ -47,7 +47,7 @@ def _history_rows(entries: object) -> list[dict[str, Any]]:
 
 
 def _history_rows_from_response(data: dict[str, Any]) -> list[dict[str, Any]]:
-    page = HistoryPageResponse.model_validate(data)
+    page = HistoryPageResponse.model_validate(data, strict=True)
     return _history_rows([entry.model_dump() for entry in page.entries])
 
 
