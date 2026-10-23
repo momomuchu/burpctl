@@ -184,7 +184,17 @@ def run(
             with client:
                 data = fn(client)
             render_data = redact_data(data) if conf.redact else data
-            out = render(render_data, state.fmt, fields=state.fields)
+            try:
+                out = render(render_data, state.fmt, fields=state.fields)
+            except TypeError:
+                exit_code = EXIT_GENERIC
+                emit_error(
+                    state.fmt,
+                    "RENDER_ERROR",
+                    "could not render command result",
+                    redact_secrets=conf.redact,
+                )
+                raise typer.Exit(exit_code) from None
         except BurpError as exc:
             exit_code = exit_code_for_error_code(exc.code)
             emit_error(
@@ -218,8 +228,8 @@ def run(
             exit_code = EXIT_GENERIC
             emit_error(
                 state.fmt,
-                "RENDER_ERROR",
-                "could not render command result",
+                "INTERNAL_ERROR",
+                "command failed unexpectedly",
                 redact_secrets=conf.redact,
             )
             raise typer.Exit(exit_code) from None
