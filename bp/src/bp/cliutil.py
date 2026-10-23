@@ -186,6 +186,8 @@ def run(
             )
             raise typer.Exit(exit_code) from None
 
+        if out:
+            typer.echo(out)
         desired_exit = 0
         if exit_on is not None:
             desired_exit = exit_on(data) or 0
@@ -196,8 +198,6 @@ def run(
                 warning_message,
                 redact_secrets=conf.redact,
             )
-        if out:
-            typer.echo(out)
         exit_code = desired_exit
     finally:
         if ledger is not None:
