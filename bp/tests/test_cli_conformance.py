@@ -5,12 +5,25 @@ Grouped verbs (scan/check/scope/collab/config/session/history) are sub-Typers; e
 is a FLAT top-level command per CLI.md §Principe ``bp <command> [subject]``.
 """
 
+import re
+
 import pytest
 from typer.testing import CliRunner
 
 from bp.cli import app
 
 runner = CliRunner()
+
+_ANSI_ESCAPE = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|[@-_])")
+_RICH_BOX_CHARS = str.maketrans({char: " " for char in "╭╮╰╯─│┌┐└┘├┤┬┴┼━┃"})
+
+
+def _normalize_help_output(output: str) -> str:
+    """Remove terminal presentation characters before checking help semantics."""
+    without_ansi = _ANSI_ESCAPE.sub("", output)
+    without_borders = without_ansi.translate(_RICH_BOX_CHARS)
+    return " ".join(without_borders.split())
+
 
 # Each entry must resolve to a real command/group (––help exits 0; missing => exit 2).
 CLI_COMMANDS: list[list[str]] = [
@@ -115,7 +128,7 @@ def test_log_help_discloses_control_plane_coverage() -> None:
     result = runner.invoke(app, ["log", "--help"])
 
     assert result.exit_code == 0
-    output = " ".join(result.stdout.split())
+    output = _normalize_help_output(result.stdout)
     assert "bp-to-extension REST operations" in output
     assert "not a proxy traffic log" in output
     assert "REST listener host" in output
