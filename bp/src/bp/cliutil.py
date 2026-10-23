@@ -42,22 +42,14 @@ def exit_code_for_error_code(code: str) -> int:
     return _EXIT_BY_CODE.get(code, EXIT_GENERIC)
 
 
+@dataclass
 class State:
-    """Mutable per-invocation options shared through Typer's context."""
-
-    __slots__ = ("fields", "fmt", "no_ledger", "no_redact", "url")
-
-    def __init__(
-        self,
-        url: str | None,
-        fmt: str,
-        fields: list[str] | None,
-        no_ledger: bool = False,
-        no_redact: bool = False,
-    ) -> None:
-        # None means --url was omitted; config.load then applies env/file/default.
-        self.url, self.fmt, self.fields = url, fmt, fields
-        self.no_ledger, self.no_redact = no_ledger, no_redact
+    # None means --url was omitted; config.load then applies env/file/default.
+    url: str | None
+    fmt: str
+    fields: list[str] | None
+    no_ledger: bool = False
+    no_redact: bool = False
 
 
 def _safe_message(message: str, *, redact_secrets: bool) -> str:

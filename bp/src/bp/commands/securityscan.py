@@ -52,7 +52,25 @@ def _project_for_display(
     data: dict[str, Any],
     return_note: bool = False,
 ) -> "dict[str, Any] | tuple[dict[str, Any], str]":
-    """Remove unsafe/clutter fields and optionally return the extracted note."""
+    """Project a security-scan response dict for display on stdout.
+
+    Applies three transformations required before the dict is rendered:
+
+    1. Recursively remove every ``bodyPreview`` key (AX-CAP-BODY — opt-in only).
+    2. Pop ``note`` from the dict; the caller echoes it to stderr so stdout stays
+       clean for NDJSON/machine consumers ([13]).
+    3. Drop ``ignoredOwnValues`` when it is an empty list — it clutters output
+       without adding information ([13]).  Non-empty values are preserved.
+
+    The critical fields for ``_has_findings`` — ``vulnerableCount`` and
+    ``findings`` — are always preserved. ``anomalousCount`` remains an
+    observation-only signal and never selects the vulnerability exit code.
+
+    When ``return_note=True`` (used in unit tests), returns ``(projected, note)``
+    as a 2-tuple so callers can assert on the extracted note text.
+    When ``return_note=False`` (default, used in command ``_do`` wrappers), returns
+    only the projected dict.
+    """
     projected: dict[str, Any] = cast(dict[str, Any], _strip_body_preview(data))
 
     note: str = projected.pop("note", "") or ""
@@ -78,7 +96,15 @@ def _project_for_display(
 
 
 def _has_findings(data: dict[str, Any]) -> bool:
-    """Return whether confirmed findings exist; anomalies alone do not qualify."""
+    """Return True when a security-scan response reports at least one finding.
+
+    Covers:
+    - vulnerableCount > 0        (auth-bypass, IDOR, CORS, confirmed header bypass)
+    - len(findings) > 0          (EndpointsScanResponse shape for check endpoints)
+
+    ``anomalousCount`` is intentionally excluded: a changed response is a
+    triage observation, not proof that access improved or a vulnerability exists.
+    """
     if data.get("vulnerableCount", 0) > 0:
         return True
     if len(data.get("findings", [])) > 0:
@@ -87,7 +113,12 @@ def _has_findings(data: dict[str, Any]) -> bool:
 
 
 def _is_inconclusive(data: dict[str, Any]) -> bool:
-    """Return whether at least one probe lacks enough evidence for a verdict."""
+    """Return True when at least one probe did not complete well enough to judge.
+
+    The extension marks a probe inconclusive when its treatment or control failed —
+    transport failure, throttling, a server error, or a missing authenticated baseline.
+    Such a scan proves nothing, so it must not be presented as a clean result.
+    """
     if data.get("inconclusiveCount", 0) > 0:
         return True
     if len(data.get("errors", [])) > 0:
