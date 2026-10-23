@@ -140,7 +140,19 @@ def test_agent_response_note_is_structured_after_success(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fake_request(self: Any, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
-        return {"vulnerableCount": 0, "findings": [], "note": "server scan caveat"}
+        return {
+            "baseline": {
+                "value": "1",
+                "status": 200,
+                "length": 12,
+                "bodyPreview": None,
+                "sameAsBaseline": True,
+                "vulnerable": False,
+            },
+            "results": [],
+            "vulnerableCount": 0,
+            "note": "server scan caveat",
+        }
 
     monkeypatch.setattr("bp.client.BurpClient._request", fake_request)
     result = runner.invoke(
