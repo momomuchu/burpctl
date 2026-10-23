@@ -11,7 +11,7 @@ from typing import Annotated, Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, run
+from bp.cliutil import fail_usage, run
 from bp.models import ProxyEntry
 
 
@@ -105,21 +105,25 @@ def intercept(
 ) -> None:
     """Control interception; unsupported actions fail with a typed runtime error."""
     if action not in _INTERCEPT_ACTIONS:
-        typer.echo(
-            f"error: intercept action must be one of {_INTERCEPT_ACTIONS!r}, got {action!r}",
-            err=True,
+        fail_usage(
+            ctx.obj.fmt,
+            f"intercept action must be one of {_INTERCEPT_ACTIONS!r}, got {action!r}",
         )
-        raise typer.Exit(EXIT_USAGE)
 
-    if action in _UNSUPPORTED_ACTIONS:
-        typer.echo(
-            f"note: '{action}' is unavailable in pinned Montoya 2025.3; "
-            "the server will return UNSUPPORTED without acting.",
-            err=True,
-        )
+    success_notes = (
+        [
+            (
+                "INTERCEPT_UNSUPPORTED",
+                f"'{action}' is unavailable in pinned Montoya 2025.3; "
+                "the server will return UNSUPPORTED without acting.",
+            )
+        ]
+        if action in _UNSUPPORTED_ACTIONS
+        else []
+    )
 
     path = _ACTION_TO_PATH[action]
-    run(ctx, lambda c: c.post(path))
+    run(ctx, lambda c: c.post(path), success_notes=success_notes)
 
 
 # ---------------------------------------------------------------------------

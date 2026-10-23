@@ -12,7 +12,7 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, run
+from bp.cliutil import fail_usage, run
 from bp.models import HistoryEntryResponse, ReplayResponse
 
 
@@ -267,12 +267,12 @@ def history_clear(
     NOTE: returns 404 if the Burp extension DB failed to initialise.
     """
     if not confirm:
-        typer.echo(
-            "warning: 'bp history clear' irreversibly wipes the history and sitemap tables.\n"
+        fail_usage(
+            ctx.obj.fmt,
+            "'bp history clear' irreversibly wipes the history and sitemap tables.\n"
             "         Pass --confirm to proceed.",
-            err=True,
+            human_label="warning",
         )
-        raise typer.Exit(EXIT_USAGE)
 
     def _do(c: Any) -> Any:
         return c._request("DELETE", "/history")

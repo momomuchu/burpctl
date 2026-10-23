@@ -28,7 +28,7 @@ from typing import Annotated, Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, run
+from bp.cliutil import fail_usage, run
 
 # ---------------------------------------------------------------------------
 # "scope" sub-Typer — registered as app.add_typer(scope, name="scope")
@@ -74,12 +74,12 @@ def scope_set(
     Montoya does not expose a scope-list or remove-rule API. Use 'bp scope add' for one new entry.
     """
     if not confirm:
-        typer.echo(
-            "warning: 'bp scope set' replaces the extension-managed scope list, but cannot remove\n"
+        fail_usage(
+            ctx.obj.fmt,
+            "'bp scope set' replaces the extension-managed scope list, but cannot remove\n"
             "         earlier Burp-engine rules. Pass --confirm, or use 'bp scope add'.",
-            err=True,
+            human_label="warning",
         )
-        raise typer.Exit(EXIT_USAGE)
 
     body: dict[str, Any] = {"includes": includes, "excludes": excludes}
     run(ctx, lambda c: c.post("/target/scope", body))
