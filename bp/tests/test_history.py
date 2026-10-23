@@ -12,6 +12,7 @@ from typing import Any
 
 import pytest
 
+from bp.client import BurpError
 from bp.commands.history import _history_rows
 from bp.models import HistoryEntryResponse, HistoryPageResponse
 
@@ -156,6 +157,13 @@ def test_history_rows_handles_missing_status() -> None:
 def test_history_rows_empty_list() -> None:
     """[35] Empty input yields empty list."""
     assert _history_rows([]) == []
+
+
+def test_history_rows_rejects_non_list_entries() -> None:
+    with pytest.raises(BurpError) as exc_info:
+        _history_rows(None)
+
+    assert exc_info.value.code == "INVALID_RESPONSE"
 
 
 # ---------------------------------------------------------------------------
