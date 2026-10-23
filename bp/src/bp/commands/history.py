@@ -46,6 +46,12 @@ def _history_rows(entries: object) -> list[dict[str, Any]]:
     return rows
 
 
+def _history_rows_from_response(data: dict[str, Any]) -> list[dict[str, Any]]:
+    if "entries" not in data:
+        raise BurpError("INVALID_RESPONSE", "server returned an unexpected response shape")
+    return _history_rows(data["entries"])
+
+
 def _history_entry_display(entry: dict[str, Any]) -> dict[str, Any]:
     """Project a single HistoryEntryResponse dict to a clean display dict.
 
@@ -145,7 +151,7 @@ def history_list(
         if page is not None:
             params["page"] = page
         page_data = c.get("/history", **params)
-        return _history_rows(page_data.get("entries", []))
+        return _history_rows_from_response(page_data)
 
     run(ctx, _do)
 

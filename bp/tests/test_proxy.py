@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from bp.cli import _proxy_rows
+from bp.cli import _proxy_rows, _proxy_rows_from_response
 from bp.client import BurpError
 from bp.commands.proxynav import _proxy_entry_display
 from bp.models import ProxyEntry, ProxyHistory
@@ -50,6 +50,13 @@ def test_proxy_rows_empty() -> None:
 def test_proxy_rows_rejects_non_list_entries() -> None:
     with pytest.raises(BurpError) as exc_info:
         _proxy_rows(None)
+
+    assert exc_info.value.code == "INVALID_RESPONSE"
+
+
+def test_proxy_rows_rejects_missing_entries() -> None:
+    with pytest.raises(BurpError) as exc_info:
+        _proxy_rows_from_response({"total": 3})
 
     assert exc_info.value.code == "INVALID_RESPONSE"
 

@@ -114,6 +114,12 @@ def _proxy_rows(entries: object) -> list[dict[str, Any]]:
     return rows
 
 
+def _proxy_rows_from_response(data: dict[str, Any]) -> list[dict[str, Any]]:
+    if "entries" not in data:
+        raise BurpError("INVALID_RESPONSE", "server returned an unexpected response shape")
+    return _proxy_rows(data["entries"])
+
+
 @app.command()
 def proxy(
     ctx: typer.Context,
@@ -125,7 +131,7 @@ def proxy(
     params: dict[str, Any] = {
         k: v for k, v in (("host", host), ("limit", limit), ("offset", offset)) if v is not None
     }
-    run(ctx, lambda c: _proxy_rows(c.get("/proxy/history", **params).get("entries", [])))
+    run(ctx, lambda c: _proxy_rows_from_response(c.get("/proxy/history", **params)))
 
 
 def _fuzz_rows(results: list[FuzzResult], anomalous_only: bool) -> list[dict[str, Any]]:
