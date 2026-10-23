@@ -1,0 +1,26 @@
+{
+  "actual": {
+    "exit": 0,
+    "restLog": [
+      {
+        "body_length": 76,
+        "body_sha256": "78d8ab73759e306f6e29e9a3ed67316c1ddddc9ae15f2ef54637adc5c6f41815",
+        "method": "POST",
+        "path": "/scan/auth-bypass",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"results\":[],\"totalScanned\":1,\"vulnerableCount\":0,\"inconclusiveCount\":0}\n",
+    "targetLog": []
+  },
+  "id": "L09",
+  "observedAt": "2026-10-23T11:46:10.993975+00:00",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "d3b3e874715fa6d47ef9aa82f25a1e7f11a8e35a8352e4155e9c47b3cf6a81b4",
+    "sealedAt": "2026-10-23T11:46:09.477319+00:00"
+  },
+  "variant": "normal",
+  "verdict": "PASS"
+}

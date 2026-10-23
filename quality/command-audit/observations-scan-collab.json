@@ -1,0 +1,2411 @@
+[
+  {
+    "id": "L01",
+    "oracleHash": "051463f0494acb7412a9d3c733d8add9809974a967d4edb950998a47587ec391",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": {
+        "sha256": "8307b0b40f76a691ff0bffa1dc0ff2e33e74d81de17ec456ef4a1e134e9462b2",
+        "expectedAt": "2026-10-23T12:18:30.350873+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "collab",
+        "new"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": "{\"payloads\":[{\"id\":\"cid-001\",\"payload\":\"cid-001.oastify.test\",\"interactionId\":\"cid-001\"}]}\n",
+        "stderr": "",
+        "route": "POST /collaborator/generate",
+        "effect": "simulated collaborator generation response",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-x8u3zrf3/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-x8u3zrf3/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-x8u3zrf3/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65213",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-x8u3zrf3/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /collaborator/generate",
+            "effect": "one collaborator generation"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:30.603795+00:00",
+        "exit": 0,
+        "stdout": "{\"payloads\":[{\"id\":\"cid-001\",\"payload\":\"cid-001.oastify.test\",\"interactionId\":\"cid-001\"}]}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/collaborator/generate",
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bodyLength": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l01-normal-20261023T121830351394Z-b6af439b95e54fae959429fc59f2ef97-preflight.json",
+        "preflightFileSha256": "251cdcc5ba44402dcaef458d15746560fda83321db4d7ad0152fc5ed54977ff7",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l01-normal-20261023T121830351394Z-b6af439b95e54fae959429fc59f2ef97-actual.json",
+        "actualFileSha256": "361a53d3955aeb32b20b9186f33a13fa3c1adaacd9a9b45fb2cb22dc786d3fa0"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "sha256": "4ab12643c3cef2afc797753455b9daf51060a049a3de1599864905c91ff7789c",
+        "expectedAt": "2026-10-23T12:18:31.359982+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "collab",
+        "new"
+      ],
+      "expected": {
+        "exit": 4,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"Burp Suite Professional is required\",\"status\":503,\"http_status\":503,\"op\":\"POST /collaborator/generate\"}}\n",
+        "route": "POST /collaborator/generate",
+        "effect": "zero provider effect",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ah4ms93s/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ah4ms93s/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ah4ms93s/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65225",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ah4ms93s/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "case": "Community capability",
+          "exit": 4,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:31.573995+00:00",
+        "exit": 4,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"Burp Suite Professional is required\",\"status\":503,\"http_status\":503,\"op\":\"POST /collaborator/generate\"}}\n",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/collaborator/generate",
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bodyLength": 0,
+            "status": 503
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "ORACLE_MISMATCH",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload.",
+        "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l01-contrast-20261023T121831360447Z-0bf1c086665541e0b29e8a05b405d645-preflight.json",
+        "preflightFileSha256": "e11a1dd94100972445f5ff3543df7d3977b2627ba825830f0da073e3dbd37646",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l01-contrast-20261023T121831360447Z-0bf1c086665541e0b29e8a05b405d645-actual.json",
+        "actualFileSha256": "235af90b66de608c52843408c93fab8d50dd7127d7f5e1a815cc3776dc1d3dba"
+      }
+    },
+    "additional": [
+      {
+        "case": "providerFailure",
+        "preRunSeal": {
+          "sha256": "72157825faae6c466d579d681ba46aa68776820c7007d6781616a3bdae82cbb0",
+          "expectedAt": "2026-10-23T12:18:32.369384+00:00"
+        },
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--project",
+          "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+          "bp",
+          "collab",
+          "new"
+        ],
+        "expected": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"Burp Collaborator provider operation failed\",\"status\":503,\"http_status\":503,\"op\":\"POST /collaborator/generate\"}}\n",
+          "route": "POST /collaborator/generate",
+          "effect": "provider failure",
+          "environment": {
+            "BP_AGENT": "1",
+            "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-8acqzicv/home/.bp/config",
+            "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-8acqzicv/state/ledger.db",
+            "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-8acqzicv/payloads",
+            "BURP_REST_URL": "http://127.0.0.1:65242",
+            "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-8acqzicv/home",
+            "NO_COLOR": "1",
+            "TERM": "dumb"
+          },
+          "sealedOracleBranch": null
+        },
+        "actual": {
+          "observedAt": "2026-10-23T12:18:32.582271+00:00",
+          "exit": 1,
+          "stdout": "",
+          "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"Burp Collaborator provider operation failed\",\"status\":503,\"http_status\":503,\"op\":\"POST /collaborator/generate\"}}\n",
+          "restLog": [
+            {
+              "method": "POST",
+              "path": "/collaborator/generate",
+              "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "bodyLength": 0,
+              "status": 503
+            }
+          ],
+          "targetLog": []
+        },
+        "verdict": "PASS",
+        "limits": [
+          "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+        ],
+        "evidence": {
+          "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l01-providerFailure-20261023T121832369877Z-992862c8ebb14d21ba57c12536209ee9-preflight.json",
+          "preflightFileSha256": "506d8e9c640d3ddd600dbf6b9d00893bcc60252b3bb096b83da39dbf50a4d995",
+          "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l01-providerFailure-20261023T121832369877Z-992862c8ebb14d21ba57c12536209ee9-actual.json",
+          "actualFileSha256": "bd7bc071e8cc42a8c9e73a9ac539cd6cf64463ec0949e15423d49f4911112e6f"
+        }
+      }
+    ],
+    "historical": [
+      {
+        "id": "L01",
+        "oracleHash": "051463f0494acb7412a9d3c733d8add9809974a967d4edb950998a47587ec391",
+        "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+        "normal": {
+          "preRunSeal": {
+            "sha256": "b840110795e4d6508de455d6cbfe759d7afa5b085ed00cb5b62822c44792b9be",
+            "expectedAt": "2026-10-23T11:29:04.677801+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "collab",
+            "new"
+          ],
+          "expected": {
+            "exit": 0,
+            "stdout": "{\"payloads\":[{\"id\":\"cid-001\",\"payload\":\"cid-001.oastify.test\",\"interactionId\":\"cid-001\"}]}\n",
+            "stderr": "",
+            "route": "POST /collaborator/generate",
+            "effect": "simulated collaborator generation response",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-5zitp2pr/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-5zitp2pr/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-5zitp2pr/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61018",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-5zitp2pr/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:06.395127+00:00",
+            "exit": 0,
+            "stdout": "{\"payloads\":[{\"id\":\"cid-001\",\"payload\":\"cid-001.oastify.test\",\"interactionId\":\"cid-001\"}]}\n",
+            "stderr": "",
+            "restLog": [
+              {
+                "method": "POST",
+                "path": "/collaborator/generate",
+                "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bodyLength": 0,
+                "status": 200
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        },
+        "contrast": {
+          "preRunSeal": {
+            "sha256": "fa3fe721665431ad6a8ab250a93ddadf84e215ab191d23cfa4efe44458d99465",
+            "expectedAt": "2026-10-23T11:29:07.194361+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "collab",
+            "new"
+          ],
+          "expected": {
+            "exit": 4,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"Burp Suite Professional is required\",\"status\":503,\"http_status\":503,\"op\":\"POST /collaborator/generate\"}}\n",
+            "route": "POST /collaborator/generate",
+            "effect": "zero provider effect",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-_9xceftq/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-_9xceftq/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-_9xceftq/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61036",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-_9xceftq/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:08.759672+00:00",
+            "exit": 4,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"Burp Suite Professional is required\",\"status\":503,\"http_status\":503,\"op\":\"POST /collaborator/generate\"}}\n",
+            "restLog": [
+              {
+                "method": "POST",
+                "path": "/collaborator/generate",
+                "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bodyLength": 0,
+                "status": 503
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        },
+        "additional": [
+          {
+            "case": "providerFailure",
+            "preRunSeal": {
+              "sha256": "936412d9a817410d097167e422d2fdd9aea82e16bb21d3e3ac44e13fa7f6bd22",
+              "expectedAt": "2026-10-23T11:29:09.709016+00:00"
+            },
+            "argv": [
+              "uv",
+              "run",
+              "--frozen",
+              "--project",
+              "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+              "bp",
+              "collab",
+              "new"
+            ],
+            "expected": {
+              "exit": 1,
+              "stdout": "",
+              "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"Burp Collaborator provider operation failed\",\"status\":503,\"http_status\":503,\"op\":\"POST /collaborator/generate\"}}\n",
+              "route": "POST /collaborator/generate",
+              "effect": "provider failure",
+              "environment": {
+                "BP_AGENT": "1",
+                "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-mjoz1tl5/home/.bp/config",
+                "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-mjoz1tl5/state/ledger.db",
+                "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-mjoz1tl5/payloads",
+                "BURP_REST_URL": "http://127.0.0.1:61065",
+                "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-mjoz1tl5/home",
+                "NO_COLOR": "1",
+                "TERM": "dumb"
+              }
+            },
+            "actual": {
+              "observedAt": "2026-10-23T11:29:11.574142+00:00",
+              "exit": 1,
+              "stdout": "",
+              "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"Burp Collaborator provider operation failed\",\"status\":503,\"http_status\":503,\"op\":\"POST /collaborator/generate\"}}\n",
+              "restLog": [
+                {
+                  "method": "POST",
+                  "path": "/collaborator/generate",
+                  "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "bodyLength": 0,
+                  "status": 503
+                }
+              ],
+              "targetLog": []
+            },
+            "verdict": "PASS",
+            "limits": [
+              "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "L02",
+    "oracleHash": "826be32eff22c9c7c98ce1ae1b861d51b18cb1f591eac11d3181142aeb16a7bc",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": {
+        "sha256": "9b64fcdf4dfe20d30b90bc7458d7f33a7d82dd792161a03e0e1479ddcd84d95e",
+        "expectedAt": "2026-10-23T12:18:33.378453+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "collab",
+        "poll",
+        "cid-001"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": "{\"found\":false,\"interactions\":[],\"queriedPayloadId\":\"cid-001\"}\n",
+        "stderr": "",
+        "route": "GET /collaborator/poll/cid-001",
+        "effect": "simulated collaborator read",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ce9xs1bd/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ce9xs1bd/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ce9xs1bd/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65254",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ce9xs1bd/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "GET /collaborator/poll/CID",
+            "effect": "one collaborator read"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:33.609839+00:00",
+        "exit": 0,
+        "stdout": "{\"found\":false,\"interactions\":[],\"queriedPayloadId\":\"cid-001\"}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/collaborator/poll/cid-001",
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bodyLength": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l02-normal-20261023T121833378993Z-8d4313ab6a124dffbbc59cb9724912ba-preflight.json",
+        "preflightFileSha256": "809845061b3495e89cedea404678995916dfd53e2650efc8dadc54b6c0d33818",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l02-normal-20261023T121833378993Z-8d4313ab6a124dffbbc59cb9724912ba-actual.json",
+        "actualFileSha256": "6f8a0b7922720f4bcdf682e8b68abe5eb743b751e4a6a5b721d4e29e6212d1ac"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "sha256": "af0a3a16f403fc1693479976d85c06f11553726cc3d2891c288469637dee65c2",
+        "expectedAt": "2026-10-23T12:18:34.387631+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "collab",
+        "poll",
+        "unknown"
+      ],
+      "expected": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"Collaborator payload not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /collaborator/poll/unknown\"}}\n",
+        "route": "GET /collaborator/poll/unknown",
+        "effect": "zero provider effect",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ho7imuao/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ho7imuao/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ho7imuao/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65266",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ho7imuao/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "case": "unknown correlation ID",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:34.626600+00:00",
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"Collaborator payload not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /collaborator/poll/unknown\"}}\n",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/collaborator/poll/unknown",
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bodyLength": 0,
+            "status": 404
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "ORACLE_MISMATCH",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload.",
+        "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l02-contrast-20261023T121834388133Z-1d9bd9d4669e4d3ca8063c617177d754-preflight.json",
+        "preflightFileSha256": "7abb6756443d5be0c23b9f5f2d8c29f4fca8565c45deddb1dd73d7798d2d7dcc",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l02-contrast-20261023T121834388133Z-1d9bd9d4669e4d3ca8063c617177d754-actual.json",
+        "actualFileSha256": "d15d928a52bb807b50c3be005ddfc97bfe93ae0ce66f9384be100a8163acb6dc"
+      }
+    },
+    "additional": [
+      {
+        "case": "providerFailure",
+        "preRunSeal": {
+          "sha256": "f3606eb74a2168681ee7ced73361ecabc842190ada0290de9400036d26769559",
+          "expectedAt": "2026-10-23T12:18:35.397199+00:00"
+        },
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--project",
+          "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+          "bp",
+          "collab",
+          "poll",
+          "cid-001"
+        ],
+        "expected": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"Burp Collaborator provider operation failed\",\"status\":503,\"http_status\":503,\"op\":\"GET /collaborator/poll/cid-001\"}}\n",
+          "route": "GET /collaborator/poll/cid-001",
+          "effect": "provider failure",
+          "environment": {
+            "BP_AGENT": "1",
+            "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-cgy6ju_u/home/.bp/config",
+            "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-cgy6ju_u/state/ledger.db",
+            "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-cgy6ju_u/payloads",
+            "BURP_REST_URL": "http://127.0.0.1:65285",
+            "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-cgy6ju_u/home",
+            "NO_COLOR": "1",
+            "TERM": "dumb"
+          },
+          "sealedOracleBranch": null
+        },
+        "actual": {
+          "observedAt": "2026-10-23T12:18:35.683948+00:00",
+          "exit": 1,
+          "stdout": "",
+          "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"Burp Collaborator provider operation failed\",\"status\":503,\"http_status\":503,\"op\":\"GET /collaborator/poll/cid-001\"}}\n",
+          "restLog": [
+            {
+              "method": "GET",
+              "path": "/collaborator/poll/cid-001",
+              "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "bodyLength": 0,
+              "status": 503
+            }
+          ],
+          "targetLog": []
+        },
+        "verdict": "PASS",
+        "limits": [
+          "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+        ],
+        "evidence": {
+          "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l02-providerFailure-20261023T121835397856Z-90903abd90654f228e20f01ccad42eb1-preflight.json",
+          "preflightFileSha256": "316c5c7aebc329cdeff72fa89962769ad0f02f301b37ef7edcd963f33816465c",
+          "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l02-providerFailure-20261023T121835397856Z-90903abd90654f228e20f01ccad42eb1-actual.json",
+          "actualFileSha256": "16855bfc99627193500a66c094c0358d9c2b02fe041dca99d0bb54b6ee368b46"
+        }
+      }
+    ],
+    "historical": [
+      {
+        "id": "L02",
+        "oracleHash": "826be32eff22c9c7c98ce1ae1b861d51b18cb1f591eac11d3181142aeb16a7bc",
+        "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+        "normal": {
+          "preRunSeal": {
+            "sha256": "20765a40abf1db48c166dd6fd071f642fffd58e75bb821988560fda3cca8f9c8",
+            "expectedAt": "2026-10-23T11:29:11.723034+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "collab",
+            "poll",
+            "cid-001"
+          ],
+          "expected": {
+            "exit": 0,
+            "stdout": "{\"found\":false,\"interactions\":[],\"queriedPayloadId\":\"cid-001\"}\n",
+            "stderr": "",
+            "route": "GET /collaborator/poll/cid-001",
+            "effect": "simulated collaborator read",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-_tlbjgxg/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-_tlbjgxg/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-_tlbjgxg/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61095",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-_tlbjgxg/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:13.150090+00:00",
+            "exit": 0,
+            "stdout": "{\"found\":false,\"interactions\":[],\"queriedPayloadId\":\"cid-001\"}\n",
+            "stderr": "",
+            "restLog": [
+              {
+                "method": "GET",
+                "path": "/collaborator/poll/cid-001",
+                "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bodyLength": 0,
+                "status": 200
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        },
+        "contrast": {
+          "preRunSeal": {
+            "sha256": "ed9155c7cd4c73993fe37654f6ce123ef54291a372a924ed7c08a9fdb8e89cec",
+            "expectedAt": "2026-10-23T11:29:13.735396+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "collab",
+            "poll",
+            "unknown"
+          ],
+          "expected": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"Collaborator payload not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /collaborator/poll/unknown\"}}\n",
+            "route": "GET /collaborator/poll/unknown",
+            "effect": "zero provider effect",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-3_ci7mec/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-3_ci7mec/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-3_ci7mec/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61114",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-3_ci7mec/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:15.060780+00:00",
+            "exit": 1,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"Collaborator payload not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /collaborator/poll/unknown\"}}\n",
+            "restLog": [
+              {
+                "method": "GET",
+                "path": "/collaborator/poll/unknown",
+                "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bodyLength": 0,
+                "status": 404
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        },
+        "additional": [
+          {
+            "case": "providerFailure",
+            "preRunSeal": {
+              "sha256": "f9d2c4c4315d4920015ede076ceff61e3f4009f3730671d30fd848b7161181d2",
+              "expectedAt": "2026-10-23T11:29:15.256002+00:00"
+            },
+            "argv": [
+              "uv",
+              "run",
+              "--frozen",
+              "--project",
+              "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+              "bp",
+              "collab",
+              "poll",
+              "cid-001"
+            ],
+            "expected": {
+              "exit": 1,
+              "stdout": "",
+              "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"Burp Collaborator provider operation failed\",\"status\":503,\"http_status\":503,\"op\":\"GET /collaborator/poll/cid-001\"}}\n",
+              "route": "GET /collaborator/poll/cid-001",
+              "effect": "provider failure",
+              "environment": {
+                "BP_AGENT": "1",
+                "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-m98sz20k/home/.bp/config",
+                "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-m98sz20k/state/ledger.db",
+                "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-m98sz20k/payloads",
+                "BURP_REST_URL": "http://127.0.0.1:61133",
+                "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-m98sz20k/home",
+                "NO_COLOR": "1",
+                "TERM": "dumb"
+              }
+            },
+            "actual": {
+              "observedAt": "2026-10-23T11:29:16.426830+00:00",
+              "exit": 1,
+              "stdout": "",
+              "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"Burp Collaborator provider operation failed\",\"status\":503,\"http_status\":503,\"op\":\"GET /collaborator/poll/cid-001\"}}\n",
+              "restLog": [
+                {
+                  "method": "GET",
+                  "path": "/collaborator/poll/cid-001",
+                  "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "bodyLength": 0,
+                  "status": 503
+                }
+              ],
+              "targetLog": []
+            },
+            "verdict": "PASS",
+            "limits": [
+              "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "L03",
+    "oracleHash": "65051d24fff7168807dab3e885c05e3eee7f042ecf304fe961837eb3d87e70cc",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": {
+        "sha256": "f494592acba20577f2fcaf565197e1e4c5e9391d6f56949f14febced763d984d",
+        "expectedAt": "2026-10-23T12:18:36.407768+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "crawl",
+        "http://127.0.0.1:65305/"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n",
+        "stderr": "",
+        "route": "POST /scanner/crawl",
+        "effect": "simulated scanner task response",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-u54ywh5u/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-u54ywh5u/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-u54ywh5u/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65304",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-u54ywh5u/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /scanner/crawl",
+            "effect": "one scanner task"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:36.618375+00:00",
+        "exit": 0,
+        "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/scanner/crawl",
+            "bodySha256": "16021771d17aea7c437bb803ddaeef614861ca4fe0a9f43b6685d6f0e23486dd",
+            "bodyLength": 45,
+            "status": 200
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l03-normal-20261023T121836408289Z-bcdf73447fb34e6289084be1143468bb-preflight.json",
+        "preflightFileSha256": "45604cffc37047acd887b7f592d0eb4343a8454c049675d90ffdd527d7ed0ff2",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l03-normal-20261023T121836408289Z-bcdf73447fb34e6289084be1143468bb-actual.json",
+        "actualFileSha256": "5776eca3316612033058fe96af91824012be7bf647390c8ab11b81b920a9a9c3"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "sha256": "dbe93556ad6b93d34f0c781ed0935e81011a02d148aa0f138b32a4bbba51316d",
+        "expectedAt": "2026-10-23T12:18:37.415928+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "crawl",
+        "http://127.0.0.1:65313/"
+      ],
+      "expected": {
+        "exit": 4,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"this operation requires Burp Suite Professional\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/crawl\"}}\n",
+        "route": "POST /scanner/crawl",
+        "effect": "zero scanner task",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-f0_1tfaz/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-f0_1tfaz/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-f0_1tfaz/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65312",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-f0_1tfaz/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "case": "Community capability",
+          "exit": 4,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:37.635508+00:00",
+        "exit": 4,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"this operation requires Burp Suite Professional\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/crawl\"}}\n",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/scanner/crawl",
+            "bodySha256": "e1bab6a8401522a6104547bf80324e355dc8d4e2857b9290d257e634cfa3720b",
+            "bodyLength": 45,
+            "status": 503
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "ORACLE_MISMATCH",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload.",
+        "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l03-contrast-20261023T121837416405Z-a7cb5fbbd48d4c1fa17f906003cd8805-preflight.json",
+        "preflightFileSha256": "475fc7227a59200f933a1be3a51f9c7a437ee654e0fb688a93a5c6f1e457e5e8",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l03-contrast-20261023T121837416405Z-a7cb5fbbd48d4c1fa17f906003cd8805-actual.json",
+        "actualFileSha256": "78d7cc99dc0e91df88f78758a0c9772f8b157e81538f1731348d0a98304739e2"
+      }
+    },
+    "historical": [
+      {
+        "id": "L03",
+        "oracleHash": "65051d24fff7168807dab3e885c05e3eee7f042ecf304fe961837eb3d87e70cc",
+        "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+        "normal": {
+          "preRunSeal": {
+            "sha256": "0ce43a542d3981672255fab7f7b785775b489038951e3ccbfc4286d6838bd4e8",
+            "expectedAt": "2026-10-23T11:29:16.766543+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "crawl",
+            "http://127.0.0.1:61155/"
+          ],
+          "expected": {
+            "exit": 0,
+            "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n",
+            "stderr": "",
+            "route": "POST /scanner/crawl",
+            "effect": "simulated scanner task response",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-gvsa7bm5/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-gvsa7bm5/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-gvsa7bm5/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61154",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-gvsa7bm5/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:18.012099+00:00",
+            "exit": 0,
+            "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n",
+            "stderr": "",
+            "restLog": [
+              {
+                "method": "POST",
+                "path": "/scanner/crawl",
+                "bodySha256": "70b0bfef2226efe5f24966686c62f2e51bdbbd831c423460446f83bbf93ad2ec",
+                "bodyLength": 45,
+                "status": 200
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        },
+        "contrast": {
+          "preRunSeal": {
+            "sha256": "cff798dde93e4df0b9860de86e7454d7be18d92c4bddfbe188329c389e9c73f5",
+            "expectedAt": "2026-10-23T11:29:18.780901+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "crawl",
+            "http://127.0.0.1:61189/"
+          ],
+          "expected": {
+            "exit": 4,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"this operation requires Burp Suite Professional\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/crawl\"}}\n",
+            "route": "POST /scanner/crawl",
+            "effect": "zero scanner task",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-e1zjklh2/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-e1zjklh2/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-e1zjklh2/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61188",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-e1zjklh2/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:20.434059+00:00",
+            "exit": 4,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"this operation requires Burp Suite Professional\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/crawl\"}}\n",
+            "restLog": [
+              {
+                "method": "POST",
+                "path": "/scanner/crawl",
+                "bodySha256": "4cfac1df39d0088573e2f2b06a3edc9baae352545f6b72487feef54ae92e91e5",
+                "bodyLength": 45,
+                "status": 503
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "L04",
+    "oracleHash": "c8e0f0db0f3928329c875467ad4ebe3c47df61af0d681e8b99823f2430247b48",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": {
+        "sha256": "7cbae99eb9345b6c977543b2ff74b059c51d13fd29c16a4c8166554d43264cac",
+        "expectedAt": "2026-10-23T12:18:38.430220+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "audit",
+        "http://127.0.0.1:65320/"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n",
+        "stderr": "",
+        "route": "POST /scanner/audit",
+        "effect": "simulated scanner task response",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-d6m658yo/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-d6m658yo/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-d6m658yo/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65319",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-d6m658yo/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /scanner/audit",
+            "effect": "one scanner task"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:38.656436+00:00",
+        "exit": 0,
+        "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/scanner/audit",
+            "bodySha256": "67011697b5aa13de253a0e83efca1f4f6d07ed75b06717d77fa0a5c6437191b3",
+            "bodyLength": 45,
+            "status": 200
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l04-normal-20261023T121838431892Z-1e394dc220dd477ca4355b3fa153b1b3-preflight.json",
+        "preflightFileSha256": "cf1853a4d75227bb30b8f18c731db0cb6270aa56d7400e1647ad8c743f58cef4",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l04-normal-20261023T121838431892Z-1e394dc220dd477ca4355b3fa153b1b3-actual.json",
+        "actualFileSha256": "69059cf751877c4a8107ed25dabefcfec2c0f51500dc94b9107ad9d2ee4749b1"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "sha256": "debc1153002d1b0b8c32f6c07057b48ff33ba6c449671787810cfbfe3fe37b2b",
+        "expectedAt": "2026-10-23T12:18:39.444025+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "audit",
+        "http://127.0.0.1:65330/"
+      ],
+      "expected": {
+        "exit": 4,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"this operation requires Burp Suite Professional\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/audit\"}}\n",
+        "route": "POST /scanner/audit",
+        "effect": "zero scanner task",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-v88qs3lk/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-v88qs3lk/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-v88qs3lk/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65329",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-v88qs3lk/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "case": "Community capability",
+          "exit": 4,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:39.657817+00:00",
+        "exit": 4,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"this operation requires Burp Suite Professional\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/audit\"}}\n",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/scanner/audit",
+            "bodySha256": "276f78a4b67bfc5902bd0b85fe079a6ec58029fb4b34426409aa82e0f8514b75",
+            "bodyLength": 45,
+            "status": 503
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "ORACLE_MISMATCH",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload.",
+        "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l04-contrast-20261023T121839445610Z-cca83a53398e42edb1b5dc6a55912f71-preflight.json",
+        "preflightFileSha256": "03faa31ed26f07c1a06c602f2a59e6e650480b806e3bda0e97b178c3584e5fd6",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l04-contrast-20261023T121839445610Z-cca83a53398e42edb1b5dc6a55912f71-actual.json",
+        "actualFileSha256": "32f45697b2567e2f60634e4d5bd27f6333c09a2d3ec1af3f407f57a238c35dd8"
+      }
+    },
+    "historical": [
+      {
+        "id": "L04",
+        "oracleHash": "c8e0f0db0f3928329c875467ad4ebe3c47df61af0d681e8b99823f2430247b48",
+        "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+        "normal": {
+          "preRunSeal": {
+            "sha256": "477f89ad19fb91b38cf7a4ad7b8c96eb73e99485e801016b017de8176d8d94c4",
+            "expectedAt": "2026-10-23T11:29:20.801458+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "audit",
+            "http://127.0.0.1:61212/"
+          ],
+          "expected": {
+            "exit": 0,
+            "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n",
+            "stderr": "",
+            "route": "POST /scanner/audit",
+            "effect": "simulated scanner task response",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-xylqj65m/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-xylqj65m/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-xylqj65m/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61211",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-xylqj65m/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:22.479463+00:00",
+            "exit": 0,
+            "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n",
+            "stderr": "",
+            "restLog": [
+              {
+                "method": "POST",
+                "path": "/scanner/audit",
+                "bodySha256": "4a227aaaf5f18bb1b115cace7b2477f83e1cc0b904aae3dadb96d6bc3150d2b9",
+                "bodyLength": 45,
+                "status": 200
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        },
+        "contrast": {
+          "preRunSeal": {
+            "sha256": "3eb66d2fcc94a2ff8ae5601524e2957659ab426a41ba2424ab7aa57a115f00d1",
+            "expectedAt": "2026-10-23T11:29:22.820740+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "audit",
+            "http://127.0.0.1:61243/"
+          ],
+          "expected": {
+            "exit": 4,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"this operation requires Burp Suite Professional\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/audit\"}}\n",
+            "route": "POST /scanner/audit",
+            "effect": "zero scanner task",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-wqjl1fsf/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-wqjl1fsf/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-wqjl1fsf/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61242",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-wqjl1fsf/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:24.480710+00:00",
+            "exit": 4,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"this operation requires Burp Suite Professional\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/audit\"}}\n",
+            "restLog": [
+              {
+                "method": "POST",
+                "path": "/scanner/audit",
+                "bodySha256": "6cd7a4bfe3e247a603afb2dcb0de443b87d4db6ab9d7f57d9e9c2506cc505ef5",
+                "bodyLength": 45,
+                "status": 503
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "L05",
+    "oracleHash": "f6f3ae8f24186f874a14e3fe7cc09cd9767ef727cc78342e051ef8526907686f",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": {
+        "sha256": "f8fcac5c696f65a26489dfc7cbb19120c1af844573baa2ccf31ecdee62f9b8e0",
+        "expectedAt": "2026-10-23T12:18:40.456183+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "all",
+        "http://127.0.0.1:65337/"
+      ],
+      "expected": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"linked crawl and audit is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"POST /scanner/crawl-and-audit\"}}\n",
+        "route": "POST /scanner/crawl-and-audit",
+        "effect": "zero scanner task",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-xfu3lt0x/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-xfu3lt0x/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-xfu3lt0x/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65336",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-xfu3lt0x/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "POST /scanner/crawl-and-audit",
+            "effect": "zero server effect"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:40.677368+00:00",
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"linked crawl and audit is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"POST /scanner/crawl-and-audit\"}}\n",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/scanner/crawl-and-audit",
+            "bodySha256": "2cafab9c153c211679228a1d8f91410720901b1148183f57c2418fb28b3d7c1c",
+            "bodyLength": 45,
+            "status": 501
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The CLI fixture observes the 501 response and zero target traffic, not Montoya internals; ScannerServiceTest proves zero scanner/Burp API calls."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l05-normal-20261023T121840457964Z-57601fac11d14127bad6f0b622057107-preflight.json",
+        "preflightFileSha256": "a2be2a8479daa28ba8424cba0e9712587aab4181e307d77f592906a212f2f30b",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l05-normal-20261023T121840457964Z-57601fac11d14127bad6f0b622057107-actual.json",
+        "actualFileSha256": "e1ad9761ec2c6b0fbc7711467f17fb7669e9e3d39f38b975bd8e91e265494266"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "sha256": "d4d1099eb677ea0804f2b62f5fefae8f6154ae63570d42d2e2e425606c535110",
+        "expectedAt": "2026-10-23T12:18:41.465344+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "all",
+        "http://127.0.0.1:65348/"
+      ],
+      "expected": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"linked crawl and audit is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"POST /scanner/crawl-and-audit\"}}\n",
+        "route": "POST /scanner/crawl-and-audit",
+        "effect": "zero scanner task",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-jlasel9o/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-jlasel9o/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-jlasel9o/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65347",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-jlasel9o/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "case": "unsupported route",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:41.663619+00:00",
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"linked crawl and audit is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"POST /scanner/crawl-and-audit\"}}\n",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/scanner/crawl-and-audit",
+            "bodySha256": "e3030f16786b1b72e33fabffc120722228762afcd813c246976d7c43051e9bc4",
+            "bodyLength": 45,
+            "status": 501
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "ORACLE_MISMATCH",
+      "limits": [
+        "The CLI fixture observes the 501 response and zero target traffic, not Montoya internals; ScannerServiceTest proves zero scanner/Burp API calls.",
+        "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l05-contrast-20261023T121841465825Z-8cd91f823bc545d89dcb91e371c89380-preflight.json",
+        "preflightFileSha256": "4551079d903783823a2ad4e992f8f1a32cf72c6def012f7ed7af8d754c096abd",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l05-contrast-20261023T121841465825Z-8cd91f823bc545d89dcb91e371c89380-actual.json",
+        "actualFileSha256": "06e57cb9c4b83822c33ec6bf3c5934a33046b8a07936a22d4c5279c919c442a3"
+      }
+    },
+    "historical": [
+      {
+        "id": "L05",
+        "oracleHash": "f6f3ae8f24186f874a14e3fe7cc09cd9767ef727cc78342e051ef8526907686f",
+        "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+        "normal": {
+          "preRunSeal": {
+            "sha256": "9bf129ec44c25fb85394c6e1ea6b866d3187eed35257cfeec769879ea3e2282b",
+            "expectedAt": "2026-10-23T11:29:24.841044+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "all",
+            "http://127.0.0.1:61269/"
+          ],
+          "expected": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"linked crawl and audit is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"POST /scanner/crawl-and-audit\"}}\n",
+            "route": "POST /scanner/crawl-and-audit",
+            "effect": "zero scanner task",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-ccr4fdht/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-ccr4fdht/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-ccr4fdht/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61268",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-ccr4fdht/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:26.325856+00:00",
+            "exit": 1,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"linked crawl and audit is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"POST /scanner/crawl-and-audit\"}}\n",
+            "restLog": [
+              {
+                "method": "POST",
+                "path": "/scanner/crawl-and-audit",
+                "bodySha256": "d4c31b638778ba9a815fa465ce0d956493c42dda37dd5c84d12b155d2667c15c",
+                "bodyLength": 45,
+                "status": 501
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The CLI fixture observes the 501 response and zero target traffic, not Montoya internals; ScannerServiceTest proves zero scanner/Burp API calls."
+          ]
+        },
+        "contrast": {
+          "preRunSeal": {
+            "sha256": "40332a652c3da3b0c48f8f4b9910dbd075f0c85cf0b3561138826d03ca7d930f",
+            "expectedAt": "2026-10-23T11:29:26.853650+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "all",
+            "http://127.0.0.1:61300/"
+          ],
+          "expected": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"linked crawl and audit is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"POST /scanner/crawl-and-audit\"}}\n",
+            "route": "POST /scanner/crawl-and-audit",
+            "effect": "zero scanner task",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-iz94jrph/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-iz94jrph/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-iz94jrph/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61299",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-iz94jrph/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:28.201309+00:00",
+            "exit": 1,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"linked crawl and audit is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"POST /scanner/crawl-and-audit\"}}\n",
+            "restLog": [
+              {
+                "method": "POST",
+                "path": "/scanner/crawl-and-audit",
+                "bodySha256": "c42692015f8f71de691317520a246006bdc9fced675a722ebd21e689484663ec",
+                "bodyLength": 45,
+                "status": 501
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The CLI fixture observes the 501 response and zero target traffic, not Montoya internals; ScannerServiceTest proves zero scanner/Burp API calls."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "L06",
+    "oracleHash": "ca976b3e5d0b4c8f258109ab3c6f85033f24aedd01b04fd15eaa847b42a45c6f",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": {
+        "sha256": "9345e091bd6ec3f191cc4a809aa7846a9d81c6eac88d8fa296df83f040810957",
+        "expectedAt": "2026-10-23T12:18:42.476161+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "status",
+        "sid-001"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": "{\"scanId\":\"sid-001\",\"status\":\"Running\",\"crawlProgress\":null,\"auditProgress\":null,\"issueCount\":1,\"statusMessage\":\"Running\",\"requestCount\":2,\"errorCount\":0}\n",
+        "stderr": "",
+        "route": "GET /scanner/sid-001/status",
+        "effect": "one scanner state read",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ctxantcf/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ctxantcf/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ctxantcf/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65362",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ctxantcf/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "GET /scanner/SID/status",
+            "effect": "one scanner read"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:42.671806+00:00",
+        "exit": 0,
+        "stdout": "{\"scanId\":\"sid-001\",\"status\":\"Running\",\"crawlProgress\":null,\"auditProgress\":null,\"issueCount\":1,\"statusMessage\":\"Running\",\"requestCount\":2,\"errorCount\":0}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/scanner/sid-001/status",
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bodyLength": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l06-normal-20261023T121842477247Z-dc46c2c3678844c98cb0b5aaba5c821f-preflight.json",
+        "preflightFileSha256": "5350b8213fafa7a9dacb0fedf7e32b7c4c952ac7ba1050c0383915f38cbe2d5d",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l06-normal-20261023T121842477247Z-dc46c2c3678844c98cb0b5aaba5c821f-actual.json",
+        "actualFileSha256": "158a30363cc92f136edae542ff4b238d8d65c70071a31f69083d2a79abb931c6"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "sha256": "b278c0ff7bc9c045f6d9b2ecc403a0f5cfbfd990e66c7468a13163e1c0c9694f",
+        "expectedAt": "2026-10-23T12:18:43.485179+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "status",
+        "unknown"
+      ],
+      "expected": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"scanner task was not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /scanner/unknown/status\"}}\n",
+        "route": "GET /scanner/unknown/status",
+        "effect": "zero task mutation",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-luts56ic/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-luts56ic/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-luts56ic/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65374",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-luts56ic/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "case": "unknown task ID",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:43.678451+00:00",
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"scanner task was not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /scanner/unknown/status\"}}\n",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/scanner/unknown/status",
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bodyLength": 0,
+            "status": 404
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "ORACLE_MISMATCH",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload.",
+        "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l06-contrast-20261023T121843485644Z-1d41087398d7483e9fe075f8db3c2907-preflight.json",
+        "preflightFileSha256": "391bafeca427ba12e2abd0bea473a6c1882dedb02703efd6ca82950c3bac7858",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l06-contrast-20261023T121843485644Z-1d41087398d7483e9fe075f8db3c2907-actual.json",
+        "actualFileSha256": "5dba5fa35213f0254ff673bc5c9ccc5293f02fd33c8eddc01178f0829a5e8f4b"
+      }
+    },
+    "historical": [
+      {
+        "id": "L06",
+        "oracleHash": "ca976b3e5d0b4c8f258109ab3c6f85033f24aedd01b04fd15eaa847b42a45c6f",
+        "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+        "normal": {
+          "preRunSeal": {
+            "sha256": "8308df985104754bf93eccbcbfb9c437ff2aa0793cbd8e1e7aa86e69a7a40ad8",
+            "expectedAt": "2026-10-23T11:29:28.871388+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "status",
+            "sid-001"
+          ],
+          "expected": {
+            "exit": 0,
+            "stdout": "{\"scanId\":\"sid-001\",\"status\":\"Running\",\"crawlProgress\":null,\"auditProgress\":null,\"issueCount\":1,\"statusMessage\":\"Running\",\"requestCount\":2,\"errorCount\":0}\n",
+            "stderr": "",
+            "route": "GET /scanner/sid-001/status",
+            "effect": "one scanner state read",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-fsqyxwfo/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-fsqyxwfo/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-fsqyxwfo/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61324",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-fsqyxwfo/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:30.432651+00:00",
+            "exit": 0,
+            "stdout": "{\"scanId\":\"sid-001\",\"status\":\"Running\",\"crawlProgress\":null,\"auditProgress\":null,\"issueCount\":1,\"statusMessage\":\"Running\",\"requestCount\":2,\"errorCount\":0}\n",
+            "stderr": "",
+            "restLog": [
+              {
+                "method": "GET",
+                "path": "/scanner/sid-001/status",
+                "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bodyLength": 0,
+                "status": 200
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        },
+        "contrast": {
+          "preRunSeal": {
+            "sha256": "fe95ede3f56692f0c1ddf6a5d20367fdac949e0ef5ddc979cc7c519f073d72b7",
+            "expectedAt": "2026-10-23T11:29:30.883268+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "status",
+            "unknown"
+          ],
+          "expected": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"scanner task was not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /scanner/unknown/status\"}}\n",
+            "route": "GET /scanner/unknown/status",
+            "effect": "zero task mutation",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-hl_8vw22/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-hl_8vw22/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-hl_8vw22/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61348",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-hl_8vw22/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:32.982328+00:00",
+            "exit": 1,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"scanner task was not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /scanner/unknown/status\"}}\n",
+            "restLog": [
+              {
+                "method": "GET",
+                "path": "/scanner/unknown/status",
+                "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bodyLength": 0,
+                "status": 404
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "L07",
+    "oracleHash": "2304fd07adbdee38d04e9080110ab9c52f26c4d5b56746c776bf5c36fea881d4",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": {
+        "sha256": "85c5813c8c6f63add8ebadd1ab40098277b7373dfd5b39307fd65863f0eeee5a",
+        "expectedAt": "2026-10-23T12:18:44.492901+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "issues",
+        "sid-001"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": "{\"scanId\":\"sid-001\",\"issues\":[{\"name\":\"fixture issue\",\"url\":\"http://127.0.0.1:65382/issue\",\"severity\":\"LOW\",\"confidence\":\"FIRM\"}],\"total\":1}\n",
+        "stderr": "",
+        "route": "GET /scanner/sid-001/issues",
+        "effect": "one scanner issue read",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-37a2j8st/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-37a2j8st/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-37a2j8st/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65381",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-37a2j8st/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "GET /scanner/SID/issues",
+            "effect": "one scanner read"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:44.682609+00:00",
+        "exit": 0,
+        "stdout": "{\"scanId\":\"sid-001\",\"issues\":[{\"name\":\"fixture issue\",\"url\":\"http://127.0.0.1:65382/issue\",\"severity\":\"LOW\",\"confidence\":\"FIRM\"}],\"total\":1}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/scanner/sid-001/issues",
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bodyLength": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l07-normal-20261023T121844493365Z-ee9ada245405476bb4b5cd5a77cbd058-preflight.json",
+        "preflightFileSha256": "f92b7e1c6c8ce08aeaf9c4fb5b22536b5730f5ec09ddb747e7af122578864207",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l07-normal-20261023T121844493365Z-ee9ada245405476bb4b5cd5a77cbd058-actual.json",
+        "actualFileSha256": "d35bc9e7b08a79c74cee4cb017958f3dbf5f01ccf422b21045521dd47204e4a4"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "sha256": "d0879a936a3892e54a2c9e467cbf80924caaf1b4008c66f5f7b61f0ec5bdaafc",
+        "expectedAt": "2026-10-23T12:18:45.501982+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "issues",
+        "unknown"
+      ],
+      "expected": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"scanner task was not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /scanner/unknown/issues\"}}\n",
+        "route": "GET /scanner/unknown/issues",
+        "effect": "zero task mutation",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ljfl0y2x/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ljfl0y2x/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ljfl0y2x/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65388",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-ljfl0y2x/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "case": "unknown task ID",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:45.697538+00:00",
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"scanner task was not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /scanner/unknown/issues\"}}\n",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/scanner/unknown/issues",
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bodyLength": 0,
+            "status": 404
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "ORACLE_MISMATCH",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload.",
+        "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l07-contrast-20261023T121845502434Z-e4b1024e796942eeb7bb0b13fd71c2de-preflight.json",
+        "preflightFileSha256": "41c5be3b988e27383e19f94899e99a67c686f7d9325aee991e8b18c26e628d78",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l07-contrast-20261023T121845502434Z-e4b1024e796942eeb7bb0b13fd71c2de-actual.json",
+        "actualFileSha256": "bb3295e4d8de102863e1e227c1978cd3b9e48154de724bd6b308e074158fde30"
+      }
+    },
+    "historical": [
+      {
+        "id": "L07",
+        "oracleHash": "2304fd07adbdee38d04e9080110ab9c52f26c4d5b56746c776bf5c36fea881d4",
+        "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+        "normal": {
+          "preRunSeal": {
+            "sha256": "eb1ad572bd368b971847db77e2ed8ba570806d71e25eb37fa2ef6b5d696d2820",
+            "expectedAt": "2026-10-23T11:29:33.399667+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "issues",
+            "sid-001"
+          ],
+          "expected": {
+            "exit": 0,
+            "stdout": "{\"scanId\":\"sid-001\",\"issues\":[{\"name\":\"fixture issue\",\"url\":\"http://127.0.0.1:61384/issue\",\"severity\":\"LOW\",\"confidence\":\"FIRM\"}],\"total\":1}\n",
+            "stderr": "",
+            "route": "GET /scanner/sid-001/issues",
+            "effect": "one scanner issue read",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-swe_92ui/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-swe_92ui/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-swe_92ui/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61383",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-swe_92ui/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:35.493971+00:00",
+            "exit": 0,
+            "stdout": "{\"scanId\":\"sid-001\",\"issues\":[{\"name\":\"fixture issue\",\"url\":\"http://127.0.0.1:61384/issue\",\"severity\":\"LOW\",\"confidence\":\"FIRM\"}],\"total\":1}\n",
+            "stderr": "",
+            "restLog": [
+              {
+                "method": "GET",
+                "path": "/scanner/sid-001/issues",
+                "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bodyLength": 0,
+                "status": 200
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        },
+        "contrast": {
+          "preRunSeal": {
+            "sha256": "83377cfb4ccaf0f4cc288650099b85333ad9bd47243232e694a325f4927c1bc0",
+            "expectedAt": "2026-10-23T11:29:35.956664+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "issues",
+            "unknown"
+          ],
+          "expected": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"scanner task was not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /scanner/unknown/issues\"}}\n",
+            "route": "GET /scanner/unknown/issues",
+            "effect": "zero task mutation",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-um1nzu_b/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-um1nzu_b/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-um1nzu_b/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61418",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-um1nzu_b/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:37.852924+00:00",
+            "exit": 1,
+            "stdout": "",
+            "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"scanner task was not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /scanner/unknown/issues\"}}\n",
+            "restLog": [
+              {
+                "method": "GET",
+                "path": "/scanner/unknown/issues",
+                "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bodyLength": 0,
+                "status": 404
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "L08",
+    "oracleHash": "7ba7f79e92684c05826affd35a1f17c75164c24591f046daaa6564b4c4672f8a",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": {
+        "sha256": "b6d8d36efe673d1ec946bb0e91bf2156fd3c1d7e8066ecd405abf7bf19ba35af",
+        "expectedAt": "2026-10-23T12:18:46.514916+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "defs"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": "{\"definitions\":[{\"name\":\"fixture definition\",\"typeIndex\":1,\"description\":\"fixture\",\"remediation\":\"fixture\"}],\"total\":1}\n",
+        "stderr": "",
+        "route": "GET /scanner/issue-definitions",
+        "effect": "one scanner definition read",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-7hpn92sc/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-7hpn92sc/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-7hpn92sc/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65393",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-7hpn92sc/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "GET /scanner/issue-definitions",
+            "effect": "one scanner read"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:46.762988+00:00",
+        "exit": 0,
+        "stdout": "{\"definitions\":[{\"name\":\"fixture definition\",\"typeIndex\":1,\"description\":\"fixture\",\"remediation\":\"fixture\"}],\"total\":1}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/scanner/issue-definitions",
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bodyLength": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l08-normal-20261023T121846516587Z-f150cb81d5c34afcb7a542854d23516d-preflight.json",
+        "preflightFileSha256": "ba75f683dffe857257a21777c898f6da09cb5c241aa1e37e33c68d2d08faec8f",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l08-normal-20261023T121846516587Z-f150cb81d5c34afcb7a542854d23516d-actual.json",
+        "actualFileSha256": "56ecda73063f8fe343fd994e98946ba3b76d493b2ae97846717a6f2d0d7b93ec"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "sha256": "c625a4611b0667b3a121fd4cc12a52468c5aaada94dc37d16e4d6bf556d9fd30",
+        "expectedAt": "2026-10-23T12:18:47.527310+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+        "bp",
+        "scan",
+        "defs"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": "{\"definitions\":[],\"total\":0}\n",
+        "stderr": "",
+        "route": "GET /scanner/issue-definitions",
+        "effect": "Community-safe empty list",
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-0ao4tjyq/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-0ao4tjyq/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-0ao4tjyq/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:65405",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-270/test_observation_artifact_matc0/bp-audit-0ao4tjyq/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        },
+        "sealedOracleBranch": {
+          "case": "Community-safe empty list",
+          "exit": 0,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "actual": {
+        "observedAt": "2026-10-23T12:18:47.964122+00:00",
+        "exit": 0,
+        "stdout": "{\"definitions\":[],\"total\":0}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/scanner/issue-definitions",
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bodyLength": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": []
+      },
+      "verdict": "ORACLE_MISMATCH",
+      "limits": [
+        "The sealed oracle contrast predicts empty stdout plus a typed stderr despite exit 0; current Kotlin and CLI behavior returns JSON on stdout.",
+        "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+      ],
+      "evidence": {
+        "preflightPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l08-contrast-20261023T121847527978Z-5ba31f01ba9042d3b27bd84fcbc01b15-preflight.json",
+        "preflightFileSha256": "b7ee8614fdf77efac82d8a0d9eacd77feb6e529619a40c98e9b4a716ebb62963",
+        "actualPath": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-8-l08-contrast-20261023T121847527978Z-5ba31f01ba9042d3b27bd84fcbc01b15-actual.json",
+        "actualFileSha256": "4572c2d70af5963fd7402670d26f2eda00e1febafe2993a711f55979f962acb0"
+      }
+    },
+    "historical": [
+      {
+        "id": "L08",
+        "oracleHash": "7ba7f79e92684c05826affd35a1f17c75164c24591f046daaa6564b4c4672f8a",
+        "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+        "normal": {
+          "preRunSeal": {
+            "sha256": "b7de41b2d06882c9f1c4afa593d3c67c328756ce1a2e8b57f12ff59b8901db86",
+            "expectedAt": "2026-10-23T11:29:38.472118+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "defs"
+          ],
+          "expected": {
+            "exit": 0,
+            "stdout": "{\"definitions\":[{\"name\":\"fixture definition\",\"typeIndex\":1,\"description\":\"fixture\",\"remediation\":\"fixture\"}],\"total\":1}\n",
+            "stderr": "",
+            "route": "GET /scanner/issue-definitions",
+            "effect": "one scanner definition read",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-qkomdijr/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-qkomdijr/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-qkomdijr/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61455",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-qkomdijr/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:39.648464+00:00",
+            "exit": 0,
+            "stdout": "{\"definitions\":[{\"name\":\"fixture definition\",\"typeIndex\":1,\"description\":\"fixture\",\"remediation\":\"fixture\"}],\"total\":1}\n",
+            "stderr": "",
+            "restLog": [
+              {
+                "method": "GET",
+                "path": "/scanner/issue-definitions",
+                "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bodyLength": 0,
+                "status": 200
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "PASS",
+          "limits": [
+            "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+          ]
+        },
+        "contrast": {
+          "preRunSeal": {
+            "sha256": "ff7a446c9ee650f0199bd01c53befefc23d3e0e7718f8f5f85424b0199509e18",
+            "expectedAt": "2026-10-23T11:29:39.984024+00:00"
+          },
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--project",
+            "/Users/maache/burpctl-ulw-worktrees-20261023/scan_collab/bp",
+            "bp",
+            "scan",
+            "defs"
+          ],
+          "expected": {
+            "exit": 0,
+            "stdout": "{\"definitions\":[],\"total\":0}\n",
+            "stderr": "",
+            "route": "GET /scanner/issue-definitions",
+            "effect": "Community-safe empty list",
+            "environment": {
+              "BP_AGENT": "1",
+              "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-3bgx6r7b/home/.bp/config",
+              "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-3bgx6r7b/state/ledger.db",
+              "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-3bgx6r7b/payloads",
+              "BURP_REST_URL": "http://127.0.0.1:61470",
+              "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-135/test_observation_artifact_matc0/bp-audit-3bgx6r7b/home",
+              "NO_COLOR": "1",
+              "TERM": "dumb"
+            }
+          },
+          "actual": {
+            "observedAt": "2026-10-23T11:29:41.132807+00:00",
+            "exit": 0,
+            "stdout": "{\"definitions\":[],\"total\":0}\n",
+            "stderr": "",
+            "restLog": [
+              {
+                "method": "GET",
+                "path": "/scanner/issue-definitions",
+                "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bodyLength": 0,
+                "status": 200
+              }
+            ],
+            "targetLog": []
+          },
+          "verdict": "ORACLE_MISMATCH",
+          "limits": [
+            "The sealed oracle contrast predicts empty stdout plus a typed stderr despite exit 0; current Kotlin and CLI behavior returns JSON on stdout.",
+            "Manifest L08 contrast expects empty stdout and typed stderr; observed Community-safe JSON agrees with ScannerService.issueDefinitions()."
+          ]
+        }
+      }
+    ]
+  }
+]

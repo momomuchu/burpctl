@@ -1,0 +1,286 @@
+{
+  "schema": "burpctl.command-audit/observations-crosscutting/v1",
+  "candidate": {
+    "revision": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "branch": "codex/qa-crosscutting"
+  },
+  "scope": "Shared parsing and output variations only; installed bp/burpctl, loopback fixture, isolated HOME/config/ledger, no live Burp or external target.",
+  "status": "EXECUTED",
+  "summary": {
+    "invocations": 15,
+    "passes": 11,
+    "failures": 4,
+    "externalTargetEffects": 0
+  },
+  "observations": [
+    {
+      "case": "format-before-command",
+      "executable": "bp",
+      "verdict": "PASS",
+      "actual": {"exit": 0, "stdout": "json", "stderr": "empty", "route": ["GET /health"], "ledgerDelta": 0},
+      "preRunSeal": "2f5649aef0a205d385488e78426a27a3c491a152e4f2487afa0566b59c9b4c53",
+      "evidence": "task-crosscutting-1792754905565197000-format-before-command-bp-actual.json"
+    },
+    {
+      "case": "format-after-command",
+      "executable": "bp",
+      "verdict": "PASS",
+      "actual": {"exit": 0, "stdout": "json", "stderr": "empty", "route": ["GET /health"], "ledgerDelta": 0},
+      "preRunSeal": "e08d0230b76351036096a94816eb3bcd863f739178f1a1c835d11c050aa40fa4",
+      "evidence": "task-crosscutting-1792754908085194000-format-after-command-bp-actual.json"
+    },
+    {
+      "case": "agent-json-default",
+      "executable": "bp",
+      "verdict": "PASS",
+      "actual": {"exit": 0, "stdout": "json", "stderr": "empty", "route": ["GET /health"], "ledgerDelta": 0},
+      "preRunSeal": "5b18a15b3843d2e6f826d0bf10df3c028398165ba0c659657455702a38a66ccd",
+      "evidence": "task-crosscutting-1792754911107376000-agent-json-default-bp-actual.json"
+    },
+    {
+      "case": "explicit-table-over-agent",
+      "executable": "bp",
+      "verdict": "PASS",
+      "actual": {"exit": 0, "stdout": "table", "stderr": "empty", "route": ["GET /health"], "ledgerDelta": 0},
+      "preRunSeal": "5572d01001c06af04865e2b335de98922062f9690ace0ac9d77400cb3b43b8a6",
+      "evidence": "task-crosscutting-1792754913601400000-explicit-table-over-agent-bp-actual.json"
+    },
+    {
+      "case": "delimiter-stops-hoist",
+      "executable": "bp",
+      "verdict": "PASS",
+      "actual": {"exit": 2, "stdout": "empty", "stderr": "usage", "route": [], "ledgerDelta": 0},
+      "preRunSeal": "49991c4ab8004b0682496483e0dad16c453e94b140a57c7569a8de02f2466a05",
+      "evidence": "task-crosscutting-1792754916140132000-delimiter-stops-hoist-bp-actual.json"
+    },
+    {
+      "case": "help-h",
+      "executable": "bp",
+      "verdict": "PASS",
+      "actual": {"exit": 0, "stdout": "Usage: bp", "stderr": "empty", "route": [], "ledgerDelta": 0},
+      "preRunSeal": "34ac64eb991ecfe28a96177834287a84f6a63168380cba72946d4df493191b38",
+      "evidence": "task-crosscutting-1792754918656606000-help-h-bp-actual.json"
+    },
+    {
+      "case": "help-help",
+      "executable": "bp",
+      "verdict": "PASS",
+      "actual": {"exit": 0, "stdout": "Usage: bp", "stderr": "empty", "route": [], "ledgerDelta": 0},
+      "preRunSeal": "5501b7a7048d948bb4b6cfe9bedcfefeb0efc0878d3e78f5a33610c96ad6e09c",
+      "evidence": "task-crosscutting-1792754922180970000-help-help-bp-actual.json"
+    },
+    {
+      "case": "invalid-format-machine-error",
+      "executable": "bp",
+      "verdict": "FAIL",
+      "expected": {"exit": 2, "stdout": "empty", "stderr": {"error": {"code": "USAGE_ERROR"}}, "route": [], "ledgerDelta": 0},
+      "actual": {"exit": 2, "stdout": "empty", "stderr": "Typer human Usage/Error panel", "route": [], "ledgerDelta": 0},
+      "failedChecks": ["stderr"],
+      "preRunSeal": "80c09f14b4106b19ce212ab2d8723b868071cc6a320f33063f03c7c160f15c95",
+      "evidence": "task-crosscutting-1792754925203771000-invalid-format-machine-error-bp-actual.json"
+    },
+    {
+      "case": "raw-structured-unavailable",
+      "executable": "bp",
+      "verdict": "PASS",
+      "actual": {"exit": 2, "stdout": "empty", "stderr": "raw structured-value usage error", "route": ["GET /health"], "ledgerDelta": 0},
+      "preRunSeal": "7a22138d8db4e37af1342bfccb8f1145478e2d378509fb115e5378257b3d0556",
+      "evidence": "task-crosscutting-1792754928733066000-raw-structured-unavailable-bp-actual.json"
+    },
+    {
+      "case": "fields-redaction-no-ledger",
+      "executable": "bp",
+      "verdict": "PASS",
+      "actual": {"exit": 0, "stdout": {"Authorization": "***", "status": "ok"}, "stderr": "empty", "route": ["GET /config/project"], "ledgerDelta": 0},
+      "preRunSeal": "1ca02c4f45264c25da8533154e3fd014a118b308c8c99c4e2425073d6aca9f27",
+      "evidence": "task-crosscutting-1792754931757915000-fields-redaction-no-ledger-bp-actual.json"
+    },
+    {
+      "case": "unknown-command-usage",
+      "executable": "bp",
+      "verdict": "PASS",
+      "actual": {"exit": 2, "stdout": "empty", "stderr": "Usage: bp; No such command", "route": [], "ledgerDelta": 0},
+      "preRunSeal": "a8e7628cbdd1e10436995d70d53cd501faa091aab75e99cd2c733397f15c2b48",
+      "evidence": "task-crosscutting-1792754934267369000-unknown-command-usage-bp-actual.json"
+    },
+    {
+      "case": "unknown-command-usage",
+      "executable": "burpctl",
+      "verdict": "PASS",
+      "actual": {"exit": 2, "stdout": "empty", "stderr": "Usage: burpctl; No such command", "route": [], "ledgerDelta": 0},
+      "preRunSeal": "6759e0373f5ac6d8536a8df97db1fa38d3be77df9c5d4d28260d76ec9471a823",
+      "evidence": "task-crosscutting-1792754937286342000-unknown-command-usage-burpctl-actual.json"
+    },
+    {
+      "case": "agent-machine-error-delimiter",
+      "executable": "bp",
+      "verdict": "FAIL",
+      "expected": {"exit": 2, "stdout": "", "stderr": {"error": {"code": "USAGE_ERROR"}}, "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "actual": {"exit": 2, "stdout": "", "stderr": "Usage: bp health; unexpected arguments (--format json)", "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "failedChecks": ["stderr"],
+      "preRunSeal": "fef0f86f6971793407e2b80dd92cd9811b9691a168207c601468145c2aa87c92",
+      "evidence": "task-crosscutting-1792755349648687000-agent-machine-error-delimiter-bp-actual.json"
+    },
+    {
+      "case": "agent-machine-error-unknown-bp",
+      "executable": "bp",
+      "verdict": "FAIL",
+      "expected": {"exit": 2, "stdout": "", "stderr": {"error": {"code": "USAGE_ERROR"}}, "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "actual": {"exit": 2, "stdout": "", "stderr": "Usage: bp; No such command 'missing-crosscutting-command'", "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "failedChecks": ["stderr"],
+      "preRunSeal": "29f4b122e020222869e6dcf61a040d300332c5d84d2530f6eacccd78800d283d",
+      "evidence": "task-crosscutting-1792755350664296000-agent-machine-error-unknown-bp-bp-actual.json"
+    },
+    {
+      "case": "agent-machine-error-unknown-burpctl",
+      "executable": "burpctl",
+      "verdict": "FAIL",
+      "expected": {"exit": 2, "stdout": "", "stderr": {"error": {"code": "USAGE_ERROR"}}, "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "actual": {"exit": 2, "stdout": "", "stderr": "Usage: burpctl; No such command 'missing-crosscutting-command'", "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "failedChecks": ["stderr"],
+      "preRunSeal": "67deb2568e155bbfade5ec2c3d7db7ee5b7a24dabeba25c2383155aacae64ad0",
+      "evidence": "task-crosscutting-1792755351694244000-agent-machine-error-unknown-burpctl-burpctl-actual.json"
+    }
+  ],
+  "findings": [
+    {
+      "id": "XC01",
+      "title": "Invalid --format bypasses the JSON error contract in agent mode",
+      "classification": "contract-regression-on-previously-untested-D03-edge",
+      "rootCause": "python-output",
+      "reproduction": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--project",
+          "/Users/maache/burpctl-ulw-worktrees-20261023/crosscutting/bp",
+          "bp",
+          "health",
+          "--format",
+          "yaml"
+        ],
+        "environment": {
+          "BP_AGENT": "1",
+          "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-129/test_invalid_format_exposes_ma0/bp-audit-ftlqz2le/home/.bp/config",
+          "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-129/test_invalid_format_exposes_ma0/bp-audit-ftlqz2le/state/ledger.db",
+          "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-129/test_invalid_format_exposes_ma0/bp-audit-ftlqz2le/payloads",
+          "BURP_REST_URL": "http://127.0.0.1:60805",
+          "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-129/test_invalid_format_exposes_ma0/bp-audit-ftlqz2le/home",
+          "NO_COLOR": "1",
+          "TERM": "dumb"
+        }
+      },
+      "oracle": {
+        "sealed": true,
+        "preRunSeal": "80c09f14b4106b19ce212ab2d8723b868071cc6a320f33063f03c7c160f15c95",
+        "expected": {
+          "exit": 2,
+          "stdout": "",
+          "stderr": {"error": {"code": "USAGE_ERROR"}},
+          "route": [],
+          "ledgerDelta": 0,
+          "targetDelta": 0
+        },
+        "sources": [
+          "docs/CLI.md:9-11",
+          "docs/OUTPUT.md:488-498"
+        ]
+      },
+      "actual": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "Usage: bp [OPTIONS] COMMAND [ARGS]...\nTry 'bp -h' for help.\n╭─ Error ──────────────────────────────────────────────────────────────────────╮\n│ Invalid value for --format: must be one of json, table, raw, quiet           │\n╰──────────────────────────────────────────────────────────────────────────────╯\n",
+        "route": [],
+        "ledgerDelta": 0,
+        "targetDelta": 0
+      },
+      "comparison": {
+        "indexedDefect": "D03",
+        "indexedInvariant": "agent-mode error has one truthful stable representation",
+        "existingCoverage": "bp/tests/test_cliutil.py:49-57 asserts only exit 2 for invalid --format; D03's other indexed tests contain no invalid-format machine-stderr assertion",
+        "result": "The candidate violates the cited current contract. This exact parser edge was not proved by the tests indexed under D03, so wording overlap alone is not used as deduplication evidence."
+      },
+      "evidence": {
+        "expected": "task-crosscutting-1792754925203771000-invalid-format-machine-error-bp-expected.json",
+        "actual": "task-crosscutting-1792754925203771000-invalid-format-machine-error-bp-actual.json"
+      },
+      "issueReady": false,
+      "reason": "No product fix or issue was authorized in this audit lane."
+    },
+    {
+      "id": "XC02",
+      "title": "The hoist delimiter parser error bypasses the agent JSON error contract",
+      "classification": "contract-regression-on-previously-untested-D03-edge",
+      "rootCause": "python-cli-parser-boundary",
+      "reproduction": {
+        "command": "bp health -- --format json",
+        "environment": {"BP_AGENT": "1", "NO_COLOR": "1", "TERM": "dumb"}
+      },
+      "oracle": {
+        "sealed": true,
+        "preRunSeal": "fef0f86f6971793407e2b80dd92cd9811b9691a168207c601468145c2aa87c92",
+        "expected": {"exit": 2, "stdout": "", "stderr": {"error": {"code": "USAGE_ERROR"}}, "effects": "zero"},
+        "sources": ["docs/CLI.md:8-11", "docs/OUTPUT.md:5-15", "docs/OUTPUT.md:488-498"]
+      },
+      "actual": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "Usage: bp health [OPTIONS]; Got unexpected extra argument(s) (--format json)",
+        "effects": "zero"
+      },
+      "comparison": {
+        "relatedFinding": "XC01",
+        "sharedBoundary": "Typer/Click usage failures reach the default renderer through cli_main's app(...) call instead of cliutil.emit_error.",
+        "sharedRootCauseAssessment": "supported",
+        "basis": "Both probes fail only the stderr JSON check, retain exit 2 and zero effects, and originate before command execution. XC02 additionally proves the documented -- hoist stop while exposing the same renderer boundary."
+      },
+      "evidence": {
+        "expected": "task-crosscutting-1792755349648687000-agent-machine-error-delimiter-bp-expected.json",
+        "actual": "task-crosscutting-1792755349648687000-agent-machine-error-delimiter-bp-actual.json"
+      },
+      "issueReady": false,
+      "reason": "No product fix or issue was authorized in this audit lane."
+    },
+    {
+      "id": "XC03",
+      "title": "Unknown commands bypass the agent JSON error contract for both aliases",
+      "classification": "contract-regression-on-previously-untested-D03-edge",
+      "rootCause": "python-cli-parser-boundary",
+      "reproduction": {
+        "commands": [
+          "bp missing-crosscutting-command",
+          "burpctl missing-crosscutting-command"
+        ],
+        "environment": {"BP_AGENT": "1", "NO_COLOR": "1", "TERM": "dumb"}
+      },
+      "oracle": {
+        "sealed": true,
+        "preRunSeals": {
+          "bp": "29f4b122e020222869e6dcf61a040d300332c5d84d2530f6eacccd78800d283d",
+          "burpctl": "67deb2568e155bbfade5ec2c3d7db7ee5b7a24dabeba25c2383155aacae64ad0"
+        },
+        "expected": {"exit": 2, "stdout": "", "stderr": {"error": {"code": "USAGE_ERROR"}}, "effects": "zero"},
+        "sources": ["docs/CLI.md:7-11", "docs/OUTPUT.md:5-15", "docs/OUTPUT.md:488-498"]
+      },
+      "actual": {
+        "bp": {"exit": 2, "stdout": "", "stderr": "Usage: bp; No such command", "effects": "zero"},
+        "burpctl": {"exit": 2, "stdout": "", "stderr": "Usage: burpctl; No such command", "effects": "zero"}
+      },
+      "comparison": {
+        "relatedFindings": ["XC01", "XC02"],
+        "sharedBoundary": "Typer/Click usage failures reach the default renderer through cli_main's app(...) call instead of cliutil.emit_error.",
+        "sharedRootCauseAssessment": "supported",
+        "basis": "Both aliases produce the same non-JSON failure shape with only the Usage program name changed; exit, stdout and zero-effect behavior match XC01/XC02. The alias parity rules out alias registration as the cause."
+      },
+      "evidence": {
+        "bpExpected": "task-crosscutting-1792755350664296000-agent-machine-error-unknown-bp-bp-expected.json",
+        "bpActual": "task-crosscutting-1792755350664296000-agent-machine-error-unknown-bp-bp-actual.json",
+        "burpctlExpected": "task-crosscutting-1792755351694244000-agent-machine-error-unknown-burpctl-burpctl-expected.json",
+        "burpctlActual": "task-crosscutting-1792755351694244000-agent-machine-error-unknown-burpctl-burpctl-actual.json"
+      },
+      "issueReady": false,
+      "reason": "No product fix or issue was authorized in this audit lane."
+    }
+  ]
+}

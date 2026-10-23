@@ -1,0 +1,53 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "check",
+    "idor",
+    "http://127.0.0.1:54999/item/{id}",
+    "--param",
+    "id",
+    "--own",
+    "1",
+    "--target",
+    "2"
+  ],
+  "environment": {
+    "BP_AGENT": "1",
+    "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+    "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+    "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+    "BURP_REST_URL": "http://127.0.0.1:54998",
+    "HOME": "{{FIXTURE_ROOT}}/home",
+    "NO_COLOR": "1",
+    "TERM": "dumb"
+  },
+  "expected": {
+    "classifier": {
+      "anomalousCount": null,
+      "confirmed": false,
+      "findingsCount": null,
+      "vulnerableCount": 0
+    },
+    "endToEndTargetEffectCount": "INCONCLUSIVE",
+    "exit": 0,
+    "fixtureTargetEffectCount": 0,
+    "restEffectCount": 1,
+    "restRoute": "POST /scan/idor",
+    "stderr": "empty",
+    "stderrJson": null,
+    "stdout": "json",
+    "stdoutJson": "{\"baseline\":{\"status\":200,\"inconclusive\":false},\"results\":[{\"vulnerable\":false}],\"vulnerableCount\":0,\"inconclusiveCount\":0,\"verdict\":\"clean\"}"
+  },
+  "id": "L10",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "cd58b71d9c182954e4c9b96b1ccd252554bde39f531cf7a2f4b1f766ec413c77",
+    "sealedAt": "2026-10-23T11:46:14.565740+00:00"
+  },
+  "variant": "normal"
+}

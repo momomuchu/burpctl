@@ -1,0 +1,49 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "defs"
+  ],
+  "expected": {
+    "effect": "Community-safe empty list",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65405",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "GET /scanner/issue-definitions",
+    "sealedOracleBranch": {
+      "case": "Community-safe empty list",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"definitions\":[],\"total\":0}\n"
+  },
+  "expectedAt": "2026-10-23T12:18:47.527310+00:00",
+  "id": "L08",
+  "preRunSeal": "c625a4611b0667b3a121fd4cc12a52468c5aaada94dc37d16e4d6bf556d9fd30",
+  "variant": "contrast"
+}

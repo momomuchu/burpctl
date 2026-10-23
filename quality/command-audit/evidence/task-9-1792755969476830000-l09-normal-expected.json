@@ -1,0 +1,49 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "check",
+    "auth",
+    "http://127.0.0.1:54973",
+    "--endpoint",
+    "/private"
+  ],
+  "environment": {
+    "BP_AGENT": "1",
+    "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+    "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+    "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+    "BURP_REST_URL": "http://127.0.0.1:54972",
+    "HOME": "{{FIXTURE_ROOT}}/home",
+    "NO_COLOR": "1",
+    "TERM": "dumb"
+  },
+  "expected": {
+    "classifier": {
+      "anomalousCount": null,
+      "confirmed": false,
+      "findingsCount": null,
+      "vulnerableCount": 0
+    },
+    "endToEndTargetEffectCount": "INCONCLUSIVE",
+    "exit": 0,
+    "fixtureTargetEffectCount": 0,
+    "restEffectCount": 1,
+    "restRoute": "POST /scan/auth-bypass",
+    "stderr": "empty",
+    "stderrJson": null,
+    "stdout": "json",
+    "stdoutJson": "{\"results\":[],\"totalScanned\":1,\"vulnerableCount\":0,\"inconclusiveCount\":0}"
+  },
+  "id": "L09",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "d3b3e874715fa6d47ef9aa82f25a1e7f11a8e35a8352e4155e9c47b3cf6a81b4",
+    "sealedAt": "2026-10-23T11:46:09.477319+00:00"
+  },
+  "variant": "normal"
+}

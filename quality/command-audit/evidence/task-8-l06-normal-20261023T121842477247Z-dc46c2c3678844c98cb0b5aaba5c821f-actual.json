@@ -1,0 +1,74 @@
+{
+  "actual": {
+    "exit": 0,
+    "observedAt": "2026-10-23T12:18:42.671806+00:00",
+    "restLog": [
+      {
+        "bodyLength": 0,
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "method": "GET",
+        "path": "/scanner/sid-001/status",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"scanId\":\"sid-001\",\"status\":\"Running\",\"crawlProgress\":null,\"auditProgress\":null,\"issueCount\":1,\"statusMessage\":\"Running\",\"requestCount\":2,\"errorCount\":0}\n",
+    "targetLog": []
+  },
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "status",
+    "sid-001"
+  ],
+  "evidence": {
+    "actualPath": "{{ATTEMPT_DIR}}/task-8-l06-normal-20261023T121842477247Z-dc46c2c3678844c98cb0b5aaba5c821f-actual.json",
+    "preflightFileSha256": "5350b8213fafa7a9dacb0fedf7e32b7c4c952ac7ba1050c0383915f38cbe2d5d",
+    "preflightPath": "{{ATTEMPT_DIR}}/task-8-l06-normal-20261023T121842477247Z-dc46c2c3678844c98cb0b5aaba5c821f-preflight.json"
+  },
+  "expected": {
+    "effect": "one scanner state read",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65362",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "GET /scanner/sid-001/status",
+    "sealedOracleBranch": {
+      "effect": {
+        "effect": "one scanner read",
+        "route": "GET /scanner/SID/status"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "empty",
+        "shape": "empty"
+      },
+      "stdout": {
+        "mode": "json",
+        "shape": "parseable"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"scanId\":\"sid-001\",\"status\":\"Running\",\"crawlProgress\":null,\"auditProgress\":null,\"issueCount\":1,\"statusMessage\":\"Running\",\"requestCount\":2,\"errorCount\":0}\n"
+  },
+  "limits": [
+    "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+  ],
+  "preRunSeal": {
+    "expectedAt": "2026-10-23T12:18:42.476161+00:00",
+    "sha256": "9345e091bd6ec3f191cc4a809aa7846a9d81c6eac88d8fa296df83f040810957"
+  },
+  "verdict": "PASS"
+}

@@ -1,0 +1,74 @@
+{
+  "actual": {
+    "exit": 0,
+    "observedAt": "2026-10-23T12:18:33.609839+00:00",
+    "restLog": [
+      {
+        "bodyLength": 0,
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "method": "GET",
+        "path": "/collaborator/poll/cid-001",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"found\":false,\"interactions\":[],\"queriedPayloadId\":\"cid-001\"}\n",
+    "targetLog": []
+  },
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "collab",
+    "poll",
+    "cid-001"
+  ],
+  "evidence": {
+    "actualPath": "{{ATTEMPT_DIR}}/task-8-l02-normal-20261023T121833378993Z-8d4313ab6a124dffbbc59cb9724912ba-actual.json",
+    "preflightFileSha256": "809845061b3495e89cedea404678995916dfd53e2650efc8dadc54b6c0d33818",
+    "preflightPath": "{{ATTEMPT_DIR}}/task-8-l02-normal-20261023T121833378993Z-8d4313ab6a124dffbbc59cb9724912ba-preflight.json"
+  },
+  "expected": {
+    "effect": "simulated collaborator read",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65254",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "GET /collaborator/poll/cid-001",
+    "sealedOracleBranch": {
+      "effect": {
+        "effect": "one collaborator read",
+        "route": "GET /collaborator/poll/CID"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "empty",
+        "shape": "empty"
+      },
+      "stdout": {
+        "mode": "json",
+        "shape": "parseable"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"found\":false,\"interactions\":[],\"queriedPayloadId\":\"cid-001\"}\n"
+  },
+  "limits": [
+    "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+  ],
+  "preRunSeal": {
+    "expectedAt": "2026-10-23T12:18:33.378453+00:00",
+    "sha256": "9b64fcdf4dfe20d30b90bc7458d7f33a7d82dd792161a03e0e1479ddcd84d95e"
+  },
+  "verdict": "PASS"
+}

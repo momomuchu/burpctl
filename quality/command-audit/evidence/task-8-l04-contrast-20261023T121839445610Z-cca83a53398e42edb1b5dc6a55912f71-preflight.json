@@ -1,0 +1,50 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "audit",
+    "http://127.0.0.1:65330/"
+  ],
+  "expected": {
+    "effect": "zero scanner task",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65329",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 4,
+    "route": "POST /scanner/audit",
+    "sealedOracleBranch": {
+      "case": "Community capability",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 4,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"this operation requires Burp Suite Professional\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/audit\"}}\n",
+    "stdout": ""
+  },
+  "expectedAt": "2026-10-23T12:18:39.444025+00:00",
+  "id": "L04",
+  "preRunSeal": "debc1153002d1b0b8c32f6c07057b48ff33ba6c449671787810cfbfe3fe37b2b",
+  "variant": "contrast"
+}

@@ -1,0 +1,76 @@
+{
+  "actual": {
+    "exit": 1,
+    "observedAt": "2026-10-23T12:18:43.678451+00:00",
+    "restLog": [
+      {
+        "bodyLength": 0,
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "method": "GET",
+        "path": "/scanner/unknown/status",
+        "status": 404
+      }
+    ],
+    "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"scanner task was not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /scanner/unknown/status\"}}\n",
+    "stdout": "",
+    "targetLog": []
+  },
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "status",
+    "unknown"
+  ],
+  "evidence": {
+    "actualPath": "{{ATTEMPT_DIR}}/task-8-l06-contrast-20261023T121843485644Z-1d41087398d7483e9fe075f8db3c2907-actual.json",
+    "preflightFileSha256": "391bafeca427ba12e2abd0bea473a6c1882dedb02703efd6ca82950c3bac7858",
+    "preflightPath": "{{ATTEMPT_DIR}}/task-8-l06-contrast-20261023T121843485644Z-1d41087398d7483e9fe075f8db3c2907-preflight.json"
+  },
+  "expected": {
+    "effect": "zero task mutation",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65374",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 1,
+    "route": "GET /scanner/unknown/status",
+    "sealedOracleBranch": {
+      "case": "unknown task ID",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 1,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"scanner task was not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /scanner/unknown/status\"}}\n",
+    "stdout": ""
+  },
+  "limits": [
+    "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload.",
+    "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+  ],
+  "preRunSeal": {
+    "expectedAt": "2026-10-23T12:18:43.485179+00:00",
+    "sha256": "b278c0ff7bc9c045f6d9b2ecc403a0f5cfbfd990e66c7468a13163e1c0c9694f"
+  },
+  "verdict": "ORACLE_MISMATCH"
+}

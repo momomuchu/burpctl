@@ -1,0 +1,49 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "issues",
+    "sid-001"
+  ],
+  "expected": {
+    "effect": "one scanner issue read",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65381",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "GET /scanner/sid-001/issues",
+    "sealedOracleBranch": {
+      "effect": {
+        "effect": "one scanner read",
+        "route": "GET /scanner/SID/issues"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "empty",
+        "shape": "empty"
+      },
+      "stdout": {
+        "mode": "json",
+        "shape": "parseable"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"scanId\":\"sid-001\",\"issues\":[{\"name\":\"fixture issue\",\"url\":\"http://127.0.0.1:65382/issue\",\"severity\":\"LOW\",\"confidence\":\"FIRM\"}],\"total\":1}\n"
+  },
+  "expectedAt": "2026-10-23T12:18:44.492901+00:00",
+  "id": "L07",
+  "preRunSeal": "85c5813c8c6f63add8ebadd1ab40098277b7373dfd5b39307fd65863f0eeee5a",
+  "variant": "normal"
+}

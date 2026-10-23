@@ -1,0 +1,26 @@
+{
+  "actual": {
+    "exit": 0,
+    "restLog": [
+      {
+        "body_length": 89,
+        "body_sha256": "c7450ae70caff6e46d1c6549601d9831bfe3ae8dd2a5b9a1249a2a70f9901243",
+        "method": "POST",
+        "path": "/scan/headers",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"baseline\":{\"status\":403},\"results\":[{\"anomalous\":true,\"vulnerable\":false}],\"anomalousCount\":1,\"vulnerableCount\":0,\"inconclusiveCount\":0}\n",
+    "targetLog": []
+  },
+  "id": "L11",
+  "observedAt": "2026-10-23T11:46:19.531106+00:00",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "bdc47af5a2845da435c8279a23f207e8ad3d3080155ce682c8738ac241d12e78",
+    "sealedAt": "2026-10-23T11:46:17.618017+00:00"
+  },
+  "variant": "normal",
+  "verdict": "PASS"
+}

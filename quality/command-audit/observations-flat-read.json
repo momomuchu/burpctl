@@ -1,0 +1,1467 @@
+[
+  {
+    "id": "F01",
+    "oracleHash": "253c84d86a921f6b3b116acb753d12bbb11624071d7154393cec888574c8e003",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "b98510207b35fc0d1545e8a387f5411f06b8ee340e8e7fb66756c87016863f6f",
+      "expectedAtNs": 1792755004531097000,
+      "actualAtNs": 1792755006005195000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "health"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "status": "ok",
+          "version": "fixture",
+          "uptime": 1,
+          "burpVersion": null
+        },
+        "stderr": "empty",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/health",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "GET /health",
+          "status": "ok",
+          "exit_code": 0
+        }
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"status\":\"ok\",\"version\":\"fixture\",\"uptime\":1,\"burpVersion\":null}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/health",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113005f0s0ga",
+            "ts": "2026-10-23T11:30:05.367928+00:00",
+            "command": "bp health",
+            "burp_op": "GET /health",
+            "target": "127.0.0.1:61783",
+            "tag": null,
+            "status": "ok",
+            "exit_code": 0
+          }
+        ]
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    },
+    "contrast": {
+      "preRunSeal": "35ea7c6da98bb031947118f86e24e439cde75e9bdf2f489542281fe8d44feab1",
+      "expectedAtNs": 1792755028260461000,
+      "actualAtNs": 1792755029832467000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "health"
+      ],
+      "expected": {
+        "exit": 3,
+        "stdout": null,
+        "stderr": "CONNECTION_REFUSED",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "GET /health",
+          "status": "error",
+          "exit_code": 3
+        }
+      },
+      "actual": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"CONNECTION_REFUSED\",\"message\":\"Burp REST unreachable: [Errno 61] Connection refused\",\"op\":\"GET /health\"}}\n",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113029gqw91i",
+            "ts": "2026-10-23T11:30:29.496932+00:00",
+            "command": "bp health",
+            "burp_op": "GET /health",
+            "target": "127.0.0.1:62137",
+            "tag": null,
+            "status": "error",
+            "exit_code": 3
+          }
+        ]
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    }
+  },
+  {
+    "id": "F02",
+    "oracleHash": "2bc3260f2742a5024bf01ccb50037f9fbf798e0776b9a228fdc162c2127003cb",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "466479e92361420d546fd4e601e454bcd467a1e7613e0dce3aaa7e4ed2611cbe",
+      "expectedAtNs": 1792755006548003000,
+      "actualAtNs": 1792755008815857000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "version"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "version": "extension-9.9",
+          "name": "Burp REST API",
+          "burpVersion": "fixture"
+        },
+        "stderr": "empty",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/version",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "GET /version",
+          "status": "ok",
+          "exit_code": 0
+        }
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"version\":\"extension-9.9\",\"name\":\"Burp REST API\",\"burpVersion\":\"fixture\"}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/version",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113008g8cs2d",
+            "ts": "2026-10-23T11:30:08.131494+00:00",
+            "command": "bp version",
+            "burp_op": "GET /version",
+            "target": "127.0.0.1:61810",
+            "tag": null,
+            "status": "ok",
+            "exit_code": 0
+          }
+        ]
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    },
+    "contrast": {
+      "preRunSeal": "5ca64bd789a97cbcfb7001d2f8b3e2ee060f65a0f90a60185c6461400114aa74",
+      "expectedAtNs": 1792755031797298000,
+      "actualAtNs": 1792755032712142000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "--version"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": null,
+        "stderr": "typed_error",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": []
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "2.0.0\n",
+        "stderr": "",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": []
+      },
+      "verdict": "FAIL",
+      "checks": {
+        "exit": true,
+        "stdout": false,
+        "stderr": false,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    }
+  },
+  {
+    "id": "F06",
+    "oracleHash": "ffd9d65c0492694b33c8c214304735f6e88643e2d39349918130886a7ff971af",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "ac65a51fe71106fe3dac3a7017d3349846f754280a9d6ad81fe6276949f38a8f",
+      "expectedAtNs": 1792755009587205000,
+      "actualAtNs": 1792755011848842000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "ws"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "total": 1,
+          "entries": [
+            {
+              "id": 7,
+              "url": "ws://fixture/ws",
+              "direction": "CLIENT_TO_SERVER",
+              "payload": "audit",
+              "timestamp": "2026-10-23T10:00:00Z",
+              "webSocketId": 41,
+              "payloadBase64": "YXVkaXQ=",
+              "editedPayloadBase64": null,
+              "time": "2026-10-23T10:00:00Z",
+              "listenerPort": 8080
+            }
+          ]
+        },
+        "stderr": "empty",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/proxy/websocket/history",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "GET /proxy/websocket/history",
+          "status": "ok",
+          "exit_code": 0
+        }
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"total\":1,\"entries\":[{\"id\":7,\"url\":\"ws://fixture/ws\",\"direction\":\"CLIENT_TO_SERVER\",\"payload\":\"audit\",\"timestamp\":\"2026-10-23T10:00:00Z\",\"webSocketId\":41,\"payloadBase64\":\"YXVkaXQ=\",\"editedPayloadBase64\":null,\"time\":\"2026-10-23T10:00:00Z\",\"listenerPort\":8080}]}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/proxy/websocket/history",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113011te4jwy",
+            "ts": "2026-10-23T11:30:11.209742+00:00",
+            "command": "bp ws",
+            "burp_op": "GET /proxy/websocket/history",
+            "target": "127.0.0.1:61869",
+            "tag": null,
+            "status": "ok",
+            "exit_code": 0
+          }
+        ]
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    },
+    "contrast": {
+      "preRunSeal": "2d6628eb572e02ea3d3d9faf0e25ef87cbca0e89b582d92597424dce52ae3f7d",
+      "expectedAtNs": 1792755033313654000,
+      "actualAtNs": 1792755035389898000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "ws"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": null,
+        "stderr": "typed_error",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "GET /proxy/websocket/history",
+          "status": "ok",
+          "exit_code": 0
+        }
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"total\":0,\"entries\":[]}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/proxy/websocket/history",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113034qeuce2",
+            "ts": "2026-10-23T11:30:34.802491+00:00",
+            "command": "bp ws",
+            "burp_op": "GET /proxy/websocket/history",
+            "target": "127.0.0.1:62187",
+            "tag": null,
+            "status": "ok",
+            "exit_code": 0
+          }
+        ]
+      },
+      "verdict": "FAIL",
+      "checks": {
+        "exit": true,
+        "stdout": false,
+        "stderr": false,
+        "rest": false,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    }
+  },
+  {
+    "id": "F10",
+    "oracleHash": "60bb1e4ab3bcbcdc1149f278a7b932b97a4c74647de154e95efa15da57bff0bc",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "5b4a90ce02489ef3606b8e5d90f91d98ec6865b9a02d45ca9fd817ce2b3c82cd",
+      "expectedAtNs": 1792755012618873000,
+      "actualAtNs": 1792755014317195000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "sitemap",
+        "http://127.0.0.1:61913/"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "entries": [
+            {
+              "url": "http://127.0.0.1/a",
+              "method": "GET",
+              "statusCode": 200,
+              "mimeType": "text/plain"
+            }
+          ],
+          "total": 1
+        },
+        "stderr": "empty",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/target/sitemap?url=http%3A%2F%2F127.0.0.1%3A61913%2F",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "GET /target/sitemap",
+          "status": "ok",
+          "exit_code": 0
+        }
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"entries\":[{\"url\":\"http://127.0.0.1/a\",\"method\":\"GET\",\"statusCode\":200,\"mimeType\":\"text/plain\"}],\"total\":1}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/target/sitemap?url=http%3A%2F%2F127.0.0.1%3A61913%2F",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113013zw1zg1",
+            "ts": "2026-10-23T11:30:13.822114+00:00",
+            "command": "bp sitemap",
+            "burp_op": "GET /target/sitemap",
+            "target": "127.0.0.1:61912",
+            "tag": null,
+            "status": "ok",
+            "exit_code": 0
+          }
+        ]
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    },
+    "contrast": {
+      "preRunSeal": "3f72ddc9016ee4436c391e9f36d8d6ee4da5a6703d12d9c87c13c0668f105318",
+      "expectedAtNs": 1792755035831608000,
+      "actualAtNs": 1792755037599922000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "sitemap",
+        "http://127.0.0.1:62222/"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": null,
+        "stderr": "typed_error",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "GET /target/sitemap",
+          "status": "ok",
+          "exit_code": 0
+        }
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"entries\":[],\"total\":0}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/target/sitemap?url=http%3A%2F%2F127.0.0.1%3A62222%2F",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113037bh2i4v",
+            "ts": "2026-10-23T11:30:37.008234+00:00",
+            "command": "bp sitemap",
+            "burp_op": "GET /target/sitemap",
+            "target": "127.0.0.1:62221",
+            "tag": null,
+            "status": "ok",
+            "exit_code": 0
+          }
+        ]
+      },
+      "verdict": "FAIL",
+      "checks": {
+        "exit": true,
+        "stdout": false,
+        "stderr": false,
+        "rest": false,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    }
+  },
+  {
+    "id": "F11",
+    "oracleHash": "22e7c1343e29420eb2836d11e48f240e2ecd848d75438695617c1ef22dfde157",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "411802112f048da93ba05b2aadffe8f2b434370a8b98081cc8cc1665db126c1c",
+      "expectedAtNs": 1792755015136454000,
+      "actualAtNs": 1792755017485177000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "encode",
+        "a b",
+        "--enc",
+        "url"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "result": "a%20b",
+          "encoding": "url"
+        },
+        "stderr": "empty",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/decoder/encode",
+            "body_sha256": "f19af90d79b66e730d8ecb00299e142384c2d3a9c707dcd6368428e39141317a",
+            "body_length": 31,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "POST /decoder/encode",
+          "status": "ok",
+          "exit_code": 0
+        }
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"result\":\"a%20b\",\"encoding\":\"url\"}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/decoder/encode",
+            "body_sha256": "f19af90d79b66e730d8ecb00299e142384c2d3a9c707dcd6368428e39141317a",
+            "body_length": 31,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113016iclpao",
+            "ts": "2026-10-23T11:30:16.936550+00:00",
+            "command": "bp encode",
+            "burp_op": "POST /decoder/encode",
+            "target": "127.0.0.1:61948",
+            "tag": null,
+            "status": "ok",
+            "exit_code": 0
+          }
+        ]
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    },
+    "contrast": {
+      "preRunSeal": "d2cffff22f50c16ebc38842bef0f62d12a43c3a5d15a9f3f5b3d4359ffbf7163",
+      "expectedAtNs": 1792755038354635000,
+      "actualAtNs": 1792755040100487000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "encode",
+        "a b",
+        "--enc",
+        "rot13"
+      ],
+      "expected": {
+        "exit": 2,
+        "stdout": null,
+        "stderr": "USAGE_ERROR",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": []
+      },
+      "actual": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "error: --enc must be one of base64, url, hex, html; got 'rot13'\n",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": []
+      },
+      "verdict": "FAIL",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": false,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    }
+  },
+  {
+    "id": "F12",
+    "oracleHash": "1c05b59f3a95039f64a4503039f8f087e6d7e84d47df5d2f2de735963fb2d170",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "6c227144b484eac4703c5a87b40067ec38230ed1e85b72a854bd8ceb26dea9bf",
+      "expectedAtNs": 1792755018161196000,
+      "actualAtNs": 1792755020214162000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "decode",
+        "YQ==",
+        "--enc",
+        "base64"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "result": "a",
+          "encoding": "base64"
+        },
+        "stderr": "empty",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/decoder/decode",
+            "body_sha256": "17b437ce5a6d3edf9b981b1ec1661ec33d1de6635dd24301bc6baf54f045aac1",
+            "body_length": 35,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "POST /decoder/decode",
+          "status": "ok",
+          "exit_code": 0
+        }
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"result\":\"a\",\"encoding\":\"base64\"}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/decoder/decode",
+            "body_sha256": "17b437ce5a6d3edf9b981b1ec1661ec33d1de6635dd24301bc6baf54f045aac1",
+            "body_length": 35,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113019jofmia",
+            "ts": "2026-10-23T11:30:19.746977+00:00",
+            "command": "bp decode",
+            "burp_op": "POST /decoder/decode",
+            "target": "127.0.0.1:62000",
+            "tag": null,
+            "status": "ok",
+            "exit_code": 0
+          }
+        ]
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    },
+    "contrast": {
+      "preRunSeal": "6167c20a199c57822b5fdc2047ef7321f27365a7dbe91c38a0dccce73e90401f",
+      "expectedAtNs": 1792755040375501000,
+      "actualAtNs": 1792755042188426000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "decode",
+        "%%%",
+        "--enc",
+        "base64"
+      ],
+      "expected": {
+        "exit": 1,
+        "stdout": null,
+        "stderr": "INVALID_REQUEST",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "POST /decoder/decode",
+          "status": "error",
+          "exit_code": 1
+        }
+      },
+      "actual": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"INVALID_REQUEST\",\"message\":\"fixture rejection\",\"status\":400,\"http_status\":400,\"op\":\"POST /decoder/decode\"}}\n",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/decoder/decode",
+            "body_sha256": "0b349aa897a694ec6797bf8e88529e6e0e9102ffe8c3b4d6d224274114aa5619",
+            "body_length": 34,
+            "status": 400
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "202610231130412499q7",
+            "ts": "2026-10-23T11:30:41.603713+00:00",
+            "command": "bp decode",
+            "burp_op": "POST /decoder/decode",
+            "target": "127.0.0.1:62270",
+            "tag": null,
+            "status": "error",
+            "exit_code": 1
+          }
+        ]
+      },
+      "verdict": "FAIL",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": false,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    }
+  },
+  {
+    "id": "F13",
+    "oracleHash": "e2272bde709320f09fa40f0d7e634e9ce6ef581aff1854d4aaa49dcc1b59b609",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "c67e656393aec48c2249642c5fa5ed28b4b68f46ea0ca914ef5d76f6ee828304",
+      "expectedAtNs": 1792755020677598000,
+      "actualAtNs": 1792755022211563000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "hash",
+        "abc",
+        "--algo",
+        "sha256"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "result": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+          "algorithm": "sha256"
+        },
+        "stderr": "empty",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/decoder/hash",
+            "body_sha256": "2a2a40a17fa9b4a8748eaa12010ce16d96d0a2c03ca3a5300a48a14645716cfe",
+            "body_length": 35,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "POST /decoder/hash",
+          "status": "ok",
+          "exit_code": 0
+        }
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"result\":\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\",\"algorithm\":\"sha256\"}\n",
+        "stderr": "",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/decoder/hash",
+            "body_sha256": "2a2a40a17fa9b4a8748eaa12010ce16d96d0a2c03ca3a5300a48a14645716cfe",
+            "body_length": 35,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "202610231130219p94qg",
+            "ts": "2026-10-23T11:30:21.776691+00:00",
+            "command": "bp hash",
+            "burp_op": "POST /decoder/hash",
+            "target": "127.0.0.1:62032",
+            "tag": null,
+            "status": "ok",
+            "exit_code": 0
+          }
+        ]
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    },
+    "contrast": {
+      "preRunSeal": "7847fd233210dc6e84ec7a7d21bbbdd6ef871fb4d72ee1f9c6994f9e1de5ea0e",
+      "expectedAtNs": 1792755042901420000,
+      "actualAtNs": 1792755044857032000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "hash",
+        "abc",
+        "--algo",
+        "not-a-hash"
+      ],
+      "expected": {
+        "exit": 1,
+        "stdout": null,
+        "stderr": "INVALID_REQUEST",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "POST /decoder/hash",
+          "status": "error",
+          "exit_code": 1
+        }
+      },
+      "actual": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"INVALID_REQUEST\",\"message\":\"fixture rejection\",\"status\":400,\"http_status\":400,\"op\":\"POST /decoder/hash\"}}\n",
+        "restLog": [
+          {
+            "method": "POST",
+            "path": "/decoder/hash",
+            "body_sha256": "e8ba2ec119bbd4379935cb4a4ec1bbbd0f8f6c39f5c197ab7ef6ce405e57fe6d",
+            "body_length": 39,
+            "status": 400
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "2026102311304404cdad",
+            "ts": "2026-10-23T11:30:44.213506+00:00",
+            "command": "bp hash",
+            "burp_op": "POST /decoder/hash",
+            "target": "127.0.0.1:62296",
+            "tag": null,
+            "status": "error",
+            "exit_code": 1
+          }
+        ]
+      },
+      "verdict": "FAIL",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": false,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    }
+  },
+  {
+    "id": "F14",
+    "oracleHash": "fb6dc50d54c6be2c156cd858d46a3c51ba1180f741c09075ae30296522ffa488",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "d4afac3c0370f02c5edad643891fbae992362d9f325155e1d18601bb415f7d22",
+      "expectedAtNs": 1792755022700728000,
+      "actualAtNs": 1792755023924354000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "ext"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "extensions": [
+            {
+              "name": "Burp REST API",
+              "enabled": true,
+              "filename": "/fixture/burp-rest.jar"
+            }
+          ],
+          "total": 1,
+          "scope": "current-extension-only"
+        },
+        "stderr": "empty",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/extensions",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "GET /extensions",
+          "status": "ok",
+          "exit_code": 0
+        }
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"extensions\":[{\"name\":\"Burp REST API\",\"enabled\":true,\"filename\":\"/fixture/burp-rest.jar\"}],\"total\":1,\"scope\":\"current-extension-only\"}\n",
+        "stderr": "note: /extensions only reports the active extension; total is always 1.\n",
+        "restLog": [
+          {
+            "method": "GET",
+            "path": "/extensions",
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "body_length": 0,
+            "status": 200
+          }
+        ],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113023vmtcjt",
+            "ts": "2026-10-23T11:30:23.617916+00:00",
+            "command": "bp ext",
+            "burp_op": "GET /extensions",
+            "target": "127.0.0.1:62065",
+            "tag": null,
+            "status": "ok",
+            "exit_code": 0
+          }
+        ]
+      },
+      "verdict": "FAIL",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": false,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    },
+    "contrast": {
+      "preRunSeal": "a105ada15bcc05688ce17ddc72dac19b08f974af233f62abc185ee928cb8557d",
+      "expectedAtNs": 1792755030282540000,
+      "actualAtNs": 1792755031737213000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "ext"
+      ],
+      "expected": {
+        "exit": 3,
+        "stdout": null,
+        "stderr": "CONNECTION_REFUSED",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": {
+          "count": 1,
+          "burp_op": "GET /extensions",
+          "status": "error",
+          "exit_code": 3
+        }
+      },
+      "actual": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "note: /extensions only reports the active extension; total is always 1.\n{\"error\":{\"code\":\"CONNECTION_REFUSED\",\"message\":\"Burp REST unreachable: [Errno 61] Connection refused\",\"op\":\"GET /extensions\"}}\n",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113031ard89i",
+            "ts": "2026-10-23T11:30:31.387098+00:00",
+            "command": "bp ext",
+            "burp_op": "GET /extensions",
+            "target": "127.0.0.1:62159",
+            "tag": null,
+            "status": "error",
+            "exit_code": 3
+          }
+        ]
+      },
+      "verdict": "FAIL",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": false,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    }
+  },
+  {
+    "id": "F17",
+    "oracleHash": "cba347513712fa7f8afbcea0e7b71d22ada0f6c50c9441692c0b04f6199fd6ea",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "f254f180703b5d0031002cd1cc5e22bf18c651ddfb4f7caba3b6e7d6faaca62a",
+      "expectedAtNs": 1792755024231257000,
+      "actualAtNs": 1792755026123815000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "log",
+        "--limit",
+        "2"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": [
+          {
+            "id": "20261023113024hhbjgk",
+            "ts": "2026-10-23T11:30:24.227727+00:00",
+            "command": "bp third",
+            "burp_op": null,
+            "target": "fixture.invalid",
+            "program": null,
+            "tag": null,
+            "status": "refused",
+            "exit_code": null,
+            "req_sha256": null,
+            "resp_sha256": null,
+            "resp_status": null,
+            "resp_len": null,
+            "duration_ms": null,
+            "error_code": null,
+            "req_ref": null,
+            "resp_ref": null
+          },
+          {
+            "id": "20261023113024bbhul5",
+            "ts": "2026-10-23T11:30:24.227067+00:00",
+            "command": "bp second --token ***",
+            "burp_op": null,
+            "target": "fixture.invalid",
+            "program": null,
+            "tag": null,
+            "status": "error",
+            "exit_code": null,
+            "req_sha256": null,
+            "resp_sha256": null,
+            "resp_status": null,
+            "resp_len": null,
+            "duration_ms": null,
+            "error_code": null,
+            "req_ref": null,
+            "resp_ref": null
+          }
+        ],
+        "stderr": "empty",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113024qlon1c",
+            "ts": "2026-10-23T11:30:24.225791+00:00",
+            "command": "bp first",
+            "burp_op": null,
+            "target": "fixture.invalid",
+            "tag": null,
+            "status": "ok",
+            "exit_code": null
+          },
+          {
+            "id": "20261023113024bbhul5",
+            "ts": "2026-10-23T11:30:24.227067+00:00",
+            "command": "bp second --token ***",
+            "burp_op": null,
+            "target": "fixture.invalid",
+            "tag": null,
+            "status": "error",
+            "exit_code": null
+          },
+          {
+            "id": "20261023113024hhbjgk",
+            "ts": "2026-10-23T11:30:24.227727+00:00",
+            "command": "bp third",
+            "burp_op": null,
+            "target": "fixture.invalid",
+            "tag": null,
+            "status": "refused",
+            "exit_code": null
+          }
+        ]
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"id\":\"20261023113024hhbjgk\",\"ts\":\"2026-10-23T11:30:24.227727+00:00\",\"command\":\"bp third\",\"burp_op\":null,\"target\":\"fixture.invalid\",\"program\":null,\"tag\":null,\"status\":\"refused\",\"exit_code\":null,\"req_sha256\":null,\"resp_sha256\":null,\"resp_status\":null,\"resp_len\":null,\"duration_ms\":null,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023113024bbhul5\",\"ts\":\"2026-10-23T11:30:24.227067+00:00\",\"command\":\"bp second --token ***\",\"burp_op\":null,\"target\":\"fixture.invalid\",\"program\":null,\"tag\":null,\"status\":\"error\",\"exit_code\":null,\"req_sha256\":null,\"resp_sha256\":null,\"resp_status\":null,\"resp_len\":null,\"duration_ms\":null,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n",
+        "stderr": "",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113024qlon1c",
+            "ts": "2026-10-23T11:30:24.225791+00:00",
+            "command": "bp first",
+            "burp_op": null,
+            "target": "fixture.invalid",
+            "tag": null,
+            "status": "ok",
+            "exit_code": null
+          },
+          {
+            "id": "20261023113024bbhul5",
+            "ts": "2026-10-23T11:30:24.227067+00:00",
+            "command": "bp second --token ***",
+            "burp_op": null,
+            "target": "fixture.invalid",
+            "tag": null,
+            "status": "error",
+            "exit_code": null
+          },
+          {
+            "id": "20261023113024hhbjgk",
+            "ts": "2026-10-23T11:30:24.227727+00:00",
+            "command": "bp third",
+            "burp_op": null,
+            "target": "fixture.invalid",
+            "tag": null,
+            "status": "refused",
+            "exit_code": null
+          }
+        ]
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    },
+    "contrast": {
+      "preRunSeal": "48f37341e04c8bd5c37e23257c08c8e746a834aa1129612c9e90fa369275ef24",
+      "expectedAtNs": 1792755045423634000,
+      "actualAtNs": 1792755047770449000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "log",
+        "--status",
+        "unknown"
+      ],
+      "expected": {
+        "exit": 2,
+        "stdout": null,
+        "stderr": "USAGE_ERROR",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": []
+      },
+      "actual": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"USAGE_ERROR\",\"message\":\"status must be one of: ok, error, refused\"}}\n",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": []
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    }
+  },
+  {
+    "id": "F18",
+    "oracleHash": "8d0a73fcd7aab8ff63b2a9ace9283350a8f8e4c85eb025aa411c7debf9b3fe1f",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "f7e281595fd009a731ddbaeb4a697f7d548774003d1bd4a9f89a15331984b387",
+      "expectedAtNs": 1792755026246484000,
+      "actualAtNs": 1792755027731312000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "tag",
+        "20261023113026i9ov3z",
+        "audit"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "id": "20261023113026i9ov3z",
+          "tag": "audit",
+          "status": "tagged"
+        },
+        "stderr": "empty",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113026i9ov3z",
+            "ts": "2026-10-23T11:30:26.243471+00:00",
+            "command": "bp seeded",
+            "burp_op": null,
+            "target": null,
+            "tag": "audit",
+            "status": "ok",
+            "exit_code": null
+          }
+        ]
+      },
+      "actual": {
+        "exit": 0,
+        "stdout": "{\"id\":\"20261023113026i9ov3z\",\"tag\":\"audit\",\"status\":\"tagged\"}\n",
+        "stderr": "",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113026i9ov3z",
+            "ts": "2026-10-23T11:30:26.243471+00:00",
+            "command": "bp seeded",
+            "burp_op": null,
+            "target": null,
+            "tag": "audit",
+            "status": "ok",
+            "exit_code": null
+          }
+        ]
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    },
+    "contrast": {
+      "preRunSeal": "94b1407ea8ad024df4b3d5e54221611fad7632ac9202c3bd3ca01aa6b78e23f1",
+      "expectedAtNs": 1792755048461388000,
+      "actualAtNs": 1792755050607020000,
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_read/bp",
+        "bp",
+        "tag",
+        "unknown-opid",
+        "audit"
+      ],
+      "expected": {
+        "exit": 1,
+        "stdout": null,
+        "stderr": "NOT_FOUND",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113048p8knrv",
+            "ts": "2026-10-23T11:30:48.458441+00:00",
+            "command": "bp seed",
+            "burp_op": null,
+            "target": null,
+            "tag": null,
+            "status": "ok",
+            "exit_code": null
+          }
+        ]
+      },
+      "actual": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"op id 'unknown-opid' not found in ledger.\"}}\n",
+        "restLog": [],
+        "targetLog": [],
+        "ledger": [
+          {
+            "id": "20261023113048p8knrv",
+            "ts": "2026-10-23T11:30:48.458441+00:00",
+            "command": "bp seed",
+            "burp_op": null,
+            "target": null,
+            "tag": null,
+            "status": "ok",
+            "exit_code": null
+          }
+        ]
+      },
+      "verdict": "PASS",
+      "checks": {
+        "exit": true,
+        "stdout": true,
+        "stderr": true,
+        "rest": true,
+        "target": true,
+        "ledger": true
+      },
+      "limits": "loopback fixture plus isolated HOME/config/ledger; no external target"
+    }
+  }
+]

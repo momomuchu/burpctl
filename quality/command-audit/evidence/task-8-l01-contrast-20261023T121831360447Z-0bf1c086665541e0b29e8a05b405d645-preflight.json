@@ -1,0 +1,49 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "collab",
+    "new"
+  ],
+  "expected": {
+    "effect": "zero provider effect",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65225",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 4,
+    "route": "POST /collaborator/generate",
+    "sealedOracleBranch": {
+      "case": "Community capability",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 4,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"Burp Suite Professional is required\",\"status\":503,\"http_status\":503,\"op\":\"POST /collaborator/generate\"}}\n",
+    "stdout": ""
+  },
+  "expectedAt": "2026-10-23T12:18:31.359982+00:00",
+  "id": "L01",
+  "preRunSeal": "4ab12643c3cef2afc797753455b9daf51060a049a3de1599864905c91ff7789c",
+  "variant": "contrast"
+}

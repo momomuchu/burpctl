@@ -1,0 +1,26 @@
+{
+  "actual": {
+    "exit": 0,
+    "restLog": [
+      {
+        "body_length": 52,
+        "body_sha256": "1a54b8bb4d9f25cddd6bf43d1a876ae0741ee7881b515ead0a2fab515f4d8325",
+        "method": "POST",
+        "path": "/scan/cors",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"results\":[{\"origin\":\"http://127.0.0.1:55047\",\"acao\":\"http://127.0.0.1:55047\",\"acac\":\"true\",\"vulnerable\":false}],\"vulnerableCount\":0,\"inconclusiveCount\":0}\n",
+    "targetLog": []
+  },
+  "id": "L12",
+  "observedAt": "2026-10-23T11:46:24.603896+00:00",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "67158a9b782cf94afc40df645d4a5a1adf3cf0e6eae2f8eb9877409dcdc70658",
+    "sealedAt": "2026-10-23T11:46:22.706488+00:00"
+  },
+  "variant": "normal",
+  "verdict": "PASS"
+}

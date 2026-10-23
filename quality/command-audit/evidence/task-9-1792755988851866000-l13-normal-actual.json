@@ -1,0 +1,26 @@
+{
+  "actual": {
+    "exit": 0,
+    "restLog": [
+      {
+        "body_length": 70,
+        "body_sha256": "830d833c81664b5c3afdff0ccae52917e273b4327117d1c6d30687d8ab5841cf",
+        "method": "POST",
+        "path": "/scan/endpoints",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"scanned\":2,\"findings\":[],\"durationMs\":1,\"source\":\"extension-h2-send-history\",\"sourceCounts\":{\"repeater\":1,\"session\":1},\"errors\":[],\"inconclusiveCount\":0}\n",
+    "targetLog": []
+  },
+  "id": "L13",
+  "observedAt": "2026-10-23T11:46:31.467449+00:00",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "22c04998c62e416c1ea09ef6c93eeae177f27007ca09caf359cfdb1fc25dd693",
+    "sealedAt": "2026-10-23T11:46:28.851896+00:00"
+  },
+  "variant": "normal",
+  "verdict": "PASS"
+}

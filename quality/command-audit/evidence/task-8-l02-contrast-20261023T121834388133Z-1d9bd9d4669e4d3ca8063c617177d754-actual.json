@@ -1,0 +1,76 @@
+{
+  "actual": {
+    "exit": 1,
+    "observedAt": "2026-10-23T12:18:34.626600+00:00",
+    "restLog": [
+      {
+        "bodyLength": 0,
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "method": "GET",
+        "path": "/collaborator/poll/unknown",
+        "status": 404
+      }
+    ],
+    "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"Collaborator payload not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /collaborator/poll/unknown\"}}\n",
+    "stdout": "",
+    "targetLog": []
+  },
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "collab",
+    "poll",
+    "unknown"
+  ],
+  "evidence": {
+    "actualPath": "{{ATTEMPT_DIR}}/task-8-l02-contrast-20261023T121834388133Z-1d9bd9d4669e4d3ca8063c617177d754-actual.json",
+    "preflightFileSha256": "7abb6756443d5be0c23b9f5f2d8c29f4fca8565c45deddb1dd73d7798d2d7dcc",
+    "preflightPath": "{{ATTEMPT_DIR}}/task-8-l02-contrast-20261023T121834388133Z-1d9bd9d4669e4d3ca8063c617177d754-preflight.json"
+  },
+  "expected": {
+    "effect": "zero provider effect",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65266",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 1,
+    "route": "GET /collaborator/poll/unknown",
+    "sealedOracleBranch": {
+      "case": "unknown correlation ID",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 1,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"Collaborator payload not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /collaborator/poll/unknown\"}}\n",
+    "stdout": ""
+  },
+  "limits": [
+    "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload.",
+    "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+  ],
+  "preRunSeal": {
+    "expectedAt": "2026-10-23T12:18:34.387631+00:00",
+    "sha256": "af0a3a16f403fc1693479976d85c06f11553726cc3d2891c288469637dee65c2"
+  },
+  "verdict": "ORACLE_MISMATCH"
+}

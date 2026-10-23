@@ -1,0 +1,75 @@
+{
+  "actual": {
+    "exit": 0,
+    "observedAt": "2026-10-23T12:18:47.964122+00:00",
+    "restLog": [
+      {
+        "bodyLength": 0,
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "method": "GET",
+        "path": "/scanner/issue-definitions",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"definitions\":[],\"total\":0}\n",
+    "targetLog": []
+  },
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "defs"
+  ],
+  "evidence": {
+    "actualPath": "{{ATTEMPT_DIR}}/task-8-l08-contrast-20261023T121847527978Z-5ba31f01ba9042d3b27bd84fcbc01b15-actual.json",
+    "preflightFileSha256": "b7ee8614fdf77efac82d8a0d9eacd77feb6e529619a40c98e9b4a716ebb62963",
+    "preflightPath": "{{ATTEMPT_DIR}}/task-8-l08-contrast-20261023T121847527978Z-5ba31f01ba9042d3b27bd84fcbc01b15-preflight.json"
+  },
+  "expected": {
+    "effect": "Community-safe empty list",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65405",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "GET /scanner/issue-definitions",
+    "sealedOracleBranch": {
+      "case": "Community-safe empty list",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"definitions\":[],\"total\":0}\n"
+  },
+  "limits": [
+    "The sealed oracle contrast predicts empty stdout plus a typed stderr despite exit 0; current Kotlin and CLI behavior returns JSON on stdout.",
+    "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+  ],
+  "preRunSeal": {
+    "expectedAt": "2026-10-23T12:18:47.527310+00:00",
+    "sha256": "c625a4611b0667b3a121fd4cc12a52468c5aaada94dc37d16e4d6bf556d9fd30"
+  },
+  "verdict": "ORACLE_MISMATCH"
+}

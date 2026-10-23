@@ -1,0 +1,76 @@
+{
+  "actual": {
+    "exit": 4,
+    "observedAt": "2026-10-23T12:18:39.657817+00:00",
+    "restLog": [
+      {
+        "bodyLength": 45,
+        "bodySha256": "276f78a4b67bfc5902bd0b85fe079a6ec58029fb4b34426409aa82e0f8514b75",
+        "method": "POST",
+        "path": "/scanner/audit",
+        "status": 503
+      }
+    ],
+    "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"this operation requires Burp Suite Professional\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/audit\"}}\n",
+    "stdout": "",
+    "targetLog": []
+  },
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "audit",
+    "http://127.0.0.1:65330/"
+  ],
+  "evidence": {
+    "actualPath": "{{ATTEMPT_DIR}}/task-8-l04-contrast-20261023T121839445610Z-cca83a53398e42edb1b5dc6a55912f71-actual.json",
+    "preflightFileSha256": "03faa31ed26f07c1a06c602f2a59e6e650480b806e3bda0e97b178c3584e5fd6",
+    "preflightPath": "{{ATTEMPT_DIR}}/task-8-l04-contrast-20261023T121839445610Z-cca83a53398e42edb1b5dc6a55912f71-preflight.json"
+  },
+  "expected": {
+    "effect": "zero scanner task",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65329",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 4,
+    "route": "POST /scanner/audit",
+    "sealedOracleBranch": {
+      "case": "Community capability",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 4,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"this operation requires Burp Suite Professional\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/audit\"}}\n",
+    "stdout": ""
+  },
+  "limits": [
+    "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload.",
+    "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+  ],
+  "preRunSeal": {
+    "expectedAt": "2026-10-23T12:18:39.444025+00:00",
+    "sha256": "debc1153002d1b0b8c32f6c07057b48ff33ba6c449671787810cfbfe3fe37b2b"
+  },
+  "verdict": "ORACLE_MISMATCH"
+}

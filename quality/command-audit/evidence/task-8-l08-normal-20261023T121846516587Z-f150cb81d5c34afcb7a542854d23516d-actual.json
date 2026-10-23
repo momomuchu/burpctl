@@ -1,0 +1,73 @@
+{
+  "actual": {
+    "exit": 0,
+    "observedAt": "2026-10-23T12:18:46.762988+00:00",
+    "restLog": [
+      {
+        "bodyLength": 0,
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "method": "GET",
+        "path": "/scanner/issue-definitions",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"definitions\":[{\"name\":\"fixture definition\",\"typeIndex\":1,\"description\":\"fixture\",\"remediation\":\"fixture\"}],\"total\":1}\n",
+    "targetLog": []
+  },
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "defs"
+  ],
+  "evidence": {
+    "actualPath": "{{ATTEMPT_DIR}}/task-8-l08-normal-20261023T121846516587Z-f150cb81d5c34afcb7a542854d23516d-actual.json",
+    "preflightFileSha256": "ba75f683dffe857257a21777c898f6da09cb5c241aa1e37e33c68d2d08faec8f",
+    "preflightPath": "{{ATTEMPT_DIR}}/task-8-l08-normal-20261023T121846516587Z-f150cb81d5c34afcb7a542854d23516d-preflight.json"
+  },
+  "expected": {
+    "effect": "one scanner definition read",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65393",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "GET /scanner/issue-definitions",
+    "sealedOracleBranch": {
+      "effect": {
+        "effect": "one scanner read",
+        "route": "GET /scanner/issue-definitions"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "empty",
+        "shape": "empty"
+      },
+      "stdout": {
+        "mode": "json",
+        "shape": "parseable"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"definitions\":[{\"name\":\"fixture definition\",\"typeIndex\":1,\"description\":\"fixture\",\"remediation\":\"fixture\"}],\"total\":1}\n"
+  },
+  "limits": [
+    "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+  ],
+  "preRunSeal": {
+    "expectedAt": "2026-10-23T12:18:46.514916+00:00",
+    "sha256": "b6d8d36efe673d1ec946bb0e91bf2156fd3c1d7e8066ecd405abf7bf19ba35af"
+  },
+  "verdict": "PASS"
+}

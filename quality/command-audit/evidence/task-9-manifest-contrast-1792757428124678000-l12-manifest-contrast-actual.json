@@ -1,0 +1,43 @@
+{
+  "actual": {
+    "exit": 5,
+    "restLog": [
+      {
+        "body_length": 52,
+        "body_sha256": "a0bc550e2ceaba819996c7407eb51de4694f8c6fcfd377c4a5e9d400350d7d96",
+        "method": "POST",
+        "path": "/scan/cors",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"results\":[{\"origin\":\"https://evil.invalid\",\"acao\":\"https://evil.invalid\",\"acac\":\"true\",\"vulnerable\":true}],\"vulnerableCount\":1,\"inconclusiveCount\":0}\n",
+    "targetLog": []
+  },
+  "comparison": {
+    "effectMatch": true,
+    "exitMatch": true,
+    "manifestMatch": false,
+    "routeMatch": false,
+    "stderrMatch": false,
+    "stdoutMatch": false
+  },
+  "evidence": {
+    "actualFile": "task-9-manifest-contrast-1792757428124678000-l12-manifest-contrast-actual.json",
+    "expectedFile": "task-9-manifest-contrast-1792757428124678000-l12-manifest-contrast-expected.json"
+  },
+  "id": "L12",
+  "limits": [
+    "The loopback REST fixture proves CLI routing and payload only; it does not execute Kotlin probes.",
+    "End-to-end target effects remain INCONCLUSIVE; no external vulnerability claim is made."
+  ],
+  "observedAt": "2026-10-23T12:10:28.336678+00:00",
+  "oracleHash": "06a6ec1ee371dfc2f41a20c77a5d889a2e4df8f0c758b9e2d654f2aa1ad88940",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "1b408864d3b6b90fc8cb42d4ad936e541477391152f1dde90603151baac7b9bf",
+    "sealedAt": "2026-10-23T12:10:28.124694+00:00"
+  },
+  "scenario": "original-manifest-contrast",
+  "verdict": "ORACLE_MISMATCH"
+}

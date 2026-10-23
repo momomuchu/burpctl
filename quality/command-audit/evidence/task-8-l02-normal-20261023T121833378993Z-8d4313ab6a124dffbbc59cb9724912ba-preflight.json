@@ -1,0 +1,49 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "collab",
+    "poll",
+    "cid-001"
+  ],
+  "expected": {
+    "effect": "simulated collaborator read",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65254",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "GET /collaborator/poll/cid-001",
+    "sealedOracleBranch": {
+      "effect": {
+        "effect": "one collaborator read",
+        "route": "GET /collaborator/poll/CID"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "empty",
+        "shape": "empty"
+      },
+      "stdout": {
+        "mode": "json",
+        "shape": "parseable"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"found\":false,\"interactions\":[],\"queriedPayloadId\":\"cid-001\"}\n"
+  },
+  "expectedAt": "2026-10-23T12:18:33.378453+00:00",
+  "id": "L02",
+  "preRunSeal": "9b64fcdf4dfe20d30b90bc7458d7f33a7d82dd792161a03e0e1479ddcd84d95e",
+  "variant": "normal"
+}
