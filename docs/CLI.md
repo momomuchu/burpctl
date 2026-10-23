@@ -80,14 +80,15 @@ framing.
 | `bp send <id> [--set-header 'N: V']… [--body @f\|STR] [--method M] [--path P]` | `POST /repeater/send` | repeater |
 | `bp send --batch @file` | `POST /repeater/send/batch` | repeater | _(v1.1 — not shipped)_ |
 | `bp tab <id>` | `POST /repeater/tab/create` | repeater |
-| `bp fuzz <id> --pos SEL… [--payloads N=F]… [--type T] [--throttle-ms N] [--anomalous-only]` | client-side fire via `POST /repeater/send` (v1: synchronous) | intruder |
+| `bp fuzz <id> --pos SEL… [--payloads N=F]… [--type T] [--anomalous-only]` | client-side fire via `POST /repeater/send` (v1: synchronous) | intruder |
 | `bp fuzz <id> --param NAME --payloads @f` | `POST /intruder/quick-fuzz` (1-param shortcut) | intruder | _(v1.1 — not shipped)_ |
 | `bp fuzz status\|results\|pause\|resume\|stop <attackId>` _(v1.1 — async lifecycle, not shipped in v1)_ | `/intruder/attack/{id}/*` | intruder |
 | `bp collab new [--count N]` | `POST /collaborator/generate[/batch]` | collaborator (Pro) |
 | `bp collab poll [id]` | `GET /collaborator/poll[/{id}]` | collaborator (Pro) |
 | `bp scan crawl\|audit\|all <url>` | `POST /scanner/{crawl,audit,crawl-and-audit}` | scanner (Pro) |
 | `bp scan status\|issues <scanId>` · `bp scan defs` | `/scanner/{id}/*` · `/scanner/issue-definitions` | scanner (Pro) _(pause\|resume\|stop: v1.1 — not shipped)_ |
-| `bp check auth\|idor\|headers\|cors\|endpoints <url>` | `POST /scan/*` | securityscan |
+| `bp check auth\|idor\|headers\|cors <url>` | `POST /scan/*` | securityscan |
+| `bp check endpoints <host>` | `POST /scan/endpoints` | securityscan |
 | `bp scope show\|set\|add\|remove\|check [url]` | `GET/POST /target/scope*`; manages/classifies Burp scope but does not block proxy traffic; `set` cannot remove prior engine/UI rules | target |
 | `bp sitemap [prefix]` | `GET /target/sitemap` | target |
 | `bp encode\|decode\|hash <data> [--smart]` | `POST /decoder/*` | decoder |

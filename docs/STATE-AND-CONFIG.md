@@ -80,21 +80,23 @@ redact          = on          # on | off  (masks JWT/cookies/Authorization/keys 
 ledger          = on          # on | off
 throttle_ms     = 0
 anomaly_pct     = 5           # length anomaly threshold (see ALGORITHMS A2)
-agent_mode      = auto        # auto | on | off (NDJSON for AI agent, see OUTPUT.md)
 ```
 
 **Env variables** (prefix `BP_`, plus legacy `BURP_REST_URL`):
 `BURP_REST_URL`, `BP_ENFORCE_SCOPE`, `BP_ENVELOPE`, `BP_REDACT`, `BP_NO_LEDGER`, `BP_THROTTLE_MS`,
 and `BP_AGENT` (see OUTPUT.md).
 
-**Equivalent flags** (per command): `--url`, `--enforce-scope`, `--envelope`, `--redact`, `--no-ledger`, `--throttle-ms`. Each flag overrides env+config for that invocation.
+**Equivalent flags** (per command): `--url`, `--format`, `--fields`, `--no-ledger`, and `--no-redact`.
+These are the only configuration-related flags currently exposed by the CLI. Each flag overrides
+any lower-precedence setting for that invocation.
 
-> **Implementation status.** `--url`, `--no-ledger`, `--format`, `--fields` and `--version` are
-> wired flags; `redact` and `ledger` are consumed at runtime (the chokepoint reads exactly those
-> two knobs). `enforce_scope`, `envelope`, `throttle_ms`, `anomaly_pct` and the
-> `--enforce-scope`/`--envelope`/`--redact`/`--throttle-ms` flags are **parsed but NOT yet wired**
-> — reserved for v1.1; use the env vars (`BP_REDACT=off`, …) for those. `agent_mode=auto` TTY
-> detection is likewise v1.1 (default format is `table`; pass `--format json` for agents).
+> **Implementation status.** `--url`, `--no-ledger`, `--format`, `--fields`, `--no-redact`, and
+> `--version` are wired flags; `redact` and `ledger` are consumed at runtime (the chokepoint
+> reads exactly those two knobs). `enforce_scope`, `envelope`, `throttle_ms`, and `anomaly_pct`
+> are loaded and validated from configuration, but are not applied to command execution yet.
+> There are no CLI flags for those settings. `BP_AGENT=1` selects JSON output; TTY-aware automatic
+> format detection is not implemented yet, so the default without `BP_AGENT=1` or an explicit
+> `--format` is `table`.
 
 **Guard semantics (non-blocking by default — ADR-0007):**
 - `enforce_scope=warn` (default): fires anyway, **warns** if the target is out of scope. _(v1.1 — not yet wired; no warning is emitted in v1.)_

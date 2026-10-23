@@ -34,7 +34,8 @@ See [ADR-0013](adr/0013-truthful-executable-contracts.md).
 1. Every `bp` command emits records (fuzz rows, history rows, issues, interactions…).
 2. `--format` picks the *shape*: `json` (agent), `table` (human), `raw` (Burp bytes), `quiet` (one value).
 3. `--fields` picks *which* columns and their order; `-w` builds a *custom line* from `%{tokens}`.
-4. Default format is `table` for all streams in v1; pass `--format json` for agents/pipes. _(v1.1 — TTY-aware auto-detect not yet implemented)_
+4. Default format is `table` in v1. `BP_AGENT=1` selects `json`; pass `--format json` for agents
+   and pipes. TTY-aware automatic detection is not implemented yet.
 5. Errors always go to **stderr** as one JSON object; data goes to **stdout**; exit code carries success/failure.
 6. Each attempted bp-to-extension REST call is written as one **Run Ledger** row (`~/.bp/`) unless
    `--no-ledger`; this is operation metadata, not a mirror of every shown result or all proxy traffic.
@@ -69,10 +70,9 @@ Each requirement is tagged with a criticality scale: `[IMPORTANCE][BLOCKS:level]
   **names, types, and order are frozen** per the field catalog (§2). New fields may be *appended*
   (never reordered, never renamed) — additive-only, mirroring the Kotlin `ignoreUnknownKeys` /
   `encodeDefaults` contract (SPEC §8).
-- **[HIGH][BLOCKS:high] A4 — Default format is context-aware.** `table` when stdout is a TTY;
-  `json` when stdout is piped, redirected, or `BP_AGENT=1` is set. This is the single biggest
-  AX-friendliness lever: an agent piping `bp` gets parseable JSON with zero flags.
-  _(v1.1 — not yet implemented; the current default is `table` for all streams — pass `--format json` for agents/pipes)_
+- **[HIGH][BLOCKS:high] A4 — Default format and agent selection.** `BP_AGENT=1` selects `json`;
+  otherwise the v1 default is `table`. TTY-aware switching between `table` and `json` is a v1.1
+  feature and is not implemented yet. Agents and pipes should pass `--format json` explicitly.
 - **[HIGH][BLOCKS:none] A5 — Never dump full bodies by default.** Response bodies are summarized
   (preview-capped) unless the user explicitly asks (`--fields body` or `--format raw` on a single
   record). Token efficiency is a contract, not a courtesy (SPEC handoff: "summarise, don't dump").
@@ -91,7 +91,7 @@ When multiple output flags are combined, resolve in this exact order:
 2. --quiet            → if present (and no -w), emit only the single essential value per record.
 3. --format           → json | table | raw  (explicit beats the A4 default).
 4. --fields           → applies ONLY to json and table; selects + orders columns.
-5. default (A4)        → table if TTY else json.
+5. default (A4)        → table, unless `BP_AGENT=1` selects json.
 ```
 
 - **[CRITICAL][BLOCKS:high] R-PREC** `-w` and `--quiet` are mutually exclusive with each other;
@@ -437,14 +437,14 @@ bp scanner issues SCAN_ID -w '%{severity}\t%{url}\t%{name}'
 
 ## 4 · Agent-mode (AX) contract
 
-This is the contract an AI agent (or `bb-fetch`-style harness) relies on. It is the reason `json` is
-the default when piped (A4).
+This is the contract an AI agent (or `bb-fetch`-style harness) relies on. Agents select JSON with
+`BP_AGENT=1` or an explicit `--format json` (A4).
 
 ### 4.1 · Activation
 
 - **[CRITICAL][BLOCKS:high] AX-ACTIVATE** Agent mode is active when ANY of: `BP_AGENT=1` in env,
-  or `--format json` explicit. _(v1.1 — TTY-detection trigger not yet implemented; until then, always
-  pass `--format json` explicitly for agent/pipe use.)_ In agent mode the default format is `json`
+  or `--format json` explicit. TTY-aware automatic detection is not implemented yet; until then,
+  pass `--format json` explicitly for agent/pipe use. In agent mode the format is `json`
   and human niceties (color, spinners, progress bars) are **fully suppressed** (they would corrupt
   stdout *and* stderr parsing).
 
@@ -485,7 +485,7 @@ the default when piped (A4).
 ### 4.4 · How an agent parses `bp` (recommended contract)
 
 ```
-1. Pass --format json (v1 does not auto-detect pipes; TTY-aware default is v1.1).
+1. Pass --format json (v1 does not auto-detect TTY or pipes).
 2. Read stdout line by line; json.loads(line) → one record. Stop early if satisfied.
 3. On empty stdout + exit 0 → zero records (valid empty result).
 4. On exit ≠ 0 → read the SINGLE json object on stderr: {"error":{"code":..,"message":..}} (§5).
@@ -495,7 +495,7 @@ the default when piped (A4).
 
 - **[HIGH][BLOCKS:high] AX-STDERR-JSON** In agent mode, **errors on stderr are also JSON** (single
   object, §5) — so an agent has one parser for both streams. In human mode, stderr errors are plain
-  prose. Detection: `BP_AGENT=1` or explicit `--format json` (A4; TTY-detection not yet in v1).
+  prose. Detection: `BP_AGENT=1` or explicit `--format json` (A4; TTY detection is not yet in v1).
 
 ### 4.5 · Determinism for agents
 
@@ -624,11 +624,12 @@ the default when piped (A4).
 - [CRITICAL][BLOCKS:high] F-QUIET — single essential value per family.
 - [CRITICAL][BLOCKS:high] R-WTOK — full 11-token `-w` grammar (see §3.1 for the headline example).
 - [CRITICAL][BLOCKS:high] E-EXIT / E-TARGET — shipped exit codes (0/1/2/3/4); target HTTP status ≠ exit code.
-- [CRITICAL][BLOCKS:high] AX-ACTIVATE — agent mode = non-TTY/BP_AGENT/explicit json.
+- [CRITICAL][BLOCKS:high] AX-ACTIVATE — agent mode = BP_AGENT/explicit json.
 
 ### HIGH
 
-- [HIGH][BLOCKS:high] A4 — context-aware default format (table TTY / json piped) _(v1.1 — not yet implemented; default is `table` for all streams)_.
+- [HIGH][BLOCKS:high] A4 — `BP_AGENT=1` or explicit `--format json` selects JSON; TTY-aware automatic
+  detection is v1.1 and is not yet implemented (default is `table` otherwise).
 - [HIGH][BLOCKS:high] AX-CAP-ROWS / AX-CAP-BODY — anti-dump caps (50 rows, 256-byte preview).
 - [HIGH][BLOCKS:high] R-HIST-404 / R-COLLAB-PRO — degrade gracefully, exit 1 (R-HIST-404) / exit 4 PRO_REQUIRED (R-COLLAB-PRO), stderr.
 - [HIGH][BLOCKS:high] E-TARGET — exit code reflects bp+Burp, not target response.
