@@ -59,7 +59,7 @@ def _base_raw(entry: Mapping[str, Any]) -> tuple[bytes, str, str]:
     try:
         raw = build_raw(method, url, headers, body)
         parts = urlsplit(url)
-    except TypeError:
+    except (TypeError, ValueError):
         raise BurpError("INVALID_RESPONSE", "history entry has invalid request shape") from None
     return raw, (parts.scheme or "https"), parts.netloc
 
