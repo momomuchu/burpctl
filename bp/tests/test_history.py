@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from bp.client import BurpError
 from bp.commands.history import _history_rows, _history_rows_from_response
@@ -167,10 +168,17 @@ def test_history_rows_rejects_non_list_entries() -> None:
 
 
 def test_history_rows_rejects_missing_entries() -> None:
-    with pytest.raises(BurpError) as exc_info:
+    with pytest.raises(ValidationError):
         _history_rows_from_response({"total": 3, "page": 0, "pageSize": 50})
 
-    assert exc_info.value.code == "INVALID_RESPONSE"
+
+def test_history_rows_rejects_incomplete_response_wrapper() -> None:
+    with pytest.raises(ValidationError):
+        _history_rows_from_response({"entries": []})
+
+
+def test_history_rows_accepts_complete_empty_response_wrapper() -> None:
+    assert _history_rows_from_response({"entries": [], "total": 0, "page": 0, "pageSize": 50}) == []
 
 
 # ---------------------------------------------------------------------------

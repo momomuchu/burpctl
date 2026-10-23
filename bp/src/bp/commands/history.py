@@ -14,7 +14,7 @@ import typer
 
 from bp.client import BurpError
 from bp.cliutil import EXIT_USAGE, run
-from bp.models import HistoryEntryResponse, ReplayResponse
+from bp.models import HistoryEntryResponse, HistoryPageResponse, ReplayResponse
 
 
 # ---------------------------------------------------------------------------
@@ -47,9 +47,8 @@ def _history_rows(entries: object) -> list[dict[str, Any]]:
 
 
 def _history_rows_from_response(data: dict[str, Any]) -> list[dict[str, Any]]:
-    if "entries" not in data:
-        raise BurpError("INVALID_RESPONSE", "server returned an unexpected response shape")
-    return _history_rows(data["entries"])
+    page = HistoryPageResponse.model_validate(data)
+    return _history_rows([entry.model_dump() for entry in page.entries])
 
 
 def _history_entry_display(entry: dict[str, Any]) -> dict[str, Any]:
