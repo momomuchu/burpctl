@@ -13,11 +13,22 @@ from __future__ import annotations
 from typing import Any, Literal, cast, overload
 
 import typer
+from pydantic import ValidationError
 
 from bp.client import BurpError
 from bp.cliutil import EXIT_VULN, parse_headers, run
+from bp.models import (
+    AuthBypassResponse,
+    CorsResponse,
+    EndpointsScanResponse,
+    HeadersBypassResponse,
+    IdorResponse,
+)
 
 _FindingField = Literal["vulnerableCount", "findings"]
+_ScanResponse = (
+    AuthBypassResponse | IdorResponse | HeadersBypassResponse | CorsResponse | EndpointsScanResponse
+)
 
 
 # ---------------------------------------------------------------------------
@@ -126,37 +137,17 @@ def _has_findings(data: dict[str, Any], finding_field: _FindingField | None = No
     return False
 
 
-def _validate_scan_verdict(data: dict[str, Any], finding_field: _FindingField) -> dict[str, Any]:
-    """Reject malformed fields that determine a security-scan verdict.
-
-    Scan responses have two finding indicators: a non-negative ``vulnerableCount``
-    for individual probes, or a ``findings`` list for the endpoint sweep. Optional
-    inconclusive fields are validated too because they distinguish an uncertain
-    scan from a clean one.
-    """
-
-    def invalid() -> None:
+def _validate_scan_response(
+    data: dict[str, Any], response_model: type[_ScanResponse]
+) -> dict[str, Any]:
+    """Validate a complete Kotlin scan DTO while preserving its original wire fields."""
+    try:
+        response_model.model_validate(data)
+    except ValidationError:
         raise BurpError(
             "INVALID_RESPONSE",
             "server returned an unexpected response shape",
-        )
-
-    if finding_field not in data:
-        invalid()
-
-    for field in ("vulnerableCount", "anomalousCount", "inconclusiveCount"):
-        if field in data:
-            value = data[field]
-            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-                invalid()
-
-    for field in ("findings", "errors"):
-        if field in data and not isinstance(data[field], list):
-            invalid()
-
-    if "note" in data and data["note"] is not None and not isinstance(data["note"], str):
-        invalid()
-
+        ) from None
     return data
 
 
@@ -227,7 +218,7 @@ def check_auth(
     }
 
     def _do(client: Any) -> Any:
-        return _validate_scan_verdict(client.post("/scan/auth-bypass", body), "vulnerableCount")
+        return _validate_scan_response(client.post("/scan/auth-bypass", body), AuthBypassResponse)
 
     run(ctx, _do, exit_on=lambda d: _finding_exit(d, "vulnerableCount"))
 
@@ -291,7 +282,7 @@ def check_idor(
     success_notes: list[tuple[str, str]] = []
 
     def _do(client: Any) -> Any:
-        raw = _validate_scan_verdict(client.post("/scan/idor", req_body), "vulnerableCount")
+        raw = _validate_scan_response(client.post("/scan/idor", req_body), IdorResponse)
         # [02] Strip bodyPreview (AX-CAP-BODY) and [13] route note to stderr.
         projected, note = _project_for_display(
             raw, return_note=True, finding_field="vulnerableCount"
@@ -346,7 +337,9 @@ def check_headers(
         req_body["protectedContentMarker"] = marker
 
     def _do(client: Any) -> Any:
-        return _validate_scan_verdict(client.post("/scan/headers", req_body), "vulnerableCount")
+        return _validate_scan_response(
+            client.post("/scan/headers", req_body), HeadersBypassResponse
+        )
 
     run(ctx, _do, exit_on=lambda d: _finding_exit(d, "vulnerableCount"))
 
@@ -374,7 +367,7 @@ def check_cors(
     }
 
     def _do(client: Any) -> Any:
-        return _validate_scan_verdict(client.post("/scan/cors", req_body), "vulnerableCount")
+        return _validate_scan_response(client.post("/scan/cors", req_body), CorsResponse)
 
     run(ctx, _do, exit_on=lambda d: _finding_exit(d, "vulnerableCount"))
 
@@ -415,7 +408,9 @@ def check_endpoints(
     }
 
     def _do(client: Any) -> Any:
-        return _validate_scan_verdict(client.post("/scan/endpoints", req_body), "findings")
+        return _validate_scan_response(
+            client.post("/scan/endpoints", req_body), EndpointsScanResponse
+        )
 
     run(ctx, _do, exit_on=lambda d: _finding_exit(d, "findings"))
 
