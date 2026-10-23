@@ -344,7 +344,7 @@ def _guarded_diff_data_only(fixture: AuditFixture, external: str, loopback: str)
             "",
         )
     )
-    guard_text = '''import json
+    guard_text = """import json
 import os
 import socket
 
@@ -396,7 +396,7 @@ socket.getaddrinfo = guarded_getaddrinfo
 socket.socket.connect = guarded_connect
 socket.socket.connect_ex = guarded_connect_ex
 _record("GUARD_LOADED", _HOST, _PORT)
-'''
+"""
     profile.write_text(profile_text, encoding="utf-8")
     sitecustomize.write_text(guard_text, encoding="utf-8")
     cli = Path(__file__).resolve().parents[1] / ".venv" / "bin" / "bp"
@@ -424,13 +424,27 @@ _record("GUARD_LOADED", _HOST, _PORT)
     pre_run: JsonObject = {
         "id": "F15",
         "variant": "manifest-contrast-guarded-data-only",
-        "candidate": os.environ.get("BP_AUDIT_CANDIDATE", "3af139dc0b4020923f831099338c92af3265d7e2"),
+        "candidate": os.environ.get(
+            "BP_AUDIT_CANDIDATE", "3af139dc0b4020923f831099338c92af3265d7e2"
+        ),
         "oracleHash": ORACLE_HASHES["F15"],
         "oracleCase": "contrast",
         "preRunSeal": datetime.now(timezone.utc).isoformat(),
         "manifestArgv": ["bp", "diff", external, loopback],
         "argv": argv,
-        "env": {key: env[key] for key in ("HOME", "BURP_REST_URL", "BP_LEDGER_PATH", "BP_AGENT", "PYTHONPATH", "BP_GUARD_HOST", "BP_GUARD_PORT", "BP_GUARD_TRACE")},
+        "env": {
+            key: env[key]
+            for key in (
+                "HOME",
+                "BURP_REST_URL",
+                "BP_LEDGER_PATH",
+                "BP_AGENT",
+                "PYTHONPATH",
+                "BP_GUARD_HOST",
+                "BP_GUARD_PORT",
+                "BP_GUARD_TRACE",
+            )
+        },
         "networkGuard": {
             "sandboxProfile": profile_text,
             "sandboxProfileSha256": hashlib.sha256(profile_text.encode()).hexdigest(),
@@ -438,7 +452,10 @@ _record("GUARD_LOADED", _HOST, _PORT)
             "allowed": f"127.0.0.1:{rest_port}",
             "denied": "all other network and external DNS",
         },
-        "prestate": {"rest": _effect_rows(before.rest_effects), "target": _effect_rows(before.target_effects)},
+        "prestate": {
+            "rest": _effect_rows(before.rest_effects),
+            "target": _effect_rows(before.target_effects),
+        },
         "expected": {
             "exit": 2,
             "stdout": "empty",
@@ -476,7 +493,14 @@ _record("GUARD_LOADED", _HOST, _PORT)
         check=False,
     )
     dns_probe = subprocess.run(
-        ["/usr/bin/sandbox-exec", "-f", str(profile), str(python), "-c", "import socket; socket.getaddrinfo('example.invalid', 443)"],
+        [
+            "/usr/bin/sandbox-exec",
+            "-f",
+            str(profile),
+            str(python),
+            "-c",
+            "import socket; socket.getaddrinfo('example.invalid', 443)",
+        ],
         env=env,
         capture_output=True,
         text=True,
@@ -495,10 +519,20 @@ _record("GUARD_LOADED", _HOST, _PORT)
         "target log": _effect_rows(target_delta),
         "ledgerDelta": _ledger_count(fixture.manifest.ledger_path) - ledger_before,
         "CLI guard trace": cli_trace,
-        "DNS guard probe": {"exit": dns_probe.returncode, "stdout": dns_probe.stdout, "stderr": dns_probe.stderr},
-        "OS sandbox target probe": {"exit": os_probe.returncode, "stdout": os_probe.stdout, "stderr": os_probe.stderr},
+        "DNS guard probe": {
+            "exit": dns_probe.returncode,
+            "stdout": dns_probe.stdout,
+            "stderr": dns_probe.stderr,
+        },
+        "OS sandbox target probe": {
+            "exit": os_probe.returncode,
+            "stdout": os_probe.stdout,
+            "stderr": os_probe.stderr,
+        },
         "full guard trace": full_trace,
-        "postProbeTargetLog": _effect_rows(after_probes.target_effects[len(before.target_effects) :]),
+        "postProbeTargetLog": _effect_rows(
+            after_probes.target_effects[len(before.target_effects) :]
+        ),
     }
     observation: JsonObject = dict(pre_run)
     observation["actual"] = actual
