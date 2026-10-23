@@ -182,3 +182,46 @@ def test_human_local_error_and_success_note_keep_plain_text(
     success = runner.invoke(app, ["ext"], env={"BP_NO_LEDGER": "1"})
     assert success.exit_code == 0, success.output
     assert success.stderr.startswith("note: /extensions only reports")
+
+
+@pytest.mark.parametrize(
+    ("args", "env", "expected_stderr"),
+    [
+        (
+            ["--format", "json", "send", "1", "--body", "@/definitely/missing/file"],
+            {"BP_AGENT": "1"},
+            {"error": {"code": "USAGE_ERROR"}},
+        ),
+        (
+            ["--format", "table", "send", "1", "--set-header", "broken"],
+            {"BP_AGENT": "1"},
+            "error: --set-header must be 'Name: Value', got 'broken'",
+        ),
+        (
+            ["--format", "json", "send", "1", "--set-header", "broken"],
+            {},
+            {"error": {"code": "USAGE_ERROR"}},
+        ),
+    ],
+)
+def test_repeater_preflight_uses_explicit_format(
+    monkeypatch: pytest.MonkeyPatch,
+    args: list[str],
+    env: dict[str, str],
+    expected_stderr: dict[str, dict[str, str]] | str,
+) -> None:
+    class UnexpectedClient:
+        def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+            raise AssertionError("preflight error reached REST client")
+
+    monkeypatch.setattr("bp.cliutil.BurpClient", UnexpectedClient)
+    result = runner.invoke(app, args, env={"BP_NO_LEDGER": "1", **env})
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    assert len(result.stderr.splitlines()) == 1
+    if isinstance(expected_stderr, dict):
+        diagnostic = json.loads(result.stderr)
+        assert diagnostic["error"]["code"] == expected_stderr["error"]["code"]
+    else:
+        assert result.stderr.strip() == expected_stderr
