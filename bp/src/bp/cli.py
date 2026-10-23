@@ -1,9 +1,4 @@
-"""bp — Burp Suite REST CLI entry point. See docs/CLI.md.
-
-Global options resolve to a State object on the typer context; each command runs against a
-BurpClient and renders via the output layer. Command groups live in ``bp.commands.*`` and are
-registered onto ``app`` below. Exit codes follow CLI.md (3=conn, 4=pro).
-"""
+"""bp — Burp Suite REST CLI entry point. See docs/CLI.md."""
 
 from __future__ import annotations
 
@@ -14,10 +9,11 @@ from dataclasses import asdict
 from typing import Any
 
 import typer
+from typer._click.exceptions import ClickException
 
 from bp import __version__
 from bp.client import BurpClient
-from bp.cliutil import EXIT_USAGE, State, exit_code_for_error_code, run
+from bp.cliutil import EXIT_USAGE, State, emit_error, exit_code_for_error_code, run
 from bp.models import ProxyEntry
 from bp.output import FORMATS
 from bp.runner import FuzzResult, run_fuzz
@@ -235,13 +231,7 @@ def _find_subcommand(argv: list[str]) -> int | None:
 
 
 def _hoist_global_opts(argv: list[str]) -> list[str]:
-    """Move global value-taking options (and their values) ahead of the subcommand.
-
-    Makes ``bp <cmd> --format json`` behave like ``bp --format json <cmd>`` (ADR-0009).
-    Only the three known options in ``_GLOBAL_VALUE_OPTS`` are moved, and only when they
-    appear after the subcommand; everything else is left untouched for Typer to parse or
-    reject exactly as before.
-    """
+    """Move known global options ahead of the subcommand until ``--`` (ADR-0009)."""
     sub_idx = _find_subcommand(argv)
     if sub_idx is None:
         return argv
@@ -278,11 +268,25 @@ def _hoist_global_opts(argv: list[str]) -> list[str]:
 
 
 def cli_main() -> None:
-    """Console entrypoint (bp / burpctl). Applies ADR-0009 option hoisting, then dispatches.
-
-    ``prog_name`` reflects the command the user actually invoked, so ``bp --help`` and
-    ``burpctl --help`` each show their own name in usage/error output (both are installed;
-    ADR-0012: ``bp`` is primary, ``burpctl`` is the alias).
-    """
+    """Apply global-option hoisting and dispatch the bp / burpctl entrypoint."""
     prog = os.path.basename(sys.argv[0]) or "bp"
-    app(args=_hoist_global_opts(sys.argv[1:]), prog_name=prog)
+    args = _hoist_global_opts(sys.argv[1:])
+    boundary = args.index("--") if "--" in args else len(args)
+    parser_args = args[:boundary]
+    formats = [v for k, v in zip(parser_args, parser_args[1:]) if k == "--format"]
+    formats += [arg.partition("=")[2] for arg in parser_args if arg.startswith("--format=")]
+    error_format = (
+        formats[-1]
+        if formats and formats[-1] in FORMATS
+        else ("json" if os.environ.get("BP_AGENT") == "1" else "table")
+    )
+    if error_format != "json":
+        app(args=args, prog_name=prog)
+        return
+    try:
+        exit_code = app(args=args, prog_name=prog, standalone_mode=False)
+    except ClickException as exc:
+        emit_error("json", "USAGE_ERROR", exc.format_message(), redact_secrets=True)
+        raise SystemExit(exc.exit_code) from None
+    if exit_code is not None:
+        raise SystemExit(exit_code)
