@@ -220,7 +220,9 @@ def check_idor(
     extraHeaders? } to POST /scan/idor.
     """
     # Shared helper → consistent 'Name: Value' parsing and exit 2 (was a hardcoded literal here).
-    extra_headers: dict[str, str] | None = parse_headers(header, "--header") or None
+    extra_headers: dict[str, str] | None = (
+        parse_headers(header, "--header", fmt=ctx.obj.fmt) or None
+    )
 
     req_body: dict[str, Any] = {
         "endpoint": url,
@@ -234,15 +236,22 @@ def check_idor(
     if extra_headers is not None:
         req_body["extraHeaders"] = extra_headers
 
+    success_notes: list[tuple[str, str]] = []
+
     def _do(client: Any) -> Any:
         raw = client.post("/scan/idor", req_body)
         # [02] Strip bodyPreview (AX-CAP-BODY) and [13] route note to stderr.
         projected, note = _project_for_display(raw, return_note=True)
         if note:
-            typer.echo(f"note: {note}", err=True)
+            success_notes.append(("SECURITY_SCAN_NOTE", note))
         return projected
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    run(
+        ctx,
+        _do,
+        exit_on=lambda d: EXIT_VULN if _has_findings(d) else None,
+        success_notes=success_notes,
+    )
 
 
 # ---------------------------------------------------------------------------

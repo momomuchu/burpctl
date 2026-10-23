@@ -28,7 +28,7 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, parse_headers, run
+from bp.cliutil import fail_usage, parse_headers, run
 
 # ---------------------------------------------------------------------------
 # Sub-application
@@ -69,21 +69,25 @@ def session_set(
     try:
         body: dict[str, Any] = _json.loads(json_str)
     except _json.JSONDecodeError as exc:
-        typer.echo(f"error: --json is not valid JSON: {exc}", err=True)
-        raise typer.Exit(EXIT_USAGE) from None
+        fail_usage(ctx.obj.fmt, f"--json is not valid JSON: {exc}")
 
     if not isinstance(body, dict) or "cookies" not in body:
-        typer.echo(
-            'error: SetSessionRequest requires "cookies" key (Map<String,String>).',
-            err=True,
+        fail_usage(
+            ctx.obj.fmt,
+            'SetSessionRequest requires "cookies" key (Map<String,String>).',
         )
-        raise typer.Exit(EXIT_USAGE) from None
 
-    typer.echo(
-        "note: /session/set is a full replace — existing session cookies and headers are overwritten.",
-        err=True,
+    run(
+        ctx,
+        lambda c: c.post("/session/set", body),
+        success_notes=[
+            (
+                "SESSION_FULL_REPLACE",
+                "/session/set is a full replace — existing session cookies and headers "
+                "are overwritten.",
+            )
+        ],
     )
-    run(ctx, lambda c: c.post("/session/set", body))
 
 
 # ---------------------------------------------------------------------------
@@ -113,11 +117,16 @@ def session_clear(ctx: typer.Context) -> None:
     NOTE: this does NOT wipe the auto-captured cookie-jar.
     Use 'bp session cookies' to inspect the cookie-jar (wiped only on extension reload).
     """
-    typer.echo(
-        "note: /session/clear resets session cookies/headers but leaves the cookie-jar intact.",
-        err=True,
+    run(
+        ctx,
+        lambda c: c._request("DELETE", "/session/clear"),
+        success_notes=[
+            (
+                "SESSION_COOKIE_JAR_RETAINED",
+                "/session/clear resets session cookies/headers but leaves the cookie-jar intact.",
+            )
+        ],
     )
-    run(ctx, lambda c: c._request("DELETE", "/session/clear"))
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +173,7 @@ def session_send(
       bp session send https://example.com/api/admin --method POST --body '{}'
     """
     # Parse extra headers early (shared helper → consistent exit 2)
-    extra_headers = parse_headers(set_header)
+    extra_headers = parse_headers(set_header, fmt=ctx.obj.fmt)
 
     def _do(c: Any) -> Any:
         payload: dict[str, Any] = {"method": method, "url": url}
