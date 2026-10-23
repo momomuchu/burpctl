@@ -60,6 +60,14 @@ class Expected:
 
 
 @dataclass(frozen=True, slots=True)
+class Invocation:
+    case: str
+    argv: tuple[str, ...]
+    expected: Expected
+    executable: str = "bp"
+
+
+@dataclass(frozen=True, slots=True)
 class Observation:
     case: str
     candidate: str
@@ -130,16 +138,12 @@ def _matches(actual: str, oracle: StreamOracle) -> bool:
 def _invoke(
     fixture: AuditFixture,
     tmp_path: Path,
-    case: str,
-    argv: tuple[str, ...],
-    expected: Expected,
-    *,
-    executable: str = "bp",
+    invocation: Invocation,
 ) -> Observation:
     before = fixture.snapshot()
     ledger_before = _ledger_count(fixture.manifest.ledger_path)
     expected_at_ns = time.time_ns()
-    full_argv = tuple([*fixture.command(executable), *argv])
+    full_argv = tuple([*fixture.command(invocation.executable), *invocation.argv])
     environment: dict[str, JsonValue] = {
         "HOME": str(fixture.manifest.home),
         "BURP_REST_URL": fixture.manifest.rest_url,
@@ -151,22 +155,22 @@ def _invoke(
         "TERM": "dumb",
     }
     pre_run: dict[str, JsonValue] = {
-        "case": case,
+        "case": invocation.case,
         "candidate": CANDIDATE,
         "expected_at_ns": expected_at_ns,
-        "executable": executable,
+        "executable": invocation.executable,
         "argv": list(full_argv),
         "environment": environment,
-        "expected": json.dumps(asdict(expected), separators=(",", ":"), sort_keys=True),
+        "expected": json.dumps(asdict(invocation.expected), separators=(",", ":"), sort_keys=True),
         "prestate": json.dumps(asdict(before), separators=(",", ":"), sort_keys=True),
     }
     canonical = json.dumps(pre_run, separators=(",", ":"), sort_keys=True).encode()
     pre_run_seal = hashlib.sha256(canonical).hexdigest()
     pre_run["pre_run_seal"] = pre_run_seal
-    sequence = f"{expected_at_ns}-{case}-{executable}"
+    sequence = f"{expected_at_ns}-{invocation.case}-{invocation.executable}"
     _write_once(_evidence_dir(tmp_path) / f"task-crosscutting-{sequence}-expected.json", pre_run)
 
-    result = fixture.run(argv, executable=executable)
+    result = fixture.run(invocation.argv, executable=invocation.executable)
     actual_at_ns = time.time_ns()
     after = fixture.snapshot()
     routes = tuple(
@@ -175,23 +179,23 @@ def _invoke(
     target_delta = len(after.target_effects) - len(before.target_effects)
     ledger_delta = _ledger_count(fixture.manifest.ledger_path) - ledger_before
     checks = (
-        ("exit", result.returncode == expected.exit_code),
-        ("stdout", _matches(result.stdout, expected.stdout)),
-        ("stderr", _matches(result.stderr, expected.stderr)),
-        ("route", routes == expected.routes),
-        ("ledger", ledger_delta == expected.ledger_delta),
-        ("target", target_delta == expected.target_delta),
+        ("exit", result.returncode == invocation.expected.exit_code),
+        ("stdout", _matches(result.stdout, invocation.expected.stdout)),
+        ("stderr", _matches(result.stderr, invocation.expected.stderr)),
+        ("route", routes == invocation.expected.routes),
+        ("ledger", ledger_delta == invocation.expected.ledger_delta),
+        ("target", target_delta == invocation.expected.target_delta),
     )
     verdict: Verdict = "PASS" if all(passed for _, passed in checks) else "FAIL"
     observation = Observation(
-        case=case,
+        case=invocation.case,
         candidate=CANDIDATE,
         expected_at_ns=expected_at_ns,
         actual_at_ns=actual_at_ns,
         pre_run_seal=pre_run_seal,
-        executable=executable,
+        executable=invocation.executable,
         argv=full_argv,
-        expected=expected,
+        expected=invocation.expected,
         actual_exit_code=result.returncode,
         actual_stdout=result.stdout,
         actual_stderr=result.stderr,
@@ -218,6 +222,16 @@ def _health_json() -> StreamOracle:
     )
 
 
+def _machine_error_expected() -> Expected:
+    return Expected(
+        2,
+        StreamOracle("empty"),
+        StreamOracle("machine_error", error_code="USAGE_ERROR"),
+        (),
+        0,
+    )
+
+
 def _envelope(data: dict[str, str]) -> bytes:
     return json.dumps({"success": True, "data": data, "error": None}).encode()
 
@@ -232,7 +246,7 @@ def _envelope(data: dict[str, str]) -> bytes:
 def test_json_format_is_position_tolerant(case: str, argv: tuple[str, ...], tmp_path: Path) -> None:
     with FixtureRoot(tmp_path) as fixture:
         expected = Expected(0, _health_json(), StreamOracle("empty"), (("GET", "/health"),), 0)
-        assert _invoke(fixture, tmp_path, case, argv, expected).verdict == "PASS"
+        assert _invoke(fixture, tmp_path, Invocation(case, argv, expected)).verdict == "PASS"
 
 
 def test_agent_default_yields_to_explicit_table(tmp_path: Path) -> None:
@@ -247,16 +261,20 @@ def test_agent_default_yields_to_explicit_table(tmp_path: Path) -> None:
         )
         assert (
             _invoke(
-                fixture, tmp_path, "agent-json-default", ("health", "--no-ledger"), implicit
+                fixture,
+                tmp_path,
+                Invocation("agent-json-default", ("health", "--no-ledger"), implicit),
             ).verdict
             == "PASS"
         )
         observed = _invoke(
             fixture,
             tmp_path,
-            "explicit-table-over-agent",
-            ("--format", "table", "--no-ledger", "health"),
-            explicit,
+            Invocation(
+                "explicit-table-over-agent",
+                ("--format", "table", "--no-ledger", "health"),
+                explicit,
+            ),
         )
         assert observed.verdict == "PASS"
         assert not observed.actual_stdout.lstrip().startswith("{")
@@ -269,9 +287,7 @@ def test_hoisting_stops_at_delimiter(tmp_path: Path) -> None:
             _invoke(
                 fixture,
                 tmp_path,
-                "delimiter-stops-hoist",
-                ("health", "--", "--format", "json"),
-                expected,
+                Invocation("delimiter-stops-hoist", ("health", "--", "--format", "json"), expected),
             ).verdict
             == "PASS"
         )
@@ -282,26 +298,23 @@ def test_help_aliases(flag: str, tmp_path: Path) -> None:
     with FixtureRoot(tmp_path) as fixture:
         expected = Expected(0, StreamOracle("usage", program="bp"), StreamOracle("empty"), (), 0)
         assert (
-            _invoke(fixture, tmp_path, f"help-{flag.lstrip('-')}", (flag,), expected).verdict
+            _invoke(
+                fixture, tmp_path, Invocation(f"help-{flag.lstrip('-')}", (flag,), expected)
+            ).verdict
             == "PASS"
         )
 
 
 def test_invalid_format_exposes_machine_error_regression(tmp_path: Path) -> None:
     with FixtureRoot(tmp_path) as fixture:
-        expected = Expected(
-            2,
-            StreamOracle("empty"),
-            StreamOracle("machine_error", error_code="USAGE_ERROR"),
-            (),
-            0,
-        )
         observed = _invoke(
             fixture,
             tmp_path,
-            "invalid-format-machine-error",
-            ("health", "--format", "yaml"),
-            expected,
+            Invocation(
+                "invalid-format-machine-error",
+                ("health", "--format", "yaml"),
+                _machine_error_expected(),
+            ),
         )
         assert observed.actual_exit_code == 2
         assert observed.verdict == "FAIL"
@@ -321,9 +334,11 @@ def test_raw_is_unavailable_for_structured_health(tmp_path: Path) -> None:
             _invoke(
                 fixture,
                 tmp_path,
-                "raw-structured-unavailable",
-                ("health", "--format", "raw", "--no-ledger"),
-                expected,
+                Invocation(
+                    "raw-structured-unavailable",
+                    ("health", "--format", "raw", "--no-ledger"),
+                    expected,
+                ),
             ).verdict
             == "PASS"
         )
@@ -348,18 +363,20 @@ def test_fields_redaction_and_no_ledger_share_one_output_contract(tmp_path: Path
         observed = _invoke(
             fixture,
             tmp_path,
-            "fields-redaction-no-ledger",
-            (
-                "config",
-                "get",
-                "project",
-                "--fields",
-                "authorization,status",
-                "--format",
-                "json",
-                "--no-ledger",
+            Invocation(
+                "fields-redaction-no-ledger",
+                (
+                    "config",
+                    "get",
+                    "project",
+                    "--fields",
+                    "authorization,status",
+                    "--format",
+                    "json",
+                    "--no-ledger",
+                ),
+                expected,
             ),
-            expected,
         )
         assert observed.verdict == "PASS"
         assert "crosscutting-secret" not in observed.actual_stdout
@@ -378,10 +395,45 @@ def test_unknown_command_usage_keeps_invoked_alias(executable: str, tmp_path: Pa
         observed = _invoke(
             fixture,
             tmp_path,
-            "unknown-command-usage",
-            ("missing-crosscutting-command",),
-            expected,
-            executable=executable,
+            Invocation(
+                "unknown-command-usage",
+                ("missing-crosscutting-command",),
+                expected,
+                executable,
+            ),
         )
         assert observed.verdict == "PASS"
         assert "No such command" in observed.actual_stderr
+
+
+@pytest.mark.parametrize(
+    "invocation",
+    [
+        Invocation(
+            "agent-machine-error-delimiter",
+            ("health", "--", "--format", "json"),
+            _machine_error_expected(),
+        ),
+        Invocation(
+            "agent-machine-error-unknown-bp",
+            ("missing-crosscutting-command",),
+            _machine_error_expected(),
+        ),
+        Invocation(
+            "agent-machine-error-unknown-burpctl",
+            ("missing-crosscutting-command",),
+            _machine_error_expected(),
+            "burpctl",
+        ),
+    ],
+    ids=lambda invocation: invocation.case,
+)
+def test_agent_parser_errors_expose_machine_contract_regression(
+    invocation: Invocation,
+    tmp_path: Path,
+) -> None:
+    with FixtureRoot(tmp_path) as fixture:
+        observed = _invoke(fixture, tmp_path, invocation)
+        assert observed.actual_exit_code == 2
+        assert observed.verdict == "FAIL"
+        assert f"Usage: {invocation.executable}" in observed.actual_stderr

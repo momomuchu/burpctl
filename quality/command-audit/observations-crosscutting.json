@@ -7,9 +7,9 @@
   "scope": "Shared parsing and output variations only; installed bp/burpctl, loopback fixture, isolated HOME/config/ledger, no live Burp or external target.",
   "status": "EXECUTED",
   "summary": {
-    "invocations": 12,
+    "invocations": 15,
     "passes": 11,
-    "failures": 1,
+    "failures": 4,
     "externalTargetEffects": 0
   },
   "observations": [
@@ -110,6 +110,36 @@
       "actual": {"exit": 2, "stdout": "empty", "stderr": "Usage: burpctl; No such command", "route": [], "ledgerDelta": 0},
       "preRunSeal": "6759e0373f5ac6d8536a8df97db1fa38d3be77df9c5d4d28260d76ec9471a823",
       "evidence": "task-crosscutting-1792754937286342000-unknown-command-usage-burpctl-actual.json"
+    },
+    {
+      "case": "agent-machine-error-delimiter",
+      "executable": "bp",
+      "verdict": "FAIL",
+      "expected": {"exit": 2, "stdout": "", "stderr": {"error": {"code": "USAGE_ERROR"}}, "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "actual": {"exit": 2, "stdout": "", "stderr": "Usage: bp health; unexpected arguments (--format json)", "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "failedChecks": ["stderr"],
+      "preRunSeal": "fef0f86f6971793407e2b80dd92cd9811b9691a168207c601468145c2aa87c92",
+      "evidence": "task-crosscutting-1792755349648687000-agent-machine-error-delimiter-bp-actual.json"
+    },
+    {
+      "case": "agent-machine-error-unknown-bp",
+      "executable": "bp",
+      "verdict": "FAIL",
+      "expected": {"exit": 2, "stdout": "", "stderr": {"error": {"code": "USAGE_ERROR"}}, "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "actual": {"exit": 2, "stdout": "", "stderr": "Usage: bp; No such command 'missing-crosscutting-command'", "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "failedChecks": ["stderr"],
+      "preRunSeal": "29f4b122e020222869e6dcf61a040d300332c5d84d2530f6eacccd78800d283d",
+      "evidence": "task-crosscutting-1792755350664296000-agent-machine-error-unknown-bp-bp-actual.json"
+    },
+    {
+      "case": "agent-machine-error-unknown-burpctl",
+      "executable": "burpctl",
+      "verdict": "FAIL",
+      "expected": {"exit": 2, "stdout": "", "stderr": {"error": {"code": "USAGE_ERROR"}}, "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "actual": {"exit": 2, "stdout": "", "stderr": "Usage: burpctl; No such command 'missing-crosscutting-command'", "route": [], "ledgerDelta": 0, "targetDelta": 0},
+      "failedChecks": ["stderr"],
+      "preRunSeal": "67deb2568e155bbfade5ec2c3d7db7ee5b7a24dabeba25c2383155aacae64ad0",
+      "evidence": "task-crosscutting-1792755351694244000-agent-machine-error-unknown-burpctl-burpctl-actual.json"
     }
   ],
   "findings": [
@@ -174,6 +204,80 @@
       "evidence": {
         "expected": "task-crosscutting-1792754925203771000-invalid-format-machine-error-bp-expected.json",
         "actual": "task-crosscutting-1792754925203771000-invalid-format-machine-error-bp-actual.json"
+      },
+      "issueReady": false,
+      "reason": "No product fix or issue was authorized in this audit lane."
+    },
+    {
+      "id": "XC02",
+      "title": "The hoist delimiter parser error bypasses the agent JSON error contract",
+      "classification": "contract-regression-on-previously-untested-D03-edge",
+      "rootCause": "python-cli-parser-boundary",
+      "reproduction": {
+        "command": "bp health -- --format json",
+        "environment": {"BP_AGENT": "1", "NO_COLOR": "1", "TERM": "dumb"}
+      },
+      "oracle": {
+        "sealed": true,
+        "preRunSeal": "fef0f86f6971793407e2b80dd92cd9811b9691a168207c601468145c2aa87c92",
+        "expected": {"exit": 2, "stdout": "", "stderr": {"error": {"code": "USAGE_ERROR"}}, "effects": "zero"},
+        "sources": ["docs/CLI.md:8-11", "docs/OUTPUT.md:5-15", "docs/OUTPUT.md:488-498"]
+      },
+      "actual": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "Usage: bp health [OPTIONS]; Got unexpected extra argument(s) (--format json)",
+        "effects": "zero"
+      },
+      "comparison": {
+        "relatedFinding": "XC01",
+        "sharedBoundary": "Typer/Click usage failures reach the default renderer through cli_main's app(...) call instead of cliutil.emit_error.",
+        "sharedRootCauseAssessment": "supported",
+        "basis": "Both probes fail only the stderr JSON check, retain exit 2 and zero effects, and originate before command execution. XC02 additionally proves the documented -- hoist stop while exposing the same renderer boundary."
+      },
+      "evidence": {
+        "expected": "task-crosscutting-1792755349648687000-agent-machine-error-delimiter-bp-expected.json",
+        "actual": "task-crosscutting-1792755349648687000-agent-machine-error-delimiter-bp-actual.json"
+      },
+      "issueReady": false,
+      "reason": "No product fix or issue was authorized in this audit lane."
+    },
+    {
+      "id": "XC03",
+      "title": "Unknown commands bypass the agent JSON error contract for both aliases",
+      "classification": "contract-regression-on-previously-untested-D03-edge",
+      "rootCause": "python-cli-parser-boundary",
+      "reproduction": {
+        "commands": [
+          "bp missing-crosscutting-command",
+          "burpctl missing-crosscutting-command"
+        ],
+        "environment": {"BP_AGENT": "1", "NO_COLOR": "1", "TERM": "dumb"}
+      },
+      "oracle": {
+        "sealed": true,
+        "preRunSeals": {
+          "bp": "29f4b122e020222869e6dcf61a040d300332c5d84d2530f6eacccd78800d283d",
+          "burpctl": "67deb2568e155bbfade5ec2c3d7db7ee5b7a24dabeba25c2383155aacae64ad0"
+        },
+        "expected": {"exit": 2, "stdout": "", "stderr": {"error": {"code": "USAGE_ERROR"}}, "effects": "zero"},
+        "sources": ["docs/CLI.md:7-11", "docs/OUTPUT.md:5-15", "docs/OUTPUT.md:488-498"]
+      },
+      "actual": {
+        "bp": {"exit": 2, "stdout": "", "stderr": "Usage: bp; No such command", "effects": "zero"},
+        "burpctl": {"exit": 2, "stdout": "", "stderr": "Usage: burpctl; No such command", "effects": "zero"}
+      },
+      "comparison": {
+        "relatedFindings": ["XC01", "XC02"],
+        "sharedBoundary": "Typer/Click usage failures reach the default renderer through cli_main's app(...) call instead of cliutil.emit_error.",
+        "sharedRootCauseAssessment": "supported",
+        "basis": "Both aliases produce the same non-JSON failure shape with only the Usage program name changed; exit, stdout and zero-effect behavior match XC01/XC02. The alias parity rules out alias registration as the cause."
+      },
+      "evidence": {
+        "bpExpected": "task-crosscutting-1792755350664296000-agent-machine-error-unknown-bp-bp-expected.json",
+        "bpActual": "task-crosscutting-1792755350664296000-agent-machine-error-unknown-bp-bp-actual.json",
+        "burpctlExpected": "task-crosscutting-1792755351694244000-agent-machine-error-unknown-burpctl-burpctl-expected.json",
+        "burpctlActual": "task-crosscutting-1792755351694244000-agent-machine-error-unknown-burpctl-burpctl-actual.json"
       },
       "issueReady": false,
       "reason": "No product fix or issue was authorized in this audit lane."
