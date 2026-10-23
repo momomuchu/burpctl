@@ -52,8 +52,7 @@ def _ok(data: str) -> bytes:
 
 def _error(code: str, message: str) -> bytes:
     return (
-        f'{{"success":false,"data":null,"error":{{"code":"{code}",'
-        f'"message":"{message}"}}}}'
+        f'{{"success":false,"data":null,"error":{{"code":"{code}","message":"{message}"}}}}'
     ).encode()
 
 
@@ -79,7 +78,9 @@ ZERO_TASK_LIMIT: Final = (
     "The CLI fixture observes the 501 response and zero target traffic, not Montoya internals; ScannerServiceTest proves zero scanner/Burp API calls.",
 )
 
-PAYLOADS = '{"payloads":[{"id":"cid-001","payload":"cid-001.oastify.test","interactionId":"cid-001"}]}'
+PAYLOADS = (
+    '{"payloads":[{"id":"cid-001","payload":"cid-001.oastify.test","interactionId":"cid-001"}]}'
+)
 POLL = '{"found":false,"interactions":[],"queriedPayloadId":"cid-001"}'
 START = '{"scanId":"sid-001","status":"running"}'
 STATUS = '{"scanId":"sid-001","status":"Running","crawlProgress":null,"auditProgress":null,"issueCount":1,"statusMessage":"Running","requestCount":2,"errorCount":0}'
@@ -89,24 +90,306 @@ EMPTY_DEFS = '{"definitions":[],"total":0}'
 
 
 CASES: Final = (
-    Case("L01", "normal", ("bp", "collab", "new"), "POST", "/collaborator/generate", 200, _ok(PAYLOADS), None, 0, PAYLOADS + "\n", "", "simulated collaborator generation response", PRO_LIMIT),
-    Case("L01", "contrast", ("bp", "collab", "new"), "POST", "/collaborator/generate", 503, _error("PRO_REQUIRED", "Burp Suite Professional is required"), None, 4, "", _stderr(("PRO_REQUIRED", "Burp Suite Professional is required", 503), ("POST", "/collaborator/generate")), "zero provider effect", PRO_LIMIT),
-    Case("L01", "providerFailure", ("bp", "collab", "new"), "POST", "/collaborator/generate", 503, _error("SERVICE_UNAVAILABLE", "Burp Collaborator provider operation failed"), None, 1, "", _stderr(("SERVICE_UNAVAILABLE", "Burp Collaborator provider operation failed", 503), ("POST", "/collaborator/generate")), "provider failure", PRO_LIMIT),
-    Case("L02", "normal", ("bp", "collab", "poll", "cid-001"), "GET", "/collaborator/poll/cid-001", 200, _ok(POLL), None, 0, POLL + "\n", "", "simulated collaborator read", PRO_LIMIT),
-    Case("L02", "contrast", ("bp", "collab", "poll", "unknown"), "GET", "/collaborator/poll/unknown", 404, _error("NOT_FOUND", "Collaborator payload not found"), None, 1, "", _stderr(("NOT_FOUND", "Collaborator payload not found", 404), ("GET", "/collaborator/poll/unknown")), "zero provider effect", PRO_LIMIT),
-    Case("L02", "providerFailure", ("bp", "collab", "poll", "cid-001"), "GET", "/collaborator/poll/cid-001", 503, _error("SERVICE_UNAVAILABLE", "Burp Collaborator provider operation failed"), None, 1, "", _stderr(("SERVICE_UNAVAILABLE", "Burp Collaborator provider operation failed", 503), ("GET", "/collaborator/poll/cid-001")), "provider failure", PRO_LIMIT),
-    Case("L03", "normal", ("bp", "scan", "crawl", "{{TARGET}}/"), "POST", "/scanner/crawl", 200, _ok(START), '{"url":"{{TARGET}}/","config":{}}', 0, START + "\n", "", "simulated scanner task response", PRO_LIMIT),
-    Case("L03", "contrast", ("bp", "scan", "crawl", "{{TARGET}}/"), "POST", "/scanner/crawl", 503, _error("PRO_REQUIRED", "this operation requires Burp Suite Professional"), '{"url":"{{TARGET}}/","config":{}}', 4, "", _stderr(("PRO_REQUIRED", "this operation requires Burp Suite Professional", 503), ("POST", "/scanner/crawl")), "zero scanner task", PRO_LIMIT),
-    Case("L04", "normal", ("bp", "scan", "audit", "{{TARGET}}/"), "POST", "/scanner/audit", 200, _ok(START), '{"url":"{{TARGET}}/","config":{}}', 0, START + "\n", "", "simulated scanner task response", PRO_LIMIT),
-    Case("L04", "contrast", ("bp", "scan", "audit", "{{TARGET}}/"), "POST", "/scanner/audit", 503, _error("PRO_REQUIRED", "this operation requires Burp Suite Professional"), '{"url":"{{TARGET}}/","config":{}}', 4, "", _stderr(("PRO_REQUIRED", "this operation requires Burp Suite Professional", 503), ("POST", "/scanner/audit")), "zero scanner task", PRO_LIMIT),
-    Case("L05", "normal", ("bp", "scan", "all", "{{TARGET}}/"), "POST", "/scanner/crawl-and-audit", 501, _error("UNSUPPORTED", "linked crawl and audit is unsupported"), '{"url":"{{TARGET}}/","config":{}}', 1, "", _stderr(("UNSUPPORTED", "linked crawl and audit is unsupported", 501), ("POST", "/scanner/crawl-and-audit")), "zero scanner task", ZERO_TASK_LIMIT),
-    Case("L05", "contrast", ("bp", "scan", "all", "{{TARGET}}/"), "POST", "/scanner/crawl-and-audit", 501, _error("UNSUPPORTED", "linked crawl and audit is unsupported"), '{"url":"{{TARGET}}/","config":{}}', 1, "", _stderr(("UNSUPPORTED", "linked crawl and audit is unsupported", 501), ("POST", "/scanner/crawl-and-audit")), "zero scanner task", ZERO_TASK_LIMIT),
-    Case("L06", "normal", ("bp", "scan", "status", "sid-001"), "GET", "/scanner/sid-001/status", 200, _ok(STATUS), None, 0, STATUS + "\n", "", "one scanner state read", PRO_LIMIT),
-    Case("L06", "contrast", ("bp", "scan", "status", "unknown"), "GET", "/scanner/unknown/status", 404, _error("NOT_FOUND", "scanner task was not found"), None, 1, "", _stderr(("NOT_FOUND", "scanner task was not found", 404), ("GET", "/scanner/unknown/status")), "zero task mutation", PRO_LIMIT),
-    Case("L07", "normal", ("bp", "scan", "issues", "sid-001"), "GET", "/scanner/sid-001/issues", 200, _ok(ISSUES), None, 0, ISSUES + "\n", "", "one scanner issue read", PRO_LIMIT),
-    Case("L07", "contrast", ("bp", "scan", "issues", "unknown"), "GET", "/scanner/unknown/issues", 404, _error("NOT_FOUND", "scanner task was not found"), None, 1, "", _stderr(("NOT_FOUND", "scanner task was not found", 404), ("GET", "/scanner/unknown/issues")), "zero task mutation", PRO_LIMIT),
-    Case("L08", "normal", ("bp", "scan", "defs"), "GET", "/scanner/issue-definitions", 200, _ok(DEFS), None, 0, DEFS + "\n", "", "one scanner definition read", PRO_LIMIT),
-    Case("L08", "contrast", ("bp", "scan", "defs"), "GET", "/scanner/issue-definitions", 200, _ok(EMPTY_DEFS), None, 0, EMPTY_DEFS + "\n", "", "Community-safe empty list", ("The sealed oracle contrast predicts empty stdout plus a typed stderr despite exit 0; current Kotlin and CLI behavior returns JSON on stdout.",)),
+    Case(
+        "L01",
+        "normal",
+        ("bp", "collab", "new"),
+        "POST",
+        "/collaborator/generate",
+        200,
+        _ok(PAYLOADS),
+        None,
+        0,
+        PAYLOADS + "\n",
+        "",
+        "simulated collaborator generation response",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L01",
+        "contrast",
+        ("bp", "collab", "new"),
+        "POST",
+        "/collaborator/generate",
+        503,
+        _error("PRO_REQUIRED", "Burp Suite Professional is required"),
+        None,
+        4,
+        "",
+        _stderr(
+            ("PRO_REQUIRED", "Burp Suite Professional is required", 503),
+            ("POST", "/collaborator/generate"),
+        ),
+        "zero provider effect",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L01",
+        "providerFailure",
+        ("bp", "collab", "new"),
+        "POST",
+        "/collaborator/generate",
+        503,
+        _error("SERVICE_UNAVAILABLE", "Burp Collaborator provider operation failed"),
+        None,
+        1,
+        "",
+        _stderr(
+            ("SERVICE_UNAVAILABLE", "Burp Collaborator provider operation failed", 503),
+            ("POST", "/collaborator/generate"),
+        ),
+        "provider failure",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L02",
+        "normal",
+        ("bp", "collab", "poll", "cid-001"),
+        "GET",
+        "/collaborator/poll/cid-001",
+        200,
+        _ok(POLL),
+        None,
+        0,
+        POLL + "\n",
+        "",
+        "simulated collaborator read",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L02",
+        "contrast",
+        ("bp", "collab", "poll", "unknown"),
+        "GET",
+        "/collaborator/poll/unknown",
+        404,
+        _error("NOT_FOUND", "Collaborator payload not found"),
+        None,
+        1,
+        "",
+        _stderr(
+            ("NOT_FOUND", "Collaborator payload not found", 404),
+            ("GET", "/collaborator/poll/unknown"),
+        ),
+        "zero provider effect",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L02",
+        "providerFailure",
+        ("bp", "collab", "poll", "cid-001"),
+        "GET",
+        "/collaborator/poll/cid-001",
+        503,
+        _error("SERVICE_UNAVAILABLE", "Burp Collaborator provider operation failed"),
+        None,
+        1,
+        "",
+        _stderr(
+            ("SERVICE_UNAVAILABLE", "Burp Collaborator provider operation failed", 503),
+            ("GET", "/collaborator/poll/cid-001"),
+        ),
+        "provider failure",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L03",
+        "normal",
+        ("bp", "scan", "crawl", "{{TARGET}}/"),
+        "POST",
+        "/scanner/crawl",
+        200,
+        _ok(START),
+        '{"url":"{{TARGET}}/","config":{}}',
+        0,
+        START + "\n",
+        "",
+        "simulated scanner task response",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L03",
+        "contrast",
+        ("bp", "scan", "crawl", "{{TARGET}}/"),
+        "POST",
+        "/scanner/crawl",
+        503,
+        _error("PRO_REQUIRED", "this operation requires Burp Suite Professional"),
+        '{"url":"{{TARGET}}/","config":{}}',
+        4,
+        "",
+        _stderr(
+            ("PRO_REQUIRED", "this operation requires Burp Suite Professional", 503),
+            ("POST", "/scanner/crawl"),
+        ),
+        "zero scanner task",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L04",
+        "normal",
+        ("bp", "scan", "audit", "{{TARGET}}/"),
+        "POST",
+        "/scanner/audit",
+        200,
+        _ok(START),
+        '{"url":"{{TARGET}}/","config":{}}',
+        0,
+        START + "\n",
+        "",
+        "simulated scanner task response",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L04",
+        "contrast",
+        ("bp", "scan", "audit", "{{TARGET}}/"),
+        "POST",
+        "/scanner/audit",
+        503,
+        _error("PRO_REQUIRED", "this operation requires Burp Suite Professional"),
+        '{"url":"{{TARGET}}/","config":{}}',
+        4,
+        "",
+        _stderr(
+            ("PRO_REQUIRED", "this operation requires Burp Suite Professional", 503),
+            ("POST", "/scanner/audit"),
+        ),
+        "zero scanner task",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L05",
+        "normal",
+        ("bp", "scan", "all", "{{TARGET}}/"),
+        "POST",
+        "/scanner/crawl-and-audit",
+        501,
+        _error("UNSUPPORTED", "linked crawl and audit is unsupported"),
+        '{"url":"{{TARGET}}/","config":{}}',
+        1,
+        "",
+        _stderr(
+            ("UNSUPPORTED", "linked crawl and audit is unsupported", 501),
+            ("POST", "/scanner/crawl-and-audit"),
+        ),
+        "zero scanner task",
+        ZERO_TASK_LIMIT,
+    ),
+    Case(
+        "L05",
+        "contrast",
+        ("bp", "scan", "all", "{{TARGET}}/"),
+        "POST",
+        "/scanner/crawl-and-audit",
+        501,
+        _error("UNSUPPORTED", "linked crawl and audit is unsupported"),
+        '{"url":"{{TARGET}}/","config":{}}',
+        1,
+        "",
+        _stderr(
+            ("UNSUPPORTED", "linked crawl and audit is unsupported", 501),
+            ("POST", "/scanner/crawl-and-audit"),
+        ),
+        "zero scanner task",
+        ZERO_TASK_LIMIT,
+    ),
+    Case(
+        "L06",
+        "normal",
+        ("bp", "scan", "status", "sid-001"),
+        "GET",
+        "/scanner/sid-001/status",
+        200,
+        _ok(STATUS),
+        None,
+        0,
+        STATUS + "\n",
+        "",
+        "one scanner state read",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L06",
+        "contrast",
+        ("bp", "scan", "status", "unknown"),
+        "GET",
+        "/scanner/unknown/status",
+        404,
+        _error("NOT_FOUND", "scanner task was not found"),
+        None,
+        1,
+        "",
+        _stderr(
+            ("NOT_FOUND", "scanner task was not found", 404), ("GET", "/scanner/unknown/status")
+        ),
+        "zero task mutation",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L07",
+        "normal",
+        ("bp", "scan", "issues", "sid-001"),
+        "GET",
+        "/scanner/sid-001/issues",
+        200,
+        _ok(ISSUES),
+        None,
+        0,
+        ISSUES + "\n",
+        "",
+        "one scanner issue read",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L07",
+        "contrast",
+        ("bp", "scan", "issues", "unknown"),
+        "GET",
+        "/scanner/unknown/issues",
+        404,
+        _error("NOT_FOUND", "scanner task was not found"),
+        None,
+        1,
+        "",
+        _stderr(
+            ("NOT_FOUND", "scanner task was not found", 404), ("GET", "/scanner/unknown/issues")
+        ),
+        "zero task mutation",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L08",
+        "normal",
+        ("bp", "scan", "defs"),
+        "GET",
+        "/scanner/issue-definitions",
+        200,
+        _ok(DEFS),
+        None,
+        0,
+        DEFS + "\n",
+        "",
+        "one scanner definition read",
+        PRO_LIMIT,
+    ),
+    Case(
+        "L08",
+        "contrast",
+        ("bp", "scan", "defs"),
+        "GET",
+        "/scanner/issue-definitions",
+        200,
+        _ok(EMPTY_DEFS),
+        None,
+        0,
+        EMPTY_DEFS + "\n",
+        "",
+        "Community-safe empty list",
+        (
+            "The sealed oracle contrast predicts empty stdout plus a typed stderr despite exit 0; current Kotlin and CLI behavior returns JSON on stdout.",
+        ),
+    ),
 )
 
 
@@ -141,7 +424,9 @@ def _effects(effects: tuple[RequestEffect, ...]) -> list[JsonValue]:
 
 def _oracle_rows() -> dict[str, JsonObject]:
     document = json.loads(ORACLES.read_text(encoding="utf-8"))
-    return {row["id"]: row for row in document["rows"] if row["id"] in {f"L0{i}" for i in range(1, 9)}}
+    return {
+        row["id"]: row for row in document["rows"] if row["id"] in {f"L0{i}" for i in range(1, 9)}
+    }
 
 
 def _run(case: Case, tmp_path: Path) -> JsonObject:
@@ -152,7 +437,9 @@ def _run(case: Case, tmp_path: Path) -> JsonObject:
         if body is None:
             fixture.add_rest_route(case.method, case.path, status=case.status, body=response)
         else:
-            fixture.expect_rest_route(case.method, case.path, expected_body=body, status=case.status, body=response)
+            fixture.expect_rest_route(
+                case.method, case.path, expected_body=body, status=case.status, body=response
+            )
         env: JsonObject = {
             "BP_AGENT": "1",
             "BP_CONFIG_PATH": str(fixture.manifest.config_path),
@@ -218,7 +505,9 @@ def _run(case: Case, tmp_path: Path) -> JsonObject:
             "limits": list(case.limits),
         }
         actual_path = evidence_root / f"{stem}-actual.json"
-        actual_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        actual_path.write_text(
+            json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
         return record
 
 
@@ -271,21 +560,35 @@ def _semantic(document: list[JsonObject]) -> list[tuple[str, str, int, str, int]
             target_log = actual["targetLog"]
             assert isinstance(exit_code, int) and not isinstance(exit_code, bool)
             assert isinstance(target_log, list)
-            result.append((str(row["id"]), variant, exit_code, str(record["verdict"]), len(target_log)))
+            result.append(
+                (str(row["id"]), variant, exit_code, str(record["verdict"]), len(target_log))
+            )
     return result
 
 
-@pytest.mark.parametrize("case", [case for case in CASES if case.variant == "normal"], ids=lambda case: f"{case.row_id}-pro")
+@pytest.mark.parametrize(
+    "case",
+    [case for case in CASES if case.variant == "normal"],
+    ids=lambda case: f"{case.row_id}-pro",
+)
 def test_pro(case: Case, tmp_path: Path) -> None:
     _run(case, tmp_path)
 
 
-@pytest.mark.parametrize("case", [case for case in CASES if case.variant == "contrast"], ids=lambda case: f"{case.row_id}-community-or-scan-all")
+@pytest.mark.parametrize(
+    "case",
+    [case for case in CASES if case.variant == "contrast"],
+    ids=lambda case: f"{case.row_id}-community-or-scan-all",
+)
 def test_community_or_scan_all(case: Case, tmp_path: Path) -> None:
     _run(case, tmp_path)
 
 
-@pytest.mark.parametrize("case", [case for case in CASES if case.variant == "providerFailure"], ids=lambda case: f"{case.row_id}-service-failure")
+@pytest.mark.parametrize(
+    "case",
+    [case for case in CASES if case.variant == "providerFailure"],
+    ids=lambda case: f"{case.row_id}-service-failure",
+)
 def test_service_failure(case: Case, tmp_path: Path) -> None:
     _run(case, tmp_path)
 
@@ -308,5 +611,11 @@ def test_observation_artifact_matches_fresh_cli_audit(tmp_path: Path) -> None:
     ]
     assert _semantic(committed) == expected
     assert all(row["candidate"] == CANDIDATE for row in committed)
-    assert all(row["normal"]["preRunSeal"]["expectedAt"] < row["normal"]["actual"]["observedAt"] for row in committed)
-    assert all(row["contrast"]["preRunSeal"]["expectedAt"] < row["contrast"]["actual"]["observedAt"] for row in committed)
+    assert all(
+        row["normal"]["preRunSeal"]["expectedAt"] < row["normal"]["actual"]["observedAt"]
+        for row in committed
+    )
+    assert all(
+        row["contrast"]["preRunSeal"]["expectedAt"] < row["contrast"]["actual"]["observedAt"]
+        for row in committed
+    )
