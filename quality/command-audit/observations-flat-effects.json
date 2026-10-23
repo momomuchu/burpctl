@@ -286,7 +286,126 @@
       "limits": [
         "Bad selector produced GET-only, one ledger write, and zero /repeater/send effects. This establishes client preflight zero at the adapter boundary."
       ]
-    }
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "ba7014b78ab8b01799d179133120ac4264b95f5a28258a72c66e9024fbd4f83d",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "GET /proxy/history; POST /repeater/send",
+            "effect": "bounded shot rows"
+          }
+        },
+        "contrast": {
+          "case": "missing payload file usage",
+          "exit": 2,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The original bounded-shot effect requires Montoya target execution. The CLI fixture observed the history lookup plus baseline and shot adapter calls, but its REST stub cannot execute or count target sends."
+      },
+      "contrast": {
+        "classifications": [
+          "SUPPLEMENTAL_CASE"
+        ],
+        "manifestVsActual": {
+          "exit": "NOT_APPLICABLE",
+          "stdout": "NOT_APPLICABLE",
+          "stderr": "NOT_APPLICABLE",
+          "route": "NOT_APPLICABLE",
+          "effect": "NOT_APPLICABLE"
+        },
+        "basis": "The preserved bad-selector case is useful negative coverage but is not the sealed missing-payload-file contrast. It cannot receive a verdict against the original oracleHash."
+      }
+    },
+    "manifestCases": [
+      {
+        "case": "contrast",
+        "preRunSeal": "2026-10-23T12:19:31.824319+00:00",
+        "sealSha256": "ebcd74d0e73dd20adf7e4e55f7ff078a38fc15c309e1cb93aa13995192cafefe",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--project",
+          "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+          "bp",
+          "fuzz",
+          "0",
+          "--pos",
+          "query:id",
+          "--payloads",
+          "id=/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-278/test_fuzz_manifest_missing_pay0/bp-audit-_7yg6ye7/payloads/manifest-missing.txt",
+          "--type",
+          "sniper"
+        ],
+        "expected": {
+          "effect": {
+            "effect": "zero",
+            "route": "none"
+          },
+          "exit": 2,
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          }
+        },
+        "actual": {
+          "exit": 2,
+          "stdout": "",
+          "stderr": "error: cannot read payload file /private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-278/test_fuzz_manifest_missing_pay0/bp-audit-_7yg6ye7/payloads/manifest-missing.txt: [Errno 2] No such file or directory: '/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-278/test_fuzz_manifest_missing_pay0/bp-audit-_7yg6ye7/payloads/manifest-missing.txt'\n",
+          "REST log": [],
+          "target log": [],
+          "ledgerDelta": 0,
+          "observedAt": "2026-10-23T12:19:32.127835+00:00"
+        },
+        "verdict": "FAIL",
+        "limits": [
+          "The exact sealed missing-payload-file case ran through the installed CLI. Exit, stdout, and zero effects matched; stderr was plaintext instead of the required typed JSON object.",
+          "This is a confirmed agent-mode output failure, not an oracle substitution."
+        ],
+        "evidence": {
+          "expected": "task-7-provenance-r1-F04-manifest-contrast-expected.json",
+          "actual": "task-7-provenance-r1-F04-manifest-contrast-actual.json"
+        }
+      }
+    ]
   },
   {
     "id": "F05",
@@ -407,6 +526,69 @@
       "limits": [
         "Missing ID returned typed NOT_FOUND after one history GET and one ledger write; target effects stayed zero."
       ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "a7cfcbf9bece8ae10e411b5312ee511d18d541200b42d27bd485dfb20ec6c2a6",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "GET /proxy/history/0",
+            "effect": "one read"
+          }
+        },
+        "contrast": {
+          "case": "missing request ID",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "ALIGNED"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "MATCH"
+        },
+        "basis": "The original one-read expectation matches the installed CLI observation."
+      },
+      "contrast": {
+        "classifications": [
+          "FALSE_ORACLE"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MISMATCH",
+          "effect": "MISMATCH"
+        },
+        "basis": "The sealed contrast expected no route and zero server effect. The installed CLI must issue GET /proxy/history/99 to learn that the ID is missing, producing one REST and ledger effect; the local override previously hid this oracle error."
+      }
     }
   },
   {
@@ -528,6 +710,71 @@
       "limits": [
         "Server returned 501 UNSUPPORTED and no fixture-target traffic, but stderr contained a plaintext note followed by JSON. docs/OUTPUT.md:5-15 requires one JSON error object in agent mode. Engine zero-effect is supported separately by ProxyServiceTest, not end-to-end here."
       ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "cbf55075e6fedb0a6a5dd8477e19baf739dd5791355aa9f6f96b2a8e23d30374",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /proxy/intercept/enable",
+            "effect": "intercept state change"
+          }
+        },
+        "contrast": {
+          "case": "forward unsupported",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The adapter route matches, while the stub cannot prove the Montoya intercept state change."
+      },
+      "contrast": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "PRODUCT_FAILURE",
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MISMATCH",
+          "route": "MISMATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The sealed zero-route oracle is false because the CLI calls POST /proxy/intercept/forward and receives 501. The plaintext note plus JSON is also a confirmed agent-mode output failure. Engine state is not observed end to end by this fixture."
+      }
     }
   },
   {
@@ -653,6 +900,70 @@
       "limits": [
         "Missing ID produced one typed REST error and one ledger write. RepeaterServiceTest supports zero target sends for invalid IDs; the combined CLI-to-Montoya path remains INCONCLUSIVE."
       ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "8d45561951b69e3992e80c58d58e2bc5253f70ae54322f32c8663c1cfcf04334",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /repeater/send",
+            "effect": "one target send"
+          }
+        },
+        "contrast": {
+          "case": "missing request ID",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The adapter call matches; the REST stub does not execute the sealed one-target-send effect."
+      },
+      "contrast": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MISMATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The sealed zero-route oracle is false: the installed CLI sends POST /repeater/send and learns missing ID from the 404 response. The combined zero-target result remains unobserved at the CLI fixture."
+      }
     }
   },
   {
@@ -776,6 +1087,70 @@
       "limits": [
         "Missing ID produced one typed REST error and zero direct CLI target traffic. UI zero-effect is supported by RepeaterServiceTest, not by a combined end-to-end path."
       ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "52d64ecd3651538e1b344dc28c72fe4031d7a44555886099a137e0d936f45dd9",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /repeater/tab/create",
+            "effect": "one tab effect"
+          }
+        },
+        "contrast": {
+          "case": "missing request ID",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The adapter call matches; the REST stub cannot create or count the sealed tab effect."
+      },
+      "contrast": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MISMATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The sealed zero-route oracle is false: the installed CLI sends POST /repeater/tab/create and learns missing ID from the 404 response. The combined zero-tab result remains unobserved at the CLI fixture."
+      }
     }
   },
   {
@@ -899,7 +1274,124 @@
       "limits": [
         "Server preflight returned exit 1 after one REST/ledger effect rather than sealed local exit 2; stderr also mixed a plaintext note with JSON. UtilsServiceTest supports zero downstream sends on invalid targets, but combined target count is not observed."
       ]
-    }
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "40559bca31545b0c08fb6d083266538875a558c923afad676fe57f0b4fc0326d",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /utils/diff",
+            "effect": "two loopback fetches"
+          }
+        },
+        "contrast": {
+          "case": "non-loopback target usage",
+          "exit": 2,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MISMATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The command intentionally emits its set-based-diff note on successful execution, so the sealed empty-stderr expectation is false under the current implementation and published error-only JSON rule. The two extension fetches remain unobserved."
+      },
+      "contrast": {
+        "classifications": [
+          "SUPPLEMENTAL_CASE"
+        ],
+        "manifestVsActual": {
+          "exit": "NOT_APPLICABLE",
+          "stdout": "NOT_APPLICABLE",
+          "stderr": "NOT_APPLICABLE",
+          "route": "NOT_APPLICABLE",
+          "effect": "NOT_APPLICABLE"
+        },
+        "basis": "The preserved relative-target case is not the sealed non-loopback-target contrast and cannot receive a verdict against the original oracleHash."
+      }
+    },
+    "manifestCases": [
+      {
+        "case": "contrast",
+        "preRunSeal": "2026-10-23T12:19:32.836264+00:00",
+        "sealSha256": "1e6746ddeca761412ffca798bec70d3f6f020e5f812a4819cc8416ec4c019f49",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--project",
+          "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+          "bp",
+          "diff",
+          "https://example.invalid/a",
+          "http://127.0.0.1:49573/b"
+        ],
+        "expected": {
+          "effect": {
+            "effect": "zero",
+            "route": "none"
+          },
+          "exit": 2,
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          }
+        },
+        "actual": {
+          "exit": null,
+          "stdout": "",
+          "stderr": "",
+          "REST log": [],
+          "target log": [],
+          "ledgerDelta": 0,
+          "observedAt": "2026-10-23T12:19:32.837302+00:00",
+          "subprocessStarted": false,
+          "safetyError": "CLI URL must use a fixture target: https://example.invalid/a"
+        },
+        "verdict": "SAFETY_LIMITED",
+        "limits": [
+          "The exact non-loopback contrast was presented to AuditFixture.run and rejected by its allowlist before subprocess creation.",
+          "No external target, REST route, target request, or ledger effect occurred. Candidate behavior for this unsafe argv is therefore not observed and remains SAFETY_LIMITED."
+        ],
+        "evidence": {
+          "expected": "task-7-provenance-r1-F15-manifest-contrast-expected.json",
+          "actual": "task-7-provenance-r1-F15-manifest-contrast-actual.json"
+        }
+      }
+    ]
   },
   {
     "id": "F16",
@@ -1020,6 +1512,70 @@
       "limits": [
         "Failure accounting was rendered from a strict stub and no direct CLI target request occurred. External bundle denial and downstream counts require the Kotlin service proof; combined end-to-end behavior remains INCONCLUSIVE."
       ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "cb176568f2ac98733f3807a0a7ecdbaee3809cfd1e667c39bfa929cd67323714",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /utils/extract-endpoints",
+            "effect": "one loopback fetch"
+          }
+        },
+        "contrast": {
+          "case": "external bundle denied",
+          "exit": 0,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The adapter result matches, while the stub cannot execute the sealed loopback page fetch."
+      },
+      "contrast": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MISMATCH",
+          "stderr": "MISMATCH",
+          "route": "MISMATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The sealed empty-stdout, typed-error, zero-route contrast conflicts with the command contract that reports bundle failures inside a successful JSON result after POST /utils/extract-endpoints. Actual bundle denial remains a Kotlin-service concern and is not executed by this stub."
+      }
     }
   }
 ]

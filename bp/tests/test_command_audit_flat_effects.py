@@ -10,14 +10,15 @@ from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal, TypeAlias, assert_never
+from typing import Literal, TypeAlias, assert_never, cast
 
-from audit_fixture import AuditFixture, FixtureRoot, RequestEffect
+from audit_fixture import AuditFixture, FixtureRoot, RequestEffect, UnsafeTargetError
 
 JsonScalar: TypeAlias = str | int | float | bool | None
 JsonValue: TypeAlias = JsonScalar | Sequence["JsonValue"] | Mapping[str, "JsonValue"]
 JsonObject: TypeAlias = dict[str, JsonValue]
 StreamRule: TypeAlias = Literal["empty", "json", "typed-json", "note"]
+OracleCase: TypeAlias = Literal["normal", "contrast"]
 
 ORACLE_HASHES = {
     "F03": "5d462453d007f8008faf0259e5cec51835a619b2ebfd29cdb81dadb0077f4f6d",
@@ -28,6 +29,18 @@ ORACLE_HASHES = {
     "F09": "52d64ecd3651538e1b344dc28c72fe4031d7a44555886099a137e0d936f45dd9",
     "F15": "40559bca31545b0c08fb6d083266538875a558c923afad676fe57f0b4fc0326d",
     "F16": "cb176568f2ac98733f3807a0a7ecdbaee3809cfd1e667c39bfa929cd67323714",
+}
+ORACLE_MANIFEST = Path(__file__).resolve().parents[2] / "quality" / "command-audit" / "oracles.json"
+INTEGRATION_LIMITED = {
+    ("F04", "normal"),
+    ("F07", "normal"),
+    ("F08", "normal"),
+    ("F08", "contrast"),
+    ("F09", "normal"),
+    ("F09", "contrast"),
+    ("F15", "normal"),
+    ("F16", "normal"),
+    ("F16", "contrast"),
 }
 
 
@@ -48,6 +61,7 @@ class Case:
     variant: str
     argv: tuple[str, ...]
     expected: Expected
+    oracle_case: OracleCase | None = None
 
 
 def _api(data: Mapping[str, JsonValue]) -> bytes:
@@ -113,10 +127,94 @@ def _stream_matches(rule: StreamRule, value: str) -> bool:
             assert_never(unreachable)
 
 
-def _invoke(fixture: AuditFixture, case: Case) -> JsonObject:
+def _oracle_case(case: Case) -> OracleCase | None:
+    if case.oracle_case is not None:
+        return case.oracle_case
+    if case.variant in ("normal", "contrast"):
+        return cast(OracleCase, case.variant)
+    return None
+
+
+def _manifest_expected(case: Case) -> JsonObject | None:
+    oracle_case = _oracle_case(case)
+    if oracle_case is None:
+        return None
+    manifest = json.loads(ORACLE_MANIFEST.read_text(encoding="utf-8"))
+    row = next(item for item in manifest["rows"] if item["id"] == case.feature)
+    assert row["seal"]["hash"] == ORACLE_HASHES[case.feature]
+    source = row["expected"] if oracle_case == "normal" else row["contrast"]
+    return {
+        "exit": source["exit"],
+        "stdout": source["stdout"],
+        "stderr": source["stderr"],
+        "effect": source["effect"],
+    }
+
+
+def _manifest_stream_rule(value: JsonValue) -> StreamRule:
+    assert isinstance(value, Mapping)
+    mode = value.get("mode")
+    shape = value.get("shape")
+    if mode == "empty":
+        return "empty"
+    if mode == "json" and shape == "typed_error":
+        return "typed-json"
+    if mode == "json":
+        return "json"
+    raise AssertionError(f"unsupported manifest stream: {value!r}")
+
+
+def _route_matches_manifest(route: str, rest: tuple[tuple[str, str, int], ...]) -> bool:
+    if route == "none":
+        return not rest
+    observed = {(method, path.split("?", 1)[0]) for method, path, _status in rest}
+    for part in route.split(";"):
+        method, path = part.strip().split(" ", 1)
+        if not any(
+            actual_method == method and actual_path.startswith(path)
+            for actual_method, actual_path in observed
+        ):
+            return False
+    return True
+
+
+def _oracle_comparison(case: Case, manifest_expected: JsonObject | None) -> JsonObject:
+    if manifest_expected is None:
+        return {"applicable": False, "classification": "SUPPLEMENTAL_NOT_ORACLE_CASE"}
+    effect = manifest_expected["effect"]
+    assert isinstance(effect, Mapping)
+    route = effect.get("route")
+    assert isinstance(route, str)
+    comparison: JsonObject = {
+        "exit": case.expected.exit == manifest_expected["exit"],
+        "stdout": case.expected.stdout == _manifest_stream_rule(manifest_expected["stdout"]),
+        "stderr": case.expected.stderr == _manifest_stream_rule(manifest_expected["stderr"]),
+        "route": _route_matches_manifest(route, case.expected.rest),
+    }
+    mismatch = not all(value is True for value in comparison.values())
+    oracle_case = _oracle_case(case)
+    integration_limited = (case.feature, oracle_case) in INTEGRATION_LIMITED
+    classification = (
+        "ORACLE_MISMATCH" if mismatch else "INTEGRATION_LIMIT" if integration_limited else "ALIGNED"
+    )
+    comparison["applicable"] = True
+    comparison["classification"] = classification
+    return comparison
+
+
+def _resolved_verdict(comparison: Mapping[str, bool], oracle_classification: JsonValue) -> str:
+    if not all(comparison.values()):
+        return "FAIL"
+    if oracle_classification in {"ORACLE_MISMATCH", "INTEGRATION_LIMIT"}:
+        assert isinstance(oracle_classification, str)
+        return oracle_classification
+    return "PASS"
+
+
+def _pre_run(fixture: AuditFixture, case: Case) -> tuple[JsonObject, str]:
     before = fixture.snapshot()
-    ledger_before = _ledger_count(fixture.manifest.ledger_path)
     timestamp = datetime.now(timezone.utc).isoformat()
+    manifest_expected = _manifest_expected(case)
     expected: JsonObject = {
         "exit": case.expected.exit,
         "stdout": case.expected.stdout,
@@ -133,6 +231,9 @@ def _invoke(fixture: AuditFixture, case: Case) -> JsonObject:
             "BP_AUDIT_CANDIDATE", "3af139dc0b4020923f831099338c92af3265d7e2"
         ),
         "oracleHash": ORACLE_HASHES[case.feature],
+        "oracleCase": _oracle_case(case) or "SUPPLEMENTAL",
+        "manifestExpected": manifest_expected,
+        "oracleComparison": _oracle_comparison(case, manifest_expected),
         "preRunSeal": timestamp,
         "argv": [*fixture.command("bp"), *case.argv],
         "env": {
@@ -152,6 +253,13 @@ def _invoke(fixture: AuditFixture, case: Case) -> JsonObject:
     prefix = os.environ.get("BP_AUDIT_RUN_ID", "local")
     stem = f"task-7-{prefix}-{case.feature}-{case.variant}"
     _write_evidence(f"{stem}-expected.json", pre_run)
+    return pre_run, stem
+
+
+def _invoke(fixture: AuditFixture, case: Case) -> JsonObject:
+    before = fixture.snapshot()
+    ledger_before = _ledger_count(fixture.manifest.ledger_path)
+    pre_run, stem = _pre_run(fixture, case)
 
     result = fixture.run(case.argv, executable="bp")
     after = fixture.snapshot()
@@ -179,7 +287,39 @@ def _invoke(fixture: AuditFixture, case: Case) -> JsonObject:
     observation: JsonObject = dict(pre_run)
     observation["actual"] = actual
     observation["comparison"] = comparison
-    observation["verdict"] = "PASS" if all(comparison.values()) else "FAIL"
+    oracle_comparison = pre_run["oracleComparison"]
+    assert isinstance(oracle_comparison, Mapping)
+    oracle_classification = oracle_comparison["classification"]
+    observation["verdict"] = _resolved_verdict(comparison, oracle_classification)
+    _write_evidence(f"{stem}-actual.json", observation)
+    return observation
+
+
+def _invoke_safety_limited(fixture: AuditFixture, case: Case) -> JsonObject:
+    before = fixture.snapshot()
+    ledger_before = _ledger_count(fixture.manifest.ledger_path)
+    pre_run, stem = _pre_run(fixture, case)
+    try:
+        fixture.run(case.argv, executable="bp")
+    except UnsafeTargetError as exc:
+        after = fixture.snapshot()
+        actual: JsonObject = {
+            "observedAt": datetime.now(timezone.utc).isoformat(),
+            "subprocessStarted": False,
+            "safetyError": str(exc),
+            "exit": None,
+            "stdout": "",
+            "stderr": "",
+            "rest": _effect_rows(after.rest_effects[len(before.rest_effects) :]),
+            "target": _effect_rows(after.target_effects[len(before.target_effects) :]),
+            "ledgerDelta": _ledger_count(fixture.manifest.ledger_path) - ledger_before,
+        }
+    else:
+        raise AssertionError("fixture allowed a non-loopback target subprocess")
+    observation: JsonObject = dict(pre_run)
+    observation["actual"] = actual
+    observation["comparison"] = {"safetyPreflight": True, "zeroEffects": True}
+    observation["verdict"] = "SAFETY_LIMITED"
     _write_evidence(f"{stem}-actual.json", observation)
     return observation
 
@@ -272,8 +412,26 @@ def test_req_setup_normal_and_contrast(tmp_path: Path) -> None:
                         "missing ID; zero target",
                     ),
                 ),
-            )
+            ),
+            "ORACLE_MISMATCH",
         )
+
+
+def test_local_expected_override_cannot_pass_original_oracle() -> None:
+    case = Case(
+        "F05",
+        "contrast",
+        ("req", "99"),
+        Expected(
+            1, "empty", "typed-json", (("GET", "/proxy/history/99", 404),), 0, 1, "missing ID"
+        ),
+    )
+    comparison = _oracle_comparison(case, _manifest_expected(case))
+    assert comparison["classification"] == "ORACLE_MISMATCH"
+    assert (
+        _resolved_verdict({"localExpected": True}, comparison["classification"])
+        == "ORACLE_MISMATCH"
+    )
 
 
 def _prepare_fuzz(fixture: AuditFixture, payloads: bytes) -> Path:
@@ -318,7 +476,31 @@ def test_fuzz_replay_baseline_and_shots(tmp_path: Path) -> None:
                 0, "json", "empty", rest, 0, 4, "CLI fixture does not execute Montoya target sends"
             ),
         )
-        _assert_verdict(_invoke(fixture, case))
+        _assert_verdict(_invoke(fixture, case), "INTEGRATION_LIMIT")
+
+
+def test_fuzz_manifest_missing_payload_file(tmp_path: Path) -> None:
+    with FixtureRoot(tmp_path) as fixture:
+        missing = fixture.manifest.payload_dir / "manifest-missing.txt"
+        case = Case(
+            "F04",
+            "manifest-contrast",
+            ("fuzz", "0", "--pos", "query:id", "--payloads", f"id={missing}", "--type", "sniper"),
+            Expected(
+                2, "empty", "typed-json", (), 0, 0, "manifest missing-file preflight; zero effects"
+            ),
+            oracle_case="contrast",
+        )
+        observation = _invoke(fixture, case)
+        _assert_verdict(observation, "FAIL")
+        assert observation["oracleComparison"] == {
+            "exit": True,
+            "stdout": True,
+            "stderr": True,
+            "route": True,
+            "applicable": True,
+            "classification": "ALIGNED",
+        }
 
 
 def test_fuzz_bad_selector_has_zero_send(tmp_path: Path) -> None:
@@ -414,7 +596,8 @@ def test_intercept_on_and_forward_unsupported(tmp_path: Path) -> None:
                         "state effect represented by stub only",
                     ),
                 ),
-            )
+            ),
+            "INTEGRATION_LIMIT",
         )
         contrast = Case(
             "F07",
@@ -456,7 +639,7 @@ def test_send_replay_and_missing_id(tmp_path: Path) -> None:
                 "target completion not observed at CLI fixture",
             ),
         )
-        _assert_verdict(_invoke(fixture, normal))
+        _assert_verdict(_invoke(fixture, normal), "INTEGRATION_LIMIT")
         fixture.expect_rest_route(
             "POST",
             "/repeater/send",
@@ -478,7 +661,7 @@ def test_send_replay_and_missing_id(tmp_path: Path) -> None:
                 "missing ID; Kotlin service supplies zero-target proof",
             ),
         )
-        _assert_verdict(_invoke(fixture, contrast))
+        _assert_verdict(_invoke(fixture, contrast), "ORACLE_MISMATCH")
 
 
 def test_tab_normal_and_missing_id(tmp_path: Path) -> None:
@@ -503,7 +686,7 @@ def test_tab_normal_and_missing_id(tmp_path: Path) -> None:
                 "tab effect represented by stub; zero CLI target traffic",
             ),
         )
-        _assert_verdict(_invoke(fixture, normal))
+        _assert_verdict(_invoke(fixture, normal), "INTEGRATION_LIMIT")
         fixture.expect_rest_route(
             "POST",
             "/repeater/tab/create",
@@ -525,7 +708,7 @@ def test_tab_normal_and_missing_id(tmp_path: Path) -> None:
                 "missing ID; zero CLI target traffic",
             ),
         )
-        _assert_verdict(_invoke(fixture, contrast))
+        _assert_verdict(_invoke(fixture, contrast), "ORACLE_MISMATCH")
 
 
 def test_diff_normal_and_invalid_target(tmp_path: Path) -> None:
@@ -590,6 +773,32 @@ def test_diff_normal_and_invalid_target(tmp_path: Path) -> None:
         _assert_verdict(_invoke(fixture, contrast), "FAIL")
 
 
+def test_diff_manifest_non_loopback_target_is_safety_limited(tmp_path: Path) -> None:
+    with FixtureRoot(tmp_path) as fixture:
+        loopback = f"{fixture.manifest.target_url}/b"
+        case = Case(
+            "F15",
+            "manifest-contrast",
+            ("diff", "https://example.invalid/a", loopback),
+            Expected(
+                2,
+                "empty",
+                "typed-json",
+                (),
+                0,
+                0,
+                "fixture rejects unsafe target before subprocess",
+            ),
+            oracle_case="contrast",
+        )
+        observation = _invoke_safety_limited(fixture, case)
+        _assert_verdict(observation, "SAFETY_LIMITED")
+        actual = observation["actual"]
+        assert isinstance(actual, Mapping)
+        assert actual["subprocessStarted"] is False
+        assert actual["rest"] == [] and actual["target"] == [] and actual["ledgerDelta"] == 0
+
+
 def test_endpoints_normal_and_external_bundle_report(tmp_path: Path) -> None:
     with FixtureRoot(tmp_path) as fixture:
         page = f"{fixture.manifest.target_url}/page"
@@ -623,7 +832,7 @@ def test_endpoints_normal_and_external_bundle_report(tmp_path: Path) -> None:
                 "page and bundle fetches not observed at CLI fixture",
             ),
         )
-        _assert_verdict(_invoke(fixture, normal))
+        _assert_verdict(_invoke(fixture, normal), "INTEGRATION_LIMIT")
         fixture.expect_rest_route(
             "POST",
             "/utils/extract-endpoints",
@@ -653,4 +862,4 @@ def test_endpoints_normal_and_external_bundle_report(tmp_path: Path) -> None:
                 "external bundle denial represented by stub only",
             ),
         )
-        _assert_verdict(_invoke(fixture, contrast))
+        _assert_verdict(_invoke(fixture, contrast), "ORACLE_MISMATCH")
