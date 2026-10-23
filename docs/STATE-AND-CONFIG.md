@@ -94,9 +94,9 @@ any lower-precedence setting for that invocation.
 > `--version` are wired flags; `redact` and `ledger` are consumed at runtime (the chokepoint
 > reads exactly those two knobs). `enforce_scope`, `envelope`, `throttle_ms`, and `anomaly_pct`
 > are loaded and validated from configuration, but are not applied to command execution yet.
-> There are no CLI flags for those settings. `BP_AGENT=1` selects JSON output; TTY-aware automatic
-> format detection is not implemented yet, so the default without `BP_AGENT=1` or an explicit
-> `--format` is `table`.
+> There are no CLI flags for those settings. When `--format` is omitted, `BP_AGENT=1` selects JSON
+> output; an explicit `--format` takes precedence. TTY-aware automatic format detection is not
+> implemented yet, so the default without `BP_AGENT=1` or an explicit `--format` is `table`.
 
 **Guard semantics (non-blocking by default — ADR-0007):**
 - `enforce_scope=warn` (default): fires anyway, **warns** if the target is out of scope. _(v1.1 — not yet wired; no warning is emitted in v1.)_
