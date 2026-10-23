@@ -78,6 +78,10 @@ def _replay_display(response: dict[str, Any]) -> dict[str, Any]:
     return {
         "original": _history_entry_display(rr.original.model_dump()),
         "replayed": _history_entry_display(rr.replayed.model_dump()),
+        "persistence": {
+            "status": rr.persistence.status,
+            "warning": rr.persistence.warning,
+        },
     }
 
 

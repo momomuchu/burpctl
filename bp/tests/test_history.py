@@ -230,6 +230,12 @@ ENTRY_WITH_SECRETS: dict[str, Any] = {
 REPLAY_RESPONSE: dict[str, Any] = {
     "original": ENTRY_WITH_SECRETS,
     "replayed": {**ENTRY_WITH_SECRETS, "id": 0, "source": "replay", "statusCode": 201},
+    "persistence": {
+        "status": "failed",
+        "historyPersisted": False,
+        "sitemapPersisted": False,
+        "warning": "Target send completed, but optional history and sitemap persistence failed; do not retry the target send.",
+    },
 }
 
 
@@ -292,6 +298,22 @@ def test_replay_display_essential_fields_present_in_rendered_output() -> None:
     assert "POST" in out, "method missing from output"
     assert "target.example.com" in out, "host/url missing from output"
     assert "200" in out, "original statusCode missing from output"
+
+
+def test_replay_display_projects_persistence_status_and_warning() -> None:
+    """A persistence failure must remain visible in the safe default projection."""
+    from bp.commands.history import _replay_display
+    from bp.output import render
+
+    projected = _replay_display(REPLAY_RESPONSE)
+    persistence = projected["persistence"]
+    assert persistence == {
+        "status": "failed",
+        "warning": "Target send completed, but optional history and sitemap persistence failed; do not retry the target send.",
+    }
+    rendered = render(projected, "table")
+    assert "failed" in rendered
+    assert "do not retry the target send" in rendered
 
 
 # ---------------------------------------------------------------------------

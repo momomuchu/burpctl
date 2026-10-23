@@ -118,8 +118,19 @@ class HistoryPageResponse(_Wire):
     pageSize: int
 
 
+class RepeaterPersistence(_Wire):
+    """Replay persistence outcome returned after the target request completes."""
+
+    status: str
+    historyPersisted: bool = False
+    sitemapPersisted: bool = False
+    historyId: int | None = None
+    warning: str | None = None
+
+
 class ReplayResponse(_Wire):
-    """Mirrors the Kotlin ReplayResponse{original, replayed} shape (HistoryModels.kt)."""
+    """Mirrors the Kotlin ReplayResponse shape, including persistence metadata."""
 
     original: HistoryEntryResponse
     replayed: HistoryEntryResponse
+    persistence: RepeaterPersistence = RepeaterPersistence(status="not_configured")
