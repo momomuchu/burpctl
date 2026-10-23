@@ -32,13 +32,12 @@ def _validator() -> ModuleType:
 VALIDATOR: Final = _validator()
 MODE: Final = os.environ.get(VALIDATOR.MODE_ENV, "baseline-replay")
 if MODE not in VALIDATOR.MODES:
-    raise RuntimeError(
-        f"invalid {VALIDATOR.MODE_ENV}={MODE!r}; expected one of {VALIDATOR.MODES}"
-    )
+    raise RuntimeError(f"invalid {VALIDATOR.MODE_ENV}={MODE!r}; expected one of {VALIDATOR.MODES}")
 
 _source_matches_history = False
 if MODE == "historical-live":
     _source_matches_history = VALIDATOR.source_tree() == VALIDATOR.HISTORICAL_SOURCE_TREE
+
 
 def require_historical_live() -> None:
     """Stop collection of a historical probe module outside its exact source mode."""
@@ -77,9 +76,7 @@ def test_tampered_declared_evidence_is_rejected(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
-    assert VALIDATOR.validate_declared_evidence(
-        provenance, evidence_dir, expected_count=1
-    ) == 1
+    assert VALIDATOR.validate_declared_evidence(provenance, evidence_dir, expected_count=1) == 1
 
     evidence.write_text('{"observed":"rewritten"}\n', encoding="utf-8")
     with pytest.raises(VALIDATOR.AuditValidationError, match="digest mismatch"):
