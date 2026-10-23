@@ -1,0 +1,745 @@
+[
+  {
+    "id": "L09",
+    "oracleHash": "d86e2bcdf1acf999f9158a87d0b04028cd227b672bd756673db1d2fb2540153b",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2+task-9-working-tree",
+    "normal": {
+      "preRunSeal": {
+        "algorithm": "sha256",
+        "hash": "d3b3e874715fa6d47ef9aa82f25a1e7f11a8e35a8352e4155e9c47b3cf6a81b4",
+        "sealedAt": "2026-10-23T11:46:09.477319+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+        "bp",
+        "check",
+        "auth",
+        "http://127.0.0.1:54973",
+        "--endpoint",
+        "/private"
+      ],
+      "environment": {
+        "BP_AGENT": "1",
+        "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an0/bp-audit-ilp86c0g/home/.bp/config",
+        "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an0/bp-audit-ilp86c0g/state/ledger.db",
+        "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an0/bp-audit-ilp86c0g/payloads",
+        "BURP_REST_URL": "http://127.0.0.1:54972",
+        "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an0/bp-audit-ilp86c0g/home",
+        "NO_COLOR": "1",
+        "TERM": "dumb"
+      },
+      "expected": {
+        "classifier": {
+          "anomalousCount": null,
+          "confirmed": false,
+          "findingsCount": null,
+          "vulnerableCount": 0
+        },
+        "endToEndTargetEffectCount": "INCONCLUSIVE",
+        "exit": 0,
+        "fixtureTargetEffectCount": 0,
+        "restEffectCount": 1,
+        "restRoute": "POST /scan/auth-bypass",
+        "stderr": "empty",
+        "stderrJson": null,
+        "stdout": "json",
+        "stdoutJson": "{\"results\":[],\"totalScanned\":1,\"vulnerableCount\":0,\"inconclusiveCount\":0}"
+      },
+      "actual": {
+        "exit": 0,
+        "restLog": [
+          {
+            "body_length": 76,
+            "body_sha256": "78d8ab73759e306f6e29e9a3ed67316c1ddddc9ae15f2ef54637adc5c6f41815",
+            "method": "POST",
+            "path": "/scan/auth-bypass",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"results\":[],\"totalScanned\":1,\"vulnerableCount\":0,\"inconclusiveCount\":0}\n",
+        "targetLog": [],
+        "observedAt": "2026-10-23T11:46:10.993975+00:00"
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The canned REST envelope proves CLI routing and exit classification only.",
+        "Kotlin/Montoya target probes are not executed by this fixture; zero fixture targetLog does not establish an end-to-end target count or a vulnerability."
+      ],
+      "evidence": {
+        "expectedFile": "task-9-1792755969476830000-l09-normal-expected.json",
+        "actualFile": "task-9-1792755969476830000-l09-normal-actual.json"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "algorithm": "sha256",
+        "hash": "464541c940efd3fd28476f842339fd23587651d97a64fbcf091bd784d03d4da3",
+        "sealedAt": "2026-10-23T11:46:11.542281+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+        "bp",
+        "check",
+        "auth",
+        "http://127.0.0.1:54980",
+        "--endpoint",
+        "/private"
+      ],
+      "environment": {
+        "BP_AGENT": "1",
+        "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an1/bp-audit-rq9p_k61/home/.bp/config",
+        "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an1/bp-audit-rq9p_k61/state/ledger.db",
+        "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an1/bp-audit-rq9p_k61/payloads",
+        "BURP_REST_URL": "http://127.0.0.1:54979",
+        "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an1/bp-audit-rq9p_k61/home",
+        "NO_COLOR": "1",
+        "TERM": "dumb"
+      },
+      "expected": {
+        "classifier": {
+          "anomalousCount": null,
+          "confirmed": true,
+          "findingsCount": null,
+          "vulnerableCount": 1
+        },
+        "endToEndTargetEffectCount": "INCONCLUSIVE",
+        "exit": 5,
+        "fixtureTargetEffectCount": 0,
+        "restEffectCount": 1,
+        "restRoute": "POST /scan/auth-bypass",
+        "stderr": "empty",
+        "stderrJson": null,
+        "stdout": "json",
+        "stdoutJson": "{\"results\":[{\"vulnerable\":true}],\"totalScanned\":1,\"vulnerableCount\":1,\"inconclusiveCount\":0}"
+      },
+      "actual": {
+        "exit": 5,
+        "restLog": [
+          {
+            "body_length": 76,
+            "body_sha256": "a7837002ec67278bba4b180fcaabd60b11ae7985569bd09ad534287cc3a97788",
+            "method": "POST",
+            "path": "/scan/auth-bypass",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"results\":[{\"vulnerable\":true}],\"totalScanned\":1,\"vulnerableCount\":1,\"inconclusiveCount\":0}\n",
+        "targetLog": [],
+        "observedAt": "2026-10-23T11:46:14.122461+00:00"
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The canned REST envelope proves CLI routing and exit classification only.",
+        "Kotlin/Montoya target probes are not executed by this fixture; zero fixture targetLog does not establish an end-to-end target count or a vulnerability."
+      ],
+      "evidence": {
+        "expectedFile": "task-9-1792755971539132000-l09-contrast-expected.json",
+        "actualFile": "task-9-1792755971539132000-l09-contrast-actual.json"
+      }
+    }
+  },
+  {
+    "id": "L10",
+    "oracleHash": "9509c42e2c2ea0fdb6edc6fbbe923277e498e3a11aed5cfccc495dbe269ff602",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2+task-9-working-tree",
+    "normal": {
+      "preRunSeal": {
+        "algorithm": "sha256",
+        "hash": "cd58b71d9c182954e4c9b96b1ccd252554bde39f531cf7a2f4b1f766ec413c77",
+        "sealedAt": "2026-10-23T11:46:14.565740+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+        "bp",
+        "check",
+        "idor",
+        "http://127.0.0.1:54999/item/{id}",
+        "--param",
+        "id",
+        "--own",
+        "1",
+        "--target",
+        "2"
+      ],
+      "environment": {
+        "BP_AGENT": "1",
+        "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an2/bp-audit-4m3rpzw3/home/.bp/config",
+        "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an2/bp-audit-4m3rpzw3/state/ledger.db",
+        "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an2/bp-audit-4m3rpzw3/payloads",
+        "BURP_REST_URL": "http://127.0.0.1:54998",
+        "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an2/bp-audit-4m3rpzw3/home",
+        "NO_COLOR": "1",
+        "TERM": "dumb"
+      },
+      "expected": {
+        "classifier": {
+          "anomalousCount": null,
+          "confirmed": false,
+          "findingsCount": null,
+          "vulnerableCount": 0
+        },
+        "endToEndTargetEffectCount": "INCONCLUSIVE",
+        "exit": 0,
+        "fixtureTargetEffectCount": 0,
+        "restEffectCount": 1,
+        "restRoute": "POST /scan/idor",
+        "stderr": "empty",
+        "stderrJson": null,
+        "stdout": "json",
+        "stdoutJson": "{\"baseline\":{\"status\":200,\"inconclusive\":false},\"results\":[{\"vulnerable\":false}],\"vulnerableCount\":0,\"inconclusiveCount\":0,\"verdict\":\"clean\"}"
+      },
+      "actual": {
+        "exit": 0,
+        "restLog": [
+          {
+            "body_length": 114,
+            "body_sha256": "ae58331bb69b21e7b93a2794c854fcaaed43fb1daf35975a58faa58c0d5b6fac",
+            "method": "POST",
+            "path": "/scan/idor",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"baseline\":{\"status\":200,\"inconclusive\":false},\"results\":[{\"vulnerable\":false}],\"vulnerableCount\":0,\"inconclusiveCount\":0,\"verdict\":\"clean\"}\n",
+        "targetLog": [],
+        "observedAt": "2026-10-23T11:46:15.774710+00:00"
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The canned REST envelope proves CLI routing and exit classification only.",
+        "Kotlin/Montoya target probes are not executed by this fixture; zero fixture targetLog does not establish an end-to-end target count or a vulnerability."
+      ],
+      "evidence": {
+        "expectedFile": "task-9-1792755974565668000-l10-normal-expected.json",
+        "actualFile": "task-9-1792755974565668000-l10-normal-actual.json"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "algorithm": "sha256",
+        "hash": "3cb0d965ec5b4c81c417fb59dd1b40cef0677470805a2ec1509b33e8f35e6133",
+        "sealedAt": "2026-10-23T11:46:16.086701+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+        "bp",
+        "check",
+        "idor",
+        "http://127.0.0.1:55008/item/{id}",
+        "--param",
+        "id",
+        "--own",
+        "1",
+        "--target",
+        "2",
+        "--header",
+        "broken"
+      ],
+      "environment": {
+        "BP_AGENT": "1",
+        "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an3/bp-audit-heo5_2k2/home/.bp/config",
+        "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an3/bp-audit-heo5_2k2/state/ledger.db",
+        "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an3/bp-audit-heo5_2k2/payloads",
+        "BURP_REST_URL": "http://127.0.0.1:55007",
+        "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an3/bp-audit-heo5_2k2/home",
+        "NO_COLOR": "1",
+        "TERM": "dumb"
+      },
+      "expected": {
+        "classifier": {
+          "anomalousCount": null,
+          "confirmed": false,
+          "findingsCount": null,
+          "vulnerableCount": null
+        },
+        "endToEndTargetEffectCount": "INCONCLUSIVE",
+        "exit": 2,
+        "fixtureTargetEffectCount": 0,
+        "restEffectCount": 0,
+        "restRoute": "none",
+        "stderr": "nonempty",
+        "stderrJson": null,
+        "stdout": "empty",
+        "stdoutJson": null
+      },
+      "actual": {
+        "exit": 2,
+        "restLog": [],
+        "stderr": "error: --header must be 'Name: Value', got 'broken'\n",
+        "stdout": "",
+        "targetLog": [],
+        "observedAt": "2026-10-23T11:46:16.944058+00:00"
+      },
+      "verdict": "PASS",
+      "limits": [
+        "Local malformed-header rejection proves zero REST and target fixture effects.",
+        "Agent-mode stderr is human text, while the sealed generic contrast predicts typed JSON; retained for later finding triage."
+      ],
+      "evidence": {
+        "expectedFile": "task-9-1792755976086681000-l10-contrast-expected.json",
+        "actualFile": "task-9-1792755976086681000-l10-contrast-actual.json"
+      }
+    }
+  },
+  {
+    "id": "L11",
+    "oracleHash": "5fea82a56c270af520d93f16da7c23ea0282a23782f53190790806afde46cd23",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2+task-9-working-tree",
+    "normal": {
+      "preRunSeal": {
+        "algorithm": "sha256",
+        "hash": "bdc47af5a2845da435c8279a23f207e8ad3d3080155ce682c8738ac241d12e78",
+        "sealedAt": "2026-10-23T11:46:17.618017+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+        "bp",
+        "check",
+        "headers",
+        "http://127.0.0.1:55018/private",
+        "--marker",
+        "SECRET"
+      ],
+      "environment": {
+        "BP_AGENT": "1",
+        "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an4/bp-audit-ru4ltoan/home/.bp/config",
+        "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an4/bp-audit-ru4ltoan/state/ledger.db",
+        "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an4/bp-audit-ru4ltoan/payloads",
+        "BURP_REST_URL": "http://127.0.0.1:55017",
+        "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an4/bp-audit-ru4ltoan/home",
+        "NO_COLOR": "1",
+        "TERM": "dumb"
+      },
+      "expected": {
+        "classifier": {
+          "anomalousCount": 1,
+          "confirmed": false,
+          "findingsCount": null,
+          "vulnerableCount": 0
+        },
+        "endToEndTargetEffectCount": "INCONCLUSIVE",
+        "exit": 0,
+        "fixtureTargetEffectCount": 0,
+        "restEffectCount": 1,
+        "restRoute": "POST /scan/headers",
+        "stderr": "empty",
+        "stderrJson": null,
+        "stdout": "json",
+        "stdoutJson": "{\"baseline\":{\"status\":403},\"results\":[{\"anomalous\":true,\"vulnerable\":false}],\"anomalousCount\":1,\"vulnerableCount\":0,\"inconclusiveCount\":0}"
+      },
+      "actual": {
+        "exit": 0,
+        "restLog": [
+          {
+            "body_length": 89,
+            "body_sha256": "c7450ae70caff6e46d1c6549601d9831bfe3ae8dd2a5b9a1249a2a70f9901243",
+            "method": "POST",
+            "path": "/scan/headers",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"baseline\":{\"status\":403},\"results\":[{\"anomalous\":true,\"vulnerable\":false}],\"anomalousCount\":1,\"vulnerableCount\":0,\"inconclusiveCount\":0}\n",
+        "targetLog": [],
+        "observedAt": "2026-10-23T11:46:19.531106+00:00"
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The canned REST envelope proves CLI routing and exit classification only.",
+        "Kotlin/Montoya target probes are not executed by this fixture; zero fixture targetLog does not establish an end-to-end target count or a vulnerability."
+      ],
+      "evidence": {
+        "expectedFile": "task-9-1792755977617944000-l11-normal-expected.json",
+        "actualFile": "task-9-1792755977617944000-l11-normal-actual.json"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "algorithm": "sha256",
+        "hash": "6013567634c9f2da68024e69573f1799050538657a03bb4471799b5b23a1b410",
+        "sealedAt": "2026-10-23T11:46:20.166861+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+        "bp",
+        "check",
+        "headers",
+        "http://127.0.0.1:55030/private",
+        "--marker",
+        "SECRET"
+      ],
+      "environment": {
+        "BP_AGENT": "1",
+        "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an5/bp-audit-g24izorz/home/.bp/config",
+        "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an5/bp-audit-g24izorz/state/ledger.db",
+        "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an5/bp-audit-g24izorz/payloads",
+        "BURP_REST_URL": "http://127.0.0.1:55029",
+        "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an5/bp-audit-g24izorz/home",
+        "NO_COLOR": "1",
+        "TERM": "dumb"
+      },
+      "expected": {
+        "classifier": {
+          "anomalousCount": 1,
+          "confirmed": true,
+          "findingsCount": null,
+          "vulnerableCount": 1
+        },
+        "endToEndTargetEffectCount": "INCONCLUSIVE",
+        "exit": 5,
+        "fixtureTargetEffectCount": 0,
+        "restEffectCount": 1,
+        "restRoute": "POST /scan/headers",
+        "stderr": "empty",
+        "stderrJson": null,
+        "stdout": "json",
+        "stdoutJson": "{\"baseline\":{\"status\":403},\"results\":[{\"anomalous\":true,\"vulnerable\":true}],\"anomalousCount\":1,\"vulnerableCount\":1,\"inconclusiveCount\":0}"
+      },
+      "actual": {
+        "exit": 5,
+        "restLog": [
+          {
+            "body_length": 89,
+            "body_sha256": "26ed6afab03ec5aed0c41e905babd0ade2f6b9c10e8dd6b461bac5bf085ed536",
+            "method": "POST",
+            "path": "/scan/headers",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"baseline\":{\"status\":403},\"results\":[{\"anomalous\":true,\"vulnerable\":true}],\"anomalousCount\":1,\"vulnerableCount\":1,\"inconclusiveCount\":0}\n",
+        "targetLog": [],
+        "observedAt": "2026-10-23T11:46:22.197869+00:00"
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The canned REST envelope proves CLI routing and exit classification only.",
+        "Kotlin/Montoya target probes are not executed by this fixture; zero fixture targetLog does not establish an end-to-end target count or a vulnerability."
+      ],
+      "evidence": {
+        "expectedFile": "task-9-1792755980166842000-l11-contrast-expected.json",
+        "actualFile": "task-9-1792755980166842000-l11-contrast-actual.json"
+      }
+    }
+  },
+  {
+    "id": "L12",
+    "oracleHash": "06a6ec1ee371dfc2f41a20c77a5d889a2e4df8f0c758b9e2d654f2aa1ad88940",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2+task-9-working-tree",
+    "normal": {
+      "preRunSeal": {
+        "algorithm": "sha256",
+        "hash": "67158a9b782cf94afc40df645d4a5a1adf3cf0e6eae2f8eb9877409dcdc70658",
+        "sealedAt": "2026-10-23T11:46:22.706488+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+        "bp",
+        "check",
+        "cors",
+        "http://127.0.0.1:55047/cors"
+      ],
+      "environment": {
+        "BP_AGENT": "1",
+        "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an6/bp-audit-8deydb5m/home/.bp/config",
+        "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an6/bp-audit-8deydb5m/state/ledger.db",
+        "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an6/bp-audit-8deydb5m/payloads",
+        "BURP_REST_URL": "http://127.0.0.1:55046",
+        "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an6/bp-audit-8deydb5m/home",
+        "NO_COLOR": "1",
+        "TERM": "dumb"
+      },
+      "expected": {
+        "classifier": {
+          "anomalousCount": null,
+          "confirmed": false,
+          "findingsCount": null,
+          "vulnerableCount": 0
+        },
+        "endToEndTargetEffectCount": "INCONCLUSIVE",
+        "exit": 0,
+        "fixtureTargetEffectCount": 0,
+        "restEffectCount": 1,
+        "restRoute": "POST /scan/cors",
+        "stderr": "empty",
+        "stderrJson": null,
+        "stdout": "json",
+        "stdoutJson": "{\"results\":[{\"origin\":\"http://127.0.0.1:55047\",\"acao\":\"http://127.0.0.1:55047\",\"acac\":\"true\",\"vulnerable\":false}],\"vulnerableCount\":0,\"inconclusiveCount\":0}"
+      },
+      "actual": {
+        "exit": 0,
+        "restLog": [
+          {
+            "body_length": 52,
+            "body_sha256": "1a54b8bb4d9f25cddd6bf43d1a876ae0741ee7881b515ead0a2fab515f4d8325",
+            "method": "POST",
+            "path": "/scan/cors",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"results\":[{\"origin\":\"http://127.0.0.1:55047\",\"acao\":\"http://127.0.0.1:55047\",\"acac\":\"true\",\"vulnerable\":false}],\"vulnerableCount\":0,\"inconclusiveCount\":0}\n",
+        "targetLog": [],
+        "observedAt": "2026-10-23T11:46:24.603896+00:00"
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The canned REST envelope proves CLI routing and exit classification only.",
+        "Kotlin/Montoya target probes are not executed by this fixture; zero fixture targetLog does not establish an end-to-end target count or a vulnerability."
+      ],
+      "evidence": {
+        "expectedFile": "task-9-1792755982706456000-l12-normal-expected.json",
+        "actualFile": "task-9-1792755982706456000-l12-normal-actual.json"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "algorithm": "sha256",
+        "hash": "3d357d1dff9dbedfe3688a704cdcb0ea9487c50169f383d00b623a7726599728",
+        "sealedAt": "2026-10-23T11:46:25.299604+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+        "bp",
+        "check",
+        "cors",
+        "http://127.0.0.1:55066/cors"
+      ],
+      "environment": {
+        "BP_AGENT": "1",
+        "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an7/bp-audit-i8e0ii97/home/.bp/config",
+        "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an7/bp-audit-i8e0ii97/state/ledger.db",
+        "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an7/bp-audit-i8e0ii97/payloads",
+        "BURP_REST_URL": "http://127.0.0.1:55065",
+        "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an7/bp-audit-i8e0ii97/home",
+        "NO_COLOR": "1",
+        "TERM": "dumb"
+      },
+      "expected": {
+        "classifier": {
+          "anomalousCount": null,
+          "confirmed": true,
+          "findingsCount": null,
+          "vulnerableCount": 1
+        },
+        "endToEndTargetEffectCount": "INCONCLUSIVE",
+        "exit": 5,
+        "fixtureTargetEffectCount": 0,
+        "restEffectCount": 1,
+        "restRoute": "POST /scan/cors",
+        "stderr": "empty",
+        "stderrJson": null,
+        "stdout": "json",
+        "stdoutJson": "{\"results\":[{\"origin\":\"https://evil.invalid\",\"acao\":\"https://evil.invalid\",\"acac\":\"true\",\"vulnerable\":true}],\"vulnerableCount\":1,\"inconclusiveCount\":0}"
+      },
+      "actual": {
+        "exit": 5,
+        "restLog": [
+          {
+            "body_length": 52,
+            "body_sha256": "34535b45c1d5119ebd6a8969bdd49b8efa63fd1a4dfe258abaa45557c1aef52c",
+            "method": "POST",
+            "path": "/scan/cors",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"results\":[{\"origin\":\"https://evil.invalid\",\"acao\":\"https://evil.invalid\",\"acac\":\"true\",\"vulnerable\":true}],\"vulnerableCount\":1,\"inconclusiveCount\":0}\n",
+        "targetLog": [],
+        "observedAt": "2026-10-23T11:46:28.321384+00:00"
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The canned REST envelope proves CLI routing and exit classification only.",
+        "Kotlin/Montoya target probes are not executed by this fixture; zero fixture targetLog does not establish an end-to-end target count or a vulnerability."
+      ],
+      "evidence": {
+        "expectedFile": "task-9-1792755985299587000-l12-contrast-expected.json",
+        "actualFile": "task-9-1792755985299587000-l12-contrast-actual.json"
+      }
+    }
+  },
+  {
+    "id": "L13",
+    "oracleHash": "d4000e03f5422fac3317204c17a11017a94c757068af71e4e000aae90eb5b4f0",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2+task-9-working-tree",
+    "normal": {
+      "preRunSeal": {
+        "algorithm": "sha256",
+        "hash": "22c04998c62e416c1ea09ef6c93eeae177f27007ca09caf359cfdb1fc25dd693",
+        "sealedAt": "2026-10-23T11:46:28.851896+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+        "bp",
+        "check",
+        "endpoints",
+        "127.0.0.1",
+        "--limit",
+        "2"
+      ],
+      "environment": {
+        "BP_AGENT": "1",
+        "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an8/bp-audit-fff6xziu/home/.bp/config",
+        "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an8/bp-audit-fff6xziu/state/ledger.db",
+        "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an8/bp-audit-fff6xziu/payloads",
+        "BURP_REST_URL": "http://127.0.0.1:55101",
+        "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an8/bp-audit-fff6xziu/home",
+        "NO_COLOR": "1",
+        "TERM": "dumb"
+      },
+      "expected": {
+        "classifier": {
+          "anomalousCount": null,
+          "confirmed": false,
+          "findingsCount": 0,
+          "vulnerableCount": null
+        },
+        "endToEndTargetEffectCount": "INCONCLUSIVE",
+        "exit": 0,
+        "fixtureTargetEffectCount": 0,
+        "restEffectCount": 1,
+        "restRoute": "POST /scan/endpoints",
+        "stderr": "empty",
+        "stderrJson": null,
+        "stdout": "json",
+        "stdoutJson": "{\"scanned\":2,\"findings\":[],\"durationMs\":1,\"source\":\"extension-h2-send-history\",\"sourceCounts\":{\"repeater\":1,\"session\":1},\"errors\":[],\"inconclusiveCount\":0}"
+      },
+      "actual": {
+        "exit": 0,
+        "restLog": [
+          {
+            "body_length": 70,
+            "body_sha256": "830d833c81664b5c3afdff0ccae52917e273b4327117d1c6d30687d8ab5841cf",
+            "method": "POST",
+            "path": "/scan/endpoints",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"scanned\":2,\"findings\":[],\"durationMs\":1,\"source\":\"extension-h2-send-history\",\"sourceCounts\":{\"repeater\":1,\"session\":1},\"errors\":[],\"inconclusiveCount\":0}\n",
+        "targetLog": [],
+        "observedAt": "2026-10-23T11:46:31.467449+00:00"
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The REST fixture proves HOST payload, route, and CLI exit mapping only.",
+        "H2 source ownership, DB state, and downstream target effects are not executed here; end-to-end target count is INCONCLUSIVE and requires Kotlin evidence."
+      ],
+      "evidence": {
+        "expectedFile": "task-9-1792755988851866000-l13-normal-expected.json",
+        "actualFile": "task-9-1792755988851866000-l13-normal-actual.json"
+      }
+    },
+    "contrast": {
+      "preRunSeal": {
+        "algorithm": "sha256",
+        "hash": "1fcca3c0ba48b3eb393c07a667b7f8f04fe7b3370501f290d4894c7599c4c738",
+        "sealedAt": "2026-10-23T11:46:31.929533+00:00"
+      },
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+        "bp",
+        "check",
+        "endpoints",
+        "127.0.0.1",
+        "--limit",
+        "2"
+      ],
+      "environment": {
+        "BP_AGENT": "1",
+        "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an9/bp-audit-6mx8_8h9/home/.bp/config",
+        "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an9/bp-audit-6mx8_8h9/state/ledger.db",
+        "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an9/bp-audit-6mx8_8h9/payloads",
+        "BURP_REST_URL": "http://127.0.0.1:55118",
+        "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-214/test_installed_check_normal_an9/bp-audit-6mx8_8h9/home",
+        "NO_COLOR": "1",
+        "TERM": "dumb"
+      },
+      "expected": {
+        "classifier": {
+          "anomalousCount": null,
+          "confirmed": false,
+          "findingsCount": null,
+          "vulnerableCount": null
+        },
+        "endToEndTargetEffectCount": "INCONCLUSIVE",
+        "exit": 1,
+        "fixtureTargetEffectCount": 0,
+        "restEffectCount": 1,
+        "restRoute": "POST /scan/endpoints",
+        "stderr": "json",
+        "stderrJson": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"H2 unavailable\",\"status\":503,\"http_status\":503,\"op\":\"POST /scan/endpoints\"}}",
+        "stdout": "empty",
+        "stdoutJson": null
+      },
+      "actual": {
+        "exit": 1,
+        "restLog": [
+          {
+            "body_length": 70,
+            "body_sha256": "830d833c81664b5c3afdff0ccae52917e273b4327117d1c6d30687d8ab5841cf",
+            "method": "POST",
+            "path": "/scan/endpoints",
+            "status": 503
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"H2 unavailable\",\"status\":503,\"http_status\":503,\"op\":\"POST /scan/endpoints\"}}\n",
+        "stdout": "",
+        "targetLog": [],
+        "observedAt": "2026-10-23T11:46:35.258024+00:00"
+      },
+      "verdict": "PASS",
+      "limits": [
+        "The REST fixture proves HOST payload, route, and CLI exit mapping only.",
+        "H2 source ownership, DB state, and downstream target effects are not executed here; end-to-end target count is INCONCLUSIVE and requires Kotlin evidence."
+      ],
+      "evidence": {
+        "expectedFile": "task-9-1792755991929513000-l13-contrast-expected.json",
+        "actualFile": "task-9-1792755991929513000-l13-contrast-actual.json"
+      }
+    }
+  }
+]
