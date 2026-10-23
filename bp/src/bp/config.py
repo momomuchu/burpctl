@@ -349,6 +349,11 @@ def _redact_url(url: str) -> str:
 
 
 _URL_IN_TEXT = re.compile(r"(?:https?:)?//[^\s<>\"']+", re.IGNORECASE)
+_REQUEST_LINE_TARGET = re.compile(
+    r"^(?P<method>[!#$%&'*+\-.^_`|~0-9A-Za-z]+ )(?P<target>\S+)"
+    r"(?P<version> HTTP/\d+\.\d+)(?=\r?$)",
+    re.MULTILINE,
+)
 
 # Text fallback patterns intentionally need recognizable credential context.
 # Structured output takes the recursive path below and never relies on these.
@@ -377,6 +382,12 @@ _TEXT_PATTERNS: tuple[re.Pattern[str], ...] = (
 def _redact_text_fallback(text: str) -> str:
     text = _redact_url(text)
     text = _URL_IN_TEXT.sub(lambda match: _redact_url(match.group(0)), text)
+    text = _REQUEST_LINE_TARGET.sub(
+        lambda match: (
+            f"{match.group('method')}{_redact_url(match.group('target'))}{match.group('version')}"
+        ),
+        text,
+    )
     for pattern in _TEXT_PATTERNS:
 
         def replace(match: re.Match[str]) -> str:
