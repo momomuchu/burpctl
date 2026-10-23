@@ -10,6 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from bp.cli import _proxy_rows
+from bp.client import BurpError
 from bp.commands.proxynav import _proxy_entry_display
 from bp.models import ProxyEntry, ProxyHistory
 
@@ -44,6 +45,13 @@ def test_proxy_rows_handles_missing_response() -> None:
 
 def test_proxy_rows_empty() -> None:
     assert _proxy_rows([]) == []
+
+
+def test_proxy_rows_rejects_non_list_entries() -> None:
+    with pytest.raises(BurpError) as exc_info:
+        _proxy_rows(None)
+
+    assert exc_info.value.code == "INVALID_RESPONSE"
 
 
 # --- RED contract-drift tests (Kotlin ProxyModels.kt: id=Int, request=HttpRequestData both non-null) ---

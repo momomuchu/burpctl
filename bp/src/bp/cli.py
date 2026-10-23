@@ -28,7 +28,7 @@ else:
     ClickException = getattr(import_module(_click_exceptions_module), "ClickException")
 
 from bp import __version__
-from bp.client import BurpClient
+from bp.client import BurpClient, BurpError
 from bp.cliutil import EXIT_USAGE, State, emit_error, exit_code_for_error_code, run
 from bp.models import ProxyEntry
 from bp.output import FORMATS
@@ -103,12 +103,15 @@ def version(ctx: typer.Context) -> None:
     run(ctx, lambda c: c.version().model_dump())
 
 
-def _proxy_rows(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _proxy_rows(entries: object) -> list[dict[str, Any]]:
     """Flatten the server's nested ProxyEntry (request/response) into display rows.
 
     The extension returns ``{id, request:{method,url,...}, response:{statusCode,...}}``; for the
     list view we project the essentials so the table shows id/method/url/status, not raw JSON blobs.
     """
+    if not isinstance(entries, list):
+        raise BurpError("INVALID_RESPONSE", "server returned an unexpected response shape")
+
     rows: list[dict[str, Any]] = []
     for e in entries:
         pe = ProxyEntry.model_validate(e)
