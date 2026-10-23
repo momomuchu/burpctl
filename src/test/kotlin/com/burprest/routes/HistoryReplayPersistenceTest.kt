@@ -22,6 +22,7 @@ import io.ktor.server.testing.testApplication
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.Path
@@ -34,6 +35,31 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class HistoryReplayPersistenceTest {
+    @Test
+    fun `completed replay exposes successful persistence`() = withFixture { fixture ->
+        testApplication {
+            application {
+                installStrictJson()
+                installErrorHandling { }
+                routing { historyRoutes(fixture.history, fixture.sitemap, fixture.service) }
+            }
+
+            val response = client.post("/history/${fixture.originalId}/replay")
+            val body = response.bodyAsText()
+            val data = Json.parseToJsonElement(body).jsonObject["data"]!!.jsonObject
+            val persistence = data["persistence"]!!.jsonObject
+
+            assertEquals(HttpStatusCode.OK, response.status, body)
+            assertEquals(1, fixture.sendCount.get(), "a completed replay must be sent exactly once")
+            assertEquals(2L, fixture.history.count(HistoryFilter()))
+            assertEquals(0, fixture.warningCount.get())
+            assertEquals("persisted", persistence["status"]!!.jsonPrimitive.content)
+            assertTrue(persistence["historyPersisted"]!!.jsonPrimitive.boolean)
+            assertTrue(persistence["sitemapPersisted"]!!.jsonPrimitive.boolean)
+            assertTrue(persistence["historyId"]!!.jsonPrimitive.content.toLong() > fixture.originalId)
+        }
+    }
+
     @Test
     fun `completed replay exposes failed persistence and no-retry warning`() = withFixture { fixture ->
         fixture.rejectRepeaterPersistence()
