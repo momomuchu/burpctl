@@ -1,0 +1,54 @@
+{
+  "argv": [
+    "/usr/bin/sandbox-exec",
+    "-f",
+    "{{FIXTURE_ROOT}}/process-network-guard/network.sb",
+    "{{WORKTREE}}/bp/.venv/bin/bp",
+    "diff",
+    "https://example.invalid/a",
+    "http://127.0.0.1:55927/b"
+  ],
+  "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+  "env": {
+    "BP_AGENT": "1",
+    "BP_GUARD_HOST": "127.0.0.1",
+    "BP_GUARD_PORT": "55922",
+    "BP_GUARD_TRACE": "{{FIXTURE_ROOT}}/process-network-guard/trace.jsonl",
+    "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+    "BURP_REST_URL": "http://127.0.0.1:55922",
+    "HOME": "{{FIXTURE_ROOT}}/home",
+    "PYTHONPATH": "{{FIXTURE_ROOT}}/process-network-guard"
+  },
+  "expected": {
+    "exit": 2,
+    "ledger_delta": 0,
+    "rest": [],
+    "stderr": "typed-json",
+    "stdout": "empty",
+    "target_count": 0,
+    "target_effect": "original manifest non-loopback usage rejection"
+  },
+  "id": "F15",
+  "manifestArgv": [
+    "bp",
+    "diff",
+    "https://example.invalid/a",
+    "http://127.0.0.1:55927/b"
+  ],
+  "networkGuard": {
+    "allowed": "127.0.0.1:55922",
+    "denied": "all other network and external DNS",
+    "sandboxProfile": "(version 1)\n(allow default)\n(deny network*)\n(allow network-outbound (remote tcp \"localhost:55922\"))\n",
+    "sandboxProfileSha256": "65b1dbc304d38d279ce1a19fd0936bb91a210fa3755bf4fca7f7816b4152ed1e",
+    "sitecustomizeSha256": "0ac030640d194b927e87cc8e26b2acc1edcd1486570df17e6215c7e9127cba22"
+  },
+  "oracleCase": "contrast",
+  "oracleHash": "40559bca31545b0c08fb6d083266538875a558c923afad676fe57f0b4fc0326d",
+  "preRunSeal": "2026-10-23T13:17:35.929255+00:00",
+  "prestate": {
+    "rest": [],
+    "target": []
+  },
+  "sealSha256": "77f5c5454f587935994a308563b41b9f14be4c1eb702f3663264fd2b3b13e0e1",
+  "variant": "manifest-contrast-guarded-data-only"
+}

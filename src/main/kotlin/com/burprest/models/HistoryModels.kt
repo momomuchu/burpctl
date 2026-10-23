@@ -57,4 +57,5 @@ fun SitemapRow.toResponse() = SitemapEntryResponse(
 data class ReplayResponse(
     val original: HistoryEntryResponse,
     val replayed: HistoryEntryResponse,
+    val persistence: RepeaterPersistence = RepeaterPersistence.notConfigured(),
 )

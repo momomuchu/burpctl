@@ -17,7 +17,14 @@ FORMATS = ("json", "table", "raw", "quiet")
 _ESSENTIAL = ("verdict", "status", "statusCode", "id", "attackId", "payload", "result", "value")
 
 
+def validate_format_options(fmt: str, fields: list[str] | None) -> None:
+    """Reject output option combinations that never depend on response data."""
+    if fields is not None and fmt in {"raw", "quiet"}:
+        raise ValueError(f"--fields is not valid with --format {fmt}")
+
+
 def render(data: Any, fmt: str = "table", *, fields: list[str] | None = None) -> str:
+    validate_format_options(fmt, fields)
     if fmt == "raw" and isinstance(data, list):
         # Preserve the established list diagnostic while refusing every
         # structured value (dict is handled below) instead of JSON-masquerading.
@@ -25,10 +32,6 @@ def render(data: Any, fmt: str = "table", *, fields: list[str] | None = None) ->
             "raw requires a single record and an unstructured value; "
             "use --format json for structured records"
         )
-    if fmt == "raw" and fields is not None:
-        raise ValueError("--fields is not valid with --format raw")
-    if fmt == "quiet" and fields is not None:
-        raise ValueError("--fields is not valid with --format quiet")
     if fmt == "raw" and isinstance(data, dict):
         raise ValueError(
             "raw requires an unstructured value, not a dict or list; "

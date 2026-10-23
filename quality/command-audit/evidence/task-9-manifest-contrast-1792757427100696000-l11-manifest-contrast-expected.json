@@ -1,0 +1,55 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "check",
+    "headers",
+    "http://127.0.0.1:61540/private",
+    "--marker",
+    "SECRET"
+  ],
+  "authorityClassification": "ORACLE_MISMATCH",
+  "authoritySources": [
+    "docs/SPEC.md:23",
+    "bp/src/bp/commands/securityscan.py:98-112,276-288",
+    "bp/src/bp/cliutil.py:189-210"
+  ],
+  "environment": {
+    "BP_AGENT": "1",
+    "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+    "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+    "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+    "BURP_REST_URL": "http://127.0.0.1:61539",
+    "HOME": "{{FIXTURE_ROOT}}/home",
+    "NO_COLOR": "1",
+    "TERM": "dumb"
+  },
+  "expected": {
+    "case": "anomaly without finding",
+    "effect": {
+      "effect": "zero",
+      "route": "none"
+    },
+    "exit": 0,
+    "stderr": {
+      "mode": "json",
+      "shape": "typed_error"
+    },
+    "stdout": {
+      "mode": "empty",
+      "shape": "empty"
+    }
+  },
+  "id": "L11",
+  "oracleHash": "5fea82a56c270af520d93f16da7c23ea0282a23782f53190790806afde46cd23",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "e41fb7f70f48209319a02715164db29b6067005a4c89f52ac1687905b8698c36",
+    "sealedAt": "2026-10-23T12:10:27.100712+00:00"
+  },
+  "scenario": "original-manifest-contrast"
+}

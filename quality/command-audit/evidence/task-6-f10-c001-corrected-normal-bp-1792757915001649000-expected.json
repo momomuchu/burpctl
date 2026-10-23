@@ -1,0 +1,72 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "sitemap",
+    "http://127.0.0.1:65278/"
+  ],
+  "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+  "case": "corrected-normal",
+  "environment": {
+    "BP_AGENT": "1",
+    "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+    "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+    "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+    "BURP_REST_URL": "http://127.0.0.1:65277",
+    "HOME": "{{FIXTURE_ROOT}}/home",
+    "NO_COLOR": "1",
+    "TERM": "dumb"
+  },
+  "expected": {
+    "exit": 0,
+    "ledger": {
+      "burp_op": "GET /target/sitemap",
+      "count": 1,
+      "exit_code": 0,
+      "status": "ok"
+    },
+    "restLog": [
+      {
+        "body_length": 0,
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "method": "GET",
+        "path": "/target/sitemap?url=http%3A%2F%2F127.0.0.1%3A65278%2F",
+        "status": 200
+      }
+    ],
+    "stderr": "empty",
+    "stdout": {
+      "entries": [
+        {
+          "method": "GET",
+          "mimeType": "text/plain",
+          "statusCode": 200,
+          "url": "http://127.0.0.1:65278/a"
+        }
+      ],
+      "total": 1
+    },
+    "targetLog": []
+  },
+  "expectedAtNs": 1792757915001650000,
+  "id": "F10-C001",
+  "oracleHash": "a097ee12378c10985917814679ce990978260aa7b6a8eb797e5d609991adfa42",
+  "preRunSeal": "673a6a5aa0262fb9fa1a56b95d12fd9bf6cefacb02ce32302e5d0b476f36dd20",
+  "prestate": {
+    "ledger": [],
+    "rest": [],
+    "target": []
+  },
+  "source": {
+    "priority": "current-contract-plus-fixture-ownership",
+    "sources": [
+      "docs/CLI.md:71",
+      "bp/src/bp/commands/target.py:126",
+      "bp/tests/audit_fixture.py:240"
+    ]
+  }
+}

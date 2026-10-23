@@ -1,0 +1,1699 @@
+[
+  {
+    "id": "F03",
+    "oracleHash": "5d462453d007f8008faf0259e5cec51835a619b2ebfd29cdb81dadb0077f4f6d",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "2026-10-23T11:37:10.876754+00:00",
+      "observedAt": "2026-10-23T11:37:14.040766+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "proxy",
+        "--host",
+        "127.0.0.1",
+        "--limit",
+        "1",
+        "--offset",
+        "0"
+      ],
+      "expected": {
+        "exit": 0,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "GET",
+            "/proxy/history?host=127.0.0.1&limit=1&offset=0",
+            200
+          ]
+        ],
+        "stderr": "empty",
+        "stdout": "json",
+        "target_count": 0,
+        "target_effect": "read only; absolute ID 7 projected"
+      },
+      "actual": {
+        "exit": 0,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:37:14.040766+00:00",
+        "rest": [
+          {
+            "body_length": 0,
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/proxy/history?host=127.0.0.1&limit=1&offset=0",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"id\":7,\"method\":\"GET\",\"url\":\"http://127.0.0.1:50070/captured\",\"status\":200}\n",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "PASS",
+      "limits": [
+        "Installed CLI, REST route, streams, and one ledger write observed; command is read-only."
+      ]
+    },
+    "contrast": {
+      "preRunSeal": "2026-10-23T11:26:09.780918+00:00",
+      "observedAt": "2026-10-23T11:26:18.937088+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "proxy",
+        "--limit",
+        "-1"
+      ],
+      "expected": {
+        "exit": 2,
+        "ledger_delta": 0,
+        "rest": [],
+        "stderr": "typed-json",
+        "stdout": "empty",
+        "target_count": 0,
+        "target_effect": "usage preflight; zero target"
+      },
+      "actual": {
+        "exit": 1,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:26:18.937088+00:00",
+        "rest": [
+          {
+            "body_length": 0,
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/proxy/history?limit=-1",
+            "status": 404
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"INVALID_RESPONSE\",\"message\":\"server returned non-JSON (HTTP 404)\",\"status\":404,\"http_status\":404,\"op\":\"GET /proxy/history\"}}\n",
+        "stdout": "",
+        "target": []
+      },
+      "comparison": {
+        "exit": false,
+        "ledger": false,
+        "rest": false,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "FAIL",
+      "limits": [
+        "Observed exit 1 plus one REST/ledger effect instead of sealed exit 2/zero. This is an oracle mismatch; current authority does not establish that negative limit must be rejected locally, so it is not classified here as a confirmed product defect."
+      ]
+    }
+  },
+  {
+    "id": "F04",
+    "oracleHash": "ba7014b78ab8b01799d179133120ac4264b95f5a28258a72c66e9024fbd4f83d",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "2026-10-23T11:28:49.639175+00:00",
+      "observedAt": "2026-10-23T11:28:51.926702+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "fuzz",
+        "0",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-134/test_fuzz_replay_baseline_and_0/bp-audit-575vspye/payloads/id.txt",
+        "--type",
+        "sniper"
+      ],
+      "expected": {
+        "exit": 0,
+        "ledger_delta": 4,
+        "rest": [
+          [
+            "GET",
+            "/proxy/history/0",
+            200
+          ],
+          [
+            "POST",
+            "/repeater/send",
+            200
+          ],
+          [
+            "POST",
+            "/repeater/send",
+            200
+          ],
+          [
+            "POST",
+            "/repeater/send",
+            200
+          ]
+        ],
+        "stderr": "empty",
+        "stdout": "json",
+        "target_count": 0,
+        "target_effect": "CLI fixture does not execute Montoya target sends"
+      },
+      "actual": {
+        "exit": 0,
+        "ledgerDelta": 4,
+        "observedAt": "2026-10-23T11:28:51.926702+00:00",
+        "rest": [
+          {
+            "body_length": 0,
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/proxy/history/0",
+            "status": 200
+          },
+          {
+            "body_length": 134,
+            "body_sha256": "013c1b22910388e3b14ec11d640b940fce7d569e7e8967614be95eb134cce34e",
+            "method": "POST",
+            "path": "/repeater/send",
+            "status": 200
+          },
+          {
+            "body_length": 133,
+            "body_sha256": "c70c50ae06510379373d38e140e83ff8225f49ad8fbc43dd7d315c4ddba7d4e8",
+            "method": "POST",
+            "path": "/repeater/send",
+            "status": 200
+          },
+          {
+            "body_length": 133,
+            "body_sha256": "51ac9ad76b1774a05ba8e769d86bd4dfcb7549786de89817dda2624b28ac8907",
+            "method": "POST",
+            "path": "/repeater/send",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"index\":-1,\"payloads\":[],\"status\":200,\"length\":2,\"duration_ms\":1,\"anomalous\":false,\"baseline\":true,\"error\":null,\"error_code\":null}\n{\"index\":0,\"payloads\":[\"one\"],\"status\":200,\"length\":2,\"duration_ms\":1,\"anomalous\":false,\"baseline\":false,\"error\":null,\"error_code\":null}\n{\"index\":1,\"payloads\":[\"two\"],\"status\":200,\"length\":2,\"duration_ms\":1,\"anomalous\":false,\"baseline\":false,\"error\":null,\"error_code\":null}\n",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "INCONCLUSIVE",
+      "limits": [
+        "Observed captured-request GET, one baseline POST, two shot POSTs, four ledger writes, and zero direct fixture-target calls. The REST stub does not execute Montoya, so true target count remains INCONCLUSIVE.",
+        "Additional sealed cases: shot cap produced GET-only/one ledger/zero repeater POST; post-send failure produced one attempted POST and leaves downstream completion unknown."
+      ]
+    },
+    "contrast": {
+      "preRunSeal": "2026-10-23T11:29:32.532807+00:00",
+      "observedAt": "2026-10-23T11:29:34.434665+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "fuzz",
+        "0",
+        "--pos",
+        "query:missing",
+        "--payloads",
+        "missing=/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-140/test_fuzz_bad_selector_has_zer0/bp-audit-cr_r3518/payloads/id.txt"
+      ],
+      "expected": {
+        "exit": 2,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "GET",
+            "/proxy/history/0",
+            200
+          ]
+        ],
+        "stderr": "typed-json",
+        "stdout": "empty",
+        "target_count": 0,
+        "target_effect": "preflight proves zero repeater sends"
+      },
+      "actual": {
+        "exit": 2,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:29:34.434665+00:00",
+        "rest": [
+          {
+            "body_length": 0,
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/proxy/history/0",
+            "status": 200
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"USAGE_ERROR\",\"message\":\"POS_NOT_FOUND: query param 'missing' not found\"}}\n",
+        "stdout": "",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "PASS",
+      "limits": [
+        "Bad selector produced GET-only, one ledger write, and zero /repeater/send effects. This establishes client preflight zero at the adapter boundary."
+      ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "ba7014b78ab8b01799d179133120ac4264b95f5a28258a72c66e9024fbd4f83d",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "GET /proxy/history; POST /repeater/send",
+            "effect": "bounded shot rows"
+          }
+        },
+        "contrast": {
+          "case": "missing payload file usage",
+          "exit": 2,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The original bounded-shot effect requires Montoya target execution. The CLI fixture observed the history lookup plus baseline and shot adapter calls, but its REST stub cannot execute or count target sends."
+      },
+      "contrast": {
+        "classifications": [
+          "SUPPLEMENTAL_CASE"
+        ],
+        "manifestVsActual": {
+          "exit": "NOT_APPLICABLE",
+          "stdout": "NOT_APPLICABLE",
+          "stderr": "NOT_APPLICABLE",
+          "route": "NOT_APPLICABLE",
+          "effect": "NOT_APPLICABLE"
+        },
+        "basis": "The preserved bad-selector case is useful negative coverage but is not the sealed missing-payload-file contrast. It cannot receive a verdict against the original oracleHash."
+      }
+    },
+    "manifestCases": [
+      {
+        "case": "contrast",
+        "preRunSeal": "2026-10-23T12:19:31.824319+00:00",
+        "sealSha256": "ebcd74d0e73dd20adf7e4e55f7ff078a38fc15c309e1cb93aa13995192cafefe",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--project",
+          "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+          "bp",
+          "fuzz",
+          "0",
+          "--pos",
+          "query:id",
+          "--payloads",
+          "id=/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-278/test_fuzz_manifest_missing_pay0/bp-audit-_7yg6ye7/payloads/manifest-missing.txt",
+          "--type",
+          "sniper"
+        ],
+        "expected": {
+          "effect": {
+            "effect": "zero",
+            "route": "none"
+          },
+          "exit": 2,
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          }
+        },
+        "actual": {
+          "exit": 2,
+          "stdout": "",
+          "stderr": "error: cannot read payload file /private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-278/test_fuzz_manifest_missing_pay0/bp-audit-_7yg6ye7/payloads/manifest-missing.txt: [Errno 2] No such file or directory: '/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-278/test_fuzz_manifest_missing_pay0/bp-audit-_7yg6ye7/payloads/manifest-missing.txt'\n",
+          "REST log": [],
+          "target log": [],
+          "ledgerDelta": 0,
+          "observedAt": "2026-10-23T12:19:32.127835+00:00"
+        },
+        "verdict": "FAIL",
+        "limits": [
+          "The exact sealed missing-payload-file case ran through the installed CLI. Exit, stdout, and zero effects matched; stderr was plaintext instead of the required typed JSON object.",
+          "This is a confirmed agent-mode output failure, not an oracle substitution."
+        ],
+        "evidence": {
+          "expected": "task-7-provenance-r1-F04-manifest-contrast-expected.json",
+          "actual": "task-7-provenance-r1-F04-manifest-contrast-actual.json"
+        }
+      }
+    ]
+  },
+  {
+    "id": "F05",
+    "oracleHash": "a7cfcbf9bece8ae10e411b5312ee511d18d541200b42d27bd485dfb20ec6c2a6",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "2026-10-23T11:26:19.515715+00:00",
+      "observedAt": "2026-10-23T11:26:24.766421+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "req",
+        "0"
+      ],
+      "expected": {
+        "exit": 0,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "GET",
+            "/proxy/history/0",
+            200
+          ]
+        ],
+        "stderr": "empty",
+        "stdout": "json",
+        "target_count": 0,
+        "target_effect": "read only"
+      },
+      "actual": {
+        "exit": 0,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:26:24.766421+00:00",
+        "rest": [
+          {
+            "body_length": 0,
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/proxy/history/0",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"id\":0,\"request\":{\"method\":\"GET\",\"url\":\"http://127.0.0.1:59706/?id=base\",\"headers\":[],\"body\":null}}\n",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "PASS",
+      "limits": [
+        "Installed CLI performed exactly one history GET and one ledger write; no target path applies."
+      ]
+    },
+    "contrast": {
+      "preRunSeal": "2026-10-23T11:26:24.767703+00:00",
+      "observedAt": "2026-10-23T11:26:30.410622+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "req",
+        "99"
+      ],
+      "expected": {
+        "exit": 1,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "GET",
+            "/proxy/history/99",
+            404
+          ]
+        ],
+        "stderr": "typed-json",
+        "stdout": "empty",
+        "target_count": 0,
+        "target_effect": "missing ID; zero target"
+      },
+      "actual": {
+        "exit": 1,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:26:30.410622+00:00",
+        "rest": [
+          {
+            "body_length": 0,
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/proxy/history/99",
+            "status": 404
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"missing request\",\"status\":404,\"http_status\":404,\"op\":\"GET /proxy/history/99\"}}\n",
+        "stdout": "",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "PASS",
+      "limits": [
+        "Missing ID returned typed NOT_FOUND after one history GET and one ledger write; target effects stayed zero."
+      ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "a7cfcbf9bece8ae10e411b5312ee511d18d541200b42d27bd485dfb20ec6c2a6",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "GET /proxy/history/0",
+            "effect": "one read"
+          }
+        },
+        "contrast": {
+          "case": "missing request ID",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "ALIGNED"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "MATCH"
+        },
+        "basis": "The original one-read expectation matches the installed CLI observation."
+      },
+      "contrast": {
+        "classifications": [
+          "FALSE_ORACLE"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MISMATCH",
+          "effect": "MISMATCH"
+        },
+        "basis": "The sealed contrast expected no route and zero server effect. The installed CLI must issue GET /proxy/history/99 to learn that the ID is missing, producing one REST and ledger effect; the local override previously hid this oracle error."
+      }
+    }
+  },
+  {
+    "id": "F07",
+    "oracleHash": "cbf55075e6fedb0a6a5dd8477e19baf739dd5791355aa9f6f96b2a8e23d30374",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "2026-10-23T11:28:32.894979+00:00",
+      "observedAt": "2026-10-23T11:28:34.863987+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "intercept",
+        "on"
+      ],
+      "expected": {
+        "exit": 0,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "POST",
+            "/proxy/intercept/enable",
+            200
+          ]
+        ],
+        "stderr": "empty",
+        "stdout": "json",
+        "target_count": 0,
+        "target_effect": "state effect represented by stub only"
+      },
+      "actual": {
+        "exit": 0,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:28:34.863987+00:00",
+        "rest": [
+          {
+            "body_length": 0,
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "POST",
+            "path": "/proxy/intercept/enable",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"enabled\":true}\n",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "INCONCLUSIVE",
+      "limits": [
+        "Installed CLI route/body/exit/ledger passed, but the stub cannot prove the Montoya intercept state changed."
+      ]
+    },
+    "contrast": {
+      "preRunSeal": "2026-10-23T11:28:34.865391+00:00",
+      "observedAt": "2026-10-23T11:28:37.336045+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "intercept",
+        "forward"
+      ],
+      "expected": {
+        "exit": 1,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "POST",
+            "/proxy/intercept/forward",
+            501
+          ]
+        ],
+        "stderr": "typed-json",
+        "stdout": "empty",
+        "target_count": 0,
+        "target_effect": "UNSUPPORTED; zero forward engine effect"
+      },
+      "actual": {
+        "exit": 1,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:28:37.336045+00:00",
+        "rest": [
+          {
+            "body_length": 0,
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "POST",
+            "path": "/proxy/intercept/forward",
+            "status": 501
+          }
+        ],
+        "stderr": "note: 'forward' is unavailable in pinned Montoya 2025.3; the server will return UNSUPPORTED without acting.\n{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"forward unavailable\",\"status\":501,\"http_status\":501,\"op\":\"POST /proxy/intercept/forward\"}}\n",
+        "stdout": "",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": false,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "FAIL",
+      "limits": [
+        "Server returned 501 UNSUPPORTED and no fixture-target traffic, but stderr contained a plaintext note followed by JSON. docs/OUTPUT.md:5-15 requires one JSON error object in agent mode. Engine zero-effect is supported separately by ProxyServiceTest, not end-to-end here."
+      ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "cbf55075e6fedb0a6a5dd8477e19baf739dd5791355aa9f6f96b2a8e23d30374",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /proxy/intercept/enable",
+            "effect": "intercept state change"
+          }
+        },
+        "contrast": {
+          "case": "forward unsupported",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The adapter route matches, while the stub cannot prove the Montoya intercept state change."
+      },
+      "contrast": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "PRODUCT_FAILURE",
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MISMATCH",
+          "route": "MISMATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The sealed zero-route oracle is false because the CLI calls POST /proxy/intercept/forward and receives 501. The plaintext note plus JSON is also a confirmed agent-mode output failure. Engine state is not observed end to end by this fixture."
+      }
+    }
+  },
+  {
+    "id": "F08",
+    "oracleHash": "8d45561951b69e3992e80c58d58e2bc5253f70ae54322f32c8663c1cfcf04334",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "2026-10-23T11:29:01.225477+00:00",
+      "observedAt": "2026-10-23T11:29:03.027516+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "send",
+        "0",
+        "--method",
+        "GET",
+        "--path",
+        "/echo"
+      ],
+      "expected": {
+        "exit": 0,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "POST",
+            "/repeater/send",
+            200
+          ]
+        ],
+        "stderr": "empty",
+        "stdout": "json",
+        "target_count": 0,
+        "target_effect": "target completion not observed at CLI fixture"
+      },
+      "actual": {
+        "exit": 0,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:29:03.027516+00:00",
+        "rest": [
+          {
+            "body_length": 63,
+            "body_sha256": "0c1a25ad8703637aa38b00440086ec055d7bd234a4e3fd20187ad51b6de045bf",
+            "method": "POST",
+            "path": "/repeater/send",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"response\":{\"statusCode\":200,\"body\":\"ok\"},\"durationMs\":1}\n",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "INCONCLUSIVE",
+      "limits": [
+        "Exact replay payload, REST route, exit, and ledger passed. The stub did not execute Montoya; one real target send is therefore INCONCLUSIVE at the CLI fixture boundary."
+      ]
+    },
+    "contrast": {
+      "preRunSeal": "2026-10-23T11:29:03.029272+00:00",
+      "observedAt": "2026-10-23T11:29:04.848880+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "send",
+        "99"
+      ],
+      "expected": {
+        "exit": 1,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "POST",
+            "/repeater/send",
+            404
+          ]
+        ],
+        "stderr": "typed-json",
+        "stdout": "empty",
+        "target_count": 0,
+        "target_effect": "missing ID; Kotlin service supplies zero-target proof"
+      },
+      "actual": {
+        "exit": 1,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:29:04.848880+00:00",
+        "rest": [
+          {
+            "body_length": 16,
+            "body_sha256": "40e6d75ef2504c2c5db1c2e4043624ccfd66fe51a946501d76677152e4895d84",
+            "method": "POST",
+            "path": "/repeater/send",
+            "status": 404
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"missing request\",\"status\":404,\"http_status\":404,\"op\":\"POST /repeater/send\"}}\n",
+        "stdout": "",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "INCONCLUSIVE",
+      "limits": [
+        "Missing ID produced one typed REST error and one ledger write. RepeaterServiceTest supports zero target sends for invalid IDs; the combined CLI-to-Montoya path remains INCONCLUSIVE."
+      ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "8d45561951b69e3992e80c58d58e2bc5253f70ae54322f32c8663c1cfcf04334",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /repeater/send",
+            "effect": "one target send"
+          }
+        },
+        "contrast": {
+          "case": "missing request ID",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The adapter call matches; the REST stub does not execute the sealed one-target-send effect."
+      },
+      "contrast": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MISMATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The sealed zero-route oracle is false: the installed CLI sends POST /repeater/send and learns missing ID from the 404 response. The combined zero-target result remains unobserved at the CLI fixture."
+      }
+    }
+  },
+  {
+    "id": "F09",
+    "oracleHash": "52d64ecd3651538e1b344dc28c72fe4031d7a44555886099a137e0d936f45dd9",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "2026-10-23T11:27:27.853466+00:00",
+      "observedAt": "2026-10-23T11:27:32.946126+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "tab",
+        "0",
+        "--name",
+        "audit"
+      ],
+      "expected": {
+        "exit": 0,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "POST",
+            "/repeater/tab/create",
+            200
+          ]
+        ],
+        "stderr": "empty",
+        "stdout": "json",
+        "target_count": 0,
+        "target_effect": "tab effect represented by stub; zero CLI target traffic"
+      },
+      "actual": {
+        "exit": 0,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:27:32.946126+00:00",
+        "rest": [
+          {
+            "body_length": 30,
+            "body_sha256": "0e4f0e33c544a31b69b072abf3ee75a76be98f42b46ab38e2b07044c270e9837",
+            "method": "POST",
+            "path": "/repeater/tab/create",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"created\":true}\n",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "INCONCLUSIVE",
+      "limits": [
+        "Exact tab payload, REST route, exit, ledger, and zero direct CLI target traffic passed. The UI-tab effect is stubbed; end-to-end creation is INCONCLUSIVE."
+      ]
+    },
+    "contrast": {
+      "preRunSeal": "2026-10-23T11:27:32.950385+00:00",
+      "observedAt": "2026-10-23T11:27:37.932591+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "tab",
+        "99"
+      ],
+      "expected": {
+        "exit": 1,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "POST",
+            "/repeater/tab/create",
+            404
+          ]
+        ],
+        "stderr": "typed-json",
+        "stdout": "empty",
+        "target_count": 0,
+        "target_effect": "missing ID; zero CLI target traffic"
+      },
+      "actual": {
+        "exit": 1,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:27:37.932591+00:00",
+        "rest": [
+          {
+            "body_length": 16,
+            "body_sha256": "40e6d75ef2504c2c5db1c2e4043624ccfd66fe51a946501d76677152e4895d84",
+            "method": "POST",
+            "path": "/repeater/tab/create",
+            "status": 404
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"missing request\",\"status\":404,\"http_status\":404,\"op\":\"POST /repeater/tab/create\"}}\n",
+        "stdout": "",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "INCONCLUSIVE",
+      "limits": [
+        "Missing ID produced one typed REST error and zero direct CLI target traffic. UI zero-effect is supported by RepeaterServiceTest, not by a combined end-to-end path."
+      ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "52d64ecd3651538e1b344dc28c72fe4031d7a44555886099a137e0d936f45dd9",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /repeater/tab/create",
+            "effect": "one tab effect"
+          }
+        },
+        "contrast": {
+          "case": "missing request ID",
+          "exit": 1,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The adapter call matches; the REST stub cannot create or count the sealed tab effect."
+      },
+      "contrast": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MISMATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The sealed zero-route oracle is false: the installed CLI sends POST /repeater/tab/create and learns missing ID from the 404 response. The combined zero-tab result remains unobserved at the CLI fixture."
+      }
+    }
+  },
+  {
+    "id": "F15",
+    "oracleHash": "40559bca31545b0c08fb6d083266538875a558c923afad676fe57f0b4fc0326d",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "2026-10-23T11:29:05.749854+00:00",
+      "observedAt": "2026-10-23T11:29:07.591429+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "diff",
+        "http://127.0.0.1:61032/a",
+        "http://127.0.0.1:61032/b"
+      ],
+      "expected": {
+        "exit": 0,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "POST",
+            "/utils/diff",
+            200
+          ]
+        ],
+        "stderr": "empty",
+        "stdout": "json",
+        "target_count": 0,
+        "target_effect": "two extension fetches not observed at CLI fixture"
+      },
+      "actual": {
+        "exit": 0,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:29:07.591429+00:00",
+        "rest": [
+          {
+            "body_length": 109,
+            "body_sha256": "1fa7f1b9f7d33df9b08065debc56c9c2eec14d10604eab24cdae9e116b40467f",
+            "method": "POST",
+            "path": "/utils/diff",
+            "status": 200
+          }
+        ],
+        "stderr": "note: /utils/diff body comparison is set-based (not unified diff); only status/length/header deltas are returned.\n",
+        "stdout": "{\"statusA\":200,\"statusB\":200,\"lengthA\":1,\"lengthB\":1,\"lengthDiff\":0,\"headerDiffs\":[]}\n",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": false,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "FAIL",
+      "limits": [
+        "REST payload and ledger passed, but stderr contained a plaintext note despite the sealed empty-stderr expectation. Current docs/OUTPUT.md:7-8 constrains JSON records and errors, not all successful diagnostics, so this is an oracle mismatch rather than a confirmed product defect. The two extension-side fetches are not observed at the CLI fixture."
+      ]
+    },
+    "contrast": {
+      "preRunSeal": "2026-10-23T11:29:07.592585+00:00",
+      "observedAt": "2026-10-23T11:29:09.294370+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "diff",
+        "relative-target",
+        "http://127.0.0.1:61032/b"
+      ],
+      "expected": {
+        "exit": 2,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "POST",
+            "/utils/diff",
+            400
+          ]
+        ],
+        "stderr": "typed-json",
+        "stdout": "empty",
+        "target_count": 0,
+        "target_effect": "server preflight; zero extension target fetch"
+      },
+      "actual": {
+        "exit": 1,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:29:09.294370+00:00",
+        "rest": [
+          {
+            "body_length": 100,
+            "body_sha256": "e69bbd9d3ab93d0abb6a5ad50aba3015b1ec0599e73086b19ce60a9d587eb1f7",
+            "method": "POST",
+            "path": "/utils/diff",
+            "status": 400
+          }
+        ],
+        "stderr": "note: /utils/diff body comparison is set-based (not unified diff); only status/length/header deltas are returned.\n{\"error\":{\"code\":\"INVALID_REQUEST\",\"message\":\"invalid target\",\"status\":400,\"http_status\":400,\"op\":\"POST /utils/diff\"}}\n",
+        "stdout": "",
+        "target": []
+      },
+      "comparison": {
+        "exit": false,
+        "ledger": true,
+        "rest": true,
+        "stderr": false,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "FAIL",
+      "limits": [
+        "Server preflight returned exit 1 after one REST/ledger effect rather than sealed local exit 2; stderr also mixed a plaintext note with JSON. UtilsServiceTest supports zero downstream sends on invalid targets, but combined target count is not observed."
+      ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "40559bca31545b0c08fb6d083266538875a558c923afad676fe57f0b4fc0326d",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /utils/diff",
+            "effect": "two loopback fetches"
+          }
+        },
+        "contrast": {
+          "case": "non-loopback target usage",
+          "exit": 2,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MISMATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The command intentionally emits its set-based-diff note on successful execution, so the sealed empty-stderr expectation is false under the current implementation and published error-only JSON rule. The two extension fetches remain unobserved."
+      },
+      "contrast": {
+        "classifications": [
+          "SUPPLEMENTAL_CASE"
+        ],
+        "manifestVsActual": {
+          "exit": "NOT_APPLICABLE",
+          "stdout": "NOT_APPLICABLE",
+          "stderr": "NOT_APPLICABLE",
+          "route": "NOT_APPLICABLE",
+          "effect": "NOT_APPLICABLE"
+        },
+        "basis": "The preserved relative-target case is not the sealed non-loopback-target contrast and cannot receive a verdict against the original oracleHash."
+      },
+      "exactManifestContrast": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "PRODUCT_FAILURE"
+        ],
+        "manifestVsActual": {
+          "exit": "MISMATCH",
+          "stdout": "MATCH",
+          "stderr": "MISMATCH",
+          "route": "MISMATCH",
+          "effect": "ADAPTER_ZERO_PROVEN"
+        },
+        "basis": "With the non-loopback URL confined to POST data by two process guards, the CLI performed one REST/ledger effect and returned exit 1 plus mixed note/JSON stderr instead of the sealed local exit 2, zero route, and single typed JSON error. The historical pre-subprocess SAFETY_LIMITED record remains intact."
+      }
+    },
+    "manifestCases": [
+      {
+        "case": "contrast",
+        "preRunSeal": "2026-10-23T12:19:32.836264+00:00",
+        "sealSha256": "1e6746ddeca761412ffca798bec70d3f6f020e5f812a4819cc8416ec4c019f49",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--project",
+          "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+          "bp",
+          "diff",
+          "https://example.invalid/a",
+          "http://127.0.0.1:49573/b"
+        ],
+        "expected": {
+          "effect": {
+            "effect": "zero",
+            "route": "none"
+          },
+          "exit": 2,
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          }
+        },
+        "actual": {
+          "exit": null,
+          "stdout": "",
+          "stderr": "",
+          "REST log": [],
+          "target log": [],
+          "ledgerDelta": 0,
+          "observedAt": "2026-10-23T12:19:32.837302+00:00",
+          "subprocessStarted": false,
+          "safetyError": "CLI URL must use a fixture target: https://example.invalid/a"
+        },
+        "verdict": "SAFETY_LIMITED",
+        "limits": [
+          "The exact non-loopback contrast was presented to AuditFixture.run and rejected by its allowlist before subprocess creation.",
+          "No external target, REST route, target request, or ledger effect occurred. Candidate behavior for this unsafe argv is therefore not observed and remains SAFETY_LIMITED."
+        ],
+        "evidence": {
+          "expected": "task-7-provenance-r1-F15-manifest-contrast-expected.json",
+          "actual": "task-7-provenance-r1-F15-manifest-contrast-actual.json"
+        }
+      },
+      {
+        "case": "contrast-guarded-data-only",
+        "preRunSeal": "2026-10-23T13:17:35.929255+00:00",
+        "sealSha256": "77f5c5454f587935994a308563b41b9f14be4c1eb702f3663264fd2b3b13e0e1",
+        "argv": [
+          "bp",
+          "diff",
+          "https://example.invalid/a",
+          "http://127.0.0.1:55927/b"
+        ],
+        "launcherArgv": [
+          "/usr/bin/sandbox-exec",
+          "-f",
+          "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-314/test_diff_manifest_non_loopbac0/bp-audit-uuccso1r/process-network-guard/network.sb",
+          "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp/.venv/bin/bp",
+          "diff",
+          "https://example.invalid/a",
+          "http://127.0.0.1:55927/b"
+        ],
+        "expected": {
+          "exit": 2,
+          "ledger_delta": 0,
+          "rest": [],
+          "stderr": "typed-json",
+          "stdout": "empty",
+          "target_count": 0,
+          "target_effect": "original manifest non-loopback usage rejection"
+        },
+        "networkGuard": {
+          "allowed": "127.0.0.1:55922",
+          "denied": "all other network and external DNS",
+          "sandboxProfile": "(version 1)\n(allow default)\n(deny network*)\n(allow network-outbound (remote tcp \"localhost:55922\"))\n",
+          "sandboxProfileSha256": "65b1dbc304d38d279ce1a19fd0936bb91a210fa3755bf4fca7f7816b4152ed1e",
+          "sitecustomizeSha256": "0ac030640d194b927e87cc8e26b2acc1edcd1486570df17e6215c7e9127cba22"
+        },
+        "actual": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "note: /utils/diff body comparison is set-based (not unified diff); only status/length/header deltas are returned.\n{\"error\":{\"code\":\"INVALID_REQUEST\",\"message\":\"non-loopback target denied\",\"status\":400,\"http_status\":400,\"op\":\"POST /utils/diff\"}}\n",
+          "REST log": [
+            {
+              "body_length": 110,
+              "body_sha256": "a9ead53c3e22f115adae2774e7b394f275570db8c2b70e27f64c7ef83a741e06",
+              "method": "POST",
+              "path": "/utils/diff",
+              "status": 400
+            }
+          ],
+          "target log": [],
+          "ledgerDelta": 1,
+          "CLI guard trace": [
+            {
+              "event": "GUARD_LOADED",
+              "host": "127.0.0.1",
+              "port": 55922
+            },
+            {
+              "event": "ALLOW_RESOLVE",
+              "host": "127.0.0.1",
+              "port": 55922
+            },
+            {
+              "event": "ALLOW_CONNECT",
+              "host": "127.0.0.1",
+              "port": 55922
+            }
+          ],
+          "DNS guard probe": {
+            "exit": 1,
+            "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import socket; socket.getaddrinfo('example.invalid', 443)\n                   ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-314/test_diff_manifest_non_loopbac0/bp-audit-uuccso1r/process-network-guard/sitecustomize.py\", line 29, in guarded_getaddrinfo\n    raise PermissionError(1, \"network guard denied DNS\")\nPermissionError: [Errno 1] network guard denied DNS\n",
+            "stdout": ""
+          },
+          "OS sandbox target probe": {
+            "exit": 0,
+            "stderr": "",
+            "stdout": "DENIED:1\n"
+          },
+          "postProbeTargetLog": [],
+          "observedAt": "2026-10-23T13:17:37.860760+00:00"
+        },
+        "verdict": "ORACLE_MISMATCH",
+        "classifications": [
+          "FALSE_ORACLE",
+          "PRODUCT_FAILURE"
+        ],
+        "manifestVsActual": {
+          "exit": "MISMATCH",
+          "stdout": "MATCH",
+          "stderr": "MISMATCH",
+          "route": "MISMATCH",
+          "effect": "ADAPTER_ZERO_PROVEN"
+        },
+        "limits": [
+          "The installed bp console script ran inside a macOS sandbox permitting only the owned REST socket. A Python startup guard independently denied all other host/port resolution and connection attempts.",
+          "The CLI trace contains only REST resolution/connection. The external URL was present only in the exact POST body; no target request occurred. A separate no-sitecustomize probe proves the OS sandbox denied the owned target port, and the guarded DNS probe denied example.invalid before resolver access.",
+          "The REST server is still a strict stub and does not prove the Kotlin service rejection path. This case proves real CLI data handling, adapter exit/streams/route/ledger, and zero client-side target traffic."
+        ],
+        "evidence": {
+          "expected": "task-7-data-guard-r1-F15-manifest-contrast-guarded-data-only-expected.json",
+          "expectedSha256": "8f130fffb50fc9ed3d0bc693d81ec81d9c304a840d2108560b17e59a65b22156",
+          "actual": "task-7-data-guard-r1-F15-manifest-contrast-guarded-data-only-actual.json",
+          "actualSha256": "c09b2ef2cd81e0a5253e7e328cd03ec34b427a25d9e2719c7facbca1269252f0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "F16",
+    "oracleHash": "cb176568f2ac98733f3807a0a7ecdbaee3809cfd1e667c39bfa929cd67323714",
+    "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+    "normal": {
+      "preRunSeal": "2026-10-23T11:29:09.790483+00:00",
+      "observedAt": "2026-10-23T11:29:11.574665+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "endpoints",
+        "http://127.0.0.1:61068/page"
+      ],
+      "expected": {
+        "exit": 0,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "POST",
+            "/utils/extract-endpoints",
+            200
+          ]
+        ],
+        "stderr": "empty",
+        "stdout": "json",
+        "target_count": 0,
+        "target_effect": "page and bundle fetches not observed at CLI fixture"
+      },
+      "actual": {
+        "exit": 0,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:29:11.574665+00:00",
+        "rest": [
+          {
+            "body_length": 37,
+            "body_sha256": "cd0fb31165f1d6e718a2f9db71636063ac73e4b31c3a2020cb54d0c2688d5920",
+            "method": "POST",
+            "path": "/utils/extract-endpoints",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"endpoints\":[\"/api\"],\"bundlesDiscovered\":1,\"bundlesAttempted\":1,\"bundlesFetched\":1,\"bundlesFailed\":0,\"failures\":[]}\n",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "INCONCLUSIVE",
+      "limits": [
+        "Exact REST payload/route/ledger and JSON output passed. Page and bundle target fetch counts are not observed because the CLI fixture returns a stubbed service response."
+      ]
+    },
+    "contrast": {
+      "preRunSeal": "2026-10-23T11:29:11.576281+00:00",
+      "observedAt": "2026-10-23T11:29:12.930550+00:00",
+      "argv": [
+        "uv",
+        "run",
+        "--frozen",
+        "--project",
+        "/Users/maache/burpctl-ulw-worktrees-20261023/flat_effects/bp",
+        "bp",
+        "endpoints",
+        "http://127.0.0.1:61068/page"
+      ],
+      "expected": {
+        "exit": 0,
+        "ledger_delta": 1,
+        "rest": [
+          [
+            "POST",
+            "/utils/extract-endpoints",
+            200
+          ]
+        ],
+        "stderr": "empty",
+        "stdout": "json",
+        "target_count": 0,
+        "target_effect": "external bundle denial represented by stub only"
+      },
+      "actual": {
+        "exit": 0,
+        "ledgerDelta": 1,
+        "observedAt": "2026-10-23T11:29:12.930550+00:00",
+        "rest": [
+          {
+            "body_length": 37,
+            "body_sha256": "cd0fb31165f1d6e718a2f9db71636063ac73e4b31c3a2020cb54d0c2688d5920",
+            "method": "POST",
+            "path": "/utils/extract-endpoints",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"endpoints\":[],\"bundlesDiscovered\":1,\"bundlesAttempted\":1,\"bundlesFetched\":0,\"bundlesFailed\":1,\"failures\":[{\"url\":\"https://external.invalid/app.js\",\"error\":\"denied\"}]}\n",
+        "target": []
+      },
+      "comparison": {
+        "exit": true,
+        "ledger": true,
+        "rest": true,
+        "stderr": true,
+        "stdout": true,
+        "target": true
+      },
+      "verdict": "INCONCLUSIVE",
+      "limits": [
+        "Failure accounting was rendered from a strict stub and no direct CLI target request occurred. External bundle denial and downstream counts require the Kotlin service proof; combined end-to-end behavior remains INCONCLUSIVE."
+      ]
+    },
+    "provenanceAudit": {
+      "auditedAt": "2026-10-23T12:19:32.837302+00:00",
+      "originalOracleHash": "cb176568f2ac98733f3807a0a7ecdbaee3809cfd1e667c39bfa929cd67323714",
+      "originalManifest": {
+        "normal": {
+          "exit": 0,
+          "stdout": {
+            "mode": "json",
+            "shape": "parseable"
+          },
+          "stderr": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "effect": {
+            "route": "POST /utils/extract-endpoints",
+            "effect": "one loopback fetch"
+          }
+        },
+        "contrast": {
+          "case": "external bundle denied",
+          "exit": 0,
+          "stdout": {
+            "mode": "empty",
+            "shape": "empty"
+          },
+          "stderr": {
+            "mode": "json",
+            "shape": "typed_error"
+          },
+          "effect": {
+            "route": "none",
+            "effect": "zero"
+          }
+        }
+      },
+      "normal": {
+        "classifications": [
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MATCH",
+          "stderr": "MATCH",
+          "route": "MATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The adapter result matches, while the stub cannot execute the sealed loopback page fetch."
+      },
+      "contrast": {
+        "classifications": [
+          "FALSE_ORACLE",
+          "INTEGRATION_LIMIT"
+        ],
+        "manifestVsActual": {
+          "exit": "MATCH",
+          "stdout": "MISMATCH",
+          "stderr": "MISMATCH",
+          "route": "MISMATCH",
+          "effect": "UNOBSERVED"
+        },
+        "basis": "The sealed empty-stdout, typed-error, zero-route contrast conflicts with the command contract that reports bundle failures inside a successful JSON result after POST /utils/extract-endpoints. Actual bundle denial remains a Kotlin-service concern and is not executed by this stub."
+      }
+    }
+  }
+]

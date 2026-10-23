@@ -1,0 +1,50 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "status",
+    "unknown"
+  ],
+  "expected": {
+    "effect": "zero task mutation",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65374",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 1,
+    "route": "GET /scanner/unknown/status",
+    "sealedOracleBranch": {
+      "case": "unknown task ID",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 1,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"scanner task was not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /scanner/unknown/status\"}}\n",
+    "stdout": ""
+  },
+  "expectedAt": "2026-10-23T12:18:43.485179+00:00",
+  "id": "L06",
+  "preRunSeal": "b278c0ff7bc9c045f6d9b2ecc403a0f5cfbfd990e66c7468a13163e1c0c9694f",
+  "variant": "contrast"
+}

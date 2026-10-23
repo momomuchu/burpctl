@@ -11,8 +11,10 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
-from bp.commands.history import _history_rows
+from bp.client import BurpError
+from bp.commands.history import _history_rows, _history_rows_from_response
 from bp.models import HistoryEntryResponse, HistoryPageResponse
 
 
@@ -158,6 +160,32 @@ def test_history_rows_empty_list() -> None:
     assert _history_rows([]) == []
 
 
+def test_history_rows_rejects_non_list_entries() -> None:
+    with pytest.raises(BurpError) as exc_info:
+        _history_rows(None)
+
+    assert exc_info.value.code == "INVALID_RESPONSE"
+
+
+def test_history_rows_rejects_missing_entries() -> None:
+    with pytest.raises(ValidationError):
+        _history_rows_from_response({"total": 3, "page": 0, "pageSize": 50})
+
+
+def test_history_rows_rejects_incomplete_response_wrapper() -> None:
+    with pytest.raises(ValidationError):
+        _history_rows_from_response({"entries": []})
+
+
+def test_history_rows_accepts_complete_empty_response_wrapper() -> None:
+    assert _history_rows_from_response({"entries": [], "total": 0, "page": 0, "pageSize": 50}) == []
+
+
+def test_history_rows_rejects_coerced_wrapper_types() -> None:
+    with pytest.raises(ValidationError):
+        _history_rows_from_response({"entries": [], "total": "0", "page": 0, "pageSize": 50})
+
+
 # ---------------------------------------------------------------------------
 # [37] history get default projection excludes blob fields
 # ---------------------------------------------------------------------------
@@ -230,6 +258,12 @@ ENTRY_WITH_SECRETS: dict[str, Any] = {
 REPLAY_RESPONSE: dict[str, Any] = {
     "original": ENTRY_WITH_SECRETS,
     "replayed": {**ENTRY_WITH_SECRETS, "id": 0, "source": "replay", "statusCode": 201},
+    "persistence": {
+        "status": "failed",
+        "historyPersisted": False,
+        "sitemapPersisted": False,
+        "warning": "Target send completed, but optional history and sitemap persistence failed; do not retry the target send.",
+    },
 }
 
 
@@ -292,6 +326,22 @@ def test_replay_display_essential_fields_present_in_rendered_output() -> None:
     assert "POST" in out, "method missing from output"
     assert "target.example.com" in out, "host/url missing from output"
     assert "200" in out, "original statusCode missing from output"
+
+
+def test_replay_display_projects_persistence_status_and_warning() -> None:
+    """A persistence failure must remain visible in the safe default projection."""
+    from bp.commands.history import _replay_display
+    from bp.output import render
+
+    projected = _replay_display(REPLAY_RESPONSE)
+    persistence = projected["persistence"]
+    assert persistence == {
+        "status": "failed",
+        "warning": "Target send completed, but optional history and sitemap persistence failed; do not retry the target send.",
+    }
+    rendered = render(projected, "table")
+    assert "failed" in rendered
+    assert "do not retry the target send" in rendered
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,48 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "defs"
+  ],
+  "expected": {
+    "effect": "one scanner definition read",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65393",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "GET /scanner/issue-definitions",
+    "sealedOracleBranch": {
+      "effect": {
+        "effect": "one scanner read",
+        "route": "GET /scanner/issue-definitions"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "empty",
+        "shape": "empty"
+      },
+      "stdout": {
+        "mode": "json",
+        "shape": "parseable"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"definitions\":[{\"name\":\"fixture definition\",\"typeIndex\":1,\"description\":\"fixture\",\"remediation\":\"fixture\"}],\"total\":1}\n"
+  },
+  "expectedAt": "2026-10-23T12:18:46.514916+00:00",
+  "id": "L08",
+  "preRunSeal": "b6d8d36efe673d1ec946bb0e91bf2156fd3c1d7e8066ecd405abf7bf19ba35af",
+  "variant": "normal"
+}

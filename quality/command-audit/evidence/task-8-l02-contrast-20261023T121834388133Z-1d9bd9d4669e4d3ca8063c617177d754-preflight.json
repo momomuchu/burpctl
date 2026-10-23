@@ -1,0 +1,50 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "collab",
+    "poll",
+    "unknown"
+  ],
+  "expected": {
+    "effect": "zero provider effect",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65266",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 1,
+    "route": "GET /collaborator/poll/unknown",
+    "sealedOracleBranch": {
+      "case": "unknown correlation ID",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 1,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"Collaborator payload not found\",\"status\":404,\"http_status\":404,\"op\":\"GET /collaborator/poll/unknown\"}}\n",
+    "stdout": ""
+  },
+  "expectedAt": "2026-10-23T12:18:34.387631+00:00",
+  "id": "L02",
+  "preRunSeal": "af0a3a16f403fc1693479976d85c06f11553726cc3d2891c288469637dee65c2",
+  "variant": "contrast"
+}

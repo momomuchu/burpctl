@@ -1,0 +1,1473 @@
+[
+  {
+    "candidate": {
+      "manifest": {
+        "branch": "codex/ultra-qa-command-audit",
+        "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+        "revision": "7e8b742"
+      },
+      "testedRevision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "ledgerAfter": [
+          {
+            "burpOp": "GET /target/scope",
+            "errorCode": "UNSUPPORTED",
+            "exit": 1,
+            "requestSha256": null,
+            "responseSha256": "dd3370c43f2a51a8e7dc3f3470e5d77488073b0c1b674f04c0269523ea8b88c3",
+            "responseStatus": 501,
+            "status": "error"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:31:47.801275Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/target/scope",
+            "status": 501
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"scope listing is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"GET /target/scope\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "scope",
+        "show"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-2mahbs9l",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero",
+          "ledgerCount": 0,
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": "none",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "The manifest contrast predicts no route, but the CLI must contact the server to receive UNSUPPORTED."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-02-l14-contrast-seal.json",
+        "sealedAt": "2026-10-23T11:31:44.807350Z",
+        "sha256": "852e14f39040c3c21e52a88d49132c999e5511509c683e22ea854fe01f9779df"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "id": "L14",
+    "normal": {
+      "actual": {
+        "exit": 1,
+        "ledgerAfter": [
+          {
+            "burpOp": "GET /target/scope",
+            "errorCode": "UNSUPPORTED",
+            "exit": 1,
+            "requestSha256": null,
+            "responseSha256": "dd3370c43f2a51a8e7dc3f3470e5d77488073b0c1b674f04c0269523ea8b88c3",
+            "responseStatus": 501,
+            "status": "error"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:31:44.082155Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/target/scope",
+            "status": 501
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"scope listing is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"GET /target/scope\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "scope",
+        "show"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-vro4o4le",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero server effect",
+          "ledgerCount": 1,
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": "GET /target/scope",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "CLI boundary passed; the REST fixture does not execute a real or mocked Montoya scope engine.",
+        "TargetServiceTest is the independent mocked-engine proof; live Burp scope remains unobserved."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-01-l14-normal-seal.json",
+        "sealedAt": "2026-10-23T11:31:41.785766Z",
+        "sha256": "a89828fb1ef3f27346a1b4bfbf0d784f7c5d2758f8934e4bbd44a4f6592d542f"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "a130e8d4d441d6095a8f8a644c7b67df3942ecedf2d3fb47487d10c309a90683"
+  },
+  {
+    "candidate": {
+      "manifest": {
+        "branch": "codex/ultra-qa-command-audit",
+        "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+        "revision": "7e8b742"
+      },
+      "testedRevision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 2,
+        "ledgerAfter": [],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:31:52.400119Z",
+        "restLog": [],
+        "stderr": "warning: 'bp scope set' replaces the extension-managed scope list, but cannot remove\n         earlier Burp-engine rules. Pass --confirm, or use 'bp scope add'.\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "scope",
+        "set",
+        "--include",
+        "http://127.0.0.1:63039"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-rc19jysf",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero",
+          "ledgerCount": 0,
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": "none",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "The manifest predicts typed JSON stderr; the command emits a plain-text warning before client construction."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-04-l15-contrast-seal.json",
+        "sealedAt": "2026-10-23T11:31:50.363639Z",
+        "sha256": "23b0617525fe22c1ebdb18d1989d8c7327df4b3dc73e335c8341325442b5dc8c"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "id": "L15",
+    "normal": {
+      "actual": {
+        "exit": 1,
+        "ledgerAfter": [
+          {
+            "burpOp": "POST /target/scope",
+            "errorCode": "UNSUPPORTED",
+            "exit": 1,
+            "requestSha256": "d8eede36b002e88baf3520d0c6618c1978351b765b5fd13e1f37cdca19e26f19",
+            "responseSha256": "42d88cd0df7e475c7d27148eb25b8d7f8daadf4589798c3eec7306287c2fcbec",
+            "responseStatus": 501,
+            "status": "error"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:31:50.167609Z",
+        "restLog": [
+          {
+            "bodyLength": 53,
+            "bodySha256": "3a182d646dd88b84dcf42eefef77eab2f6691bd9188e5a155ca60e312f4e48c5",
+            "method": "POST",
+            "path": "/target/scope",
+            "status": 501
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"scope replacement is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"POST /target/scope\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "scope",
+        "set",
+        "--include",
+        "http://127.0.0.1:63019",
+        "--confirm"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-e250_oie",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero server effect",
+          "ledgerCount": 1,
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": "POST /target/scope",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "CLI boundary passed; the REST fixture does not execute a real or mocked Montoya scope engine.",
+        "TargetServiceTest is the independent mocked-engine proof; live Burp scope remains unobserved."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-03-l15-normal-seal.json",
+        "sealedAt": "2026-10-23T11:31:48.333901Z",
+        "sha256": "1ca75008cca4aa93c36625ac9cc2a30fc7895d7ec2d9449a1c5eb2952dbbe432"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "9d5766521a5dd13a510efc17677e1b97e2bfe29c22bfc513b267a59fbc98407b"
+  },
+  {
+    "candidate": {
+      "manifest": {
+        "branch": "codex/ultra-qa-command-audit",
+        "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+        "revision": "7e8b742"
+      },
+      "testedRevision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "ledgerAfter": [
+          {
+            "burpOp": "POST /target/scope/add",
+            "errorCode": "INVALID_REQUEST",
+            "exit": 1,
+            "requestSha256": "cf6e3254b4842bb690ee61959699eb943c402b565d0ff25f335f31f0c7c48332",
+            "responseSha256": "491bce422e0d2e9047d3a0a239dc7807353a47948e4fee0469757416c3200ffa",
+            "responseStatus": 400,
+            "status": "error"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:31:59.292806Z",
+        "restLog": [
+          {
+            "bodyLength": 33,
+            "bodySha256": "287c4c277cb6a7594c59be91df1e7078debbab1e4163efe671e9dcdcc0413227",
+            "method": "POST",
+            "path": "/target/scope/add",
+            "status": 400
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"INVALID_REQUEST\",\"message\":\"engine rejected scope addition\",\"status\":400,\"http_status\":400,\"op\":\"POST /target/scope/add\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "scope",
+        "add",
+        "http://127.0.0.1:63079/"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-04ywec5k",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero",
+          "ledgerCount": 0,
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": "none",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "The manifest predicts no route for engine rejection; the observed rejection necessarily follows one REST call."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-06-l16-contrast-seal.json",
+        "sealedAt": "2026-10-23T11:31:57.538007Z",
+        "sha256": "1f128cd5273e53d501afbdaecbf650edab8facf26ea6fa3bcb9b64d2bad0e9dc"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "id": "L16",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "ledgerAfter": [
+          {
+            "burpOp": "POST /target/scope/add",
+            "errorCode": null,
+            "exit": 0,
+            "requestSha256": "1cf4796059911ab2ccfd598df47ae76625316a7711f469f758d08aee45463005",
+            "responseSha256": "84773b5cc318e2bcac76cabfa89d3e683b3a3f6ccfd71f9c6ddee4ca62fe7697",
+            "responseStatus": 200,
+            "status": "ok"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:31:56.631064Z",
+        "restLog": [
+          {
+            "bodyLength": 33,
+            "bodySha256": "92954aece50f40392ea95119091f28c9fe14371250af943d3ebe6948e71f5e76",
+            "method": "POST",
+            "path": "/target/scope/add",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"url\":\"http://127.0.0.1:63053/\",\"inScope\":true}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "scope",
+        "add",
+        "http://127.0.0.1:63053/"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-gzj3vpgu",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "one scope classification",
+          "ledgerCount": 1,
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": "POST /target/scope/add",
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        }
+      },
+      "limits": [
+        "CLI boundary passed; the REST fixture does not execute a real or mocked Montoya scope engine.",
+        "TargetServiceTest is the independent mocked-engine proof; live Burp scope remains unobserved."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-05-l16-normal-seal.json",
+        "sealedAt": "2026-10-23T11:31:53.414200Z",
+        "sha256": "4cf3d8fc1c3551f91782242f00ebdf430601dce0db9345ece44a4f3cffecb898"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "78d37f291c614311e2303005f41d7f3aaa30f71912c2592adb8d1c1c1771d9a3"
+  },
+  {
+    "candidate": {
+      "manifest": {
+        "branch": "codex/ultra-qa-command-audit",
+        "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+        "revision": "7e8b742"
+      },
+      "testedRevision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "ledgerAfter": [
+          {
+            "burpOp": "POST /target/scope/remove",
+            "errorCode": "INVALID_REQUEST",
+            "exit": 1,
+            "requestSha256": "3797200531f503af6ab02268efec32a98a37256892e251d8c23a46d3fb0ababc",
+            "responseSha256": "169118083a3e3c0cc3a673ec231a9d0410e78f0e4e205650f6791e32d1b48864",
+            "responseStatus": 400,
+            "status": "error"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:32:05.546627Z",
+        "restLog": [
+          {
+            "bodyLength": 33,
+            "bodySha256": "68b8c489add31880ee6f26526338bbeddb9ae6fe4092800f69f24dff4ac1e3d5",
+            "method": "POST",
+            "path": "/target/scope/remove",
+            "status": 400
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"INVALID_REQUEST\",\"message\":\"engine rejected scope removal\",\"status\":400,\"http_status\":400,\"op\":\"POST /target/scope/remove\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "scope",
+        "remove",
+        "http://127.0.0.1:63121/"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-guwv9sbj",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero",
+          "ledgerCount": 0,
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": "none",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "The manifest predicts no route for engine rejection; the observed rejection necessarily follows one REST call."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-08-l17-contrast-seal.json",
+        "sealedAt": "2026-10-23T11:32:03.107072Z",
+        "sha256": "fee2bdda9a106fb2575a0313a8e297648dae24f946158c26e8c25da5d5445099"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "id": "L17",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "ledgerAfter": [
+          {
+            "burpOp": "POST /target/scope/remove",
+            "errorCode": null,
+            "exit": 0,
+            "requestSha256": "25be419a515e8c8b9753902d130f0b5851db7ae90b4b2ad23d8573d523e91248",
+            "responseSha256": "e9e35c8e4556bd99b0650e73839064647b160061d0ea98cdfba71de1dfa8d423",
+            "responseStatus": 200,
+            "status": "ok"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:32:02.548555Z",
+        "restLog": [
+          {
+            "bodyLength": 33,
+            "bodySha256": "5a3f763d3f7bef8e0b03b3e9cd74d192385546bf6b7f60e48e117f20f704fc07",
+            "method": "POST",
+            "path": "/target/scope/remove",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"url\":\"http://127.0.0.1:63090/\",\"inScope\":false}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "scope",
+        "remove",
+        "http://127.0.0.1:63090/"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-xanteqrf",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "one scope classification",
+          "ledgerCount": 1,
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": "POST /target/scope/remove",
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        }
+      },
+      "limits": [
+        "CLI boundary passed; the REST fixture does not execute a real or mocked Montoya scope engine.",
+        "TargetServiceTest is the independent mocked-engine proof; live Burp scope remains unobserved."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-07-l17-normal-seal.json",
+        "sealedAt": "2026-10-23T11:31:59.560565Z",
+        "sha256": "12907710f2610ff6862583d7d84d7c0f7bb87298dbf601ea7979f99edefeb72b"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "826f552ee6c70bd8f525493332cb68571772e0fa3582390b12209b47c2e723e8"
+  },
+  {
+    "candidate": {
+      "manifest": {
+        "branch": "codex/ultra-qa-command-audit",
+        "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+        "revision": "7e8b742"
+      },
+      "testedRevision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "ledgerAfter": [
+          {
+            "burpOp": "GET /target/scope/check",
+            "errorCode": "INVALID_REQUEST",
+            "exit": 1,
+            "requestSha256": "6e0243604e7ecb42f89ba592eb7d275bc98ef168fa12861a784868fb99bbac69",
+            "responseSha256": "9a6ec0241af447ce4482fbaf7a92eaecb664553fe6f8b96454025acd4c5d8588",
+            "responseStatus": 400,
+            "status": "error"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:32:13.168141Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/target/scope/check?url=http%3A%2F%2F127.0.0.1%3A63173%2F",
+            "status": 400
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"INVALID_REQUEST\",\"message\":\"engine rejected scope check\",\"status\":400,\"http_status\":400,\"op\":\"GET /target/scope/check\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "scope",
+        "check",
+        "http://127.0.0.1:63173/"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-1jphupda",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero",
+          "ledgerCount": 0,
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": "none",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "The manifest predicts no route for engine rejection; the observed rejection necessarily follows one REST call."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-10-l18-contrast-seal.json",
+        "sealedAt": "2026-10-23T11:32:09.188381Z",
+        "sha256": "4d68b167a866fb5b58775369060ec3467a5429f00adbb2fa2a722a6cfb0629f1"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "id": "L18",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "ledgerAfter": [
+          {
+            "burpOp": "GET /target/scope/check",
+            "errorCode": null,
+            "exit": 0,
+            "requestSha256": "712881cd879ebe17b628b79fc1e920b6052b27c6faedccfc4a861dab53cdb12d",
+            "responseSha256": "c46dc0a4bd2f9c3db09a4ae596b229862b5eb643cbcd88d0d6e16dcada1dd075",
+            "responseStatus": 200,
+            "status": "ok"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:32:08.636723Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/target/scope/check?url=http%3A%2F%2F127.0.0.1%3A63148%2F",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"url\":\"http://127.0.0.1:63148/\",\"inScope\":true}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "scope",
+        "check",
+        "http://127.0.0.1:63148/"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-r5mdz8an",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "one scope read",
+          "ledgerCount": 1,
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": "GET /target/scope/check",
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        }
+      },
+      "limits": [
+        "CLI boundary passed; the REST fixture does not execute a real or mocked Montoya scope engine.",
+        "TargetServiceTest is the independent mocked-engine proof; live Burp scope remains unobserved."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-09-l18-normal-seal.json",
+        "sealedAt": "2026-10-23T11:32:06.156622Z",
+        "sha256": "0e5def937d2305249ffe3c7e90899692814455c39fb745ce92bedfb5b8894d08"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "18b3e8bc4bc18ee00bb98c77ecbc95eb3a475ca0c5f435a78fb12ae2e152e414"
+  },
+  {
+    "candidate": {
+      "manifest": {
+        "branch": "codex/ultra-qa-command-audit",
+        "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+        "revision": "7e8b742"
+      },
+      "testedRevision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 2,
+        "ledgerAfter": [],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:32:18.992406Z",
+        "restLog": [],
+        "stderr": "error: --json is not valid JSON: Expecting value: line 1 column 12 (char 11)\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "session",
+        "set",
+        "--json",
+        "{\"cookies\":"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-7ovxnt9m",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero",
+          "ledgerCount": 0,
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 2,
+        "route": "none",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "The manifest predicts typed JSON stderr; local JSON parsing emits a plain-text usage error."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-12-l23-contrast-seal.json",
+        "sealedAt": "2026-10-23T11:32:16.735640Z",
+        "sha256": "46befcd394eac0be7a5fe9d049ad67a69e86a01a1717687e4e2692497a2da584"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "id": "L23",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "ledgerAfter": [
+          {
+            "burpOp": "POST /session/set",
+            "errorCode": null,
+            "exit": 0,
+            "requestSha256": "4aecaf126a94600f1cb7c82bc62be47d6895f7e1a0003be0e2a8c43101c257e7",
+            "responseSha256": "ac06a4633d9e5809c725c597252a203642fc0f8ca991a80b13b6b1dd6424db75",
+            "responseStatus": 200,
+            "status": "ok"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:32:16.424071Z",
+        "restLog": [
+          {
+            "bodyLength": 29,
+            "bodySha256": "f5cecbea81ecbc394755ac6fbdc8f185c0b9c34dcab8e97c190580649b9151eb",
+            "method": "POST",
+            "path": "/session/set",
+            "status": 200
+          }
+        ],
+        "stderr": "note: /session/set is a full replace \u2014 existing session cookies and headers are overwritten.\n",
+        "stdout": "{\"name\":\"audit\",\"cookieCount\":1,\"headerCount\":1,\"cookies\":{\"audit\":\"***\"},\"headers\":{\"Authorization\":\"***\"},\"origin\":\"http://127.0.0.1:63219\"}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "session",
+        "set",
+        "--json",
+        "{\"cookies\":{\"audit\":\"local\"}}"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-ejfjmkbo",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "one session replacement",
+          "ledgerCount": 1,
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": "POST /session/set",
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        }
+      },
+      "limits": [
+        "CLI boundary passed; the REST fixture does not mutate SessionService or H2 state.",
+        "SessionServiceTest is independent mocked-service proof; live Burp session state remains unobserved."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-11-l23-normal-seal.json",
+        "sealedAt": "2026-10-23T11:32:13.715420Z",
+        "sha256": "6fdcfb6e3f99f5d218606014d7605e2677daf7bb5366632d5ebbbc290295a31b"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "oracleHash": "5da75f6e6975b436bc24a2acbe69b38ceadefd6b3fc06c9b330e03d2fdd642a7"
+  },
+  {
+    "candidate": {
+      "manifest": {
+        "branch": "codex/ultra-qa-command-audit",
+        "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+        "revision": "7e8b742"
+      },
+      "testedRevision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 0,
+        "ledgerAfter": [
+          {
+            "burpOp": "GET /session/get",
+            "errorCode": null,
+            "exit": 0,
+            "requestSha256": null,
+            "responseSha256": "2760f89532cd1f5193c4de8048d9d3e37522888e92923fb98db349822aec71a5",
+            "responseStatus": 200,
+            "status": "ok"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:32:26.389671Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/session/get",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"name\":\"default\",\"cookieCount\":0,\"headerCount\":0,\"cookies\":{},\"headers\":{},\"origin\":null}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "session",
+        "get"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-vcds1pa2",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero",
+          "ledgerCount": 0,
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": "none",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "Current SessionService returns an empty SessionInfo; the sealed contrast predicts exit 1."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-14-l24-contrast-seal.json",
+        "sealedAt": "2026-10-23T11:32:23.309528Z",
+        "sha256": "e3adb7429f804cee88c5f8102b899bdc02facad4e23d3036e1855f8208c707fb"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "id": "L24",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "ledgerAfter": [
+          {
+            "burpOp": "GET /session/get",
+            "errorCode": null,
+            "exit": 0,
+            "requestSha256": null,
+            "responseSha256": "a17190efde862d4df597a9f6bb9c10fc8a40090f8988d88924bae2db4bbc89a6",
+            "responseStatus": 200,
+            "status": "ok"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:32:23.139673Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/session/get",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"name\":\"audit\",\"cookieCount\":1,\"headerCount\":1,\"cookies\":{\"audit\":\"***\"},\"headers\":{\"Authorization\":\"***\"},\"origin\":\"http://127.0.0.1:63270\"}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "session",
+        "get"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-miuhfhvf",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "one session read",
+          "ledgerCount": 1,
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": "GET /session/get",
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        }
+      },
+      "limits": [
+        "CLI boundary passed; the REST fixture does not mutate SessionService or H2 state.",
+        "SessionServiceTest is independent mocked-service proof; live Burp session state remains unobserved."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-13-l24-normal-seal.json",
+        "sealedAt": "2026-10-23T11:32:19.766435Z",
+        "sha256": "3ca24a1cf644d12eca2abf8f9695bbb9208a6ece1c3904b2d3cf9894c113d943"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "e8cc9cc912eb186f026f507cd9edf91e3ebb62309817ad6e7c1c5a180d83adf8"
+  },
+  {
+    "candidate": {
+      "manifest": {
+        "branch": "codex/ultra-qa-command-audit",
+        "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+        "revision": "7e8b742"
+      },
+      "testedRevision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "ledgerAfter": [
+          {
+            "burpOp": "DELETE /session/clear",
+            "errorCode": "SERVICE_UNAVAILABLE",
+            "exit": 1,
+            "requestSha256": null,
+            "responseSha256": "3d6f494bdb225169d58ec0947bc28c447237f30b8e45b1f5d124f101278d57e3",
+            "responseStatus": 503,
+            "status": "error"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:32:45.672427Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "DELETE",
+            "path": "/session/clear",
+            "status": 503
+          }
+        ],
+        "stderr": "note: /session/clear resets session cookies/headers but leaves the cookie-jar intact.\n{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"session persistence unavailable\",\"status\":503,\"http_status\":503,\"op\":\"DELETE /session/clear\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "session",
+        "clear"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-e3wyea8w",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero",
+          "ledgerCount": 0,
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": "none",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "The manifest predicts no route, while a persistence failure occurs after one accepted DELETE."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-16-l25-contrast-seal.json",
+        "sealedAt": "2026-10-23T11:32:37.965224Z",
+        "sha256": "c7d3867c269ca38835281a9f33b7b4baa38a3af5f0e97eb2e4ebb74d01b8ea63"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "id": "L25",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "ledgerAfter": [
+          {
+            "burpOp": "DELETE /session/clear",
+            "errorCode": null,
+            "exit": 0,
+            "requestSha256": null,
+            "responseSha256": "2760f89532cd1f5193c4de8048d9d3e37522888e92923fb98db349822aec71a5",
+            "responseStatus": 200,
+            "status": "ok"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:32:37.446235Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "DELETE",
+            "path": "/session/clear",
+            "status": 200
+          }
+        ],
+        "stderr": "note: /session/clear resets session cookies/headers but leaves the cookie-jar intact.\n",
+        "stdout": "{\"name\":\"default\",\"cookieCount\":0,\"headerCount\":0,\"cookies\":{},\"headers\":{},\"origin\":null}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "session",
+        "clear"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-_gccml_i",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "one session clear",
+          "ledgerCount": 1,
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": "DELETE /session/clear",
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        }
+      },
+      "limits": [
+        "CLI boundary passed; the REST fixture does not mutate SessionService or H2 state.",
+        "SessionServiceTest is independent mocked-service proof; live Burp session state remains unobserved."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-15-l25-normal-seal.json",
+        "sealedAt": "2026-10-23T11:32:26.871386Z",
+        "sha256": "35888559420d9d19915b8b84efc99014e76521aee417a92dc0eccfb447b2959f"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "oracleHash": "8fbae0a9d721da0b017051192a151e62918a2fe8873a83d8bf97db9771690c8e"
+  },
+  {
+    "candidate": {
+      "manifest": {
+        "branch": "codex/ultra-qa-command-audit",
+        "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+        "revision": "7e8b742"
+      },
+      "testedRevision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 1,
+        "ledgerAfter": [
+          {
+            "burpOp": "POST /session/send",
+            "errorCode": "INVALID_REQUEST",
+            "exit": 1,
+            "requestSha256": "0f922de43bdacf9b03c8bdd3f2ddcb95541e05f7b673789ae3d33810d2a06b91",
+            "responseSha256": "526f9417006923388a16431f44618a33555c0d7baba19dfe2be6fe550850659c",
+            "responseStatus": 400,
+            "status": "error"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:33:01.509967Z",
+        "restLog": [
+          {
+            "bodyLength": 60,
+            "bodySha256": "8124b592fae82dd185dd3702618b26f1ec5622dc2503cde94dfe9e19f49f2d90",
+            "method": "POST",
+            "path": "/session/send",
+            "status": 400
+          }
+        ],
+        "stderr": "{\"error\":{\"code\":\"INVALID_REQUEST\",\"message\":\"session credentials are bound to another origin\",\"status\":400,\"http_status\":400,\"op\":\"POST /session/send\"}}\n",
+        "stdout": "",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "session",
+        "send",
+        "http://127.0.0.1:63502/cross-origin"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-ptvpffzg",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero",
+          "ledgerCount": 0,
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": "none",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "The REST rejection and zero fixture target calls are observed; only SessionServiceTest proves zero mocked Http calls before rejection."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-18-l26-contrast-seal.json",
+        "sealedAt": "2026-10-23T11:32:53.183141Z",
+        "sha256": "3fdc85830e7d57f06bfcc196fd47d36e805c2c5b7a45b410358e6d9b51b93e68"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "id": "L26",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "ledgerAfter": [
+          {
+            "burpOp": "POST /session/send",
+            "errorCode": null,
+            "exit": 0,
+            "requestSha256": "1982185715b4d75ee1ff4040d8bf54cc5ae648ccb94b3d5c0e5d6ee98d220586",
+            "responseSha256": "48524ef140522142b6baa1a46e05fd13c09c06133fe46b4f485f87f9a1db4deb",
+            "responseStatus": 200,
+            "status": "ok"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:32:52.464885Z",
+        "restLog": [
+          {
+            "bodyLength": 52,
+            "bodySha256": "0cdca410ecd1005dfd0881a252588e4f34da2e130339674646d4407659a68a13",
+            "method": "POST",
+            "path": "/session/send",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"statusCode\":200,\"headers\":[{\"name\":\"Set-Cookie\",\"value\":\"***\"}],\"body\":\"fixture response\",\"durationMs\":2,\"hasResponse\":true,\"persistence\":{\"status\":\"NOT_CONFIGURED\",\"historyPersisted\":false,\"sitemapPersisted\":false,\"historyId\":null,\"warning\":null}}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "session",
+        "send",
+        "http://127.0.0.1:63456/echo"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-b5ah6009",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "one target send",
+          "ledgerCount": 1,
+          "restCount": 1,
+          "targetCount": 1
+        },
+        "exit": 0,
+        "route": "POST /session/send",
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        }
+      },
+      "limits": [
+        "The CLI POST was observed, but the static REST fixture does not forward it to the target server.",
+        "Target send and credential non-disclosure at the destination are INCONCLUSIVE here; SessionServiceTest supplies mocked-service evidence only."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-17-l26-normal-seal.json",
+        "sealedAt": "2026-10-23T11:32:46.081885Z",
+        "sha256": "4003e537f3632f2f1c91213d17b5a4675a3c77b25e560eb880bfdd8d0b787ae7"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "f51125d4a3eac876660d2c2bb6338c533fb5e5159c77e66fe3fd2c350331a4a0"
+  },
+  {
+    "candidate": {
+      "manifest": {
+        "branch": "codex/ultra-qa-command-audit",
+        "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013",
+        "revision": "7e8b742"
+      },
+      "testedRevision": "3af139dc0b4020923f831099338c92af3265d7e2"
+    },
+    "contrast": {
+      "actual": {
+        "exit": 0,
+        "ledgerAfter": [
+          {
+            "burpOp": "GET /session/cookie-jar",
+            "errorCode": null,
+            "exit": 0,
+            "requestSha256": null,
+            "responseSha256": "c05edcec8a33932b933b4a6ad5635203e42f9ac808628b0d9a800f78205d5d6f",
+            "responseStatus": 200,
+            "status": "ok"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:33:10.255844Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/session/cookie-jar",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"cookies\":[],\"total\":0}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "session",
+        "cookies"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-el2xmdjr",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "zero",
+          "ledgerCount": 0,
+          "restCount": 0,
+          "targetCount": 0
+        },
+        "exit": 1,
+        "route": "none",
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        }
+      },
+      "limits": [
+        "Current SessionService returns an empty jar successfully; the sealed contrast predicts exit 1."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-20-l27-contrast-seal.json",
+        "sealedAt": "2026-10-23T11:33:07.358887Z",
+        "sha256": "a236852be27496f85e7170b93cccf977e9f9b7ab56345eb6daa982620ddb23fb"
+      },
+      "verdict": "ORACLE_MISMATCH"
+    },
+    "id": "L27",
+    "normal": {
+      "actual": {
+        "exit": 0,
+        "ledgerAfter": [
+          {
+            "burpOp": "GET /session/cookie-jar",
+            "errorCode": null,
+            "exit": 0,
+            "requestSha256": null,
+            "responseSha256": "cf85cd2c0e686e3bc184c6bc3c80eef657c7fa17a6aff40ca50643c325c7a4fa",
+            "responseStatus": 200,
+            "status": "ok"
+          }
+        ],
+        "ledgerBefore": [],
+        "observedAt": "2026-10-23T11:33:07.150377Z",
+        "restLog": [
+          {
+            "bodyLength": 0,
+            "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/session/cookie-jar",
+            "status": 200
+          }
+        ],
+        "stderr": "",
+        "stdout": "{\"cookies\":[{\"domain\":\"***\",\"name\":\"***\",\"value\":\"***\",\"path\":\"***\",\"secure\":false,\"expiresAt\":null,\"hostOnly\":true}],\"total\":1}\n",
+        "targetLog": []
+      },
+      "argv": [
+        "bp",
+        "session",
+        "cookies"
+      ],
+      "cleanup": {
+        "fixtureRoot": "/tmp/burpctl-task10.IgbPGl/bp-audit-jmt_jdy5",
+        "fixtureRootRemoved": true,
+        "restListenerClosed": true,
+        "targetListenerClosed": true
+      },
+      "expected": {
+        "effects": {
+          "engine": "one cookie-jar read",
+          "ledgerCount": 1,
+          "restCount": 1,
+          "targetCount": 0
+        },
+        "exit": 0,
+        "route": "GET /session/cookie-jar",
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        }
+      },
+      "limits": [
+        "CLI boundary passed; the REST fixture does not mutate SessionService or H2 state.",
+        "SessionServiceTest is independent mocked-service proof; live Burp session state remains unobserved."
+      ],
+      "preRunSeal": {
+        "evidence": "/Users/maache/burpctl-ulw-20261023/.omo/evidence/ulw/burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1/task-10-19-l27-normal-seal.json",
+        "sealedAt": "2026-10-23T11:33:02.285538Z",
+        "sha256": "0fa81e00f0ce5b90549706bd6fd2f8ac6028998084edfbbdb236a41a925110db"
+      },
+      "verdict": "INCONCLUSIVE"
+    },
+    "oracleHash": "48e1614a1cf2e08b627432858865457a166f73990ed77359bc9931852f8fc91b"
+  }
+]

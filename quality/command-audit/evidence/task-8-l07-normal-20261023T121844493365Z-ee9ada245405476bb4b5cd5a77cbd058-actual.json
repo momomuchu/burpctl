@@ -1,0 +1,74 @@
+{
+  "actual": {
+    "exit": 0,
+    "observedAt": "2026-10-23T12:18:44.682609+00:00",
+    "restLog": [
+      {
+        "bodyLength": 0,
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "method": "GET",
+        "path": "/scanner/sid-001/issues",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"scanId\":\"sid-001\",\"issues\":[{\"name\":\"fixture issue\",\"url\":\"http://127.0.0.1:65382/issue\",\"severity\":\"LOW\",\"confidence\":\"FIRM\"}],\"total\":1}\n",
+    "targetLog": []
+  },
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "issues",
+    "sid-001"
+  ],
+  "evidence": {
+    "actualPath": "{{ATTEMPT_DIR}}/task-8-l07-normal-20261023T121844493365Z-ee9ada245405476bb4b5cd5a77cbd058-actual.json",
+    "preflightFileSha256": "f92b7e1c6c8ce08aeaf9c4fb5b22536b5730f5ec09ddb747e7af122578864207",
+    "preflightPath": "{{ATTEMPT_DIR}}/task-8-l07-normal-20261023T121844493365Z-ee9ada245405476bb4b5cd5a77cbd058-preflight.json"
+  },
+  "expected": {
+    "effect": "one scanner issue read",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65381",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "GET /scanner/sid-001/issues",
+    "sealedOracleBranch": {
+      "effect": {
+        "effect": "one scanner read",
+        "route": "GET /scanner/SID/issues"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "empty",
+        "shape": "empty"
+      },
+      "stdout": {
+        "mode": "json",
+        "shape": "parseable"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"scanId\":\"sid-001\",\"issues\":[{\"name\":\"fixture issue\",\"url\":\"http://127.0.0.1:65382/issue\",\"severity\":\"LOW\",\"confidence\":\"FIRM\"}],\"total\":1}\n"
+  },
+  "limits": [
+    "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+  ],
+  "preRunSeal": {
+    "expectedAt": "2026-10-23T12:18:44.492901+00:00",
+    "sha256": "85c5813c8c6f63add8ebadd1ab40098277b7373dfd5b39307fd65863f0eeee5a"
+  },
+  "verdict": "PASS"
+}

@@ -12,8 +12,9 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, run
-from bp.models import HistoryEntryResponse, ReplayResponse
+from bp.client import BurpError
+from bp.cliutil import fail_usage, run
+from bp.models import HistoryEntryResponse, HistoryPageResponse, ReplayResponse
 
 
 # ---------------------------------------------------------------------------
@@ -21,13 +22,16 @@ from bp.models import HistoryEntryResponse, ReplayResponse
 # ---------------------------------------------------------------------------
 
 
-def _history_rows(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _history_rows(entries: object) -> list[dict[str, Any]]:
     """Flatten HistoryEntryResponse dicts into compact display rows for list view.
 
     The server returns a flat HistoryEntryResponse shape (not nested like ProxyEntry).
     We project the four essential columns so the table shows id/method/url/statusCode
     without any reqHeaders/resHeaders blob cells.  Analogous to _proxy_rows() in cli.py.
     """
+    if not isinstance(entries, list):
+        raise BurpError("INVALID_RESPONSE", "server returned an unexpected response shape")
+
     rows: list[dict[str, Any]] = []
     for e in entries:
         he = HistoryEntryResponse.model_validate(e)
@@ -40,6 +44,11 @@ def _history_rows(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+def _history_rows_from_response(data: dict[str, Any]) -> list[dict[str, Any]]:
+    page = HistoryPageResponse.model_validate(data, strict=True)
+    return _history_rows([entry.model_dump() for entry in page.entries])
 
 
 def _history_entry_display(entry: dict[str, Any]) -> dict[str, Any]:
@@ -78,6 +87,10 @@ def _replay_display(response: dict[str, Any]) -> dict[str, Any]:
     return {
         "original": _history_entry_display(rr.original.model_dump()),
         "replayed": _history_entry_display(rr.replayed.model_dump()),
+        "persistence": {
+            "status": rr.persistence.status,
+            "warning": rr.persistence.warning,
+        },
     }
 
 
@@ -141,7 +154,7 @@ def history_list(
         if page is not None:
             params["page"] = page
         page_data = c.get("/history", **params)
-        return _history_rows(page_data.get("entries", []))
+        return _history_rows_from_response(page_data)
 
     run(ctx, _do)
 
@@ -267,12 +280,12 @@ def history_clear(
     NOTE: returns 404 if the Burp extension DB failed to initialise.
     """
     if not confirm:
-        typer.echo(
-            "warning: 'bp history clear' irreversibly wipes the history and sitemap tables.\n"
+        fail_usage(
+            ctx.obj.fmt,
+            "'bp history clear' irreversibly wipes the history and sitemap tables.\n"
             "         Pass --confirm to proceed.",
-            err=True,
+            human_label="warning",
         )
-        raise typer.Exit(EXIT_USAGE)
 
     def _do(c: Any) -> Any:
         return c._request("DELETE", "/history")
@@ -288,8 +301,7 @@ def history_clear(
 def register(app: typer.Typer) -> None:
     """Register the 'history' command group onto the root app.
 
-    The default sub-command (bare 'bp history') maps to 'list'.
+    Bare 'bp history' has no default sub-command: Typer prints help and exits with usage code 2.
     """
-    # Make bare 'bp history' invoke the list command by registering it both
-    # as a sub-command and as the callback via invoke_without_command.
+    # Register the group only; bare 'bp history' remains a help/usage invocation.
     app.add_typer(sub, name="history")

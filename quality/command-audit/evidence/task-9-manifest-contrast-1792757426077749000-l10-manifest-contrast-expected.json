@@ -1,0 +1,61 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "check",
+    "idor",
+    "http://127.0.0.1:61534/item/{id}",
+    "--param",
+    "id",
+    "--own",
+    "1",
+    "--target",
+    "2",
+    "--header",
+    "broken"
+  ],
+  "authorityClassification": "PRODUCT_CONTRACT_DEFECT",
+  "authoritySources": [
+    "docs/OUTPUT.md:3-9",
+    "bp/src/bp/cliutil.py:213-229",
+    "bp/src/bp/commands/securityscan.py:209-223"
+  ],
+  "environment": {
+    "BP_AGENT": "1",
+    "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+    "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+    "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+    "BURP_REST_URL": "http://127.0.0.1:61533",
+    "HOME": "{{FIXTURE_ROOT}}/home",
+    "NO_COLOR": "1",
+    "TERM": "dumb"
+  },
+  "expected": {
+    "case": "malformed option usage",
+    "effect": {
+      "effect": "zero",
+      "route": "none"
+    },
+    "exit": 2,
+    "stderr": {
+      "mode": "json",
+      "shape": "typed_error"
+    },
+    "stdout": {
+      "mode": "empty",
+      "shape": "empty"
+    }
+  },
+  "id": "L10",
+  "oracleHash": "9509c42e2c2ea0fdb6edc6fbbe923277e498e3a11aed5cfccc495dbe269ff602",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "2103770295b150a339efdd70f91f936053c329c762f94b6a3e63d398cfb01696",
+    "sealedAt": "2026-10-23T12:10:26.077765+00:00"
+  },
+  "scenario": "original-manifest-contrast"
+}

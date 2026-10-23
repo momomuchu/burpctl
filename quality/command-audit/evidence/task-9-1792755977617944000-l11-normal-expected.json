@@ -1,0 +1,49 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "check",
+    "headers",
+    "http://127.0.0.1:55018/private",
+    "--marker",
+    "SECRET"
+  ],
+  "environment": {
+    "BP_AGENT": "1",
+    "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+    "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+    "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+    "BURP_REST_URL": "http://127.0.0.1:55017",
+    "HOME": "{{FIXTURE_ROOT}}/home",
+    "NO_COLOR": "1",
+    "TERM": "dumb"
+  },
+  "expected": {
+    "classifier": {
+      "anomalousCount": 1,
+      "confirmed": false,
+      "findingsCount": null,
+      "vulnerableCount": 0
+    },
+    "endToEndTargetEffectCount": "INCONCLUSIVE",
+    "exit": 0,
+    "fixtureTargetEffectCount": 0,
+    "restEffectCount": 1,
+    "restRoute": "POST /scan/headers",
+    "stderr": "empty",
+    "stderrJson": null,
+    "stdout": "json",
+    "stdoutJson": "{\"baseline\":{\"status\":403},\"results\":[{\"anomalous\":true,\"vulnerable\":false}],\"anomalousCount\":1,\"vulnerableCount\":0,\"inconclusiveCount\":0}"
+  },
+  "id": "L11",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "bdc47af5a2845da435c8279a23f207e8ad3d3080155ce682c8738ac241d12e78",
+    "sealedAt": "2026-10-23T11:46:17.618017+00:00"
+  },
+  "variant": "normal"
+}

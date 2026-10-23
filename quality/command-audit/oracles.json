@@ -1,0 +1,4042 @@
+{
+  "schema": "burpctl.command-audit/oracles/v1",
+  "candidate": {
+    "revision": "7e8b742",
+    "branch": "codex/ultra-qa-command-audit",
+    "contract": "current opening sections of docs/CLI.md, docs/SPEC.md, docs/OUTPUT.md, ADR-0013"
+  },
+  "status": "PRE_EXECUTION_ONLY",
+  "materialization": {
+    "tokens": [
+      "{{PORT}}",
+      "{{PAYLOAD_FILE}}",
+      "{{CID}}",
+      "{{SID}}",
+      "{{OPID}}"
+    ],
+    "rule": "Bind brace-delimited argv_template tokens to fixture.bindings, seal resulting argv before invocation, reject unresolved tokens."
+  },
+  "inventory": {
+    "F": 18,
+    "G": 7,
+    "L": 32
+  },
+  "aliases": [
+    "bp",
+    "burpctl"
+  ],
+  "groups": [
+    "collab",
+    "scan",
+    "check",
+    "scope",
+    "config",
+    "session",
+    "history"
+  ],
+  "rows": [
+    {
+      "id": "F01",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "health"
+      ],
+      "argv": [
+        "bp",
+        "health"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /health",
+          "effect": "no target effect"
+        }
+      },
+      "contrast": {
+        "case": "transport refusal",
+        "exit": 3,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "253c84d86a921f6b3b116acb753d12bbb11624071d7154393cec888574c8e003"
+      }
+    },
+    {
+      "id": "F02",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "version"
+      ],
+      "argv": [
+        "bp",
+        "version"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /version",
+          "effect": "no target effect"
+        }
+      },
+      "contrast": {
+        "case": "local version differs from extension",
+        "exit": 0,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "2bc3260f2742a5024bf01ccb50037f9fbf798e0776b9a228fdc162c2127003cb"
+      }
+    },
+    {
+      "id": "F03",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "proxy",
+        "--host",
+        "127.0.0.1",
+        "--limit",
+        "1",
+        "--offset",
+        "0"
+      ],
+      "argv": [
+        "bp",
+        "proxy",
+        "--host",
+        "127.0.0.1",
+        "--limit",
+        "1",
+        "--offset",
+        "0"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /proxy/history",
+          "effect": "one read"
+        }
+      },
+      "contrast": {
+        "case": "negative limit usage",
+        "exit": 2,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "5d462453d007f8008faf0259e5cec51835a619b2ebfd29cdb81dadb0077f4f6d"
+      }
+    },
+    {
+      "id": "F04",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "fuzz",
+        "0",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id={{PAYLOAD_FILE}}",
+        "--type",
+        "sniper"
+      ],
+      "argv": [
+        "bp",
+        "fuzz",
+        "0",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/tmp/burpctl-audit/PAYLOAD_FILE",
+        "--type",
+        "sniper"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /proxy/history; POST /repeater/send",
+          "effect": "bounded shot rows"
+        }
+      },
+      "contrast": {
+        "case": "missing payload file usage",
+        "exit": 2,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "ba7014b78ab8b01799d179133120ac4264b95f5a28258a72c66e9024fbd4f83d"
+      }
+    },
+    {
+      "id": "F05",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "req",
+        "0"
+      ],
+      "argv": [
+        "bp",
+        "req",
+        "0"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /proxy/history/0",
+          "effect": "one read"
+        }
+      },
+      "contrast": {
+        "case": "missing request ID",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "a7cfcbf9bece8ae10e411b5312ee511d18d541200b42d27bd485dfb20ec6c2a6"
+      }
+    },
+    {
+      "id": "F06",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "ws"
+      ],
+      "argv": [
+        "bp",
+        "ws"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /proxy/websocket/history",
+          "effect": "one read"
+        }
+      },
+      "contrast": {
+        "case": "empty websocket history",
+        "exit": 0,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "ffd9d65c0492694b33c8c214304735f6e88643e2d39349918130886a7ff971af"
+      }
+    },
+    {
+      "id": "F07",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "intercept",
+        "on"
+      ],
+      "argv": [
+        "bp",
+        "intercept",
+        "on"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /proxy/intercept/enable",
+          "effect": "intercept state change"
+        }
+      },
+      "contrast": {
+        "case": "forward unsupported",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "cbf55075e6fedb0a6a5dd8477e19baf739dd5791355aa9f6f96b2a8e23d30374"
+      }
+    },
+    {
+      "id": "F08",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "send",
+        "0",
+        "--method",
+        "GET",
+        "--path",
+        "/echo"
+      ],
+      "argv": [
+        "bp",
+        "send",
+        "0",
+        "--method",
+        "GET",
+        "--path",
+        "/echo"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /repeater/send",
+          "effect": "one target send"
+        }
+      },
+      "contrast": {
+        "case": "missing request ID",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "8d45561951b69e3992e80c58d58e2bc5253f70ae54322f32c8663c1cfcf04334"
+      }
+    },
+    {
+      "id": "F09",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "tab",
+        "0",
+        "--name",
+        "audit"
+      ],
+      "argv": [
+        "bp",
+        "tab",
+        "0",
+        "--name",
+        "audit"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /repeater/tab/create",
+          "effect": "one tab effect"
+        }
+      },
+      "contrast": {
+        "case": "missing request ID",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "52d64ecd3651538e1b344dc28c72fe4031d7a44555886099a137e0d936f45dd9"
+      }
+    },
+    {
+      "id": "F10",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "sitemap",
+        "http://127.0.0.1/"
+      ],
+      "argv": [
+        "bp",
+        "sitemap",
+        "http://127.0.0.1/"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /target/sitemap",
+          "effect": "one read"
+        }
+      },
+      "contrast": {
+        "case": "empty result",
+        "exit": 0,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "60bb1e4ab3bcbcdc1149f278a7b932b97a4c74647de154e95efa15da57bff0bc"
+      }
+    },
+    {
+      "id": "F11",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "encode",
+        "a b",
+        "--enc",
+        "url"
+      ],
+      "argv": [
+        "bp",
+        "encode",
+        "a b",
+        "--enc",
+        "url"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /decoder/encode",
+          "effect": "scalar result"
+        }
+      },
+      "contrast": {
+        "case": "invalid encoding usage",
+        "exit": 2,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "22e7c1343e29420eb2836d11e48f240e2ecd848d75438695617c1ef22dfde157"
+      }
+    },
+    {
+      "id": "F12",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "decode",
+        "YQ==",
+        "--enc",
+        "base64"
+      ],
+      "argv": [
+        "bp",
+        "decode",
+        "YQ==",
+        "--enc",
+        "base64"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /decoder/decode",
+          "effect": "scalar result"
+        }
+      },
+      "contrast": {
+        "case": "malformed input",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "1c05b59f3a95039f64a4503039f8f087e6d7e84d47df5d2f2de735963fb2d170"
+      }
+    },
+    {
+      "id": "F13",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "hash",
+        "abc",
+        "--algo",
+        "sha256"
+      ],
+      "argv": [
+        "bp",
+        "hash",
+        "abc",
+        "--algo",
+        "sha256"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /decoder/hash",
+          "effect": "scalar result"
+        }
+      },
+      "contrast": {
+        "case": "invalid algorithm",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "e2272bde709320f09fa40f0d7e634e9ce6ef581aff1854d4aaa49dcc1b59b609"
+      }
+    },
+    {
+      "id": "F14",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "ext"
+      ],
+      "argv": [
+        "bp",
+        "ext"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /extensions",
+          "effect": "one read"
+        }
+      },
+      "contrast": {
+        "case": "transport refusal",
+        "exit": 3,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "fb6dc50d54c6be2c156cd858d46a3c51ba1180f741c09075ae30296522ffa488"
+      }
+    },
+    {
+      "id": "F15",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "diff",
+        "http://127.0.0.1:{{PORT}}/a",
+        "http://127.0.0.1:{{PORT}}/b"
+      ],
+      "argv": [
+        "bp",
+        "diff",
+        "http://127.0.0.1:18089/a",
+        "http://127.0.0.1:18089/b"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /utils/diff",
+          "effect": "two loopback fetches"
+        }
+      },
+      "contrast": {
+        "case": "non-loopback target usage",
+        "exit": 2,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "40559bca31545b0c08fb6d083266538875a558c923afad676fe57f0b4fc0326d"
+      }
+    },
+    {
+      "id": "F16",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "endpoints",
+        "http://127.0.0.1:{{PORT}}/page"
+      ],
+      "argv": [
+        "bp",
+        "endpoints",
+        "http://127.0.0.1:18089/page"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /utils/extract-endpoints",
+          "effect": "one loopback fetch"
+        }
+      },
+      "contrast": {
+        "case": "external bundle denied",
+        "exit": 0,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "cb176568f2ac98733f3807a0a7ecdbaee3809cfd1e667c39bfa929cd67323714"
+      }
+    },
+    {
+      "id": "F17",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "log",
+        "--limit",
+        "2"
+      ],
+      "argv": [
+        "bp",
+        "log",
+        "--limit",
+        "2"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "local SQLite",
+          "effect": "two ledger reads"
+        }
+      },
+      "contrast": {
+        "case": "invalid status usage",
+        "exit": 2,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "cba347513712fa7f8afbcea0e7b71d22ada0f6c50c9441692c0b04f6199fd6ea"
+      }
+    },
+    {
+      "id": "F18",
+      "kind": "F",
+      "argv_template": [
+        "bp",
+        "tag",
+        "{{OPID}}",
+        "audit"
+      ],
+      "argv": [
+        "bp",
+        "tag",
+        "op-001",
+        "audit"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "local SQLite",
+          "effect": "one ledger update"
+        }
+      },
+      "contrast": {
+        "case": "unknown operation ID",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/cli.py:82"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "8d0a73fcd7aab8ff63b2a9ace9283350a8f8e4c85eb025aa411c7debf9b3fe1f"
+      }
+    },
+    {
+      "id": "G01",
+      "kind": "G",
+      "argv_template": [
+        "bp",
+        "collab"
+      ],
+      "argv": [
+        "bp",
+        "collab"
+      ],
+      "expected": {
+        "exit": 2,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero HTTP and state effects"
+        }
+      },
+      "contrast": {
+        "argv_template": [
+          "bp",
+          "collab",
+          "--help"
+        ],
+        "case": "explicit help",
+        "exit": 0,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "bp/tests/test_cli_conformance.py:16",
+          "docs/CLI.md:71"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "60227a5be148c6f34c0161ae4c1ef9d1ec2e515e94e64e121c25d75501801f6d"
+      }
+    },
+    {
+      "id": "G02",
+      "kind": "G",
+      "argv_template": [
+        "bp",
+        "scan"
+      ],
+      "argv": [
+        "bp",
+        "scan"
+      ],
+      "expected": {
+        "exit": 2,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero HTTP and state effects"
+        }
+      },
+      "contrast": {
+        "argv_template": [
+          "bp",
+          "scan",
+          "--help"
+        ],
+        "case": "explicit help",
+        "exit": 0,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "bp/tests/test_cli_conformance.py:16",
+          "docs/CLI.md:71"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "f17fd25f829534b3b2916e4f0a47cec3be22e850dda59093eadd50f6e19706ba"
+      }
+    },
+    {
+      "id": "G03",
+      "kind": "G",
+      "argv_template": [
+        "bp",
+        "check"
+      ],
+      "argv": [
+        "bp",
+        "check"
+      ],
+      "expected": {
+        "exit": 2,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero HTTP and state effects"
+        }
+      },
+      "contrast": {
+        "argv_template": [
+          "bp",
+          "check",
+          "--help"
+        ],
+        "case": "explicit help",
+        "exit": 0,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "bp/tests/test_cli_conformance.py:16",
+          "docs/CLI.md:71"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "eff23b82e415636a57cd8b9cf03fa51e24ff741a0536fe48a666afc8a5f08f16"
+      }
+    },
+    {
+      "id": "G04",
+      "kind": "G",
+      "argv_template": [
+        "bp",
+        "scope"
+      ],
+      "argv": [
+        "bp",
+        "scope"
+      ],
+      "expected": {
+        "exit": 2,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero HTTP and state effects"
+        }
+      },
+      "contrast": {
+        "argv_template": [
+          "bp",
+          "scope",
+          "--help"
+        ],
+        "case": "explicit help",
+        "exit": 0,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "bp/tests/test_cli_conformance.py:16",
+          "docs/CLI.md:71"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "942e2bf234467b49241077a5c25066d702767d44651a71ca696c90dcc40ea99f"
+      }
+    },
+    {
+      "id": "G05",
+      "kind": "G",
+      "argv_template": [
+        "bp",
+        "config"
+      ],
+      "argv": [
+        "bp",
+        "config"
+      ],
+      "expected": {
+        "exit": 2,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero HTTP and state effects"
+        }
+      },
+      "contrast": {
+        "argv_template": [
+          "bp",
+          "config",
+          "--help"
+        ],
+        "case": "explicit help",
+        "exit": 0,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "bp/tests/test_cli_conformance.py:16",
+          "docs/CLI.md:71"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "894d959d75a5e4fe743c0bcf7a3e172541c87aec41784bb3ae0503e7eacc4696"
+      }
+    },
+    {
+      "id": "G06",
+      "kind": "G",
+      "argv_template": [
+        "bp",
+        "session"
+      ],
+      "argv": [
+        "bp",
+        "session"
+      ],
+      "expected": {
+        "exit": 2,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero HTTP and state effects"
+        }
+      },
+      "contrast": {
+        "argv_template": [
+          "bp",
+          "session",
+          "--help"
+        ],
+        "case": "explicit help",
+        "exit": 0,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "bp/tests/test_cli_conformance.py:16",
+          "docs/CLI.md:71"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "516c858192beaa2a30a22db5692d5871d819d7870ce673231015a170876c79ea"
+      }
+    },
+    {
+      "id": "G07",
+      "kind": "G",
+      "argv_template": [
+        "bp",
+        "history"
+      ],
+      "argv": [
+        "bp",
+        "history"
+      ],
+      "expected": {
+        "exit": 2,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero HTTP and state effects"
+        }
+      },
+      "contrast": {
+        "argv_template": [
+          "bp",
+          "history",
+          "--help"
+        ],
+        "case": "explicit help",
+        "exit": 0,
+        "stdout": {
+          "mode": "help",
+          "shape": "usage"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "bp/tests/test_cli_conformance.py:16",
+          "docs/CLI.md:71"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "4284eabe30f3b5962ee49ab7d9ce4b6da09ef17673f81cf0e1dd2f6e77e4e213"
+      }
+    },
+    {
+      "id": "L01",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "collab",
+        "new"
+      ],
+      "argv": [
+        "bp",
+        "collab",
+        "new"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /collaborator/generate",
+          "effect": "one collaborator generation"
+        }
+      },
+      "contrast": {
+        "case": "Community capability",
+        "exit": 4,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "051463f0494acb7412a9d3c733d8add9809974a967d4edb950998a47587ec391"
+      }
+    },
+    {
+      "id": "L02",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "collab",
+        "poll",
+        "{{CID}}"
+      ],
+      "argv": [
+        "bp",
+        "collab",
+        "poll",
+        "cid-001"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /collaborator/poll/CID",
+          "effect": "one collaborator read"
+        }
+      },
+      "contrast": {
+        "case": "unknown correlation ID",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "826be32eff22c9c7c98ce1ae1b861d51b18cb1f591eac11d3181142aeb16a7bc"
+      }
+    },
+    {
+      "id": "L03",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "scan",
+        "crawl",
+        "http://127.0.0.1:{{PORT}}/"
+      ],
+      "argv": [
+        "bp",
+        "scan",
+        "crawl",
+        "http://127.0.0.1:18089/"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /scanner/crawl",
+          "effect": "one scanner task"
+        }
+      },
+      "contrast": {
+        "case": "Community capability",
+        "exit": 4,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "65051d24fff7168807dab3e885c05e3eee7f042ecf304fe961837eb3d87e70cc"
+      }
+    },
+    {
+      "id": "L04",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "scan",
+        "audit",
+        "http://127.0.0.1:{{PORT}}/"
+      ],
+      "argv": [
+        "bp",
+        "scan",
+        "audit",
+        "http://127.0.0.1:18089/"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /scanner/audit",
+          "effect": "one scanner task"
+        }
+      },
+      "contrast": {
+        "case": "Community capability",
+        "exit": 4,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "c8e0f0db0f3928329c875467ad4ebe3c47df61af0d681e8b99823f2430247b48"
+      }
+    },
+    {
+      "id": "L05",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "scan",
+        "all",
+        "http://127.0.0.1:{{PORT}}/"
+      ],
+      "argv": [
+        "bp",
+        "scan",
+        "all",
+        "http://127.0.0.1:18089/"
+      ],
+      "expected": {
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "POST /scanner/crawl-and-audit",
+          "effect": "zero server effect"
+        }
+      },
+      "contrast": {
+        "case": "unsupported route",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "f6f3ae8f24186f874a14e3fe7cc09cd9767ef727cc78342e051ef8526907686f"
+      }
+    },
+    {
+      "id": "L06",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "scan",
+        "status",
+        "{{SID}}"
+      ],
+      "argv": [
+        "bp",
+        "scan",
+        "status",
+        "sid-001"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /scanner/SID/status",
+          "effect": "one scanner read"
+        }
+      },
+      "contrast": {
+        "case": "unknown task ID",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "ca976b3e5d0b4c8f258109ab3c6f85033f24aedd01b04fd15eaa847b42a45c6f"
+      }
+    },
+    {
+      "id": "L07",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "scan",
+        "issues",
+        "{{SID}}"
+      ],
+      "argv": [
+        "bp",
+        "scan",
+        "issues",
+        "sid-001"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /scanner/SID/issues",
+          "effect": "one scanner read"
+        }
+      },
+      "contrast": {
+        "case": "unknown task ID",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "2304fd07adbdee38d04e9080110ab9c52f26c4d5b56746c776bf5c36fea881d4"
+      }
+    },
+    {
+      "id": "L08",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "scan",
+        "defs"
+      ],
+      "argv": [
+        "bp",
+        "scan",
+        "defs"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /scanner/issue-definitions",
+          "effect": "one scanner read"
+        }
+      },
+      "contrast": {
+        "case": "Community-safe empty list",
+        "exit": 0,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "7ba7f79e92684c05826affd35a1f17c75164c24591f046daaa6564b4c4672f8a"
+      }
+    },
+    {
+      "id": "L09",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "check",
+        "auth",
+        "http://127.0.0.1:{{PORT}}",
+        "--endpoint",
+        "/private"
+      ],
+      "argv": [
+        "bp",
+        "check",
+        "auth",
+        "http://127.0.0.1:18089",
+        "--endpoint",
+        "/private"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /scan/auth-bypass",
+          "effect": "one security probe"
+        }
+      },
+      "contrast": {
+        "case": "no finding",
+        "exit": 0,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "d86e2bcdf1acf999f9158a87d0b04028cd227b672bd756673db1d2fb2540153b"
+      }
+    },
+    {
+      "id": "L10",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "check",
+        "idor",
+        "http://127.0.0.1:{{PORT}}/item/{id}",
+        "--param",
+        "id",
+        "--own",
+        "1",
+        "--target",
+        "2"
+      ],
+      "argv": [
+        "bp",
+        "check",
+        "idor",
+        "http://127.0.0.1:18089/item/{id}",
+        "--param",
+        "id",
+        "--own",
+        "1",
+        "--target",
+        "2"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /scan/idor",
+          "effect": "bounded security probes"
+        }
+      },
+      "contrast": {
+        "case": "malformed option usage",
+        "exit": 2,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "9509c42e2c2ea0fdb6edc6fbbe923277e498e3a11aed5cfccc495dbe269ff602"
+      }
+    },
+    {
+      "id": "L11",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "check",
+        "headers",
+        "http://127.0.0.1:{{PORT}}/private",
+        "--marker",
+        "SECRET"
+      ],
+      "argv": [
+        "bp",
+        "check",
+        "headers",
+        "http://127.0.0.1:18089/private",
+        "--marker",
+        "SECRET"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /scan/headers",
+          "effect": "one security probe"
+        }
+      },
+      "contrast": {
+        "case": "anomaly without finding",
+        "exit": 0,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "5fea82a56c270af520d93f16da7c23ea0282a23782f53190790806afde46cd23"
+      }
+    },
+    {
+      "id": "L12",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "check",
+        "cors",
+        "http://127.0.0.1:{{PORT}}/cors"
+      ],
+      "argv": [
+        "bp",
+        "check",
+        "cors",
+        "http://127.0.0.1:18089/cors"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /scan/cors",
+          "effect": "one security probe"
+        }
+      },
+      "contrast": {
+        "case": "confirmed finding",
+        "exit": 5,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "06a6ec1ee371dfc2f41a20c77a5d889a2e4df8f0c758b9e2d654f2aa1ad88940"
+      }
+    },
+    {
+      "id": "L13",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "check",
+        "endpoints",
+        "127.0.0.1",
+        "--limit",
+        "2"
+      ],
+      "argv": [
+        "bp",
+        "check",
+        "endpoints",
+        "127.0.0.1",
+        "--limit",
+        "2"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /scan/endpoints",
+          "effect": "one H2 history read"
+        }
+      },
+      "contrast": {
+        "case": "H2 unavailable",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "d4000e03f5422fac3317204c17a11017a94c757068af71e4e000aae90eb5b4f0"
+      }
+    },
+    {
+      "id": "L14",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "scope",
+        "show"
+      ],
+      "argv": [
+        "bp",
+        "scope",
+        "show"
+      ],
+      "expected": {
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "GET /target/scope",
+          "effect": "zero server effect"
+        }
+      },
+      "contrast": {
+        "case": "unsupported route",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "a130e8d4d441d6095a8f8a644c7b67df3942ecedf2d3fb47487d10c309a90683"
+      }
+    },
+    {
+      "id": "L15",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "scope",
+        "set",
+        "--include",
+        "http://127.0.0.1:{{PORT}}",
+        "--confirm"
+      ],
+      "argv": [
+        "bp",
+        "scope",
+        "set",
+        "--include",
+        "http://127.0.0.1:18089",
+        "--confirm"
+      ],
+      "expected": {
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "POST /target/scope",
+          "effect": "zero server effect"
+        }
+      },
+      "contrast": {
+        "case": "missing confirmation usage",
+        "exit": 2,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "9d5766521a5dd13a510efc17677e1b97e2bfe29c22bfc513b267a59fbc98407b"
+      }
+    },
+    {
+      "id": "L16",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "scope",
+        "add",
+        "http://127.0.0.1:{{PORT}}/"
+      ],
+      "argv": [
+        "bp",
+        "scope",
+        "add",
+        "http://127.0.0.1:18089/"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /target/scope/add",
+          "effect": "one scope classification"
+        }
+      },
+      "contrast": {
+        "case": "engine rejection",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "78d37f291c614311e2303005f41d7f3aaa30f71912c2592adb8d1c1c1771d9a3"
+      }
+    },
+    {
+      "id": "L17",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "scope",
+        "remove",
+        "http://127.0.0.1:{{PORT}}/"
+      ],
+      "argv": [
+        "bp",
+        "scope",
+        "remove",
+        "http://127.0.0.1:18089/"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /target/scope/remove",
+          "effect": "one scope classification"
+        }
+      },
+      "contrast": {
+        "case": "engine rejection",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "826f552ee6c70bd8f525493332cb68571772e0fa3582390b12209b47c2e723e8"
+      }
+    },
+    {
+      "id": "L18",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "scope",
+        "check",
+        "http://127.0.0.1:{{PORT}}/"
+      ],
+      "argv": [
+        "bp",
+        "scope",
+        "check",
+        "http://127.0.0.1:18089/"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /target/scope/check",
+          "effect": "one scope read"
+        }
+      },
+      "contrast": {
+        "case": "engine rejection",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "18b3e8bc4bc18ee00bb98c77ecbc95eb3a475ca0c5f435a78fb12ae2e152e414"
+      }
+    },
+    {
+      "id": "L19",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "config",
+        "get",
+        "project"
+      ],
+      "argv": [
+        "bp",
+        "config",
+        "get",
+        "project"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /config/project",
+          "effect": "one config read"
+        }
+      },
+      "contrast": {
+        "case": "malformed response",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "a0eee5714c5929f7730fc145ba7f669852b8d1a3ba139b85674185a92b90cd74"
+      }
+    },
+    {
+      "id": "L20",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "config",
+        "get",
+        "user"
+      ],
+      "argv": [
+        "bp",
+        "config",
+        "get",
+        "user"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /config/user",
+          "effect": "one config read"
+        }
+      },
+      "contrast": {
+        "case": "malformed response",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "2cc676b34fe51559670d0bf260929d633fc6097f2ff4baf39ec264a63face6de"
+      }
+    },
+    {
+      "id": "L21",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "config",
+        "set",
+        "project",
+        "--json",
+        "{\"audit\":{\"enabled\":true}}"
+      ],
+      "argv": [
+        "bp",
+        "config",
+        "set",
+        "project",
+        "--json",
+        "{\"audit\":{\"enabled\":true}}"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "PUT /config/project",
+          "effect": "one config replacement"
+        }
+      },
+      "contrast": {
+        "case": "malformed JSON usage",
+        "exit": 2,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "0c93f914b4fbacb345344a09d7019cae97bbc0eb840d5b0616657997358f1392"
+      }
+    },
+    {
+      "id": "L22",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "config",
+        "set",
+        "user",
+        "--json",
+        "{\"audit\":{\"enabled\":true}}"
+      ],
+      "argv": [
+        "bp",
+        "config",
+        "set",
+        "user",
+        "--json",
+        "{\"audit\":{\"enabled\":true}}"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "PUT /config/user",
+          "effect": "one config replacement"
+        }
+      },
+      "contrast": {
+        "case": "malformed JSON usage",
+        "exit": 2,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "de79416923c457bea0c0fd69b2b091f09e7d0c149de085fbed7f68f0be0bb3b1"
+      }
+    },
+    {
+      "id": "L23",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "session",
+        "set",
+        "--json",
+        "{\"cookies\":{\"audit\":\"local\"}}"
+      ],
+      "argv": [
+        "bp",
+        "session",
+        "set",
+        "--json",
+        "{\"cookies\":{\"audit\":\"local\"}}"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /session/set",
+          "effect": "one session replacement"
+        }
+      },
+      "contrast": {
+        "case": "malformed JSON usage",
+        "exit": 2,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "5da75f6e6975b436bc24a2acbe69b38ceadefd6b3fc06c9b330e03d2fdd642a7"
+      }
+    },
+    {
+      "id": "L24",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "session",
+        "get"
+      ],
+      "argv": [
+        "bp",
+        "session",
+        "get"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /session/get",
+          "effect": "one session read"
+        }
+      },
+      "contrast": {
+        "case": "no configured session",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "e8cc9cc912eb186f026f507cd9edf91e3ebb62309817ad6e7c1c5a180d83adf8"
+      }
+    },
+    {
+      "id": "L25",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "session",
+        "clear"
+      ],
+      "argv": [
+        "bp",
+        "session",
+        "clear"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "DELETE /session/clear",
+          "effect": "one session clear"
+        }
+      },
+      "contrast": {
+        "case": "H2 persistence failure",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "8fbae0a9d721da0b017051192a151e62918a2fe8873a83d8bf97db9771690c8e"
+      }
+    },
+    {
+      "id": "L26",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "session",
+        "send",
+        "http://127.0.0.1:{{PORT}}/echo"
+      ],
+      "argv": [
+        "bp",
+        "session",
+        "send",
+        "http://127.0.0.1:18089/echo"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /session/send",
+          "effect": "one target send"
+        }
+      },
+      "contrast": {
+        "case": "cross-origin credentials",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "f51125d4a3eac876660d2c2bb6338c533fb5e5159c77e66fe3fd2c350331a4a0"
+      }
+    },
+    {
+      "id": "L27",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "session",
+        "cookies"
+      ],
+      "argv": [
+        "bp",
+        "session",
+        "cookies"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /session/cookie-jar",
+          "effect": "one cookie-jar read"
+        }
+      },
+      "contrast": {
+        "case": "empty observed jar",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "48e1614a1cf2e08b627432858865457a166f73990ed77359bc9931852f8fc91b"
+      }
+    },
+    {
+      "id": "L28",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "history",
+        "list",
+        "--page",
+        "0"
+      ],
+      "argv": [
+        "bp",
+        "history",
+        "list",
+        "--page",
+        "0"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /history",
+          "effect": "one history read"
+        }
+      },
+      "contrast": {
+        "case": "H2 unavailable",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "f732c0ff4785b0ba57b80ca1b6dacb68866c5d3ddea617c3f92ac507bab6a75f"
+      }
+    },
+    {
+      "id": "L29",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "history",
+        "get",
+        "1"
+      ],
+      "argv": [
+        "bp",
+        "history",
+        "get",
+        "1"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /history/1",
+          "effect": "one history read"
+        }
+      },
+      "contrast": {
+        "case": "missing history ID",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "171f5e20f29f4550395a8016cb9292f246597ea13e78ddcbd2e85d3585519c7e"
+      }
+    },
+    {
+      "id": "L30",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "history",
+        "sitemap"
+      ],
+      "argv": [
+        "bp",
+        "history",
+        "sitemap"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "GET /history/sitemap",
+          "effect": "one history read"
+        }
+      },
+      "contrast": {
+        "case": "H2 unavailable",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "257c5c6165ee54447ecc39b61870d774b95ff4ffd5f5a222e00bab4c56f5d154"
+      }
+    },
+    {
+      "id": "L31",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "history",
+        "replay",
+        "1"
+      ],
+      "argv": [
+        "bp",
+        "history",
+        "replay",
+        "1"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "POST /history/1/replay",
+          "effect": "one target send"
+        }
+      },
+      "contrast": {
+        "case": "missing history ID",
+        "exit": 1,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "5a39d49e2edbddcada8549144e66dadbe97262619364dce8a509b1567de9c296"
+      }
+    },
+    {
+      "id": "L32",
+      "kind": "L",
+      "argv_template": [
+        "bp",
+        "history",
+        "clear",
+        "--confirm"
+      ],
+      "argv": [
+        "bp",
+        "history",
+        "clear",
+        "--confirm"
+      ],
+      "expected": {
+        "exit": 0,
+        "stdout": {
+          "mode": "json",
+          "shape": "parseable"
+        },
+        "stderr": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "effect": {
+          "route": "DELETE /history",
+          "effect": "history and sitemap transaction"
+        }
+      },
+      "contrast": {
+        "case": "missing confirmation usage",
+        "exit": 2,
+        "stdout": {
+          "mode": "empty",
+          "shape": "empty"
+        },
+        "stderr": {
+          "mode": "json",
+          "shape": "typed_error"
+        },
+        "effect": {
+          "route": "none",
+          "effect": "zero"
+        }
+      },
+      "authority": {
+        "priority": "current-contract",
+        "sources": [
+          "docs/CLI.md:86",
+          "bp/src/bp/commands:1"
+        ]
+      },
+      "fixture": {
+        "bindings": {
+          "PORT": "18089",
+          "PAYLOAD_FILE": "/tmp/burpctl-audit/PAYLOAD_FILE",
+          "CID": "cid-001",
+          "SID": "sid-001",
+          "OPID": "op-001"
+        }
+      },
+      "seal": {
+        "algorithm": "sha256",
+        "sealed": true,
+        "expected_at": "2026-10-23T11:14:24Z",
+        "hash": "ed046a72310e6cb651d07205e961f8d90f8e771f2a2c5132569ea48e2abf0349"
+      }
+    }
+  ],
+  "source_conflicts": [
+    {
+      "topic": "output-default",
+      "accepted": "Current opening sections of docs/CLI.md and docs/OUTPUT.md",
+      "historical": "Historical OUTPUT A4 piped JSON proposal",
+      "decision": "current executable contract governs"
+    },
+    {
+      "topic": "history-default",
+      "accepted": "Explicit history list forms",
+      "historical": "Historical bare history prose",
+      "decision": "bare group is audited separately"
+    }
+  ],
+  "sealed_at": "2026-10-23T11:14:24Z",
+  "source_audit": {
+    "performed_without_product_invocation": true,
+    "authority": [
+      "docs/CLI.md:3-17",
+      "docs/SPEC.md:3-40",
+      "docs/OUTPUT.md:3-18",
+      "docs/adr/0013-truthful-executable-contracts.md:14-24"
+    ],
+    "h01_reference": "Caller H01 notepad oracle predates this manifest; this manifest does not claim to be its source."
+  },
+  "environment": {
+    "BP_AGENT": "1",
+    "reason": "JSON is explicit for every pre-execution oracle row; fixture runners must preserve this environment."
+  }
+}

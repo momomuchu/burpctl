@@ -1,0 +1,49 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "crawl",
+    "http://127.0.0.1:65305/"
+  ],
+  "expected": {
+    "effect": "simulated scanner task response",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65304",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "POST /scanner/crawl",
+    "sealedOracleBranch": {
+      "effect": {
+        "effect": "one scanner task",
+        "route": "POST /scanner/crawl"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "empty",
+        "shape": "empty"
+      },
+      "stdout": {
+        "mode": "json",
+        "shape": "parseable"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n"
+  },
+  "expectedAt": "2026-10-23T12:18:36.407768+00:00",
+  "id": "L03",
+  "preRunSeal": "f494592acba20577f2fcaf565197e1e4c5e9391d6f56949f14febced763d984d",
+  "variant": "normal"
+}

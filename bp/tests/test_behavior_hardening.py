@@ -229,6 +229,33 @@ def test_json_internal_render_error_is_one_record(capsys: pytest.CaptureFixture[
     assert "sentinel-secret" not in json.dumps(diagnostic)
 
 
+def test_callback_type_error_is_internal_and_keeps_ledger_pessimistic(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    ledger = MagicMock(spec=Ledger)
+    client = MagicMock(spec=BurpClient)
+    client.__enter__.return_value = client
+    client.op_ids = ["op-1"]
+    ctx = _ctx()
+    ctx.obj.no_ledger = False
+
+    with (
+        patch("bp.cliutil.Ledger", return_value=ledger),
+        patch("bp.cliutil.BurpClient", return_value=client),
+        patch("bp.cliutil.render") as render_mock,
+        pytest.raises(typer.Exit) as exc_info,
+    ):
+        run(ctx, lambda _client: (_ for _ in ()).throw(TypeError("logic-typeerror-sentinel")))
+
+    assert exc_info.value.exit_code == EXIT_GENERIC
+    assert _json_stderr(capsys) == {
+        "error": {"code": "INTERNAL_ERROR", "message": "command failed unexpectedly"}
+    }
+    render_mock.assert_not_called()
+    ledger.set_exit_code.assert_called_once_with("op-1", EXIT_GENERIC)
+    ledger.close.assert_called_once_with()
+
+
 def test_burp_error_retains_old_signature_and_exposes_metadata() -> None:
     old = BurpError("OLD", "message")
     assert old.code == "OLD"

@@ -1,0 +1,24 @@
+{
+  "c001": {
+    "missing": [],
+    "status": "PASS"
+  },
+  "counts": {
+    "FAIL": 14,
+    "INCONCLUSIVE": 29,
+    "ORACLE_MISMATCH": 25,
+    "PASS": 45,
+    "PRODUCT_CONTRACT_DEFECT": 1
+  },
+  "coverage": {
+    "bundledEvidenceFiles": 60,
+    "contradictions": 0,
+    "pointerAndHashChecks": "PASS",
+    "uniquePairs": 114
+  },
+  "forms": 57,
+  "limits": "H01 excluded; loopback fixtures do not prove unobserved Kotlin/Montoya target effects.",
+  "matrixSha256": "19fc5568999c773d06ef8b19b62b0cfb404a2db27454b850da0710e54bae9ce0",
+  "observations": 114,
+  "schema": "burpctl.command-audit/matrix-v2-summary"
+}
