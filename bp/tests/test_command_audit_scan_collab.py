@@ -8,10 +8,13 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import subprocess
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Final, TypeAlias
+from uuid import uuid4
 
 import pytest
 
@@ -401,11 +404,20 @@ def _write_sealed(path: Path, record: JsonObject) -> str:
     canonical = json.dumps(record, separators=(",", ":"), sort_keys=True).encode()
     seal = hashlib.sha256(canonical).hexdigest()
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as stream:
+    with path.open("x", encoding="utf-8") as stream:
         json.dump({**record, "preRunSeal": seal}, stream, indent=2, sort_keys=True)
         stream.flush()
         os.fsync(stream.fileno())
     return seal
+
+
+def _write_json_once(path: Path, record: JsonObject) -> str:
+    with path.open("x", encoding="utf-8") as stream:
+        json.dump(record, stream, indent=2, sort_keys=True)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _effect(effect: RequestEffect) -> JsonObject:
@@ -429,7 +441,7 @@ def _oracle_rows() -> dict[str, JsonObject]:
     }
 
 
-def _run(case: Case, tmp_path: Path) -> JsonObject:
+def _run(case: Case, tmp_path: Path, *, evidence_token: str | None = None) -> JsonObject:
     with FixtureRoot(tmp_path) as fixture:
         argv = [_materialize(part, fixture) for part in case.argv]
         response = _materialize(case.response.decode(), fixture).encode()
@@ -451,6 +463,14 @@ def _run(case: Case, tmp_path: Path) -> JsonObject:
             "TERM": "dumb",
         }
         expected_at = datetime.now(UTC).isoformat()
+        oracle_row = _oracle_rows()[case.row_id]
+        oracle_expected = (
+            oracle_row["expected"]
+            if case.variant == "normal"
+            else oracle_row["contrast"]
+            if case.variant == "contrast"
+            else None
+        )
         expected: JsonObject = {
             "exit": case.exit_code,
             "stdout": _materialize(case.stdout, fixture),
@@ -458,6 +478,7 @@ def _run(case: Case, tmp_path: Path) -> JsonObject:
             "route": f"{case.method} {case.path}",
             "effect": case.domain_effect,
             "environment": env,
+            "sealedOracleBranch": oracle_expected,
         }
         preflight: JsonObject = {
             "id": case.row_id,
@@ -467,8 +488,10 @@ def _run(case: Case, tmp_path: Path) -> JsonObject:
             "expectedAt": expected_at,
         }
         evidence_root = Path(os.environ.get(EVIDENCE_ENV, tmp_path))
-        stem = f"task-8-{case.row_id.lower()}-{case.variant}"
+        token = evidence_token or f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%S%fZ')}-{uuid4().hex}"
+        stem = f"task-8-{case.row_id.lower()}-{case.variant}-{token}"
         preflight_path = evidence_root / f"{stem}-preflight.json"
+        actual_path = evidence_root / f"{stem}-actual.json"
         seal = _write_sealed(preflight_path, preflight)
         frozen = preflight_path.read_bytes()
         before = fixture.snapshot()
@@ -489,6 +512,12 @@ def _run(case: Case, tmp_path: Path) -> JsonObject:
         assert after.target_effects == ()
         assert expected_at < observed_at
         target_log = _effects(after.target_effects)
+        verdict = "ORACLE_MISMATCH" if case.variant == "contrast" else "PASS"
+        limits: list[JsonValue] = list(case.limits)
+        if case.variant == "contrast":
+            limits.append(
+                "The sealed contrast predicts route:none/effect:zero (and L08 predicts typed stderr), while the CLI necessarily emitted the recorded REST request."
+            )
         record: JsonObject = {
             "preRunSeal": {"sha256": seal, "expectedAt": expected_at},
             "argv": preflight["argv"],
@@ -501,13 +530,18 @@ def _run(case: Case, tmp_path: Path) -> JsonObject:
                 "restLog": _effects(after.rest_effects),
                 "targetLog": target_log,
             },
-            "verdict": "PASS",
-            "limits": list(case.limits),
+            "verdict": verdict,
+            "limits": limits,
+            "evidence": {
+                "preflightPath": str(preflight_path),
+                "preflightFileSha256": hashlib.sha256(frozen).hexdigest(),
+                "actualPath": str(actual_path),
+            },
         }
-        actual_path = evidence_root / f"{stem}-actual.json"
-        actual_path.write_text(
-            json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+        actual_digest = _write_json_once(actual_path, record)
+        evidence = record["evidence"]
+        assert isinstance(evidence, dict)
+        evidence["actualFileSha256"] = actual_digest
         return record
 
 
@@ -534,16 +568,15 @@ def _capture_all(tmp_path: Path) -> list[JsonObject]:
             additional = row.setdefault("additional", [])
             assert isinstance(additional, list)
             additional.append({"case": case.variant, **record})
-    l08 = next(row for row in by_row.values() if row["id"] == "L08")
-    contrast = l08["contrast"]
-    assert isinstance(contrast, dict)
-    contrast["verdict"] = "ORACLE_MISMATCH"
-    limits = contrast["limits"]
-    assert isinstance(limits, list)
-    limits.append(
-        "Manifest L08 contrast expects empty stdout and typed stderr; observed Community-safe JSON agrees with ScannerService.issueDefinitions()."
-    )
     return list(by_row.values())
+
+
+def _preserve_history(observed: list[JsonObject]) -> list[JsonObject]:
+    previous = json.loads(OBSERVATIONS.read_text(encoding="utf-8"))
+    previous_by_id = {row["id"]: row for row in previous}
+    for row in observed:
+        row["historical"] = [previous_by_id[row["id"]]]
+    return observed
 
 
 def _semantic(document: list[JsonObject]) -> list[tuple[str, str, int, str, int]]:
@@ -595,7 +628,7 @@ def test_service_failure(case: Case, tmp_path: Path) -> None:
 
 def test_observation_artifact_matches_fresh_cli_audit(tmp_path: Path) -> None:
     if os.environ.get(RECORD_ENV) == "1":
-        observed = _capture_all(tmp_path)
+        observed = _preserve_history(_capture_all(tmp_path))
         OBSERVATIONS.write_text(json.dumps(observed, indent=2) + "\n", encoding="utf-8")
     committed = json.loads(OBSERVATIONS.read_text(encoding="utf-8"))
     expected = [
@@ -603,7 +636,7 @@ def test_observation_artifact_matches_fresh_cli_audit(tmp_path: Path) -> None:
             case.row_id,
             case.variant,
             case.exit_code,
-            "ORACLE_MISMATCH" if (case.row_id, case.variant) == ("L08", "contrast") else "PASS",
+            "ORACLE_MISMATCH" if case.variant == "contrast" else "PASS",
             0,
         )
         for case in CASES
@@ -619,3 +652,23 @@ def test_observation_artifact_matches_fresh_cli_audit(tmp_path: Path) -> None:
         row["contrast"]["preRunSeal"]["expectedAt"] < row["contrast"]["actual"]["observedAt"]
         for row in committed
     )
+
+
+def test_duplicate_evidence_path_fails_before_cli_invocation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    invocations = 0
+    original_run = AuditFixture.run
+
+    def counted_run(
+        fixture: AuditFixture, argv: Sequence[str], *, executable: str = "burpctl"
+    ) -> subprocess.CompletedProcess[str]:
+        nonlocal invocations
+        invocations += 1
+        return original_run(fixture, argv, executable=executable)
+
+    monkeypatch.setattr(AuditFixture, "run", counted_run)
+    _run(CASES[0], tmp_path, evidence_token="duplicate-proof")
+    with pytest.raises(FileExistsError):
+        _run(CASES[0], tmp_path, evidence_token="duplicate-proof")
+    assert invocations == 1
