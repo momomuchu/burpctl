@@ -12,7 +12,7 @@ from typer.testing import CliRunner
 
 from bp.cli import app
 from bp.client import BurpClient, BurpError
-from bp.commands.securityscan import _validate_scan_verdict
+from bp.commands.securityscan import _has_findings, _project_for_display, _validate_scan_verdict
 from bp.ledger import Ledger
 
 
@@ -139,6 +139,87 @@ def test_every_check_command_validates_its_finding_indicator(
 
 
 @pytest.mark.parametrize(
+    ("args", "rest_path", "data", "expected_exit", "expected_stdout"),
+    [
+        (
+            [
+                "idor",
+                "https://fixture.invalid/orders/{id}",
+                "--param",
+                "id",
+                "--own",
+                "1",
+                "--target",
+                "2",
+            ],
+            "/scan/idor",
+            {"vulnerableCount": 0, "note": 123},
+            1,
+            "",
+        ),
+        (
+            ["endpoints", "fixture.invalid"],
+            "/scan/endpoints",
+            {"findings": [], "vulnerableCount": 1},
+            0,
+            '{"findings":[],"vulnerableCount":1}\n',
+        ),
+        (
+            ["auth", "https://fixture.invalid"],
+            "/scan/auth-bypass",
+            {"vulnerableCount": 0, "findings": [{"kind": "unrelated"}]},
+            0,
+            '{"vulnerableCount":0,"findings":[{"kind":"unrelated"}]}\n',
+        ),
+    ],
+)
+def test_check_commands_use_only_their_authoritative_verdict_field(
+    monkeypatch: pytest.MonkeyPatch,
+    args: list[str],
+    rest_path: str,
+    data: dict[str, Any],
+    expected_exit: int,
+    expected_stdout: str,
+) -> None:
+    rest_paths: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        rest_paths.append(request.url.path)
+        return httpx.Response(200, json={"success": True, "data": data, "error": None})
+
+    def client_factory(
+        _url: str,
+        *,
+        ledger: Ledger | None = None,
+        redact: bool = True,
+        command: str = "",
+    ) -> BurpClient:
+        return BurpClient(
+            client=httpx.Client(
+                transport=httpx.MockTransport(handler), base_url="http://fixture.invalid"
+            ),
+            ledger=ledger,
+            redact=redact,
+            command=command,
+        )
+
+    monkeypatch.setattr("bp.cliutil.BurpClient", client_factory)
+
+    result = CliRunner().invoke(app, ["--format", "json", "--no-ledger", "check", *args])
+
+    assert result.exit_code == expected_exit
+    assert result.stdout == expected_stdout
+    assert rest_paths == [rest_path]
+    if expected_exit == 1:
+        assert '"code":"INVALID_RESPONSE"' in result.stderr
+        assert "Traceback" not in result.stderr
+        assert "fixture.invalid" not in result.stderr
+        assert "securityscan.py" not in result.stderr
+    else:
+        assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
     ("data", "finding_field"),
     [
         ({}, "vulnerableCount"),
@@ -152,6 +233,7 @@ def test_every_check_command_validates_its_finding_indicator(
         ({"vulnerableCount": 0, "inconclusiveCount": None}, "vulnerableCount"),
         ({"vulnerableCount": 0, "errors": None}, "vulnerableCount"),
         ({"vulnerableCount": 0, "anomalousCount": 1.5}, "vulnerableCount"),
+        ({"vulnerableCount": 0, "note": 123}, "vulnerableCount"),
     ],
 )
 def test_scan_verdict_rejects_missing_null_and_wrong_typed_fields(
@@ -167,6 +249,8 @@ def test_scan_verdict_rejects_missing_null_and_wrong_typed_fields(
     [
         ({"vulnerableCount": 0, "inconclusiveCount": 0}, "vulnerableCount"),
         ({"vulnerableCount": 0, "inconclusiveCount": 1}, "vulnerableCount"),
+        ({"vulnerableCount": 0, "note": None}, "vulnerableCount"),
+        ({"vulnerableCount": 0, "note": "manual review advised"}, "vulnerableCount"),
         ({"vulnerableCount": 2, "errors": []}, "vulnerableCount"),
         ({"findings": [], "inconclusiveCount": 0, "errors": []}, "findings"),
         ({"findings": [{"endpoint": "/admin"}]}, "findings"),
@@ -177,3 +261,20 @@ def test_scan_verdict_preserves_valid_clean_inconclusive_and_vulnerable_shapes(
     finding_field: Literal["vulnerableCount", "findings"],
 ) -> None:
     assert _validate_scan_verdict(data, finding_field) is data
+
+
+def test_has_findings_uses_the_selected_authoritative_field() -> None:
+    contradictory = {"vulnerableCount": 0, "findings": [{"kind": "unrelated"}]}
+    assert _has_findings(contradictory, "vulnerableCount") is False
+    assert _has_findings(contradictory, "findings") is True
+
+    contradictory = {"vulnerableCount": 1, "findings": []}
+    assert _has_findings(contradictory, "vulnerableCount") is True
+    assert _has_findings(contradictory, "findings") is False
+
+
+def test_projected_idor_verdict_ignores_unrelated_findings() -> None:
+    response = {"vulnerableCount": 0, "findings": [{"kind": "unrelated"}]}
+    projected = _project_for_display(response, finding_field="vulnerableCount")
+    assert projected["verdict"] == "clean"
+    assert projected["findings"] == [{"kind": "unrelated"}]
