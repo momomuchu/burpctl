@@ -7,11 +7,14 @@ import json
 import os
 import sqlite3
 import subprocess
+import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal, TypeAlias, assert_never, cast
+
+import pytest
 
 from audit_fixture import AuditFixture, FixtureRoot, RequestEffect, UnsafeTargetError
 
@@ -979,6 +982,10 @@ def test_diff_manifest_non_loopback_target_is_safety_limited(tmp_path: Path) -> 
         assert actual["rest"] == [] and actual["target"] == [] and actual["ledgerDelta"] == 0
 
 
+@pytest.mark.skipif(
+    sys.platform != "darwin" or not Path("/usr/bin/sandbox-exec").is_file(),
+    reason="requires the macOS process sandbox used by the immutable F15 evidence",
+)
 def test_diff_manifest_non_loopback_is_guarded_data_only(tmp_path: Path) -> None:
     with FixtureRoot(tmp_path) as fixture:
         external = "https://example.invalid/a"
