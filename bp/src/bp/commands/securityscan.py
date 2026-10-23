@@ -13,8 +13,22 @@ from __future__ import annotations
 from typing import Any, Literal, cast, overload
 
 import typer
+from pydantic import ValidationError
 
+from bp.client import BurpError
 from bp.cliutil import EXIT_VULN, parse_headers, run
+from bp.models import (
+    AuthBypassResponse,
+    CorsResponse,
+    EndpointsScanResponse,
+    HeadersBypassResponse,
+    IdorResponse,
+)
+
+_FindingField = Literal["vulnerableCount", "findings"]
+_ScanResponse = (
+    AuthBypassResponse | IdorResponse | HeadersBypassResponse | CorsResponse | EndpointsScanResponse
+)
 
 
 # ---------------------------------------------------------------------------
@@ -38,19 +52,27 @@ def _strip_body_preview(obj: Any) -> Any:
 
 @overload
 def _project_for_display(
-    data: dict[str, Any], return_note: Literal[False] = ...
+    data: dict[str, Any],
+    return_note: Literal[False] = ...,
+    *,
+    finding_field: _FindingField | None = ...,
 ) -> dict[str, Any]: ...
 
 
 @overload
 def _project_for_display(
-    data: dict[str, Any], return_note: Literal[True]
+    data: dict[str, Any],
+    return_note: Literal[True],
+    *,
+    finding_field: _FindingField | None = ...,
 ) -> tuple[dict[str, Any], str]: ...
 
 
 def _project_for_display(
     data: dict[str, Any],
     return_note: bool = False,
+    *,
+    finding_field: _FindingField | None = None,
 ) -> "dict[str, Any] | tuple[dict[str, Any], str]":
     """Project a security-scan response dict for display on stdout.
 
@@ -63,8 +85,9 @@ def _project_for_display(
        without adding information ([13]).  Non-empty values are preserved.
 
     The critical fields for ``_has_findings`` — ``vulnerableCount`` and
-    ``findings`` — are always preserved. ``anomalousCount`` remains an
-    observation-only signal and never selects the vulnerability exit code.
+    ``findings`` — are always preserved. ``finding_field`` selects the response's
+    authoritative indicator when its schema is known. ``anomalousCount`` remains
+    an observation-only signal and never selects the vulnerability exit code.
 
     When ``return_note=True`` (used in unit tests), returns ``(projected, note)``
     as a 2-tuple so callers can assert on the extracted note text.
@@ -83,7 +106,7 @@ def _project_for_display(
     # A probe that never completed is neither a finding nor a clean result, so it gets its
     # own verdict rather than being reported as "clean". This is additive — json/table still
     # render the full structured response.
-    if _has_findings(projected):
+    if _has_findings(projected, finding_field):
         projected["verdict"] = "vulnerable"
     elif _is_inconclusive(projected):
         projected["verdict"] = "inconclusive"
@@ -95,7 +118,7 @@ def _project_for_display(
     return projected
 
 
-def _has_findings(data: dict[str, Any]) -> bool:
+def _has_findings(data: dict[str, Any], finding_field: _FindingField | None = None) -> bool:
     """Return True when a security-scan response reports at least one finding.
 
     Covers:
@@ -104,12 +127,32 @@ def _has_findings(data: dict[str, Any]) -> bool:
 
     ``anomalousCount`` is intentionally excluded: a changed response is a
     triage observation, not proof that access improved or a vulnerability exists.
+    When ``finding_field`` is provided, well-typed fields from another response
+    shape remain displayable but cannot change this response's verdict.
     """
-    if data.get("vulnerableCount", 0) > 0:
+    if finding_field != "findings" and data.get("vulnerableCount", 0) > 0:
         return True
-    if len(data.get("findings", [])) > 0:
+    if finding_field != "vulnerableCount" and len(data.get("findings", [])) > 0:
         return True
     return False
+
+
+def _validate_scan_response(
+    data: dict[str, Any], response_model: type[_ScanResponse]
+) -> dict[str, Any]:
+    """Validate a complete Kotlin scan DTO while preserving its original wire fields."""
+    try:
+        response_model.model_validate(data)
+    except ValidationError:
+        raise BurpError(
+            "INVALID_RESPONSE",
+            "server returned an unexpected response shape",
+        ) from None
+    return data
+
+
+def _finding_exit(data: dict[str, Any], finding_field: _FindingField) -> int | None:
+    return EXIT_VULN if _has_findings(data, finding_field) else None
 
 
 def _is_inconclusive(data: dict[str, Any]) -> bool:
@@ -175,9 +218,9 @@ def check_auth(
     }
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/auth-bypass", body)
+        return _validate_scan_response(client.post("/scan/auth-bypass", body), AuthBypassResponse)
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    run(ctx, _do, exit_on=lambda d: _finding_exit(d, "vulnerableCount"))
 
 
 # ---------------------------------------------------------------------------
@@ -235,14 +278,16 @@ def check_idor(
         req_body["extraHeaders"] = extra_headers
 
     def _do(client: Any) -> Any:
-        raw = client.post("/scan/idor", req_body)
+        raw = _validate_scan_response(client.post("/scan/idor", req_body), IdorResponse)
         # [02] Strip bodyPreview (AX-CAP-BODY) and [13] route note to stderr.
-        projected, note = _project_for_display(raw, return_note=True)
+        projected, note = _project_for_display(
+            raw, return_note=True, finding_field="vulnerableCount"
+        )
         if note:
             typer.echo(f"note: {note}", err=True)
         return projected
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    run(ctx, _do, exit_on=lambda d: _finding_exit(d, "vulnerableCount"))
 
 
 # ---------------------------------------------------------------------------
@@ -283,9 +328,11 @@ def check_headers(
         req_body["protectedContentMarker"] = marker
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/headers", req_body)
+        return _validate_scan_response(
+            client.post("/scan/headers", req_body), HeadersBypassResponse
+        )
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    run(ctx, _do, exit_on=lambda d: _finding_exit(d, "vulnerableCount"))
 
 
 # ---------------------------------------------------------------------------
@@ -311,9 +358,9 @@ def check_cors(
     }
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/cors", req_body)
+        return _validate_scan_response(client.post("/scan/cors", req_body), CorsResponse)
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    run(ctx, _do, exit_on=lambda d: _finding_exit(d, "vulnerableCount"))
 
 
 # ---------------------------------------------------------------------------
@@ -352,9 +399,11 @@ def check_endpoints(
     }
 
     def _do(client: Any) -> Any:
-        return client.post("/scan/endpoints", req_body)
+        return _validate_scan_response(
+            client.post("/scan/endpoints", req_body), EndpointsScanResponse
+        )
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    run(ctx, _do, exit_on=lambda d: _finding_exit(d, "findings"))
 
 
 # ---------------------------------------------------------------------------
