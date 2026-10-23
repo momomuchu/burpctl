@@ -12,6 +12,7 @@ from typing import Any
 
 import typer
 
+from bp.client import BurpError
 from bp.cliutil import fail_usage, run
 from bp.models import HistoryEntryResponse, ReplayResponse
 
@@ -21,13 +22,16 @@ from bp.models import HistoryEntryResponse, ReplayResponse
 # ---------------------------------------------------------------------------
 
 
-def _history_rows(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _history_rows(entries: object) -> list[dict[str, Any]]:
     """Flatten HistoryEntryResponse dicts into compact display rows for list view.
 
     The server returns a flat HistoryEntryResponse shape (not nested like ProxyEntry).
     We project the four essential columns so the table shows id/method/url/statusCode
     without any reqHeaders/resHeaders blob cells.  Analogous to _proxy_rows() in cli.py.
     """
+    if not isinstance(entries, list):
+        raise BurpError("INVALID_RESPONSE", "server returned an unexpected response shape")
+
     rows: list[dict[str, Any]] = []
     for e in entries:
         he = HistoryEntryResponse.model_validate(e)
