@@ -511,6 +511,7 @@ def test_base_raw_missing_request_key_raises_burp_error() -> None:
         None,
         {"url": "https://t.example.com/s?q=_", "headers": [], "body": None},
         {"method": "GET", "headers": [], "body": None},
+        {"method": "GET", "url": "http://[broken", "headers": [], "body": None},
         {
             "method": "GET",
             "url": "https://t.example.com/s?q=_",
