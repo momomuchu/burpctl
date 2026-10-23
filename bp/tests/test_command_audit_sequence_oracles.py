@@ -60,8 +60,10 @@ def _need(mapping: dict[str, Json], key: str, label: str) -> Json:
 
 
 def _strings(value: Json, *, empty_ok: bool = False) -> TypeGuard[list[str]]:
-    return isinstance(value, list) and (empty_ok or bool(value)) and all(
-        isinstance(item, str) and bool(item) for item in value
+    return (
+        isinstance(value, list)
+        and (empty_ok or bool(value))
+        and all(isinstance(item, str) and bool(item) for item in value)
     )
 
 
@@ -69,7 +71,13 @@ def _walk(value: Json, path: str = "root") -> None:
     if isinstance(value, dict):
         for raw_key, child in value.items():
             key = str(raw_key)
-            if key in {"actual", "observed", "observed_at", "transcript", "actual_snapshot"} or key.startswith(("actual_", "observed_")):
+            if key in {
+                "actual",
+                "observed",
+                "observed_at",
+                "transcript",
+                "actual_snapshot",
+            } or key.startswith(("actual_", "observed_")):
                 raise SequenceOracleError(f"{path}: forbidden execution field {key}")
             _walk(child, f"{path}.{key}")
     if isinstance(value, list):
@@ -101,7 +109,11 @@ def _effects(value: Json, label: str) -> tuple[str, int | list[int]]:
     if not isinstance(status, str) or status not in STATUSES:
         raise SequenceOracleError(f"{label}: invalid effect status")
     if status == "UNKNOWN_INCONCLUSIVE":
-        if not isinstance(count, list) or len(count) != 2 or not all(isinstance(n, int) and not isinstance(n, bool) for n in count):
+        if (
+            not isinstance(count, list)
+            or len(count) != 2
+            or not all(isinstance(n, int) and not isinstance(n, bool) for n in count)
+        ):
             raise SequenceOracleError(f"{label}: unknown effect requires target range")
         numbers = cast(list[int], count)
         if numbers[0] < 0 or numbers[0] > numbers[1]:
@@ -135,7 +147,10 @@ def _reconciliation(value: Json, label: str, count: int | list[int]) -> None:
 
 def _source_projection(value: Json, label: str) -> None:
     projection = _map(value, label)
-    if projection.get("status") != "UNVERIFIED_HYPOTHESIS" or projection.get("contract_relation") != "EXPECTED_MISMATCH":
+    if (
+        projection.get("status") != "UNVERIFIED_HYPOTHESIS"
+        or projection.get("contract_relation") != "EXPECTED_MISMATCH"
+    ):
         raise SequenceOracleError(f"{label}: invalid hypothesis status")
     if not isinstance(_need(projection, "hypothesis", label), str):
         raise SequenceOracleError(f"{label}: missing hypothesis")
@@ -159,7 +174,11 @@ def _step(value: Json, sealed_at: str) -> tuple[str, str]:
         if not isinstance(_need(step, key, step_id), str):
             raise SequenceOracleError(f"{step_id}: {key} must be text")
     invocation = _map(_need(step, "invocation", step_id), f"{step_id}.invocation")
-    if not (_strings(invocation.get("argv_template")) or isinstance(invocation.get("fixture_action"), str) and invocation["fixture_action"]):
+    if not (
+        _strings(invocation.get("argv_template"))
+        or isinstance(invocation.get("fixture_action"), str)
+        and invocation["fixture_action"]
+    ):
         raise SequenceOracleError(f"{step_id}: missing invocation")
     _expected(_need(step, "expected", step_id), f"{step_id}.expected")
     citations = _need(step, "citations", step_id)
@@ -168,7 +187,9 @@ def _step(value: Json, sealed_at: str) -> tuple[str, str]:
     if not _strings(_need(step, "assumptions", step_id)):
         raise SequenceOracleError(f"{step_id}: missing assumptions")
     if step_id == "S3.7":
-        _source_projection(_need(step, "source_projection", step_id), f"{step_id}.source_projection")
+        _source_projection(
+            _need(step, "source_projection", step_id), f"{step_id}.source_projection"
+        )
     rest = _map(_need(step, "rest", step_id), f"{step_id}.rest")
     route_count = _need(rest, "route_effect_count", f"{step_id}.rest")
     if not isinstance(route_count, int) or isinstance(route_count, bool) or route_count < 0:
@@ -192,14 +213,26 @@ def _step(value: Json, sealed_at: str) -> tuple[str, str]:
         if not isinstance(_need(failure, key, f"{step_id}.failure"), str):
             raise SequenceOracleError(f"{step_id}.failure: invalid {key}")
     _expected(_need(failure, "expected", f"{step_id}.failure"), f"{step_id}.failure.expected")
-    failure_status, failure_count = _effects(_need(failure, "effects", f"{step_id}.failure"), f"{step_id}.failure.effects")
-    _reconciliation(_need(failure, "reconciliation", f"{step_id}.failure"), f"{step_id}.failure.reconciliation", failure_count)
+    failure_status, failure_count = _effects(
+        _need(failure, "effects", f"{step_id}.failure"), f"{step_id}.failure.effects"
+    )
+    _reconciliation(
+        _need(failure, "reconciliation", f"{step_id}.failure"),
+        f"{step_id}.failure.reconciliation",
+        failure_count,
+    )
     retry = _need(failure, "retry_allowed", f"{step_id}.failure")
     if not isinstance(retry, bool) or failure_status == "UNKNOWN_INCONCLUSIVE" and retry:
         raise SequenceOracleError(f"{step_id}: invalid retry policy")
     seal = _map(_need(step, "seal", step_id), f"{step_id}.seal")
     digest = _need(seal, "hash", f"{step_id}.seal")
-    if seal.get("algorithm") != "sha256" or seal.get("sealed") is not True or seal.get("expected_at") != sealed_at or not isinstance(digest, str) or not HASH.fullmatch(digest):
+    if (
+        seal.get("algorithm") != "sha256"
+        or seal.get("sealed") is not True
+        or seal.get("expected_at") != sealed_at
+        or not isinstance(digest, str)
+        or not HASH.fullmatch(digest)
+    ):
         raise SequenceOracleError(f"{step_id}: invalid seal")
     canonical = deepcopy(step)
     _map(canonical["seal"], f"{step_id}.seal")["hash"] = ""
@@ -213,11 +246,20 @@ def validate_sequence_oracles(path: Path) -> tuple[int, int]:
     """Validate ordered inventory, schema, seals, and independent contracts."""
     document = _map(cast(Json, json.loads(path.read_text(encoding="utf-8"))), "root")
     _walk(document)
-    if document.get("schema") != "burpctl.command-audit/sequence-oracles" or document.get("schema_version") != 2 or document.get("status") != "PRE_EXECUTION_ONLY":
+    if (
+        document.get("schema") != "burpctl.command-audit/sequence-oracles"
+        or document.get("schema_version") != 2
+        or document.get("status") != "PRE_EXECUTION_ONLY"
+    ):
         raise SequenceOracleError("invalid preparation schema")
     candidate = _map(document.get("candidate"), "candidate")
     policy = _map(document.get("execution_policy"), "execution_policy")
-    if candidate.get("revision") != "3af139dc0b4020923f831099338c92af3265d7e2" or policy.get("network_scope") != "LOOPBACK_ONLY" or policy.get("external_targets_forbidden") is not True or policy.get("execution_performed") is not False:
+    if (
+        candidate.get("revision") != "3af139dc0b4020923f831099338c92af3265d7e2"
+        or policy.get("network_scope") != "LOOPBACK_ONLY"
+        or policy.get("external_targets_forbidden") is not True
+        or policy.get("execution_performed") is not False
+    ):
         raise SequenceOracleError("invalid candidate or execution policy")
     sealed_at = _need(document, "sealed_at", "root")
     sequences = _need(document, "sequences", "root")
@@ -270,7 +312,24 @@ def test_sequence_oracles_are_complete_and_sealed() -> None:
     assert validate_sequence_oracles(ORACLES) == (6, 50)
 
 
-@pytest.mark.parametrize("path", ["citations", "assumptions", "state_owner", "failure_injection", "expected.stdout", "expected.stderr", "failure_injection.expected", "failure_injection.reconciliation", "rest.route_effect_count", "rest.path", "effects.live_target_effect_count", "effects.status", "seal.hash"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "citations",
+        "assumptions",
+        "state_owner",
+        "failure_injection",
+        "expected.stdout",
+        "expected.stderr",
+        "failure_injection.expected",
+        "failure_injection.reconciliation",
+        "rest.route_effect_count",
+        "rest.path",
+        "effects.live_target_effect_count",
+        "effects.status",
+        "seal.hash",
+    ],
+)
 def test_missing_contract_is_rejected(tmp_path: Path, path: str) -> None:
     document = _load()
     current = _step_by_id(document, "S1.1")
@@ -299,7 +358,9 @@ def test_ordered_inventory_is_enforced(tmp_path: Path, kind: str) -> None:
         validate_sequence_oracles(_write(tmp_path, document, f"{kind}.json"))
 
 
-@pytest.mark.parametrize("key", ["actual", "observed", "observed_at", "transcript", "actual_snapshot"])
+@pytest.mark.parametrize(
+    "key", ["actual", "observed", "observed_at", "transcript", "actual_snapshot"]
+)
 def test_execution_fields_are_rejected(tmp_path: Path, key: str) -> None:
     document = _load()
     _step_by_id(document, "S1.1")[key] = True
@@ -329,13 +390,29 @@ def test_s3_7_source_projection_cannot_be_removed_or_conflated(tmp_path: Path, c
         validate_sequence_oracles(_write(tmp_path, document, f"projection-{case}.json"))
 
 
-@pytest.mark.parametrize("case", ["argv", "route", "payload", "counts", "target", "status", "branch", "selected", "reconciliation", "retry"])
+@pytest.mark.parametrize(
+    "case",
+    [
+        "argv",
+        "route",
+        "payload",
+        "counts",
+        "target",
+        "status",
+        "branch",
+        "selected",
+        "reconciliation",
+        "retry",
+    ],
+)
 def test_resealed_semantic_changes_are_rejected(tmp_path: Path, case: str) -> None:
     document = _load()
     first = {"argv", "route", "target", "status", "branch", "selected", "retry"}
     step = _step_by_id(document, "S1.1" if case in first else "S1.2")
     if case == "argv":
-        cast(list[Json], _map(step["invocation"], "invocation")["argv_template"]).append("--changed")
+        cast(list[Json], _map(step["invocation"], "invocation")["argv_template"]).append(
+            "--changed"
+        )
     elif case == "route":
         _map(step["rest"], "rest")["path"] = "/changed"
     elif case == "payload":
