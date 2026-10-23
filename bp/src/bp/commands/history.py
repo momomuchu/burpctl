@@ -288,8 +288,7 @@ def history_clear(
 def register(app: typer.Typer) -> None:
     """Register the 'history' command group onto the root app.
 
-    The default sub-command (bare 'bp history') maps to 'list'.
+    Bare 'bp history' has no default sub-command: Typer prints help and exits with usage code 2.
     """
-    # Make bare 'bp history' invoke the list command by registering it both
-    # as a sub-command and as the callback via invoke_without_command.
+    # Register the group only; bare 'bp history' remains a help/usage invocation.
     app.add_typer(sub, name="history")
