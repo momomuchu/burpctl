@@ -1,0 +1,49 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "all",
+    "http://127.0.0.1:65337/"
+  ],
+  "expected": {
+    "effect": "zero scanner task",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65336",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 1,
+    "route": "POST /scanner/crawl-and-audit",
+    "sealedOracleBranch": {
+      "effect": {
+        "effect": "zero server effect",
+        "route": "POST /scanner/crawl-and-audit"
+      },
+      "exit": 1,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"linked crawl and audit is unsupported\",\"status\":501,\"http_status\":501,\"op\":\"POST /scanner/crawl-and-audit\"}}\n",
+    "stdout": ""
+  },
+  "expectedAt": "2026-10-23T12:18:40.456183+00:00",
+  "id": "L05",
+  "preRunSeal": "f8fcac5c696f65a26489dfc7cbb19120c1af844573baa2ccf31ecdee62f9b8e0",
+  "variant": "normal"
+}

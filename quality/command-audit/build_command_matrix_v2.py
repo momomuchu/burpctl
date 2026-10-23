@@ -3,7 +3,7 @@
 # dependencies = []
 # ///
 # ─── How to run ───
-# uv run quality/command-audit/build_command_matrix_v2.py <attempt-directory>
+# uv run quality/command-audit/build_command_matrix_v2.py <output-directory>
 
 """Build and verify the canonical 57-form command audit matrix."""
 
@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -26,6 +27,8 @@ ROOT: Final = Path(__file__).resolve().parents[2]
 QUALITY: Final = ROOT / "quality" / "command-audit"
 ORACLES: Final = QUALITY / "oracles.json"
 CORRECTIONS: Final = QUALITY / "oracle-corrections-flat-read.json"
+EVIDENCE: Final = QUALITY / "evidence"
+EVIDENCE_PROVENANCE: Final = QUALITY / "evidence-provenance.json"
 SOURCE_FILES: Final = (
     "observations-flat-read.json",
     "observations-flat-effects.json",
@@ -43,6 +46,16 @@ VERDICTS: Final = {
     "PRODUCT_CONTRACT_DEFECT",
     "SAFETY_LIMITED",
 }
+FIXTURE_PATH: Final = re.compile(
+    r"/private/var/folders/[^\"'\s]+?/bp-audit-[^/\"'\s]+"
+)
+WORKTREE_PATH: Final = re.compile(
+    r"/Users/maache/burpctl-ulw-worktrees-20261023/[^/\"'\s]+"
+)
+ATTEMPT_PATH: Final = re.compile(
+    r"/Users/maache/burpctl-ulw-20261023/\.omo/evidence/ulw/"
+    r"burpctl-ultra-ci-20261023/G001-cloner-et-auditer-burp-ctl-avec-une/a1"
+)
 
 
 class MatrixError(RuntimeError):
@@ -77,6 +90,50 @@ def _text(value: JsonValue, label: str) -> str:
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _canonicalize(value: JsonValue) -> JsonValue:
+    if isinstance(value, str):
+        canonical = ATTEMPT_PATH.sub("{{ATTEMPT_DIR}}", value)
+        canonical = WORKTREE_PATH.sub("{{WORKTREE}}", canonical)
+        return FIXTURE_PATH.sub("{{FIXTURE_ROOT}}", canonical)
+    if isinstance(value, list):
+        return [_canonicalize(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _canonicalize(item) for key, item in value.items()}
+    return value
+
+
+def _provenance() -> dict[str, JsonObject]:
+    document = _object(_load(EVIDENCE_PROVENANCE), str(EVIDENCE_PROVENANCE))
+    rows = _array(document.get("files"), "evidence provenance files")
+    result: dict[str, JsonObject] = {}
+    for value in rows:
+        row = _object(value, "evidence provenance row")
+        name = _text(row.get("name"), "evidence provenance name")
+        if name in result:
+            raise MatrixError(f"duplicate evidence provenance row: {name}")
+        result[name] = row
+    return result
+
+
+def _evidence_file(name: str, role: str, declared_original: JsonValue = None) -> JsonObject:
+    provenance = _provenance().get(name)
+    if provenance is None:
+        raise MatrixError(f"missing bundled evidence provenance: {name}")
+    path = EVIDENCE / name
+    digest = _sha256(path)
+    if provenance.get("sanitizedSha256") != digest:
+        raise MatrixError(f"bundled evidence SHA mismatch: {name}")
+    original = _text(provenance.get("originalSha256"), f"{name}.originalSha256")
+    if declared_original is not None and declared_original != original:
+        raise MatrixError(f"original evidence SHA mismatch: {name}")
+    return {
+        "role": role,
+        "path": str(path.relative_to(ROOT)),
+        "sha256": digest,
+        "originalSha256": original,
+    }
 
 
 def _pointer(document: JsonValue, pointer: str) -> JsonValue:
@@ -114,7 +171,7 @@ def _source_rows() -> tuple[dict[str, tuple[Path, int, JsonObject]], dict[str, t
     return primary, manifest_contrasts
 
 
-def _external_files(lane: JsonObject, attempt_dir: Path) -> list[JsonObject]:
+def _external_files(lane: JsonObject) -> list[JsonObject]:
     evidence_value = lane.get("evidence")
     if not isinstance(evidence_value, dict):
         return []
@@ -122,24 +179,17 @@ def _external_files(lane: JsonObject, attempt_dir: Path) -> list[JsonObject]:
     for key, value in evidence_value.items():
         if not (key.endswith("File") or key.endswith("Path") or key in {"expected", "actual"}):
             continue
-        path = Path(_text(value, f"evidence.{key}"))
-        if not path.is_absolute():
-            path = attempt_dir / path
-        if not path.is_file():
-            raise MatrixError(f"missing raw evidence file: {path}")
+        name = Path(_text(value, f"evidence.{key}")).name
         declared_key = (
             f"{key}Sha256" if key in {"expected", "actual"} else key.removesuffix("Path") + "FileSha256"
         )
         declared = evidence_value.get(declared_key)
-        digest = _sha256(path)
-        if declared is not None and declared != digest:
-            raise MatrixError(f"immutable SHA mismatch for {path}")
-        files.append({"role": key, "path": str(path), "sha256": digest})
+        files.append(_evidence_file(name, key, declared))
     return files
 
 
-def _f10_lane(variant: str, attempt_dir: Path) -> tuple[JsonObject, list[JsonObject]]:
-    matches = sorted(attempt_dir.glob(f"task-6-f10-c001-corrected-{variant}-bp-*-actual.json"))
+def _f10_lane(variant: str) -> tuple[JsonObject, list[JsonObject]]:
+    matches = sorted(EVIDENCE.glob(f"task-6-f10-c001-corrected-{variant}-bp-*-actual.json"))
     if len(matches) != 1:
         raise MatrixError(f"F10/{variant} requires exactly one corrected actual, found {len(matches)}")
     actual_path = matches[0]
@@ -149,9 +199,9 @@ def _f10_lane(variant: str, attempt_dir: Path) -> tuple[JsonObject, list[JsonObj
     for key in ("argv", "expected", "preRunSeal", "oracleHash"):
         if lane.get(key) != expected_file.get(key):
             raise MatrixError(f"F10/{variant} expected/actual contradiction at {key}")
-    files: list[JsonObject] = [
-        {"role": "expected", "path": str(expected_path), "sha256": _sha256(expected_path)},
-        {"role": "actual", "path": str(actual_path), "sha256": _sha256(actual_path)},
+    files = [
+        _evidence_file(expected_path.name, "expected"),
+        _evidence_file(actual_path.name, "actual"),
     ]
     return lane, files
 
@@ -193,7 +243,7 @@ def _correction() -> tuple[JsonObject, str]:
     return correction, digest
 
 
-def build(attempt_dir: Path) -> list[JsonObject]:
+def build() -> list[JsonObject]:
     manifest = _object(_load(ORACLES), str(ORACLES))
     oracle_rows = _array(manifest.get("rows"), "oracles.rows")
     primary, manifest_contrasts = _source_rows()
@@ -213,8 +263,8 @@ def build(attempt_dir: Path) -> list[JsonObject]:
             lane = _object(source_row.get(variant), f"{row_id}.{variant}")
             active_oracle: JsonValue = None
             if row_id == "F10":
-                lane, external = _f10_lane(variant, attempt_dir)
-                source_path = Path(_text(external[1].get("path"), "F10 actual path"))
+                lane, external = _f10_lane(variant)
+                source_path = ROOT / _text(external[1].get("path"), "F10 actual path")
                 pointer = "/"
                 active_oracle = {
                     "source": str(CORRECTIONS.relative_to(ROOT)),
@@ -229,7 +279,7 @@ def build(attempt_dir: Path) -> list[JsonObject]:
             elif row_id in manifest_contrasts and variant == "contrast":
                 source_path, source_index, lane = manifest_contrasts[row_id]
                 pointer = f"/{source_index}"
-            external.extend(_external_files(lane, attempt_dir))
+            external.extend(_external_files(lane))
             external_values: list[JsonValue] = list(external)
             comparison = lane.get("oracleComparison", lane.get("authorityClassification"))
             if comparison is None and lane.get("classifications") is not None:
@@ -256,10 +306,10 @@ def build(attempt_dir: Path) -> list[JsonObject]:
                     "correction": active_oracle,
                     "comparison": comparison if comparison is not None else source_row.get("provenanceAudit"),
                 },
-                "argv": lane.get("argv"),
-                "expectedPreRun": lane.get("expected"),
-                "preRunSeal": lane.get("preRunSeal"),
-                "actual": lane.get("actual"),
+                "argv": _canonicalize(lane.get("argv")),
+                "expectedPreRun": _canonicalize(lane.get("expected")),
+                "preRunSeal": _canonicalize(lane.get("preRunSeal")),
+                "actual": _canonicalize(lane.get("actual")),
                 "rawEvidence": {
                     "source": raw_source,
                     "pointer": pointer,
@@ -268,7 +318,7 @@ def build(attempt_dir: Path) -> list[JsonObject]:
                     "priorCases": prior_cases,
                 },
                 "verdict": lane.get("verdict"),
-                "limits": lane.get("limits"),
+                "limits": _canonicalize(lane.get("limits")),
             }
             rows.append(row)
     return rows
@@ -281,6 +331,7 @@ def validate(rows: list[JsonObject]) -> JsonObject:
     if "H01" in {row_id for row_id, _variant in pairs}:
         raise MatrixError("H01 is outside the canonical 57-form inventory")
     scan_pairs = 0
+    evidence_names: set[str] = set()
     for row in rows:
         row_id = _text(row.get("id"), "id")
         variant = _text(row.get("variant"), "variant")
@@ -294,8 +345,8 @@ def validate(rows: list[JsonObject]) -> JsonObject:
         if raw.get("sourceSha256") != _sha256(source):
             raise MatrixError(f"source SHA mismatch for {row_id}/{variant}")
         pointed = _object(_pointer(_load(source), _text(raw.get("pointer"), "pointer")), "lane")
-        for key, output_key in (("argv", "argv"), ("expected", "expectedPreRun"), ("actual", "actual"), ("verdict", "verdict"), ("limits", "limits")):
-            if pointed.get(key) != row.get(output_key):
+        for key, output_key in (("argv", "argv"), ("expected", "expectedPreRun"), ("preRunSeal", "preRunSeal"), ("actual", "actual"), ("verdict", "verdict"), ("limits", "limits")):
+            if _canonicalize(pointed.get(key)) != row.get(output_key):
                 raise MatrixError(f"{row_id}/{variant} contradicts raw evidence at {key}")
         oracle = _object(row.get("oracle"), "oracle")
         original = _object(oracle.get("original"), "oracle.original")
@@ -306,9 +357,10 @@ def validate(rows: list[JsonObject]) -> JsonObject:
             raise MatrixError(f"empty oracle pointer for {row_id}/{variant}")
         for value in _array(raw.get("files"), "rawEvidence.files"):
             evidence_file = _object(value, "rawEvidence.files[]")
-            evidence_path = Path(_text(evidence_file.get("path"), "evidence path"))
+            evidence_path = ROOT / _text(evidence_file.get("path"), "evidence path")
             if evidence_file.get("sha256") != _sha256(evidence_path):
                 raise MatrixError(f"evidence SHA mismatch for {row_id}/{variant}: {evidence_path}")
+            evidence_names.add(evidence_path.name)
         if row_id.startswith("L0") and int(row_id[1:]) <= 8:
             files = _array(raw.get("files"), "rawEvidence.files")
             if len(files) != 2:
@@ -318,8 +370,15 @@ def validate(rows: list[JsonObject]) -> JsonObject:
             comparison = _object(oracle.get("comparison"), "oracle.comparison")
             if comparison.get("classification") != "ORACLE_MISMATCH":
                 raise MatrixError(f"{row_id}/contrast lacks explicit oracleComparison")
+        if "/Users/" in json.dumps(row, sort_keys=True):
+            raise MatrixError(f"machine-specific user path leaked into {row_id}/{variant}")
     if scan_pairs != 16:
         raise MatrixError(f"expected 16 immutable scan pairs, got {scan_pairs}")
+    provenance_names = set(_provenance())
+    if evidence_names != provenance_names or len(provenance_names) != 60:
+        raise MatrixError(
+            f"bundled evidence inventory mismatch: used={len(evidence_names)} declared={len(provenance_names)}"
+        )
     f15 = next(row for row in rows if row.get("id") == "F15" and row.get("variant") == "contrast")
     f15_raw = _object(f15.get("rawEvidence"), "F15.rawEvidence")
     f15_prior = _array(f15_raw.get("priorCases"), "F15.rawEvidence.priorCases")
@@ -344,7 +403,12 @@ def validate(rows: list[JsonObject]) -> JsonObject:
         "forms": 57,
         "observations": 114,
         "counts": dict(sorted(counts.items())),
-        "coverage": {"uniquePairs": 114, "pointerAndHashChecks": "PASS", "contradictions": 0},
+        "coverage": {
+            "uniquePairs": 114,
+            "bundledEvidenceFiles": 60,
+            "pointerAndHashChecks": "PASS",
+            "contradictions": 0,
+        },
         "c001": {"status": "FAIL" if missing else "PASS", "missing": missing},
         "limits": "H01 excluded; loopback fixtures do not prove unobserved Kotlin/Montoya target effects.",
     }
@@ -352,14 +416,14 @@ def validate(rows: list[JsonObject]) -> JsonObject:
 
 def main() -> int:
     if len(sys.argv) != 2:
-        raise MatrixError("usage: build_command_matrix_v2.py <attempt-directory>")
-    attempt_dir = Path(sys.argv[1]).resolve()
-    if not attempt_dir.is_dir():
-        raise MatrixError(f"attempt directory does not exist: {attempt_dir}")
-    rows = build(attempt_dir)
+        raise MatrixError("usage: build_command_matrix_v2.py <output-directory>")
+    output_dir = Path(sys.argv[1]).resolve()
+    if not output_dir.is_dir():
+        raise MatrixError(f"output directory does not exist: {output_dir}")
+    rows = build()
     summary = validate(rows)
-    matrix_path = attempt_dir / "command-matrix-v2.jsonl"
-    summary_path = attempt_dir / "command-matrix-v2-summary.json"
+    matrix_path = output_dir / "command-matrix-v2.jsonl"
+    summary_path = output_dir / "command-matrix-v2-summary.json"
     matrix_path.write_text(
         "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8"
     )

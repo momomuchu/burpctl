@@ -1,0 +1,47 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "check",
+    "cors",
+    "http://127.0.0.1:55047/cors"
+  ],
+  "environment": {
+    "BP_AGENT": "1",
+    "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+    "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+    "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+    "BURP_REST_URL": "http://127.0.0.1:55046",
+    "HOME": "{{FIXTURE_ROOT}}/home",
+    "NO_COLOR": "1",
+    "TERM": "dumb"
+  },
+  "expected": {
+    "classifier": {
+      "anomalousCount": null,
+      "confirmed": false,
+      "findingsCount": null,
+      "vulnerableCount": 0
+    },
+    "endToEndTargetEffectCount": "INCONCLUSIVE",
+    "exit": 0,
+    "fixtureTargetEffectCount": 0,
+    "restEffectCount": 1,
+    "restRoute": "POST /scan/cors",
+    "stderr": "empty",
+    "stderrJson": null,
+    "stdout": "json",
+    "stdoutJson": "{\"results\":[{\"origin\":\"http://127.0.0.1:55047\",\"acao\":\"http://127.0.0.1:55047\",\"acac\":\"true\",\"vulnerable\":false}],\"vulnerableCount\":0,\"inconclusiveCount\":0}"
+  },
+  "id": "L12",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "67158a9b782cf94afc40df645d4a5a1adf3cf0e6eae2f8eb9877409dcdc70658",
+    "sealedAt": "2026-10-23T11:46:22.706488+00:00"
+  },
+  "variant": "normal"
+}

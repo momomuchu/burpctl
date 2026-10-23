@@ -1,0 +1,74 @@
+{
+  "actual": {
+    "exit": 0,
+    "observedAt": "2026-10-23T12:18:36.618375+00:00",
+    "restLog": [
+      {
+        "bodyLength": 45,
+        "bodySha256": "16021771d17aea7c437bb803ddaeef614861ca4fe0a9f43b6685d6f0e23486dd",
+        "method": "POST",
+        "path": "/scanner/crawl",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n",
+    "targetLog": []
+  },
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "scan",
+    "crawl",
+    "http://127.0.0.1:65305/"
+  ],
+  "evidence": {
+    "actualPath": "{{ATTEMPT_DIR}}/task-8-l03-normal-20261023T121836408289Z-bcdf73447fb34e6289084be1143468bb-actual.json",
+    "preflightFileSha256": "45604cffc37047acd887b7f592d0eb4343a8454c049675d90ffdd527d7ed0ff2",
+    "preflightPath": "{{ATTEMPT_DIR}}/task-8-l03-normal-20261023T121836408289Z-bcdf73447fb34e6289084be1143468bb-preflight.json"
+  },
+  "expected": {
+    "effect": "simulated scanner task response",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65304",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "POST /scanner/crawl",
+    "sealedOracleBranch": {
+      "effect": {
+        "effect": "one scanner task",
+        "route": "POST /scanner/crawl"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "empty",
+        "shape": "empty"
+      },
+      "stdout": {
+        "mode": "json",
+        "shape": "parseable"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n"
+  },
+  "limits": [
+    "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+  ],
+  "preRunSeal": {
+    "expectedAt": "2026-10-23T12:18:36.407768+00:00",
+    "sha256": "f494592acba20577f2fcaf565197e1e4c5e9391d6f56949f14febced763d984d"
+  },
+  "verdict": "PASS"
+}

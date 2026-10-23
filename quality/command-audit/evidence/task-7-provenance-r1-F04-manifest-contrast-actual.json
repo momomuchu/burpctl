@@ -1,0 +1,85 @@
+{
+  "actual": {
+    "exit": 2,
+    "ledgerDelta": 0,
+    "observedAt": "2026-10-23T12:19:32.127835+00:00",
+    "rest": [],
+    "stderr": "error: cannot read payload file {{FIXTURE_ROOT}}/payloads/manifest-missing.txt: [Errno 2] No such file or directory: '{{FIXTURE_ROOT}}/payloads/manifest-missing.txt'\n",
+    "stdout": "",
+    "target": []
+  },
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "fuzz",
+    "0",
+    "--pos",
+    "query:id",
+    "--payloads",
+    "id={{FIXTURE_ROOT}}/payloads/manifest-missing.txt",
+    "--type",
+    "sniper"
+  ],
+  "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+  "comparison": {
+    "exit": true,
+    "ledger": true,
+    "rest": true,
+    "stderr": false,
+    "stdout": true,
+    "target": true
+  },
+  "env": {
+    "BP_AGENT": "1",
+    "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+    "BURP_REST_URL": "http://127.0.0.1:49558",
+    "HOME": "{{FIXTURE_ROOT}}/home"
+  },
+  "expected": {
+    "exit": 2,
+    "ledger_delta": 0,
+    "rest": [],
+    "stderr": "typed-json",
+    "stdout": "empty",
+    "target_count": 0,
+    "target_effect": "manifest missing-file preflight; zero effects"
+  },
+  "id": "F04",
+  "manifestExpected": {
+    "effect": {
+      "effect": "zero",
+      "route": "none"
+    },
+    "exit": 2,
+    "stderr": {
+      "mode": "json",
+      "shape": "typed_error"
+    },
+    "stdout": {
+      "mode": "empty",
+      "shape": "empty"
+    }
+  },
+  "oracleCase": "contrast",
+  "oracleComparison": {
+    "applicable": true,
+    "classification": "ALIGNED",
+    "exit": true,
+    "route": true,
+    "stderr": true,
+    "stdout": true
+  },
+  "oracleHash": "ba7014b78ab8b01799d179133120ac4264b95f5a28258a72c66e9024fbd4f83d",
+  "preRunSeal": "2026-10-23T12:19:31.824319+00:00",
+  "prestate": {
+    "rest": [],
+    "target": []
+  },
+  "sealSha256": "ebcd74d0e73dd20adf7e4e55f7ff078a38fc15c309e1cb93aa13995192cafefe",
+  "variant": "manifest-contrast",
+  "verdict": "FAIL"
+}

@@ -1,0 +1,26 @@
+{
+  "actual": {
+    "exit": 0,
+    "restLog": [
+      {
+        "body_length": 114,
+        "body_sha256": "ae58331bb69b21e7b93a2794c854fcaaed43fb1daf35975a58faa58c0d5b6fac",
+        "method": "POST",
+        "path": "/scan/idor",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"baseline\":{\"status\":200,\"inconclusive\":false},\"results\":[{\"vulnerable\":false}],\"vulnerableCount\":0,\"inconclusiveCount\":0,\"verdict\":\"clean\"}\n",
+    "targetLog": []
+  },
+  "id": "L10",
+  "observedAt": "2026-10-23T11:46:15.774710+00:00",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "cd58b71d9c182954e4c9b96b1ccd252554bde39f531cf7a2f4b1f766ec413c77",
+    "sealedAt": "2026-10-23T11:46:14.565740+00:00"
+  },
+  "variant": "normal",
+  "verdict": "PASS"
+}

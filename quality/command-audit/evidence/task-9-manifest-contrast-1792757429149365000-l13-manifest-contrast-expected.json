@@ -1,0 +1,55 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "check",
+    "endpoints",
+    "127.0.0.1",
+    "--limit",
+    "2"
+  ],
+  "authorityClassification": "ORACLE_MISMATCH",
+  "authoritySources": [
+    "docs/SPEC.md:512,514-517",
+    "bp/src/bp/commands/securityscan.py:343-357",
+    "bp/src/bp/cliutil.py:27-37,145-160"
+  ],
+  "environment": {
+    "BP_AGENT": "1",
+    "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+    "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+    "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+    "BURP_REST_URL": "http://127.0.0.1:61550",
+    "HOME": "{{FIXTURE_ROOT}}/home",
+    "NO_COLOR": "1",
+    "TERM": "dumb"
+  },
+  "expected": {
+    "case": "H2 unavailable",
+    "effect": {
+      "effect": "zero",
+      "route": "none"
+    },
+    "exit": 1,
+    "stderr": {
+      "mode": "json",
+      "shape": "typed_error"
+    },
+    "stdout": {
+      "mode": "empty",
+      "shape": "empty"
+    }
+  },
+  "id": "L13",
+  "oracleHash": "d4000e03f5422fac3317204c17a11017a94c757068af71e4e000aae90eb5b4f0",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "9e9e9b2ae1b2da54a5150921d67ca4536f3fa089b9013957b5902cc6815314fb",
+    "sealedAt": "2026-10-23T12:10:29.149380+00:00"
+  },
+  "scenario": "original-manifest-contrast"
+}

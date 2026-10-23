@@ -1,0 +1,73 @@
+{
+  "actual": {
+    "exit": 0,
+    "observedAt": "2026-10-23T12:18:30.603795+00:00",
+    "restLog": [
+      {
+        "bodyLength": 0,
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "method": "POST",
+        "path": "/collaborator/generate",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"payloads\":[{\"id\":\"cid-001\",\"payload\":\"cid-001.oastify.test\",\"interactionId\":\"cid-001\"}]}\n",
+    "targetLog": []
+  },
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "collab",
+    "new"
+  ],
+  "evidence": {
+    "actualPath": "{{ATTEMPT_DIR}}/task-8-l01-normal-20261023T121830351394Z-b6af439b95e54fae959429fc59f2ef97-actual.json",
+    "preflightFileSha256": "251cdcc5ba44402dcaef458d15746560fda83321db4d7ad0152fc5ed54977ff7",
+    "preflightPath": "{{ATTEMPT_DIR}}/task-8-l01-normal-20261023T121830351394Z-b6af439b95e54fae959429fc59f2ef97-preflight.json"
+  },
+  "expected": {
+    "effect": "simulated collaborator generation response",
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+      "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+      "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:65213",
+      "HOME": "{{FIXTURE_ROOT}}/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "exit": 0,
+    "route": "POST /collaborator/generate",
+    "sealedOracleBranch": {
+      "effect": {
+        "effect": "one collaborator generation",
+        "route": "POST /collaborator/generate"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "empty",
+        "shape": "empty"
+      },
+      "stdout": {
+        "mode": "json",
+        "shape": "parseable"
+      }
+    },
+    "stderr": "",
+    "stdout": "{\"payloads\":[{\"id\":\"cid-001\",\"payload\":\"cid-001.oastify.test\",\"interactionId\":\"cid-001\"}]}\n"
+  },
+  "limits": [
+    "The loopback REST response simulates a Pro server; the CLI fixture does not create a real Montoya task or Collaborator payload."
+  ],
+  "preRunSeal": {
+    "expectedAt": "2026-10-23T12:18:30.350873+00:00",
+    "sha256": "8307b0b40f76a691ff0bffa1dc0ff2e33e74d81de17ec456ef4a1e134e9462b2"
+  },
+  "verdict": "PASS"
+}

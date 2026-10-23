@@ -1,0 +1,86 @@
+{
+  "actual": {
+    "exit": 0,
+    "ledger": [
+      {
+        "burp_op": "GET /target/sitemap",
+        "command": "bp sitemap",
+        "exit_code": 0,
+        "id": "20261023121835lwseko",
+        "status": "ok",
+        "tag": null,
+        "target": "127.0.0.1:65277",
+        "ts": "2026-10-23T12:18:35.331240+00:00"
+      }
+    ],
+    "restLog": [
+      {
+        "body_length": 0,
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "method": "GET",
+        "path": "/target/sitemap?url=http%3A%2F%2F127.0.0.1%3A65278%2F",
+        "status": 200
+      }
+    ],
+    "stderr": "",
+    "stdout": "{\"entries\":[{\"url\":\"http://127.0.0.1:65278/a\",\"method\":\"GET\",\"statusCode\":200,\"mimeType\":\"text/plain\"}],\"total\":1}\n",
+    "targetLog": []
+  },
+  "actualAtNs": 1792757915377868000,
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "sitemap",
+    "http://127.0.0.1:65278/"
+  ],
+  "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+  "checks": {
+    "exit": true,
+    "ledger": true,
+    "rest": true,
+    "stderr": true,
+    "stdout": true,
+    "target": true
+  },
+  "expected": {
+    "exit": 0,
+    "ledger": {
+      "burp_op": "GET /target/sitemap",
+      "count": 1,
+      "exit_code": 0,
+      "status": "ok"
+    },
+    "restLog": [
+      {
+        "body_length": 0,
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "method": "GET",
+        "path": "/target/sitemap?url=http%3A%2F%2F127.0.0.1%3A65278%2F",
+        "status": 200
+      }
+    ],
+    "stderr": "empty",
+    "stdout": {
+      "entries": [
+        {
+          "method": "GET",
+          "mimeType": "text/plain",
+          "statusCode": 200,
+          "url": "http://127.0.0.1:65278/a"
+        }
+      ],
+      "total": 1
+    },
+    "targetLog": []
+  },
+  "expectedAtNs": 1792757915001650000,
+  "id": "F10-C001",
+  "limits": "loopback fixture plus isolated HOME/config/ledger; no external target",
+  "oracleHash": "a097ee12378c10985917814679ce990978260aa7b6a8eb797e5d609991adfa42",
+  "preRunSeal": "673a6a5aa0262fb9fa1a56b95d12fd9bf6cefacb02ce32302e5d0b476f36dd20",
+  "verdict": "PASS"
+}

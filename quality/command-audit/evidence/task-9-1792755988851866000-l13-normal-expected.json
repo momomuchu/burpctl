@@ -1,0 +1,49 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--frozen",
+    "--project",
+    "{{WORKTREE}}/bp",
+    "bp",
+    "check",
+    "endpoints",
+    "127.0.0.1",
+    "--limit",
+    "2"
+  ],
+  "environment": {
+    "BP_AGENT": "1",
+    "BP_CONFIG_PATH": "{{FIXTURE_ROOT}}/home/.bp/config",
+    "BP_LEDGER_PATH": "{{FIXTURE_ROOT}}/state/ledger.db",
+    "BP_PAYLOAD_DIR": "{{FIXTURE_ROOT}}/payloads",
+    "BURP_REST_URL": "http://127.0.0.1:55101",
+    "HOME": "{{FIXTURE_ROOT}}/home",
+    "NO_COLOR": "1",
+    "TERM": "dumb"
+  },
+  "expected": {
+    "classifier": {
+      "anomalousCount": null,
+      "confirmed": false,
+      "findingsCount": 0,
+      "vulnerableCount": null
+    },
+    "endToEndTargetEffectCount": "INCONCLUSIVE",
+    "exit": 0,
+    "fixtureTargetEffectCount": 0,
+    "restEffectCount": 1,
+    "restRoute": "POST /scan/endpoints",
+    "stderr": "empty",
+    "stderrJson": null,
+    "stdout": "json",
+    "stdoutJson": "{\"scanned\":2,\"findings\":[],\"durationMs\":1,\"source\":\"extension-h2-send-history\",\"sourceCounts\":{\"repeater\":1,\"session\":1},\"errors\":[],\"inconclusiveCount\":0}"
+  },
+  "id": "L13",
+  "preRunSeal": {
+    "algorithm": "sha256",
+    "hash": "22c04998c62e416c1ea09ef6c93eeae177f27007ca09caf359cfdb1fc25dd693",
+    "sealedAt": "2026-10-23T11:46:28.851896+00:00"
+  },
+  "variant": "normal"
+}
