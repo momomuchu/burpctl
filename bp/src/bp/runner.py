@@ -35,9 +35,32 @@ def _base_raw(entry: Mapping[str, Any]) -> tuple[bytes, str, str]:
     if "request" not in entry:
         raise BurpError("INVALID_RESPONSE", "history entry missing 'request' field")
     req = entry["request"]
-    headers = [(h["name"], h["value"]) for h in req.get("headers", [])]
-    raw = build_raw(req["method"], req["url"], headers, req.get("body"))
-    parts = urlsplit(req["url"])
+    if not isinstance(req, Mapping):
+        raise BurpError("INVALID_RESPONSE", "history entry has invalid request shape")
+    method = req.get("method")
+    url = req.get("url")
+    raw_headers = req.get("headers", [])
+    body = req.get("body")
+    if not isinstance(method, str) or not isinstance(url, str):
+        raise BurpError("INVALID_RESPONSE", "history entry has invalid request shape")
+    if not isinstance(raw_headers, Sequence) or isinstance(raw_headers, (str, bytes, bytearray)):
+        raise BurpError("INVALID_RESPONSE", "history entry has invalid request shape")
+    if body is not None and not isinstance(body, str):
+        raise BurpError("INVALID_RESPONSE", "history entry has invalid request shape")
+    headers: list[tuple[str, str]] = []
+    for header in raw_headers:
+        if not isinstance(header, Mapping):
+            raise BurpError("INVALID_RESPONSE", "history entry has invalid request shape")
+        name = header.get("name")
+        value = header.get("value")
+        if not isinstance(name, str) or not isinstance(value, str):
+            raise BurpError("INVALID_RESPONSE", "history entry has invalid request shape")
+        headers.append((name, value))
+    try:
+        raw = build_raw(method, url, headers, body)
+        parts = urlsplit(url)
+    except TypeError:
+        raise BurpError("INVALID_RESPONSE", "history entry has invalid request shape") from None
     return raw, (parts.scheme or "https"), parts.netloc
 
 

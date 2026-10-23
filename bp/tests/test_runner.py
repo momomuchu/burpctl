@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from bp.cli import _fuzz_exit, _fuzz_rows
-from bp.client import BurpClient
+from bp.client import BurpClient, BurpError
 from bp.pos import Position, PosError
 from bp.runner import _payload_lists, run_fuzz
 
@@ -497,6 +497,67 @@ def test_base_raw_missing_request_key_raises_burp_error() -> None:
     with pytest.raises(BurpError) as ei:
         run_fuzz(_mock_client_missing_request(), 1, ["query:u"], {"u": [b"x"]}, "sniper")
     assert ei.value.code == "INVALID_RESPONSE"
+
+
+@pytest.mark.parametrize(
+    "request_data",
+    [
+        {
+            "method": 42,
+            "url": "https://t.example.com/s?q=_",
+            "headers": [],
+            "body": None,
+        },
+        None,
+        {"url": "https://t.example.com/s?q=_", "headers": [], "body": None},
+        {"method": "GET", "headers": [], "body": None},
+        {
+            "method": "GET",
+            "url": "https://t.example.com/s?q=_",
+            "headers": [{"name": 42, "value": "x"}],
+            "body": None,
+        },
+        {
+            "method": "GET",
+            "url": "https://t.example.com/s?q=_",
+            "headers": [],
+            "body": 42,
+        },
+    ],
+)
+def test_base_raw_malformed_request_shape_raises_sanitized_burp_error(
+    request_data: object,
+) -> None:
+    sends: list[str] = []
+    calls: list[str] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        calls.append(req.url.path)
+        if req.url.path.startswith("/proxy/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "data": {
+                        "request": request_data,
+                    },
+                    "error": None,
+                },
+            )
+        sends.append(req.url.path)
+        return httpx.Response(500)
+
+    client = BurpClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), base_url="http://test")
+    )
+
+    with pytest.raises(BurpError) as ei:
+        run_fuzz(client, 1, ["query:q"], {"q": [b"x"]}, "sniper")
+
+    assert ei.value.code == "INVALID_RESPONSE"
+    assert ei.value.message == "history entry has invalid request shape"
+    assert calls == ["/proxy/history/1"]
+    assert sends == []
 
 
 # --- [08b] _send(): a present 'response' missing/garbled 'statusCode' must also be clean ---
