@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "baseline": "7e8b7428bb88dfb43f58c5bf7136a289a53e6909",
+  "scope": "Historical findings from the 2026-10-23 command audit; issue and PR links do not change sealed observations.",
+  "findings": [
+    {
+      "id": "N01",
+      "status": "confirmed",
+      "invariant": "Parser failures in agent mode have one structured usage error.",
+      "rootCause": "python-cli-parser",
+      "candidateHash": "7e8b7428bb88dfb43f58c5bf7136a289a53e6909",
+      "reproduction": {"command": "BP_AGENT=1 bp --format invalid health"},
+      "oracle": {"sealed": true, "expected": "exit 2; empty stdout; one JSON USAGE_ERROR on stderr; zero REST and target requests"},
+      "actual": {"transcript": "quality/command-audit/observations-crosscutting.json: exit 2 with human Typer Usage/Error on stderr", "exitCode": 2},
+      "effects": {"evidence": "quality/command-audit/observations-crosscutting.json: zero REST and target requests"},
+      "comparison": {"novelEffect": true, "matches": ["D03"]},
+      "regression": {"tests": ["https://github.com/momomuchu/burpctl/pull/7"]},
+      "issue": {"title": "Agent-mode parser failures emit human Usage instead of JSON", "body": "https://github.com/momomuchu/burpctl/issues/2", "ready": true},
+      "pullRequests": ["https://github.com/momomuchu/burpctl/pull/7"]
+    },
+    {
+      "id": "N02",
+      "status": "confirmed",
+      "invariant": "Local command preflight errors in agent mode have one structured usage error before effects.",
+      "rootCause": "python-command-preflight",
+      "candidateHash": "7e8b7428bb88dfb43f58c5bf7136a289a53e6909",
+      "reproduction": {"command": "BP_AGENT=1 bp check idor http://127.0.0.1:<owned-fixture>/item/{id} --param id --own 1 --target 2 --header broken"},
+      "oracle": {"sealed": true, "expected": "exit 2; empty stdout; one JSON USAGE_ERROR on stderr; zero REST and target requests"},
+      "actual": {"transcript": "quality/command-audit/observations-checks.json: plaintext local usage error on stderr", "exitCode": 2},
+      "effects": {"evidence": "quality/command-audit/observations-checks.json: local refusal before REST or target request"},
+      "comparison": {"novelEffect": true, "matches": ["D03"]},
+      "regression": {"tests": ["https://github.com/momomuchu/burpctl/pull/8"]},
+      "issue": {"title": "Agent-mode command preflight and notes break JSON stderr contract", "body": "https://github.com/momomuchu/burpctl/issues/3", "ready": true},
+      "pullRequests": ["https://github.com/momomuchu/burpctl/pull/8"]
+    },
+    {
+      "id": "N03",
+      "status": "confirmed",
+      "invariant": "Fuzz payload preflight errors in agent mode are structured and produce no effects.",
+      "rootCause": "python-fuzz-preflight",
+      "candidateHash": "7e8b7428bb88dfb43f58c5bf7136a289a53e6909",
+      "reproduction": {"command": "BP_AGENT=1 bp fuzz 1 --payloads name=/missing/file"},
+      "oracle": {"sealed": true, "expected": "exit 2; empty stdout; one JSON USAGE_ERROR on stderr; no fuzz run, REST or target effect"},
+      "actual": {"transcript": "quality/command-audit/observations-flat-effects.json: plaintext missing-file error", "exitCode": 2},
+      "effects": {"evidence": "quality/command-audit/observations-flat-effects.json: preflight refused before network effects"},
+      "comparison": {"novelEffect": true, "matches": ["D03", "D06"]},
+      "regression": {"tests": ["https://github.com/momomuchu/burpctl/pull/9"]},
+      "issue": {"title": "Agent-mode command preflight and notes break JSON stderr contract", "body": "https://github.com/momomuchu/burpctl/issues/3", "ready": true},
+      "pullRequests": ["https://github.com/momomuchu/burpctl/pull/9"]
+    },
+    {
+      "id": "N04",
+      "status": "confirmed",
+      "invariant": "A replay response preserves post-send persistence failure and no-retry guidance.",
+      "rootCause": "kotlin-history-projection",
+      "candidateHash": "7e8b7428bb88dfb43f58c5bf7136a289a53e6909",
+      "reproduction": {"command": "POST /history/{id}/replay with one mocked Montoya send and injected H2 persistence failure"},
+      "oracle": {"sealed": true, "expected": "HTTP 200 with persistence.status=FAILED and do-not-retry warning; exactly one send"},
+      "actual": {"transcript": "RED HistoryReplayPersistenceTest: HTTP 200, data.persistence absent after one send", "exitCode": 0},
+      "effects": {"evidence": "RED route test in issue #4 and PR #10: one mocked send, one failed H2 write; no real target claim"},
+      "comparison": {"novelEffect": true, "matches": ["D08"]},
+      "regression": {"tests": ["https://github.com/momomuchu/burpctl/pull/10"]},
+      "issue": {"title": "History replay response drops persistence failure after a successful send", "body": "https://github.com/momomuchu/burpctl/issues/4", "ready": true},
+      "pullRequests": ["https://github.com/momomuchu/burpctl/pull/10"]
+    },
+    {
+      "id": "N05",
+      "status": "confirmed",
+      "invariant": "Every dependency version permitted by wheel metadata can launch the CLI on supported Python 3.11.",
+      "rootCause": "python-package-metadata",
+      "candidateHash": "7e8b7428bb88dfb43f58c5bf7136a289a53e6909",
+      "reproduction": {"command": "Python 3.11 fresh wheel install with typer==0.12.0 and click==8.1.8, then bp --help"},
+      "oracle": {"sealed": true, "expected": "resolver-valid install displays help and exits 0"},
+      "actual": {"transcript": "RuntimeError: Type not yet supported: str | None before command dispatch", "exitCode": 1},
+      "effects": {"evidence": "local fresh wheel smoke in issue #6: no REST, ledger or target effect"},
+      "comparison": {"novelEffect": true, "matches": ["D18"]},
+      "regression": {"tests": ["https://github.com/momomuchu/burpctl/pull/12"]},
+      "issue": {"title": "Package metadata permits Typer versions that cannot start bp", "body": "https://github.com/momomuchu/burpctl/issues/6", "ready": true},
+      "pullRequests": ["https://github.com/momomuchu/burpctl/pull/12"]
+    },
+    {
+      "id": "A01",
+      "status": "refuted",
+      "assumption": "Bare bp history dispatches to history list.",
+      "observation": "bp history exits 2 with group help and no REST; bp history list calls GET /history. The public docs only promise the explicit list form.",
+      "evidence": "quality/command-audit/observations-config-history.json",
+      "correction": "https://github.com/momomuchu/burpctl/pull/11"
+    }
+  ],
+  "documentationCorrections": [
+    {"issue": "https://github.com/momomuchu/burpctl/issues/5", "pullRequest": "https://github.com/momomuchu/burpctl/pull/11", "topics": ["unsupported --throttle-ms claim", "BP_AGENT JSON default", "check endpoints HOST argument", "bare history source comment"]}
+  ],
+  "integrationLimit": "S3.1 proxy capture was not executed in an isolated licensed Burp profile; 49 of 50 ordered actions were observed, and no external target effect is claimed."
+}

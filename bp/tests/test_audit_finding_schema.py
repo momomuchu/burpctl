@@ -14,6 +14,7 @@ import pytest
 
 ROOT: Final = Path(__file__).resolve().parents[2]
 INDEX: Final = ROOT / "quality" / "command-audit" / "defect-index.json"
+FINDINGS: Final = ROOT / "quality" / "command-audit" / "findings.json"
 LEDGER: Final = ROOT / "quality" / "confirmed-defects.yaml"
 IDS: Final = {f"D{number:02d}" for number in range(1, 19)}
 STATUSES: Final = {"confirmed", "refuted", "inconclusive"}
@@ -141,6 +142,25 @@ def test_confirmed_finding_requires_oracle_transcript_and_effect_evidence() -> N
     finding: dict[str, object] = {"status": "confirmed", "candidateHash": "a" * 40}
     with pytest.raises(FindingSchemaError, match="missing"):
         classify_finding(finding, _index())
+
+
+def test_published_findings_are_classified_and_linked() -> None:
+    """The public issue tree cannot outrun its candidate-bound evidence."""
+    data = json.loads(FINDINGS.read_text(encoding="utf-8"))
+    findings = data["findings"]
+    assert isinstance(findings, list)
+    assert {finding["id"] for finding in findings} == {"N01", "N02", "N03", "N04", "N05", "A01"}
+    for finding in findings:
+        assert isinstance(finding, dict)
+        if finding["status"] == "confirmed":
+            assert finding["candidateHash"] == data["baseline"]
+            assert classify_finding(finding, _index()) == "issue-ready"
+            assert finding["issue"]["body"].startswith(
+                "https://github.com/momomuchu/burpctl/issues/"
+            )
+            assert finding["pullRequests"]
+        else:
+            assert classify_finding(finding, _index()) == "refuted"
 
 
 def test_confirmed_novel_finding_is_issue_ready() -> None:
