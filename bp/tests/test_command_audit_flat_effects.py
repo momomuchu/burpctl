@@ -17,6 +17,9 @@ from typing import Literal, TypeAlias, assert_never, cast
 import pytest
 
 from audit_fixture import AuditFixture, FixtureRoot, RequestEffect, UnsafeTargetError
+from test_command_audit_modes import require_historical_live
+
+require_historical_live()
 
 JsonScalar: TypeAlias = str | int | float | bool | None
 JsonValue: TypeAlias = JsonScalar | Sequence["JsonValue"] | Mapping[str, "JsonValue"]

@@ -17,6 +17,9 @@ from typing import Final, Literal, cast
 import pytest
 
 from audit_fixture import AuditFixture, FixtureRoot, RequestEffect
+from test_command_audit_modes import require_historical_live
+
+require_historical_live()
 
 # allow: SIZE_OK — one auditable matrix keeps every sealed command case and runner together.
 

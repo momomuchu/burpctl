@@ -25,6 +25,9 @@ from urllib.parse import quote, urlsplit
 import pytest
 
 from audit_fixture import AuditFixture, FixtureRoot, RequestEffect, _FixtureHandler
+from test_command_audit_modes import require_historical_live
+
+require_historical_live()
 
 ROOT: Final = Path(__file__).resolve().parents[2]
 ORACLES: Final = ROOT / "quality" / "command-audit" / "sequence-oracles.json"

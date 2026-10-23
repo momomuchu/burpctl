@@ -22,6 +22,9 @@ from urllib.parse import quote, urlsplit
 import pytest
 
 from audit_fixture import AuditFixture, FixtureRoot, RequestEffect
+from test_command_audit_modes import require_historical_live
+
+require_historical_live()
 
 # allow: SIZE_OK — the single pure-data matrix keeps all twenty sealed invocations auditable.
 

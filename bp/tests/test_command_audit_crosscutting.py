@@ -20,7 +20,9 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from audit_fixture import AuditFixture, FixtureRoot
 from bp.ledger import Ledger, OpRecord
+from test_command_audit_modes import require_historical_live
 
+require_historical_live()
 
 CANDIDATE: Final = "3af139dc0b4020923f831099338c92af3265d7e2"
 StreamMode = Literal["empty", "json", "contains", "usage", "machine_error"]

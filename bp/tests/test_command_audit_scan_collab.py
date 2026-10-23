@@ -19,6 +19,9 @@ from uuid import uuid4
 import pytest
 
 from audit_fixture import AuditFixture, FixtureRoot, RequestEffect
+from test_command_audit_modes import require_historical_live
+
+require_historical_live()
 
 ROOT: Final = Path(__file__).resolve().parents[2]
 ORACLES: Final = ROOT / "quality" / "command-audit" / "oracles.json"

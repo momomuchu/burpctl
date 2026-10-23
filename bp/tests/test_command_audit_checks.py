@@ -16,7 +16,9 @@ from typing import Final, Literal, TypedDict
 import pytest
 
 from audit_fixture import AuditFixture, FixtureRoot
+from test_command_audit_modes import require_historical_live
 
+require_historical_live()
 
 StreamMode = Literal["empty", "json", "nonempty"]
 MismatchVerdict = Literal["ORACLE_MISMATCH", "PRODUCT_CONTRACT_DEFECT"]

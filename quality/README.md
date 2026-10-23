@@ -12,4 +12,8 @@ Statuses move only in this order:
 
 `bp/tests/test_quality_ledger.py` validates the document and its references. Set `BURPCTL_REQUIRE_ALL_VERIFIED=1` for the final/release gate; ordinary development runs allow incomplete records so RED-first slices can exist without falsifying completion.
 
+The historical command audit has separate sealed-replay, historical-live, and current-candidate
+contracts. See [`command-audit/README.md`](command-audit/README.md); default tests replay and
+validate its immutable evidence without requiring fixed code to reproduce historical defects.
+
 The ledger uses JSON syntax in a `.yaml` file. JSON is a strict YAML 1.2 subset, which keeps the artifact consumable without adding a parser dependency solely for this gate.
