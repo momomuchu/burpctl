@@ -1,0 +1,5205 @@
+{
+  "schema": "burpctl.command-audit/sequence-oracles",
+  "schema_version": 2,
+  "candidate": {
+    "revision": "3af139dc0b4020923f831099338c92af3265d7e2"
+  },
+  "status": "PRE_EXECUTION_ONLY",
+  "sealed_at": "2026-10-23T12:00:00Z",
+  "execution_policy": {
+    "network_scope": "LOOPBACK_ONLY",
+    "external_targets_forbidden": true,
+    "execution_performed": false,
+    "statement": "This artifact contains sealed expectations and fixture prestates only. It is not evidence that a Burp command, sequence, server, or target ran.",
+    "effect_status_semantics": {
+      "PREFLIGHT_NO_EFFECT": "Rejected or failed before the named target mutation; counts are exact zero for the prevented effect.",
+      "COMPLETED": "The named route/read/mutation or target attempt completed as described.",
+      "UNKNOWN_INCONCLUSIVE": "Transport ended after dispatch and completion cannot be inferred; remain INCONCLUSIVE until the specified authoritative reconciliation read."
+    }
+  },
+  "invariants": [
+    "Every CLI REST call creates local Run Ledger metadata when ledger is available; cliutil.run() backfills the final CLI exit code.",
+    "A mock assertion is never evidence of a live target effect; live_target_effect_count is established only by the owned loopback fixture counter.",
+    "Mutations with UNKNOWN_INCONCLUSIVE completion are never retried before reconciliation."
+  ],
+  "sequences": [
+    {
+      "id": "S1",
+      "name": "scope check/add/check/remove/check",
+      "branch": "Community and Professional",
+      "assumptions": [
+        "The loopback URL has no pre-existing Burp UI scope rule."
+      ],
+      "steps": [
+        {
+          "id": "S1.1",
+          "action": "scope check before add",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scope",
+              "check",
+              "{{LOOPBACK_URL}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "scope_check",
+              "selected_values": [
+                "url={{LOOPBACK_URL}}",
+                "inScope=false"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "api.scope().isInScope(loopback URL) is false; no extension-managed mirror is treated as authoritative.",
+          "transition": "Burp engine scope remains unchanged; one local REST ledger row is finalized with exit 0.",
+          "state_owner": "Burp Montoya api.scope()",
+          "rest": {
+            "method": "GET",
+            "path": "/target/scope/check",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "authoritative read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/target.py:108",
+            "src/main/kotlin/com/burprest/services/TargetService.kt:64"
+          ],
+          "assumptions": [
+            "The fixture binds every target URL to an owned loopback listener and provides deterministic response bodies."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "repeat authoritative scope check only",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "a7fe5cc6bbf4ce8d03cde098524fd90d447aee5f1dd6dda1c88aa41684be7bc5"
+          },
+          "branch_marker": "S1:main"
+        },
+        {
+          "id": "S1.2",
+          "action": "scope add",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scope",
+              "add",
+              "{{LOOPBACK_URL}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "scope_check",
+              "selected_values": [
+                "inScope=true"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Authoritative engine verdict is false.",
+          "transition": "includeInScope executes, then api.scope().isInScope returns the authoritative true verdict.",
+          "state_owner": "Burp Montoya api.scope()",
+          "rest": {
+            "method": "POST",
+            "path": "/target/scope/add",
+            "payload": {
+              "url": "{{LOOPBACK_URL}}"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "engine mutation and verdict",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/target.py:88",
+            "src/main/kotlin/com/burprest/services/TargetService.kt:50"
+          ],
+          "assumptions": [
+            "The fixture binds every target URL to an owned loopback listener and provides deterministic response bodies.",
+            "Montoya includeInScope returns normally."
+          ],
+          "failure_injection": {
+            "point": "after request delivery but before response receipt",
+            "injected_fault": "timeout after scope inclusion",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                0
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE"
+            },
+            "reconciliation": {
+              "action": "bp scope check {{LOOPBACK_URL}}",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "includeInScope executes, then api.scope().isInScope returns the authoritative true verdict.",
+                  "live_target_effect_count": 0
+                },
+                {
+                  "state": "Authoritative engine verdict is false.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "ca96874182f6ac314d5d136f62ae3200e8a015a590aadf836423c2cdca084f3a"
+          },
+          "branch_marker": "S1:main"
+        },
+        {
+          "id": "S1.3",
+          "action": "scope check after add",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scope",
+              "check",
+              "{{LOOPBACK_URL}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "scope_check",
+              "selected_values": [
+                "inScope=true"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Previous reconciliation or successful add established true.",
+          "transition": "Authoritative engine verdict remains true.",
+          "state_owner": "Burp Montoya api.scope()",
+          "rest": {
+            "method": "GET",
+            "path": "/target/scope/check",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "authoritative read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/target.py:108",
+            "src/main/kotlin/com/burprest/services/TargetService.kt:64"
+          ],
+          "assumptions": [
+            "S1.2 completed or was reconciled as completed."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry this read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "ee195c5958c0175072432c26217af096131d639254233a20daab21e9ab2105a5"
+          },
+          "branch_marker": "S1:main"
+        },
+        {
+          "id": "S1.4",
+          "action": "scope remove",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scope",
+              "remove",
+              "{{LOOPBACK_URL}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "scope_check",
+              "selected_values": [
+                "inScope=false"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Authoritative engine verdict is true.",
+          "transition": "excludeFromScope executes, then api.scope().isInScope returns the authoritative false verdict.",
+          "state_owner": "Burp Montoya api.scope()",
+          "rest": {
+            "method": "POST",
+            "path": "/target/scope/remove",
+            "payload": {
+              "url": "{{LOOPBACK_URL}}"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "engine mutation and verdict",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/target.py:98",
+            "src/main/kotlin/com/burprest/services/TargetService.kt:57"
+          ],
+          "assumptions": [
+            "S1.3 observed true."
+          ],
+          "failure_injection": {
+            "point": "after request delivery but before response receipt",
+            "injected_fault": "timeout after scope exclusion",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                0
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE"
+            },
+            "reconciliation": {
+              "action": "bp scope check {{LOOPBACK_URL}}",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "excludeFromScope executes, then api.scope().isInScope returns the authoritative false verdict.",
+                  "live_target_effect_count": 0
+                },
+                {
+                  "state": "Authoritative engine verdict is true.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "31aa7b88c9eaf31dc2edc0d147f3c965436560f06fd505bff4f097d54f6a8320"
+          },
+          "branch_marker": "S1:main"
+        },
+        {
+          "id": "S1.5",
+          "action": "scope check after remove",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scope",
+              "check",
+              "{{LOOPBACK_URL}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "scope_check",
+              "selected_values": [
+                "inScope=false"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Previous reconciliation or successful remove established false.",
+          "transition": "Authoritative engine verdict remains false.",
+          "state_owner": "Burp Montoya api.scope()",
+          "rest": {
+            "method": "GET",
+            "path": "/target/scope/check",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "authoritative read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/target.py:108",
+            "src/main/kotlin/com/burprest/services/TargetService.kt:64"
+          ],
+          "assumptions": [
+            "S1.4 completed or was reconciled as unchanged/completed."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry this read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "d6f326cb2102239ababf9bc8faf76ea44112eb3b28523e5cfd2dc246937aeb13"
+          },
+          "branch_marker": "S1:main"
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "name": "session replace/origin/cookie lifecycle",
+      "branch": "same-origin plus cross-origin rejection",
+      "assumptions": [
+        "The session DAO and observed cookie jar start empty.",
+        "The loopback response sets observed cookie seen=1."
+      ],
+      "steps": [
+        {
+          "id": "S2.1",
+          "action": "session get initial",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "session",
+              "get",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "session_info",
+              "selected_values": [
+                "name=default",
+                "cookies={}",
+                "headers={}",
+                "origin=null"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Configured session is empty and observed cookie jar is independently empty.",
+          "transition": "No session state changes.",
+          "state_owner": "SessionService configured-session AtomicReference + H2 SessionDao",
+          "rest": {
+            "method": "GET",
+            "path": "/session/get",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "authoritative read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/session.py:94",
+            "src/main/kotlin/com/burprest/services/SessionService.kt:123"
+          ],
+          "assumptions": [
+            "Fresh isolated extension fixture."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry this read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "73b92cbf14c39d5ab948c84bc7e1a65a5310c5812698528a04baa63fd424e1dd"
+          },
+          "branch_marker": "S2:lifecycle"
+        },
+        {
+          "id": "S2.2",
+          "action": "session set full replacement",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "session",
+              "set",
+              "--json",
+              "{\"cookies\":{\"sid\":\"secret\"},\"headers\":{\"X-Test\":\"yes\"},\"name\":\"audit\"}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "session_info",
+              "selected_values": [
+                "name=audit",
+                "cookies.sid=secret",
+                "headers.X-Test=yes",
+                "origin=null"
+              ]
+            },
+            "stderr": {
+              "mode": "text",
+              "shape": "note",
+              "selected_values": [
+                "full replace"
+              ]
+            }
+          },
+          "prestate": "Configured session is empty.",
+          "transition": "Validated credentials persist transactionally, then the immutable snapshot is swapped atomically; observed jar remains empty.",
+          "state_owner": "SessionService AtomicReference + H2 SessionDao",
+          "rest": {
+            "method": "POST",
+            "path": "/session/set",
+            "payload": {
+              "cookies": {
+                "sid": "secret"
+              },
+              "headers": {
+                "X-Test": "yes"
+              },
+              "name": "audit"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "atomic configured-session replacement",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/session.py:47",
+            "src/main/kotlin/com/burprest/services/SessionService.kt:96"
+          ],
+          "assumptions": [
+            "Session persistence is available."
+          ],
+          "failure_injection": {
+            "point": "after request delivery but before response receipt",
+            "injected_fault": "timeout around atomic persist/swap",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                0
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE"
+            },
+            "reconciliation": {
+              "action": "bp session get",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "Validated credentials persist transactionally, then the immutable snapshot is swapped atomically; observed jar remains empty.",
+                  "live_target_effect_count": 0
+                },
+                {
+                  "state": "Configured session is empty.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "424f4da0bf18ee72f541e0bbcffb8374542454c92cf090fe8887c6ab1f39a972"
+          },
+          "branch_marker": "S2:lifecycle"
+        },
+        {
+          "id": "S2.3",
+          "action": "session get after replacement",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "session",
+              "get",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "session_info",
+              "selected_values": [
+                "name=audit",
+                "origin=null"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "S2.2 succeeded or reconciliation selected the completed state.",
+          "transition": "Returns one immutable configured-session snapshot.",
+          "state_owner": "SessionService configured-session AtomicReference",
+          "rest": {
+            "method": "GET",
+            "path": "/session/get",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "authoritative read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/session.py:94",
+            "src/main/kotlin/com/burprest/services/SessionService.kt:123"
+          ],
+          "assumptions": [
+            "The configured snapshot is the S2.2 replacement."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry this read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "05d9529af363c3c0b29e1ca69c416aa059b0fcbbb7c65ae5417193343d731045"
+          },
+          "branch_marker": "S2:lifecycle"
+        },
+        {
+          "id": "S2.4",
+          "action": "same-origin credentialed send and first-use origin bind",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "session",
+              "send",
+              "{{LOOPBACK_URL}}/cookie",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "authenticated_response",
+              "selected_values": [
+                "statusCode=200",
+                "persistence.status=PERSISTED"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Configured credentials are unbound; observed jar is empty.",
+          "transition": "The origin is persisted and published before one loopback target send; response cookie seen=1 enters the separate observed jar; optional history persists.",
+          "state_owner": "SessionService configured session + observed cookie jar + H2 history",
+          "rest": {
+            "method": "POST",
+            "path": "/session/send",
+            "payload": {
+              "method": "GET",
+              "url": "{{LOOPBACK_URL}}/cookie"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 1,
+            "status": "COMPLETED",
+            "classification": "origin bind then live target send",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/session.py:128",
+            "src/main/kotlin/com/burprest/services/SessionService.kt:125",
+            "src/main/kotlin/com/burprest/services/SessionService.kt:298"
+          ],
+          "assumptions": [
+            "The target returns one HTTP response and Set-Cookie seen=1."
+          ],
+          "failure_injection": {
+            "point": "after target transmission but before REST response",
+            "injected_fault": "transport timeout after possible send",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                1
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE"
+            },
+            "reconciliation": {
+              "action": "bp session get, bp session cookies, then target fixture request-count read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "The origin is persisted and published before one loopback target send; response cookie seen=1 enters the separate observed jar; optional history persists.",
+                  "live_target_effect_count": 1
+                },
+                {
+                  "state": "Configured credentials are unbound; observed jar is empty.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "cb357e8b6c850bbd72a84adebced893c71e04c6bb4bc606f52f8724e6e2a3d06"
+          },
+          "branch_marker": "S2:same_origin"
+        },
+        {
+          "id": "S2.5",
+          "action": "cross-origin branch rejection",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "session",
+              "send",
+              "{{OTHER_LOOPBACK_ORIGIN}}/blocked",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 1,
+            "stdout": {
+              "mode": "json",
+              "shape": "empty",
+              "selected_values": []
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "INVALID_REQUEST",
+                "http_status=400"
+              ]
+            }
+          },
+          "prestate": "Configured credentials are bound to {{LOOPBACK_ORIGIN}}.",
+          "transition": "The REST route returns HTTP 400 INVALID_REQUEST before target transmission; configured session and jar are unchanged.",
+          "state_owner": "SessionService origin-bound configured session",
+          "rest": {
+            "method": "POST",
+            "path": "/session/send",
+            "payload": {
+              "method": "GET",
+              "url": "{{OTHER_LOOPBACK_ORIGIN}}/blocked"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "PREFLIGHT_NO_EFFECT",
+            "classification": "403 credential boundary rejection",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "src/main/kotlin/com/burprest/services/SessionService.kt:311",
+            "src/main/kotlin/com/burprest/server/RestServer.kt:181",
+            "src/test/kotlin/com/burprest/services/SessionServiceTest.kt:332",
+            "bp/src/bp/cliutil.py:27"
+          ],
+          "assumptions": [
+            "The second loopback listener uses a distinct port and therefore a distinct origin."
+          ],
+          "failure_injection": {
+            "point": "during origin preflight",
+            "injected_fault": "bound-origin mismatch raises IllegalArgumentException",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "INVALID_REQUEST",
+                  "http_status=400"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "bp session get and fixture request-count read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "fc26869649717d4e4455b83ba0083ec0866ddcd356466405382e4a7d10a437ba"
+          },
+          "branch_marker": "S2:cross_origin"
+        },
+        {
+          "id": "S2.6",
+          "action": "inspect observed cookies",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "session",
+              "cookies",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "cookie_jar",
+              "selected_values": [
+                "total=1",
+                "cookies[0].name=seen",
+                "cookies[0].value=1"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Configured session is bound; observed jar contains seen=1.",
+          "transition": "No state changes.",
+          "state_owner": "SessionService process-local observed cookie jar",
+          "rest": {
+            "method": "GET",
+            "path": "/session/cookie-jar",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "authoritative read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/session.py:185",
+            "src/main/kotlin/com/burprest/services/SessionService.kt:181"
+          ],
+          "assumptions": [
+            "S2.4 completed and response cookie capture succeeded."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry this read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "fc4876500bae78969ef56a129e3d2d30a55b305d7ddfcf0b5a3189655fa8eec0"
+          },
+          "branch_marker": "S2:lifecycle"
+        },
+        {
+          "id": "S2.7",
+          "action": "clear configured credentials",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "session",
+              "clear",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "session_info",
+              "selected_values": [
+                "cookies={}",
+                "headers={}",
+                "origin=null"
+              ]
+            },
+            "stderr": {
+              "mode": "text",
+              "shape": "note",
+              "selected_values": [
+                "cookie-jar intact"
+              ]
+            }
+          },
+          "prestate": "Configured credentials are bound; observed jar contains seen=1.",
+          "transition": "Configured session is transactionally cleared and swapped to empty; observed jar still contains seen=1.",
+          "state_owner": "SessionService configured session + H2 SessionDao; observed jar separate",
+          "rest": {
+            "method": "DELETE",
+            "path": "/session/clear",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "configured-session clear only",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/session.py:109",
+            "src/main/kotlin/com/burprest/services/SessionService.kt:125",
+            "docs/STATE-AND-CONFIG.md:12"
+          ],
+          "assumptions": [
+            "S2.6 observed one cookie."
+          ],
+          "failure_injection": {
+            "point": "after request delivery but before response receipt",
+            "injected_fault": "timeout around transactional clear",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                0
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE"
+            },
+            "reconciliation": {
+              "action": "bp session get followed by bp session cookies",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "Configured session is transactionally cleared and swapped to empty; observed jar still contains seen=1.",
+                  "live_target_effect_count": 0
+                },
+                {
+                  "state": "Configured credentials are bound; observed jar contains seen=1.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "6195175466bcdd4bff79e58de43219c5db104c43fdff13c0be4167ac1b63207a"
+          },
+          "branch_marker": "S2:lifecycle"
+        },
+        {
+          "id": "S2.8",
+          "action": "session get after clear",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "session",
+              "get",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "session_info",
+              "selected_values": [
+                "name=default",
+                "cookies={}",
+                "headers={}",
+                "origin=null"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "S2.7 succeeded or was reconciled.",
+          "transition": "Configured session is observed empty.",
+          "state_owner": "SessionService configured-session AtomicReference",
+          "rest": {
+            "method": "GET",
+            "path": "/session/get",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "authoritative read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/session.py:94",
+            "src/main/kotlin/com/burprest/services/SessionService.kt:123"
+          ],
+          "assumptions": [
+            "S2.7 completion has been established."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry this read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "56176cf65443ca8c2165b3a23f2d3e16620908b78ffe3dc352931f82cedcd38a"
+          },
+          "branch_marker": "S2:lifecycle"
+        },
+        {
+          "id": "S2.9",
+          "action": "observed cookies survive clear",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "session",
+              "cookies",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "cookie_jar",
+              "selected_values": [
+                "total=1",
+                "cookies[0].name=seen"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Configured session is empty; observed jar contains seen=1.",
+          "transition": "Observed jar remains unchanged.",
+          "state_owner": "SessionService process-local observed cookie jar",
+          "rest": {
+            "method": "GET",
+            "path": "/session/cookie-jar",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "authoritative read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/session.py:185",
+            "docs/STATE-AND-CONFIG.md:12"
+          ],
+          "assumptions": [
+            "No extension reload occurred."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry this read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "315ea915709ac10e0e762d37715d102cf5040fcf2ed36c4e874b707783043e37"
+          },
+          "branch_marker": "S2:lifecycle"
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "name": "proxy/H2/live target/local ledger separation",
+      "branch": "traffic chain plus independent log/tag/log",
+      "assumptions": [
+        "A loopback request is sent through the owned Burp proxy fixture and becomes proxy index {{PROXY_ID}}.",
+        "H2 history and the Python ledger start isolated."
+      ],
+      "steps": [
+        {
+          "id": "S3.1",
+          "action": "capture one request through Burp proxy listener",
+          "invocation": {
+            "kind": "fixture",
+            "fixture_action": "Send one HTTP request to {{LOOPBACK_URL}}/captured through the owned loopback Burp proxy listener; record returned absolute proxy index {{PROXY_ID}}."
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "fixture_receipt",
+              "selected_values": [
+                "proxy_index={{PROXY_ID}}",
+                "target_requests=1"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Proxy live history lacks the fixture request; H2 and local ledger are empty.",
+          "transition": "Burp proxy listener forwards one request and Montoya live proxy history gains one entry; H2 and Python ledger remain unchanged.",
+          "state_owner": "Burp proxy listener + Montoya live proxy history",
+          "rest": {
+            "method": null,
+            "path": null,
+            "payload": null,
+            "no_rest_reason": "Fixture traffic uses the proxy listener, not the Burp REST API.",
+            "route_effect_count": 0
+          },
+          "effects": {
+            "rest_route_count": 0,
+            "live_target_effect_count": 1,
+            "status": "COMPLETED",
+            "classification": "proxy capture and live target effect",
+            "local_ledger_rows": 0
+          },
+          "citations": [
+            "docs/CLI.md:105",
+            "bp/src/bp/commands/proxynav.py:53"
+          ],
+          "assumptions": [
+            "The owned proxy fixture is already configured to accept only loopback destination traffic."
+          ],
+          "failure_injection": {
+            "point": "before proxy forwarding",
+            "injected_fault": "fixture rejects non-loopback destination",
+            "expected": {
+              "exit": 2,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "LOOPBACK_POLICY"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "read proxy fixture and target request counts",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "55838451fefd93c6e496b8201f6c3811e896c0340472a271111437076e34f5c7"
+          },
+          "branch_marker": "S3:traffic_chain"
+        },
+        {
+          "id": "S3.2",
+          "action": "read captured proxy request",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "req",
+              "{{PROXY_ID}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "proxy_entry",
+              "selected_values": [
+                "id={{PROXY_ID}}",
+                "request.url={{LOOPBACK_URL}}/captured"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Montoya proxy history contains the captured entry.",
+          "transition": "One REST read and one local ledger row; no H2 or target change.",
+          "state_owner": "Montoya live proxy history index",
+          "rest": {
+            "method": "GET",
+            "path": "/proxy/history/{{PROXY_ID}}",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "proxy history read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/proxynav.py:53",
+            "bp/src/bp/commands/proxynav.py:67"
+          ],
+          "assumptions": [
+            "{{PROXY_ID}} is the absolute index from S3.1."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry this read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "8443c93e586dcf6660d86d11c8ce846e22fde1c93de2f26a4ec843a8bfe7acb8"
+          },
+          "branch_marker": "S3:traffic_chain"
+        },
+        {
+          "id": "S3.3",
+          "action": "send captured request via Repeater engine",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "send",
+              "{{PROXY_ID}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "send_response",
+              "selected_values": [
+                "response.statusCode=200",
+                "persistence.status=PERSISTED"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Proxy entry exists; H2 history has zero rows.",
+          "transition": "One live target send completes; optional H2 history/sitemap persistence reports its status; proxy history is not the H2 owner.",
+          "state_owner": "RepeaterService live target + H2 HistoryDao/SitemapDao",
+          "rest": {
+            "method": "POST",
+            "path": "/repeater/send",
+            "payload": {
+              "requestId": "{{PROXY_ID}}"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 1,
+            "status": "COMPLETED",
+            "classification": "live send with reported optional persistence",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/repeater.py:53",
+            "src/main/kotlin/com/burprest/services/RepeaterService.kt:77"
+          ],
+          "assumptions": [
+            "History and sitemap DAOs are configured."
+          ],
+          "failure_injection": {
+            "point": "after target response, during optional H2 persistence",
+            "injected_fault": "forced H2 persistence failure reports persistence.status=FAILED and do-not-retry warning",
+            "expected": {
+              "exit": 0,
+              "stdout": {
+                "mode": "json",
+                "shape": "send_response",
+                "selected_values": [
+                  "response.statusCode=200",
+                  "persistence.status=FAILED",
+                  "warning contains do not retry the target send"
+                ]
+              },
+              "stderr": {
+                "mode": "empty",
+                "shape": "empty",
+                "selected_values": []
+              }
+            },
+            "state_after": "Target send completed once; optional H2 history/sitemap persistence failed.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 1,
+              "status": "COMPLETED",
+              "classification": "target completed; optional persistence failed",
+              "local_ledger_rows": 1
+            },
+            "reconciliation": {
+              "action": "bp history list only; never repeat bp send",
+              "expected": "No new H2 row is required when persistence.status=FAILED.",
+              "status_after": "COMPLETED",
+              "outcomes": [
+                {
+                  "state": "target completed and H2 row absent",
+                  "live_target_effect_count": 1
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "b5750826b735a7f7e354730d1ab0aac906dc9d6997f2b967bec34a4a7d9d266d"
+          },
+          "branch_marker": "S3:traffic_chain"
+        },
+        {
+          "id": "S3.4",
+          "action": "list extension H2 history",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "history",
+              "list",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "history_rows",
+              "selected_values": [
+                "contains source=repeater",
+                "contains url={{LOOPBACK_URL}}/captured"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "H2 contains the successful send row when persistence was PERSISTED.",
+          "transition": "Reads H2 only; target and live proxy history do not change.",
+          "state_owner": "H2 HistoryDao",
+          "rest": {
+            "method": "GET",
+            "path": "/history",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "H2 read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/history.py:96",
+            "docs/STATE-AND-CONFIG.md:10"
+          ],
+          "assumptions": [
+            "S3.3 reported PERSISTED; otherwise this row is the reconciliation read."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "H2 unavailable",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "SERVICE_UNAVAILABLE"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "restore fixture DB and retry this read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "4cc02b3cddb8c171b9cd905da40c971336b2a2dae59e81e7701386bd929d96ff"
+          },
+          "branch_marker": "S3:traffic_chain"
+        },
+        {
+          "id": "S3.5",
+          "action": "replay H2 history entry",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "history",
+              "replay",
+              "{{HISTORY_ID}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "replay_response",
+              "selected_values": [
+                "original.id={{HISTORY_ID}}",
+                "replayed.source=replay",
+                "replayed.id=0",
+                "persistence field absent"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "H2 contains {{HISTORY_ID}}.",
+          "transition": "One H2 row is read and one live replay completes; HistoryRoutes returns only original/replayed entries and does not surface Repeater persistence metadata.",
+          "state_owner": "HistoryRoutes + RepeaterService + optional H2 persistence",
+          "rest": {
+            "method": "POST",
+            "path": "/history/{{HISTORY_ID}}/replay",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 1,
+            "status": "COMPLETED",
+            "classification": "H2 lookup and completed live replay",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/history.py:218",
+            "src/main/kotlin/com/burprest/routes/HistoryRoutes.kt:78",
+            "src/main/kotlin/com/burprest/routes/HistoryRoutes.kt:95",
+            "src/main/kotlin/com/burprest/services/RepeaterService.kt:77"
+          ],
+          "assumptions": [
+            "{{HISTORY_ID}} identifies S3.3's persisted row."
+          ],
+          "failure_injection": {
+            "point": "after target transmission but before REST response",
+            "injected_fault": "transport timeout after possible replay",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "State remains INCONCLUSIVE until the sealed reconciliation completes.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                1
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE",
+              "classification": "replay completion unknown",
+              "local_ledger_rows": 1
+            },
+            "reconciliation": {
+              "action": "read target fixture count and H2 history; never replay automatically",
+              "expected": "Authoritative reads choose exactly one sealed outcome.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "One H2 row is read and one live replay completes; HistoryRoutes returns only original/replayed entries and does not surface Repeater persistence metadata.",
+                  "live_target_effect_count": 1
+                },
+                {
+                  "state": "H2 contains {{HISTORY_ID}}.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "15a732a9728c799184755f0c2bd0d146c364115f5230600176c8e946df879e20"
+          },
+          "branch_marker": "S3:traffic_chain"
+        },
+        {
+          "id": "S3.6",
+          "action": "replay transport timeout branch",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "history",
+              "replay",
+              "{{HISTORY_ID}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 3,
+            "stdout": {
+              "mode": "json",
+              "shape": "empty",
+              "selected_values": []
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "TRANSPORT_ERROR"
+              ]
+            }
+          },
+          "prestate": "H2 contains {{HISTORY_ID}}.",
+          "transition": "REST transport ends after dispatch; the replay target effect is UNKNOWN_INCONCLUSIVE and no retry is allowed before target/H2 reads.",
+          "state_owner": "HistoryRoutes + RepeaterService + optional H2 persistence",
+          "rest": {
+            "method": "POST",
+            "path": "/history/{{HISTORY_ID}}/replay",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": [
+              0,
+              1
+            ],
+            "status": "UNKNOWN_INCONCLUSIVE",
+            "classification": "transport-unknown replay",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/history.py:218",
+            "src/main/kotlin/com/burprest/routes/HistoryRoutes.kt:78",
+            "src/main/kotlin/com/burprest/routes/HistoryRoutes.kt:95",
+            "src/main/kotlin/com/burprest/services/RepeaterService.kt:77"
+          ],
+          "assumptions": [
+            "{{HISTORY_ID}} identifies S3.3's persisted row."
+          ],
+          "failure_injection": {
+            "point": "after REST dispatch",
+            "injected_fault": "TRANSPORT_ERROR",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "State remains INCONCLUSIVE until the sealed reconciliation completes.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                1
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE",
+              "classification": "transport-unknown replay",
+              "local_ledger_rows": 1
+            },
+            "reconciliation": {
+              "action": "read target fixture count and H2 history; do not replay",
+              "expected": "Authoritative reads choose exactly one sealed outcome.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "replay completed once; optional H2 row may exist",
+                  "live_target_effect_count": 1
+                },
+                {
+                  "state": "H2 contains {{HISTORY_ID}}.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "1c6016f4a2b74c152fe87df0b68caa1308c53825775981a16d6975aaec033845"
+          },
+          "branch_marker": "S3:replay_transport_unknown",
+          "reconciliation": {
+            "action": "read target fixture count and H2 history; do not replay",
+            "expected": "Authoritative reads choose exactly one sealed outcome.",
+            "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+            "outcomes": [
+              {
+                "state": "replay completed once; optional H2 row may exist",
+                "live_target_effect_count": 1
+              },
+              {
+                "state": "H2 contains {{HISTORY_ID}}.",
+                "live_target_effect_count": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "S3.7",
+          "action": "distinguish the D08 replay persistence failure hypothesis",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "history",
+              "replay",
+              "{{HISTORY_ID}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "replay_response_with_persistence_contract",
+              "selected_values": [
+                "original.id={{HISTORY_ID}}",
+                "replayed.source=replay",
+                "replayed.id=0",
+                "persistence.status=FAILED",
+                "warning contains do not retry the target send"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "H2 contains {{HISTORY_ID}}.",
+          "transition": "The contract requires one completed live replay plus surfaced persistence.status=FAILED and a do-not-retry warning. Current source projects metadata loss, creating the D08 mismatch that execution must distinguish; H2 may lack a new row and the target is never retried.",
+          "state_owner": "HistoryRoutes + RepeaterService + optional H2 persistence",
+          "rest": {
+            "method": "POST",
+            "path": "/history/{{HISTORY_ID}}/replay",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 1,
+            "status": "COMPLETED",
+            "classification": "D08 contract: target completed exactly once; persistence failure surfaced; do not retry",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "src/main/kotlin/com/burprest/routes/HistoryRoutes.kt:92",
+            "src/main/kotlin/com/burprest/routes/HistoryRoutes.kt:95",
+            "src/main/kotlin/com/burprest/services/RepeaterService.kt:77",
+            "src/main/kotlin/com/burprest/services/RepeaterService.kt:90",
+            "src/main/kotlin/com/burprest/services/RepeaterService.kt:130",
+            "src/test/kotlin/com/burprest/services/RepeaterServiceTest.kt:404",
+            "quality/confirmed-defects.yaml:113",
+            "quality/confirmed-defects.yaml:122"
+          ],
+          "assumptions": [
+            "{{HISTORY_ID}} identifies S3.3's persisted row.",
+            "Execution injects the optional H2 persistence failure only after the replay target response and counts exactly one live send.",
+            "The source projection is an unverified D08 mismatch hypothesis, never an actual observation."
+          ],
+          "failure_injection": {
+            "point": "after completed target response",
+            "injected_fault": "forced optional H2 persistence failure",
+            "expected": {
+              "exit": 0,
+              "stdout": {
+                "mode": "json",
+                "shape": "replay_response_with_persistence_contract",
+                "selected_values": [
+                  "original.id={{HISTORY_ID}}",
+                  "replayed.source=replay",
+                  "replayed.id=0",
+                  "persistence.status=FAILED",
+                  "warning contains do not retry the target send"
+                ]
+              },
+              "stderr": {
+                "mode": "empty",
+                "shape": "empty",
+                "selected_values": []
+              }
+            },
+            "state_after": "State matches the completed/preflight classification.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 1,
+              "status": "COMPLETED",
+              "classification": "D08 contract: target completed exactly once; persistence failure surfaced; do not retry",
+              "local_ledger_rows": 1
+            },
+            "reconciliation": {
+              "action": "bp history list only; never replay again",
+              "expected": "No new replay row exists; response still proves one completed replay.",
+              "status_after": "COMPLETED",
+              "outcomes": [
+                {
+                  "state": "target completed once and new H2 replay row absent",
+                  "live_target_effect_count": 1
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "source_projection": {
+            "status": "UNVERIFIED_HYPOTHESIS",
+            "contract_relation": "EXPECTED_MISMATCH",
+            "hypothesis": "HistoryRoutes constructs ReplayResponse(original, replayed) from repeaterService.send and does not copy SendResponse.persistence, so the probable current result omits both persistence.status and its warning.",
+            "probable_result": {
+              "exit": 0,
+              "stdout": {
+                "mode": "json",
+                "shape": "replay_response",
+                "selected_values": [
+                  "original.id={{HISTORY_ID}}",
+                  "replayed.source=replay",
+                  "replayed.id=0",
+                  "persistence field absent",
+                  "persistence warning absent"
+                ]
+              },
+              "stderr": {
+                "mode": "empty",
+                "shape": "empty",
+                "selected_values": []
+              }
+            },
+            "citations": [
+              "src/main/kotlin/com/burprest/routes/HistoryRoutes.kt:95",
+              "src/main/kotlin/com/burprest/services/RepeaterService.kt:77",
+              "src/main/kotlin/com/burprest/services/RepeaterService.kt:90",
+              "quality/confirmed-defects.yaml:113",
+              "quality/confirmed-defects.yaml:122"
+            ]
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "ad1fe9a92f116ca3433ca6c94f49e86070342e10c5a3e33c2f21c1b0470ae7ac"
+          },
+          "branch_marker": "S3:replay_persistence_failed"
+        },
+        {
+          "id": "S3.8",
+          "action": "clear H2 history with confirmation",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "history",
+              "clear",
+              "--confirm",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "clear_receipt",
+              "selected_values": [
+                "cleared=true"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "H2 history and sitemap contain fixture rows.",
+          "transition": "One transaction clears H2 history and sitemap; proxy live history and Python ledger remain.",
+          "state_owner": "H2 HistoryDao + SitemapDao transaction",
+          "rest": {
+            "method": "DELETE",
+            "path": "/history",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "transactional H2 clear",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/history.py:252",
+            "src/main/kotlin/com/burprest/routes/HistoryRoutes.kt:116",
+            "docs/STATE-AND-CONFIG.md:11"
+          ],
+          "assumptions": [
+            "--confirm is present."
+          ],
+          "failure_injection": {
+            "point": "after request delivery but before response receipt",
+            "injected_fault": "timeout around transactional clear",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                0
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE"
+            },
+            "reconciliation": {
+              "action": "bp history list and bp history sitemap",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "One transaction clears H2 history and sitemap; proxy live history and Python ledger remain.",
+                  "live_target_effect_count": 0
+                },
+                {
+                  "state": "H2 history and sitemap contain fixture rows.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "279a235e7a6c03b5003538e85486c3362880d604c042924dc52cce4b4b0ed47f"
+          },
+          "branch_marker": "S3:local_ledger"
+        },
+        {
+          "id": "S3.9",
+          "action": "list H2 history after clear",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "history",
+              "list",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "history_rows",
+              "selected_values": [
+                "rows=[]"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Clear completion was established or remains under reconciliation.",
+          "transition": "Authoritative H2 read observes no rows after completed clear.",
+          "state_owner": "H2 HistoryDao",
+          "rest": {
+            "method": "GET",
+            "path": "/history",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "H2 reconciliation read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/history.py:96",
+            "src/main/kotlin/com/burprest/routes/HistoryRoutes.kt:116"
+          ],
+          "assumptions": [
+            "S3.6 completed or this read determines its state."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "H2 unavailable",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "SERVICE_UNAVAILABLE"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "restore DB and retry read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "12386397cb6f6a354c7bf360bd519966e92a200933a8dbb27029031ace758f37"
+          },
+          "branch_marker": "S3:local_ledger"
+        },
+        {
+          "id": "S3.10",
+          "action": "query local operation ledger",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "log",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "ledger_rows",
+              "selected_values": [
+                "contains REST metadata",
+                "contains final exit_code"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Python ledger contains prior bp REST operation rows.",
+          "transition": "Reads SQLite ledger only and creates no REST or target effect.",
+          "state_owner": "Python local SQLite Run Ledger",
+          "rest": {
+            "method": null,
+            "path": null,
+            "payload": null,
+            "no_rest_reason": "bp log is a local SQLite query and does not require Burp.",
+            "route_effect_count": 0
+          },
+          "effects": {
+            "rest_route_count": 0,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "local ledger read",
+            "local_ledger_rows": 0
+          },
+          "citations": [
+            "bp/src/bp/commands/obs.py:105",
+            "docs/STATE-AND-CONFIG.md:7"
+          ],
+          "assumptions": [
+            "Ledger is enabled and writable."
+          ],
+          "failure_injection": {
+            "point": "before local query",
+            "injected_fault": "ledger unavailable",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "LEDGER_UNAVAILABLE"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "restore isolated ledger and repeat read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "d22cb13e968a5481e45a288bd5d2a9bf5e35c9ded3a86e715ddfad31475cf0f5"
+          },
+          "branch_marker": "S3:local_ledger"
+        },
+        {
+          "id": "S3.11",
+          "action": "tag one local ledger row",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "tag",
+              "{{OP_ID}}",
+              "sequence-s3",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "tag_receipt",
+              "selected_values": [
+                "id={{OP_ID}}",
+                "tag=sequence-s3",
+                "status=tagged"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Local ledger row {{OP_ID}} exists and is untagged.",
+          "transition": "SQLite row tag changes; no Burp REST, H2, proxy, or live target state changes.",
+          "state_owner": "Python local SQLite Run Ledger",
+          "rest": {
+            "method": null,
+            "path": null,
+            "payload": null,
+            "no_rest_reason": "bp tag updates the local SQLite ledger only.",
+            "route_effect_count": 0
+          },
+          "effects": {
+            "rest_route_count": 0,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "local ledger mutation",
+            "local_ledger_rows": 0
+          },
+          "citations": [
+            "bp/src/bp/commands/obs.py:162",
+            "bp/src/bp/ledger.py:416"
+          ],
+          "assumptions": [
+            "{{OP_ID}} comes from S3.8."
+          ],
+          "failure_injection": {
+            "point": "before SQLite commit",
+            "injected_fault": "forced SQLite error",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "LEDGER_UNAVAILABLE"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "bp log --format json --tag sequence-s3",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "eaee3c3ef25214e62fdbd83c80d1dc00a771b46aff8bca5917501037d6704c90"
+          },
+          "branch_marker": "S3:local_ledger"
+        },
+        {
+          "id": "S3.12",
+          "action": "query tagged local ledger row",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "log",
+              "--tag",
+              "sequence-s3",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "ledger_rows",
+              "selected_values": [
+                "contains id={{OP_ID}}",
+                "tag=sequence-s3"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Local row {{OP_ID}} is tagged.",
+          "transition": "SQLite read observes the tag; no external state changes.",
+          "state_owner": "Python local SQLite Run Ledger",
+          "rest": {
+            "method": null,
+            "path": null,
+            "payload": null,
+            "no_rest_reason": "bp log is a local SQLite query.",
+            "route_effect_count": 0
+          },
+          "effects": {
+            "rest_route_count": 0,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "local ledger read",
+            "local_ledger_rows": 0
+          },
+          "citations": [
+            "bp/src/bp/commands/obs.py:105",
+            "bp/src/bp/ledger.py:416"
+          ],
+          "assumptions": [
+            "S3.9 completed."
+          ],
+          "failure_injection": {
+            "point": "before local query",
+            "injected_fault": "ledger unavailable",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "LEDGER_UNAVAILABLE"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "restore ledger and retry read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "d0adeacabef86ced7078e0c119025c839ad22e5b032b2c784c84e86dcf98281c"
+          },
+          "branch_marker": "S3:local_ledger"
+        }
+      ]
+    },
+    {
+      "id": "S4",
+      "name": "scanner edition branches and task reads",
+      "branch": "Professional, Community, unsupported linked scan",
+      "assumptions": [
+        "Professional branch uses owned loopback target and deterministic fake Montoya task state.",
+        "Community branch reports its actual edition before task creation."
+      ],
+      "steps": [
+        {
+          "id": "S4.1",
+          "action": "Professional crawl start",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scan",
+              "crawl",
+              "{{LOOPBACK_URL}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "scan_start",
+              "selected_values": [
+                "scanId={{CRAWL_ID}}",
+                "status=running"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Process-local scanner registry lacks {{CRAWL_ID}}.",
+          "transition": "Scanner starts a crawl bound to the exact loopback URL and registers its task ID.",
+          "state_owner": "ScannerService process-local scan registry + Montoya Crawl task",
+          "rest": {
+            "method": "POST",
+            "path": "/scanner/crawl",
+            "payload": {
+              "url": "{{LOOPBACK_URL}}",
+              "config": {}
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "Pro task creation; later task traffic is owned by Burp",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/scanner.py:21",
+            "src/main/kotlin/com/burprest/services/ScannerService.kt:45"
+          ],
+          "assumptions": [
+            "Burp edition is Professional.",
+            "Task-originated network effects after creation are outside this REST-call effect count and remain loopback-only."
+          ],
+          "failure_injection": {
+            "point": "after startCrawl but before task registration/response",
+            "injected_fault": "transport timeout after task start",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                0
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE"
+            },
+            "reconciliation": {
+              "action": "fixture task registry inspection plus scan status only if ID was returned; no automatic restart",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "Scanner starts a crawl bound to the exact loopback URL and registers its task ID.",
+                  "live_target_effect_count": 0
+                },
+                {
+                  "state": "Process-local scanner registry lacks {{CRAWL_ID}}.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "972fac3a6a5bc0e7e6eb4c84268513b9af12e9ea02ac45b53b287512b9c70f93"
+          },
+          "branch_marker": "S4:professional"
+        },
+        {
+          "id": "S4.2",
+          "action": "Professional crawl status",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scan",
+              "status",
+              "{{CRAWL_ID}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "scan_status",
+              "selected_values": [
+                "scanId={{CRAWL_ID}}",
+                "requestCount={{N}}",
+                "errorCount={{E}}",
+                "issueCount=0"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Process-local registry owns a Crawl task.",
+          "transition": "Reads authoritative Montoya task counters; registry remains.",
+          "state_owner": "ScannerService process-local scan registry + Montoya Crawl task",
+          "rest": {
+            "method": "GET",
+            "path": "/scanner/{{CRAWL_ID}}/status",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "task read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/scanner.py:53",
+            "src/main/kotlin/com/burprest/services/ScannerService.kt:102"
+          ],
+          "assumptions": [
+            "{{CRAWL_ID}} came from S4.1."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "d6854104665dc9ced6d5506aba13a5ed73c103b5ac5e2973a1e556efe1d8cd0f"
+          },
+          "branch_marker": "S4:professional"
+        },
+        {
+          "id": "S4.3",
+          "action": "Professional crawl issues",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scan",
+              "issues",
+              "{{CRAWL_ID}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "scan_issues",
+              "selected_values": [
+                "scanId={{CRAWL_ID}}",
+                "total=0"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Registry owns a Crawl task.",
+          "transition": "Returns an empty issue list for crawl; task remains.",
+          "state_owner": "ScannerService process-local scan registry + Montoya Crawl task",
+          "rest": {
+            "method": "GET",
+            "path": "/scanner/{{CRAWL_ID}}/issues",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "task read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/scanner.py:65",
+            "src/main/kotlin/com/burprest/services/ScannerService.kt:125"
+          ],
+          "assumptions": [
+            "Crawl tasks do not expose audit issues."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "4809d3dc0dd1cec9f6ca36607578fdadd13def60cb1a5d4eb94b7d7b108efe5e"
+          },
+          "branch_marker": "S4:professional"
+        },
+        {
+          "id": "S4.4",
+          "action": "Professional audit start",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scan",
+              "audit",
+              "{{LOOPBACK_URL}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "scan_start",
+              "selected_values": [
+                "scanId={{AUDIT_ID}}",
+                "status=running"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Process-local registry lacks {{AUDIT_ID}}.",
+          "transition": "Starts audit, adds exact loopback seed before publishing ID, then registers task.",
+          "state_owner": "ScannerService process-local scan registry + Montoya Audit task",
+          "rest": {
+            "method": "POST",
+            "path": "/scanner/audit",
+            "payload": {
+              "url": "{{LOOPBACK_URL}}",
+              "config": {}
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "Pro task creation and exact target seed",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/scanner.py:34",
+            "src/main/kotlin/com/burprest/services/ScannerService.kt:64"
+          ],
+          "assumptions": [
+            "Burp edition is Professional.",
+            "Any task network activity remains directed to owned loopback."
+          ],
+          "failure_injection": {
+            "point": "after audit task allocation but before seed/register completion",
+            "injected_fault": "forced addRequest failure deletes task",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "SERVICE_UNAVAILABLE"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "fixture confirms task deletion and absent registry ID",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "2cb30ccdb6f7a6e8ae5273101d5dde96dd513224b57abab6d8afb688cfefdfbd"
+          },
+          "branch_marker": "S4:professional"
+        },
+        {
+          "id": "S4.5",
+          "action": "Professional audit status",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scan",
+              "status",
+              "{{AUDIT_ID}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "scan_status",
+              "selected_values": [
+                "scanId={{AUDIT_ID}}",
+                "issueCount={{I}}"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Registry owns an Audit task.",
+          "transition": "Reads authoritative task counters and current issue count.",
+          "state_owner": "ScannerService process-local scan registry + Montoya Audit task",
+          "rest": {
+            "method": "GET",
+            "path": "/scanner/{{AUDIT_ID}}/status",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "task read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/scanner.py:53",
+            "src/main/kotlin/com/burprest/services/ScannerService.kt:102"
+          ],
+          "assumptions": [
+            "{{AUDIT_ID}} came from S4.4."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "67cdd5eea82c4cc3aa7b94293b84d2a34aa85237434d535929aaa24af61ef29c"
+          },
+          "branch_marker": "S4:professional"
+        },
+        {
+          "id": "S4.6",
+          "action": "Professional audit issues",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scan",
+              "issues",
+              "{{AUDIT_ID}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "scan_issues",
+              "selected_values": [
+                "scanId={{AUDIT_ID}}",
+                "total={{I}}"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Registry owns an Audit task.",
+          "transition": "Returns mapped authoritative Montoya issues; task remains.",
+          "state_owner": "ScannerService process-local scan registry + Montoya Audit task",
+          "rest": {
+            "method": "GET",
+            "path": "/scanner/{{AUDIT_ID}}/issues",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "task read",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/scanner.py:65",
+            "src/main/kotlin/com/burprest/services/ScannerService.kt:125"
+          ],
+          "assumptions": [
+            "Issue mapper receives deterministic fixture issues."
+          ],
+          "failure_injection": {
+            "point": "before REST dispatch",
+            "injected_fault": "connection refusal",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "retry read",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": true
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "a1bea09d2e587b92f2e60ae73eb2f618a4f1a3dbc7b6a944941e34007c352877"
+          },
+          "branch_marker": "S4:professional"
+        },
+        {
+          "id": "S4.7",
+          "action": "Community crawl rejection",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scan",
+              "crawl",
+              "{{LOOPBACK_URL}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 4,
+            "stdout": {
+              "mode": "json",
+              "shape": "empty",
+              "selected_values": []
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "PRO_REQUIRED",
+                "http_status=503"
+              ]
+            }
+          },
+          "prestate": "Community fixture has no scan task.",
+          "transition": "Edition check rejects before scanner start and no task ID is registered.",
+          "state_owner": "ScannerService edition gate + process-local registry",
+          "rest": {
+            "method": "POST",
+            "path": "/scanner/crawl",
+            "payload": {
+              "url": "{{LOOPBACK_URL}}",
+              "config": {}
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "PREFLIGHT_NO_EFFECT",
+            "classification": "Community capability rejection",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/scanner.py:21",
+            "src/main/kotlin/com/burprest/services/ScannerService.kt:240"
+          ],
+          "assumptions": [
+            "Burp edition is Community."
+          ],
+          "failure_injection": {
+            "point": "during edition check",
+            "injected_fault": "Community capability absent",
+            "expected": {
+              "exit": 4,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "PRO_REQUIRED"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "fixture registry remains empty",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "25cbca1a382b254824d3b2b9b9ce0548b5281dab53fe9995f702fc274b0baba1"
+          },
+          "branch_marker": "S4:community"
+        },
+        {
+          "id": "S4.8",
+          "action": "Community audit rejection",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scan",
+              "audit",
+              "{{LOOPBACK_URL}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 4,
+            "stdout": {
+              "mode": "json",
+              "shape": "empty",
+              "selected_values": []
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "PRO_REQUIRED",
+                "http_status=503"
+              ]
+            }
+          },
+          "prestate": "Community fixture has no scan task.",
+          "transition": "Edition check rejects before audit start and no task ID is registered.",
+          "state_owner": "ScannerService edition gate + process-local registry",
+          "rest": {
+            "method": "POST",
+            "path": "/scanner/audit",
+            "payload": {
+              "url": "{{LOOPBACK_URL}}",
+              "config": {}
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "PREFLIGHT_NO_EFFECT",
+            "classification": "Community capability rejection",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/scanner.py:34",
+            "src/main/kotlin/com/burprest/services/ScannerService.kt:240"
+          ],
+          "assumptions": [
+            "Burp edition is Community."
+          ],
+          "failure_injection": {
+            "point": "during edition check",
+            "injected_fault": "Community capability absent",
+            "expected": {
+              "exit": 4,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "PRO_REQUIRED"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "fixture registry remains empty",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "9a535754f550941d4d1b51234d12af9f5f1f7f124e30a67be23f01bb756a8f1a"
+          },
+          "branch_marker": "S4:community"
+        },
+        {
+          "id": "S4.9",
+          "action": "linked scan all unsupported",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "scan",
+              "all",
+              "{{LOOPBACK_URL}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 1,
+            "stdout": {
+              "mode": "json",
+              "shape": "empty",
+              "selected_values": []
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "UNSUPPORTED",
+                "http_status=501"
+              ]
+            }
+          },
+          "prestate": "No linked task exists.",
+          "transition": "Route returns 501 before parsing target into a task; registry and target remain unchanged.",
+          "state_owner": "ScannerService process-local scan registry",
+          "rest": {
+            "method": "POST",
+            "path": "/scanner/crawl-and-audit",
+            "payload": {
+              "url": "{{LOOPBACK_URL}}",
+              "config": {}
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "PREFLIGHT_NO_EFFECT",
+            "classification": "unsupported operation",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/scanner.py:44",
+            "src/main/kotlin/com/burprest/services/ScannerService.kt:94",
+            "src/main/kotlin/com/burprest/server/ApiExceptions.kt:28"
+          ],
+          "assumptions": [
+            "Montoya version is 2025.3."
+          ],
+          "failure_injection": {
+            "point": "at unsupported service boundary",
+            "injected_fault": "UNSUPPORTED response",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "UNSUPPORTED"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "fixture registry remains unchanged",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "04374b65b7172be6b34f4080d0092265230ef40c4bc1394f21d99ca31f50fd2b"
+          },
+          "branch_marker": "S4:unsupported"
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "name": "Collaborator generated-id ownership",
+      "branch": "Professional known and unknown IDs; absent capability",
+      "assumptions": [
+        "Professional fixture provides deterministic payload ID {{COLLAB_ID}} and no interactions.",
+        "Generated IDs are owned only by this CollaboratorService process."
+      ],
+      "steps": [
+        {
+          "id": "S5.1",
+          "action": "generate Collaborator payload",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "collab",
+              "new",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "collaborator_payload",
+              "selected_values": [
+                "payloads[0].id={{COLLAB_ID}}",
+                "payloads[0].interactionId={{COLLAB_ID}}"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Process-local payload map lacks {{COLLAB_ID}}.",
+          "transition": "Provider generates one payload and service records its exact correlation ID in process-local map.",
+          "state_owner": "CollaboratorService process-local payload map + Montoya Collaborator client",
+          "rest": {
+            "method": "POST",
+            "path": "/collaborator/generate",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "provider mutation; no target interaction claimed",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/collaborator.py:19",
+            "src/main/kotlin/com/burprest/routes/CollaboratorRoutes.kt:17",
+            "src/test/kotlin/com/burprest/routes/CollaboratorRoutesTest.kt:110"
+          ],
+          "assumptions": [
+            "Collaborator capability is present.",
+            "Generation itself is not proof of an interaction."
+          ],
+          "failure_injection": {
+            "point": "after provider generation but before REST response",
+            "injected_fault": "timeout after possible ID registration",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "TRANSPORT_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                0
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE"
+            },
+            "reconciliation": {
+              "action": "fixture-owned payload map inspection; do not auto-generate a replacement",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "Provider generates one payload and service records its exact correlation ID in process-local map.",
+                  "live_target_effect_count": 0
+                },
+                {
+                  "state": "Process-local payload map lacks {{COLLAB_ID}}.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "6df0c1eadeec3c88987fef1273af8b987894a4a486ff8cb5f2c5ca7bf2f0a4b3"
+          },
+          "branch_marker": "S5:professional"
+        },
+        {
+          "id": "S5.2",
+          "action": "poll known generated ID",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "collab",
+              "poll",
+              "{{COLLAB_ID}}",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "poll_response",
+              "selected_values": [
+                "queriedPayloadId={{COLLAB_ID}}",
+                "found=false",
+                "interactions=[]"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Process-local map owns {{COLLAB_ID}}.",
+          "transition": "Provider is filtered by authoritative generated ID; no interaction is fabricated.",
+          "state_owner": "CollaboratorService payload map + Montoya Collaborator client",
+          "rest": {
+            "method": "GET",
+            "path": "/collaborator/poll/{{COLLAB_ID}}",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "provider read; zero interaction effects",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/collaborator.py:49",
+            "src/main/kotlin/com/burprest/services/CollaboratorService.kt:101"
+          ],
+          "assumptions": [
+            "Provider has no interactions for {{COLLAB_ID}}."
+          ],
+          "failure_injection": {
+            "point": "before provider response",
+            "injected_fault": "provider unavailable",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "SERVICE_UNAVAILABLE"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                0
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE"
+            },
+            "reconciliation": {
+              "action": "repeat poll read only when provider health returns",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "Provider is filtered by authoritative generated ID; no interaction is fabricated.",
+                  "live_target_effect_count": 0
+                },
+                {
+                  "state": "Process-local map owns {{COLLAB_ID}}.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "2134a528da85aa7cc9a677044d04138caa2acd7d52502a72cc027a062f65f2ff"
+          },
+          "branch_marker": "S5:professional"
+        },
+        {
+          "id": "S5.3",
+          "action": "poll unknown ID",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "collab",
+              "poll",
+              "unknown-id",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 1,
+            "stdout": {
+              "mode": "json",
+              "shape": "empty",
+              "selected_values": []
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "NOT_FOUND",
+                "http_status=404"
+              ]
+            }
+          },
+          "prestate": "Process-local map does not own unknown-id.",
+          "transition": "Map lookup returns 404 before provider polling; no interaction effect.",
+          "state_owner": "CollaboratorService process-local payload map",
+          "rest": {
+            "method": "GET",
+            "path": "/collaborator/poll/unknown-id",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "PREFLIGHT_NO_EFFECT",
+            "classification": "unknown-id rejection",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "src/main/kotlin/com/burprest/services/CollaboratorService.kt:101",
+            "src/main/kotlin/com/burprest/routes/CollaboratorRoutes.kt:52"
+          ],
+          "assumptions": [
+            "unknown-id was never generated by this process.",
+            "All editions reject an ID absent from the process-local ownership map with NOT_FOUND before Collaborator capability lookup."
+          ],
+          "failure_injection": {
+            "point": "at ownership lookup",
+            "injected_fault": "unknown ID",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "NOT_FOUND"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "poll {{COLLAB_ID}} to prove known ownership remains",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "def2e3a263df055dd0ab7138722d3d79c72eb281c8f7c9f8538c0e3c7bcc2a4f"
+          },
+          "branch_marker": "S5:ownership_preflight_all_editions"
+        },
+        {
+          "id": "S5.4",
+          "action": "generate with Collaborator capability absent",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "collab",
+              "new",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 4,
+            "stdout": {
+              "mode": "json",
+              "shape": "empty",
+              "selected_values": []
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "PRO_REQUIRED",
+                "http_status=503"
+              ]
+            }
+          },
+          "prestate": "Community/absent capability has no Collaborator client and no generated ID.",
+          "transition": "Client initialization fails before payload generation; no ID or interaction effect exists.",
+          "state_owner": "CollaboratorService process-local payload map + Montoya Collaborator client",
+          "rest": {
+            "method": "POST",
+            "path": "/collaborator/generate",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "PREFLIGHT_NO_EFFECT",
+            "classification": "absent capability rejection",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/collaborator.py:19",
+            "src/main/kotlin/com/burprest/services/CollaboratorService.kt:37",
+            "src/main/kotlin/com/burprest/routes/CollaboratorRoutes.kt:74",
+            "src/test/kotlin/com/burprest/routes/CollaboratorRoutesTest.kt:31"
+          ],
+          "assumptions": [
+            "The capability fixture intentionally exposes no Collaborator client.",
+            "Generation itself is not proof of an interaction."
+          ],
+          "failure_injection": {
+            "point": "during Collaborator client initialization",
+            "injected_fault": "capability absent",
+            "expected": {
+              "exit": 4,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "PRO_REQUIRED",
+                  "http_status=503"
+                ]
+              }
+            },
+            "state_after": "State matches the completed/preflight classification.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT",
+              "classification": "absent capability rejection",
+              "local_ledger_rows": 1
+            },
+            "reconciliation": {
+              "action": "fixture confirms no client and no generated payload ID",
+              "expected": "Provider and payload map remain untouched.",
+              "status_after": "PREFLIGHT_NO_EFFECT",
+              "outcomes": [
+                {
+                  "state": "no client and no payload ID",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+      "hash": "1ec8e580d4265c099e42ba9693df0716ded9820757e1c10a0fcaa805e1aec7a0"
+          },
+          "branch_marker": "S5:capability_absent_new"
+        },
+        {
+          "id": "S5.5",
+          "action": "unscoped poll with Collaborator capability absent",
+          "invocation": {
+            "kind": "cli",
+            "argv_template": [
+              "bp",
+              "collab",
+              "poll",
+              "--format",
+              "json"
+            ]
+          },
+          "expected": {
+            "exit": 4,
+            "stdout": {
+              "mode": "json",
+              "shape": "empty",
+              "selected_values": []
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "PRO_REQUIRED",
+                "http_status=503"
+              ]
+            }
+          },
+          "prestate": "Community/absent capability has no Collaborator client.",
+          "transition": "Unscoped poll fails while initializing the provider; no interaction read/effect occurs.",
+          "state_owner": "CollaboratorService payload map + Montoya Collaborator client",
+          "rest": {
+            "method": "GET",
+            "path": "/collaborator/poll",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "PREFLIGHT_NO_EFFECT",
+            "classification": "absent capability rejection",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/commands/collaborator.py:63",
+            "src/main/kotlin/com/burprest/services/CollaboratorService.kt:37",
+            "src/main/kotlin/com/burprest/services/CollaboratorService.kt:88",
+            "src/main/kotlin/com/burprest/routes/CollaboratorRoutes.kt:74"
+          ],
+          "assumptions": [
+            "Collaborator capability is absent; this is distinct from unknown-ID ownership rejection."
+          ],
+          "failure_injection": {
+            "point": "during Collaborator client initialization",
+            "injected_fault": "capability absent",
+            "expected": {
+              "exit": 4,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "PRO_REQUIRED",
+                  "http_status=503"
+                ]
+              }
+            },
+            "state_after": "State matches the completed/preflight classification.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT",
+              "classification": "absent capability rejection",
+              "local_ledger_rows": 1
+            },
+            "reconciliation": {
+              "action": "fixture confirms provider was not polled",
+              "expected": "No provider interaction read occurred.",
+              "status_after": "PREFLIGHT_NO_EFFECT",
+              "outcomes": [
+                {
+                  "state": "provider uninitialized and unpolled",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "15c9ed716dc0d015f0f886b054d51cebe54b3d4916271181f44888ac40a6986a"
+          },
+          "branch_marker": "S5:capability_absent_unscoped_poll"
+        }
+      ]
+    },
+    {
+      "id": "S6",
+      "name": "fuzz full preflight, baseline, shots, partial failure, ledger",
+      "branch": "ordinary API error continues; transport failure stops later shots",
+      "command_argv_template": [
+        "bp",
+        "fuzz",
+        "{{PROXY_ID}}",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id={{PAYLOAD_FILE}}",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "assumptions": [
+        "Proxy entry {{PROXY_ID}} points to owned loopback URL with query id=base.",
+        "Payload file contains exactly three UTF-8 lines p1, p2, p3.",
+        "The test fixture can inject ordinary BurpError for p2 or transport failure for p2 without contacting external hosts."
+      ],
+      "steps": [
+        {
+          "id": "S6.1",
+          "action": "fuzz complete preflight",
+          "invocation": {
+            "kind": "fixture",
+            "fixture_action": "Invoke the sealed S6 command and observe its pre-effect phase: GET proxy history, resolve positions, expand the restartable plan, and validate every baseline/shot structured request before any POST."
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "no_output_until_run_completes",
+              "selected_values": [
+                "prepared_shots=3"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Target request count is zero; ledger has no S6 rows.",
+          "transition": "One GET /proxy/history/{{PROXY_ID}} is ledgered; every planned request is representable; target count remains zero.",
+          "state_owner": "Python run_fuzz plan + Montoya live proxy history + local Run Ledger",
+          "rest": {
+            "method": "GET",
+            "path": "/proxy/history/{{PROXY_ID}}",
+            "payload": null,
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 0,
+            "status": "PREFLIGHT_NO_EFFECT",
+            "classification": "full corpus validation before target effects",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/runner.py:110",
+            "bp/src/bp/runner.py:126",
+            "bp/src/bp/runner.py:133"
+          ],
+          "assumptions": [
+            "All three payloads are valid UTF-8 and cross the structured bridge."
+          ],
+          "failure_injection": {
+            "point": "during late payload validation",
+            "injected_fault": "third payload contains forbidden structured-wire byte",
+            "expected": {
+              "exit": 2,
+              "stdout": {
+                "mode": "json",
+                "shape": "empty",
+                "selected_values": []
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "USAGE_ERROR"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": 0,
+              "status": "PREFLIGHT_NO_EFFECT"
+            },
+            "reconciliation": {
+              "action": "ledger shows only the GET and target fixture count remains zero",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "PREFLIGHT_NO_EFFECT"
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "4ecab2294a9f47221fd72894e576cb28453549f46ee732d6900ee50cfab8a20d"
+          },
+          "branch_marker": "S6:preflight"
+        },
+        {
+          "id": "S6.2",
+          "action": "fuzz fresh baseline success",
+          "invocation": {
+            "kind": "fixture",
+            "fixture_action": "After successful S6.1 preflight, observe the baseline POST /repeater/send."
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "deferred_result_row",
+              "selected_values": [
+                "index=-1",
+                "baseline=true",
+                "error=null"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Full plan preflight completed; target count is zero.",
+          "transition": "Exactly one baseline REST POST attempts exactly one loopback target effect and creates its ledger row.",
+          "state_owner": "RepeaterService live target + Python local Run Ledger",
+          "rest": {
+            "method": "POST",
+            "path": "/repeater/send",
+            "payload": {
+              "request": "{{BASE_REQUEST}}"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": 1,
+            "status": "COMPLETED",
+            "classification": "fresh baseline target effect",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/runner.py:139",
+            "src/main/kotlin/com/burprest/services/RepeaterService.kt:77"
+          ],
+          "assumptions": [
+            "Baseline target response is deterministic HTTP 200."
+          ],
+          "failure_injection": {
+            "point": "after target transmission but before response parse",
+      "injected_fault": "baseline transport failure",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "fuzz_rows",
+                "selected_values": [
+                  "baseline=true",
+                  "error_code=TRANSPORT_ERROR",
+                  "zero shot rows"
+                ]
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "FUZZ_PARTIAL_FAILURE"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                1
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE",
+              "classification": "baseline transport completion unknown",
+              "local_ledger_rows": 1
+            },
+            "reconciliation": {
+              "action": "read target fixture count and ledger; do not retry baseline",
+              "expected": "Authoritative reads choose exactly one sealed outcome.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "baseline target effect completed once",
+                  "live_target_effect_count": 1
+                },
+                {
+                  "state": "Full plan preflight completed; target count is zero.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+      "hash": "d0bb2ea76c27ff8f903ee203d80be815023fe6b82a79be6909d184050a4bb105"
+          },
+          "branch_marker": "S6:baseline_success"
+        },
+        {
+          "id": "S6.3",
+          "action": "fuzz baseline transport failure",
+          "invocation": {
+            "kind": "fixture",
+            "fixture_action": "After successful S6.1 preflight, observe the baseline POST /repeater/send."
+          },
+          "expected": {
+            "exit": 3,
+            "stdout": {
+              "mode": "json",
+              "shape": "fuzz_rows",
+              "selected_values": [
+                "baseline=true",
+                "error_code=TRANSPORT_ERROR",
+                "zero shot rows"
+              ]
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "FUZZ_PARTIAL_FAILURE"
+              ]
+            }
+          },
+          "prestate": "Full plan preflight completed; target count is zero.",
+          "transition": "One baseline POST is attempted; completion is UNKNOWN_INCONCLUSIVE; one baseline error row is retained and no shots run.",
+          "state_owner": "RepeaterService live target + Python local Run Ledger",
+          "rest": {
+            "method": "POST",
+            "path": "/repeater/send",
+            "payload": {
+              "request": "{{BASE_REQUEST}}"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": [
+              0,
+              1
+            ],
+            "status": "UNKNOWN_INCONCLUSIVE",
+            "classification": "transport-unknown baseline",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/runner.py:139",
+            "src/main/kotlin/com/burprest/services/RepeaterService.kt:77"
+          ],
+          "assumptions": [
+            "Baseline target response is deterministic HTTP 200."
+          ],
+          "failure_injection": {
+            "point": "after baseline POST dispatch",
+            "injected_fault": "TRANSPORT_ERROR",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "fuzz_rows",
+                "selected_values": [
+                  "baseline=true",
+                  "error_code=TRANSPORT_ERROR",
+                  "zero shot rows"
+                ]
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "FUZZ_PARTIAL_FAILURE"
+                ]
+              }
+            },
+            "state_after": "State remains INCONCLUSIVE until the sealed reconciliation completes.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                1
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE",
+              "classification": "transport-unknown baseline",
+              "local_ledger_rows": 1
+            },
+            "reconciliation": {
+              "action": "read target fixture count and ledger; do not retry baseline",
+              "expected": "Authoritative reads choose exactly one sealed outcome.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "baseline target effect completed once",
+                  "live_target_effect_count": 1
+                },
+                {
+                  "state": "Full plan preflight completed; target count is zero.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "2b1c1c3bed690c14158ff8a8eb6372e7a7ab067e33a218957d191eec1fa407d7"
+          },
+          "branch_marker": "S6:baseline_transport",
+          "reconciliation": {
+            "action": "read target fixture count and ledger; do not retry baseline",
+            "expected": "Authoritative reads choose exactly one sealed outcome.",
+            "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+            "outcomes": [
+              {
+                "state": "baseline target effect completed once",
+                "live_target_effect_count": 1
+              },
+              {
+                "state": "Full plan preflight completed; target count is zero.",
+                "live_target_effect_count": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "S6.4",
+          "action": "fuzz baseline invalid-response failure",
+          "invocation": {
+            "kind": "fixture",
+            "fixture_action": "After successful S6.1 preflight, observe the baseline POST /repeater/send."
+          },
+          "expected": {
+            "exit": 1,
+            "stdout": {
+              "mode": "json",
+              "shape": "fuzz_rows",
+              "selected_values": [
+                "baseline=true",
+                "error_code=INVALID_RESPONSE",
+                "zero shot rows"
+              ]
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "FUZZ_PARTIAL_FAILURE"
+              ]
+            }
+          },
+          "prestate": "Full plan preflight completed; target count is zero.",
+          "transition": "One baseline POST returns an unusable response shape; completion is UNKNOWN_INCONCLUSIVE; one INVALID_RESPONSE row is retained and no shots run.",
+          "state_owner": "RepeaterService live target + Python local Run Ledger",
+          "rest": {
+            "method": "POST",
+            "path": "/repeater/send",
+            "payload": {
+              "request": "{{BASE_REQUEST}}"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 1
+          },
+          "effects": {
+            "rest_route_count": 1,
+            "live_target_effect_count": [
+              0,
+              1
+            ],
+            "status": "UNKNOWN_INCONCLUSIVE",
+            "classification": "invalid-response baseline completion unknown",
+            "local_ledger_rows": 1
+          },
+          "citations": [
+            "bp/src/bp/runner.py:139",
+            "bp/src/bp/runner.py:141",
+            "bp/src/bp/cli.py:136",
+            "bp/src/bp/cliutil.py:27",
+            "bp/tests/test_runner.py:419"
+          ],
+          "assumptions": [
+            "Baseline target response is deterministic HTTP 200."
+          ],
+          "failure_injection": {
+            "point": "while parsing baseline response",
+            "injected_fault": "INVALID_RESPONSE",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "fuzz_rows",
+                "selected_values": [
+                  "baseline=true",
+                  "error_code=INVALID_RESPONSE",
+                  "zero shot rows"
+                ]
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "FUZZ_PARTIAL_FAILURE"
+                ]
+              }
+            },
+            "state_after": "State remains INCONCLUSIVE until the sealed reconciliation completes.",
+            "effects": {
+              "rest_route_count": 1,
+              "live_target_effect_count": [
+                0,
+                1
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE",
+              "classification": "invalid-response baseline completion unknown",
+              "local_ledger_rows": 1
+            },
+            "reconciliation": {
+              "action": "read target fixture count and ledger; do not retry baseline",
+              "expected": "Authoritative reads choose exactly one sealed outcome.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "baseline target effect completed once",
+                  "live_target_effect_count": 1
+                },
+                {
+                  "state": "Full plan preflight completed; target count is zero.",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "5b953f1a75a8f5a0eced62b8a7f7a159a291d5603f5d8c66da890fa95b567cc9"
+          },
+          "branch_marker": "S6:baseline_invalid_response",
+          "reconciliation": {
+            "action": "read target fixture count and ledger; do not retry baseline",
+            "expected": "Authoritative reads choose exactly one sealed outcome.",
+            "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+            "outcomes": [
+              {
+                "state": "baseline target effect completed once",
+                "live_target_effect_count": 1
+              },
+              {
+                "state": "Full plan preflight completed; target count is zero.",
+                "live_target_effect_count": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "S6.5",
+          "action": "fuzz three successful shots",
+          "invocation": {
+            "kind": "fixture",
+            "fixture_action": "Observe the shot loop after baseline: POST p1, POST p2, POST p3, one attempted target effect per shot."
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "fuzz_rows",
+              "selected_values": [
+                "three non-baseline rows",
+                "each attempted shot represented"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "Baseline completed; target count is one.",
+          "transition": "Each shot yields exactly one REST operation, one attempted live target effect, one ledger row, and one result row.",
+          "state_owner": "RepeaterService live target + Python fuzz result list + local Run Ledger",
+          "rest": {
+            "method": "POST",
+            "path": "/repeater/send",
+            "payload": {
+              "request": "{{SHOT_REQUEST}}"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 3
+          },
+          "effects": {
+            "rest_route_count": 3,
+            "live_target_effect_count": 3,
+            "status": "COMPLETED",
+            "classification": "one effect and row per shot",
+            "local_ledger_rows": 3
+          },
+          "citations": [
+            "bp/src/bp/runner.py:170",
+            "bp/src/bp/runner.py:174",
+            "bp/src/bp/client.py:119"
+          ],
+          "assumptions": [
+            "No injected failure in this success branch."
+          ],
+          "failure_injection": {
+            "point": "p2 returns ordinary typed BurpError after a completed server response",
+            "injected_fault": "ordinary BurpError row for p2; loop continues to p3",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "fuzz_rows",
+                "selected_values": [
+                  "baseline row retained",
+                  "p1 success row retained",
+                  "p2 error row retained",
+                  "p3 success row retained"
+                ]
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "FUZZ_PARTIAL_FAILURE"
+                ]
+              }
+            },
+            "state_after": "No state claim is made beyond the stated effect classification until reconciliation.",
+            "effects": {
+              "rest_route_count": 3,
+              "live_target_effect_count": 3,
+              "status": "COMPLETED"
+            },
+            "reconciliation": {
+              "action": "stdout retains p1/p2-error/p3 rows and ledger has all three POSTs",
+              "expected": "The named owner is read through its authoritative surface.",
+              "status_after": "COMPLETED"
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "66e2cc72d9617d3da21a1daee10f9de0125ace3a68800ffcc54d3ac9ae9458d4"
+          },
+          "branch_marker": "S6:shots_success"
+        },
+        {
+          "id": "S6.6",
+          "action": "fuzz ordinary partial failure continues",
+          "invocation": {
+            "kind": "fixture",
+            "fixture_action": "Observe the shot loop after baseline: POST p1, POST p2, POST p3, one attempted target effect per shot."
+          },
+          "expected": {
+            "exit": 1,
+            "stdout": {
+              "mode": "json",
+              "shape": "fuzz_rows",
+              "selected_values": [
+                "baseline row retained",
+                "p1 success row retained",
+                "p2 error row error_code=SEND_FAILED",
+                "p3 success row retained"
+              ]
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "FUZZ_PARTIAL_FAILURE"
+              ]
+            }
+          },
+          "prestate": "Baseline completed; target count is one.",
+          "transition": "All three shot POSTs are attempted; the ordinary p2 BurpError becomes a row and p3 still runs.",
+          "state_owner": "RepeaterService live target + Python fuzz result list + local Run Ledger",
+          "rest": {
+            "method": "POST",
+            "path": "/repeater/send",
+            "payload": {
+              "request": "{{SHOT_REQUEST}}"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 3
+          },
+          "effects": {
+            "rest_route_count": 3,
+            "live_target_effect_count": 3,
+            "status": "COMPLETED",
+            "classification": "ordinary error continues through later shot",
+            "local_ledger_rows": 3
+          },
+          "citations": [
+            "bp/src/bp/runner.py:170",
+            "bp/src/bp/runner.py:174",
+            "bp/src/bp/client.py:119"
+          ],
+          "assumptions": [
+            "No injected failure in this success branch."
+          ],
+          "failure_injection": {
+            "point": "p2 server reply",
+            "injected_fault": "ordinary SEND_FAILED BurpError",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "fuzz_rows",
+                "selected_values": [
+                  "baseline row retained",
+                  "p1 success row retained",
+                  "p2 error row error_code=SEND_FAILED",
+                  "p3 success row retained"
+                ]
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "FUZZ_PARTIAL_FAILURE"
+                ]
+              }
+            },
+            "state_after": "State matches the completed/preflight classification.",
+            "effects": {
+              "rest_route_count": 3,
+              "live_target_effect_count": 3,
+              "status": "COMPLETED",
+              "classification": "ordinary error continues through later shot",
+              "local_ledger_rows": 3
+            },
+            "reconciliation": {
+              "action": "compare stdout rows with three POST ledger rows",
+              "expected": "p1, p2-error, and p3 are all accounted.",
+              "status_after": "COMPLETED",
+              "outcomes": [
+                {
+                  "state": "three shots attempted and p2 recorded as error",
+                  "live_target_effect_count": 3
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "3fd4d894f5afc17b85c175977062c4717ef8b2028f41bea0a21589a76aae7dbf"
+          },
+          "branch_marker": "S6:ordinary_partial"
+        },
+        {
+          "id": "S6.7",
+          "action": "fuzz partial transport failure stops",
+          "invocation": {
+            "kind": "fixture",
+            "fixture_action": "Run the alternate sealed S6 failure branch: p1 completes; p2 transport fails after an unknown send point; p3 is not attempted."
+          },
+          "expected": {
+            "exit": 3,
+            "stdout": {
+              "mode": "json",
+              "shape": "fuzz_rows",
+              "selected_values": [
+                "baseline row retained",
+                "p1 success row retained",
+                "p2 error row error_code=TRANSPORT_ERROR",
+                "p3 row absent"
+              ]
+            },
+            "stderr": {
+              "mode": "json",
+              "shape": "typed_error",
+              "selected_values": [
+                "FUZZ_PARTIAL_FAILURE"
+              ]
+            }
+          },
+          "prestate": "Baseline and p1 completed; p2 has not started; p3 is pending.",
+          "transition": "p1 completes; p2 transport is UNKNOWN_INCONCLUSIVE; p3 is not attempted and no p2 retry is allowed.",
+          "state_owner": "Python run_fuzz result list + live target + local Run Ledger",
+          "rest": {
+            "method": "POST",
+            "path": "/repeater/send",
+            "payload": {
+              "request": "{{P2_REQUEST}}"
+            },
+            "no_rest_reason": null,
+            "route_effect_count": 2
+          },
+          "effects": {
+            "rest_route_count": 2,
+            "live_target_effect_count": [
+              1,
+              2
+            ],
+            "status": "UNKNOWN_INCONCLUSIVE",
+            "classification": "p1 completed; p2 completion unknown; p3 not attempted",
+            "local_ledger_rows": 2
+          },
+          "citations": [
+            "bp/src/bp/runner.py:173",
+            "bp/src/bp/runner.py:189",
+            "bp/src/bp/cli.py:136"
+          ],
+          "assumptions": [
+            "Transport fixture drops the p2 REST response after the request may have reached the server."
+          ],
+          "failure_injection": {
+            "point": "p2 response transport",
+            "injected_fault": "TRANSPORT_ERROR",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "fuzz_rows",
+                "selected_values": [
+                  "baseline row retained",
+                  "p1 success row retained",
+                  "p2 error row error_code=TRANSPORT_ERROR",
+                  "p3 row absent"
+                ]
+              },
+              "stderr": {
+                "mode": "json",
+                "shape": "typed_error",
+                "selected_values": [
+                  "FUZZ_PARTIAL_FAILURE"
+                ]
+              }
+            },
+            "state_after": "State remains INCONCLUSIVE until the sealed reconciliation completes.",
+            "effects": {
+              "rest_route_count": 2,
+              "live_target_effect_count": [
+                1,
+                2
+              ],
+              "status": "UNKNOWN_INCONCLUSIVE",
+              "classification": "p1 completed; p2 completion unknown; p3 not attempted",
+              "local_ledger_rows": 2
+            },
+            "reconciliation": {
+              "action": "read target fixture count and ledger; p3 remains absent",
+              "expected": "Authoritative reads choose exactly one sealed outcome.",
+              "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+              "outcomes": [
+                {
+                  "state": "p1 and p2 target effects completed",
+                  "live_target_effect_count": 2
+                },
+                {
+                  "state": "only p1 target effect completed",
+                  "live_target_effect_count": 1
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "f36d45bc1770cb1094aa6ba936a0bdc76b53175fe634f445f4cd8dc29f903f62"
+          },
+          "branch_marker": "S6:transport_partial",
+          "reconciliation": {
+            "action": "read target fixture count and ledger; p3 remains absent",
+            "expected": "Authoritative reads choose exactly one sealed outcome.",
+            "status_after": "COMPLETED_OR_UNCHANGED_AFTER_READ",
+            "outcomes": [
+              {
+                "state": "p1 and p2 target effects completed",
+                "live_target_effect_count": 2
+              },
+              {
+                "state": "only p1 target effect completed",
+                "live_target_effect_count": 1
+              }
+            ]
+          }
+        },
+        {
+          "id": "S6.8",
+          "action": "reconcile fuzz ledger all-success",
+          "invocation": {
+            "kind": "fixture",
+            "fixture_action": "Query the isolated local ledger after either S6 branch and compare operations with the result rows and target fixture count."
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "ledger_reconciliation",
+              "selected_values": [
+                "operation_rows=5",
+                "all operation exit_code=0",
+                "one row per actual REST operation"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "The all-success fuzz command completed with exit 0.",
+          "transition": "Local ledger rows remain and every op ID is backfilled with final exit 0.",
+          "state_owner": "Python local SQLite Run Ledger + target fixture request counter",
+          "rest": {
+            "method": null,
+            "path": null,
+            "payload": null,
+            "no_rest_reason": "Reconciliation is a local SQLite and fixture-state read.",
+            "route_effect_count": 0
+          },
+          "effects": {
+            "rest_route_count": 0,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "local accounting reconciliation",
+            "local_ledger_rows": 0
+          },
+          "citations": [
+            "bp/src/bp/client.py:119",
+            "bp/src/bp/cliutil.py:202",
+            "bp/src/bp/ledger.py:427",
+            "bp/tests/test_ledger.py:485"
+          ],
+          "assumptions": [
+            "Ledger remained available for the command.",
+            "Target-effect claims come only from the owned loopback counter, never mock call count alone."
+          ],
+          "failure_injection": {
+            "point": "during final exit-code backfill",
+            "injected_fault": "SQLite set_exit_code failure emits warning",
+            "expected": {
+              "exit": 0,
+              "stdout": {
+                "mode": "json",
+                "shape": "fuzz_rows",
+                "selected_values": [
+                  "partial/success rows for all-success"
+                ]
+              },
+              "stderr": {
+                "mode": "text",
+                "shape": "warning",
+                "selected_values": [
+                  "warning: ledger write failed"
+                ]
+              }
+            },
+            "state_after": "State matches the completed/preflight classification.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "COMPLETED",
+              "classification": "ledger warning does not alter command outcome",
+              "local_ledger_rows": 0
+            },
+            "reconciliation": {
+              "action": "query local ledger without retrying target operations",
+              "expected": "REST rows remain; failed backfill may leave null/prior exit values.",
+              "status_after": "COMPLETED",
+              "outcomes": [
+                {
+                  "state": "command outcome remains exit 0",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "d4370fc3c9b7b8eb9f038b29b1da2c897d5c5465efe6f5a61e912de63aea4f14"
+          },
+          "branch_marker": "S6:ledger_success"
+        },
+        {
+          "id": "S6.9",
+          "action": "reconcile fuzz ledger ordinary-partial",
+          "invocation": {
+            "kind": "fixture",
+            "fixture_action": "Query the isolated local ledger after either S6 branch and compare operations with the result rows and target fixture count."
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "ledger_reconciliation",
+              "selected_values": [
+                "operation_rows=5",
+                "all operation exit_code=1",
+                "one row per actual REST operation"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "The ordinary-partial fuzz command completed with exit 1.",
+          "transition": "Local ledger rows remain and every op ID is backfilled with final exit 1.",
+          "state_owner": "Python local SQLite Run Ledger + target fixture request counter",
+          "rest": {
+            "method": null,
+            "path": null,
+            "payload": null,
+            "no_rest_reason": "Reconciliation is a local SQLite and fixture-state read.",
+            "route_effect_count": 0
+          },
+          "effects": {
+            "rest_route_count": 0,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "local accounting reconciliation",
+            "local_ledger_rows": 0
+          },
+          "citations": [
+            "bp/src/bp/client.py:119",
+            "bp/src/bp/cliutil.py:202",
+            "bp/src/bp/ledger.py:427",
+            "bp/tests/test_ledger.py:485"
+          ],
+          "assumptions": [
+            "Ledger remained available for the command.",
+            "Target-effect claims come only from the owned loopback counter, never mock call count alone."
+          ],
+          "failure_injection": {
+            "point": "during final exit-code backfill",
+            "injected_fault": "SQLite set_exit_code failure emits warning",
+            "expected": {
+              "exit": 1,
+              "stdout": {
+                "mode": "json",
+                "shape": "fuzz_rows",
+                "selected_values": [
+                  "partial/success rows for ordinary-partial"
+                ]
+              },
+              "stderr": {
+                "mode": "text",
+                "shape": "warning",
+                "selected_values": [
+                  "warning: ledger write failed"
+                ]
+              }
+            },
+            "state_after": "State matches the completed/preflight classification.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "COMPLETED",
+              "classification": "ledger warning does not alter command outcome",
+              "local_ledger_rows": 0
+            },
+            "reconciliation": {
+              "action": "query local ledger without retrying target operations",
+              "expected": "REST rows remain; failed backfill may leave null/prior exit values.",
+              "status_after": "COMPLETED",
+              "outcomes": [
+                {
+                  "state": "command outcome remains exit 1",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "abb725b933ac19fd422b9b8350638223876c8b4ecddb17f3c16f01a4ac5c22b6"
+          },
+          "branch_marker": "S6:ledger_ordinary_partial"
+        },
+        {
+          "id": "S6.10",
+          "action": "reconcile fuzz ledger transport-partial",
+          "invocation": {
+            "kind": "fixture",
+            "fixture_action": "Query the isolated local ledger after either S6 branch and compare operations with the result rows and target fixture count."
+          },
+          "expected": {
+            "exit": 0,
+            "stdout": {
+              "mode": "json",
+              "shape": "ledger_reconciliation",
+              "selected_values": [
+                "operation_rows=4",
+                "all operation exit_code=3",
+                "one row per actual REST operation"
+              ]
+            },
+            "stderr": {
+              "mode": "empty",
+              "shape": "empty",
+              "selected_values": []
+            }
+          },
+          "prestate": "The transport-partial fuzz command completed with exit 3.",
+          "transition": "Local ledger rows remain and every op ID is backfilled with final exit 3.",
+          "state_owner": "Python local SQLite Run Ledger + target fixture request counter",
+          "rest": {
+            "method": null,
+            "path": null,
+            "payload": null,
+            "no_rest_reason": "Reconciliation is a local SQLite and fixture-state read.",
+            "route_effect_count": 0
+          },
+          "effects": {
+            "rest_route_count": 0,
+            "live_target_effect_count": 0,
+            "status": "COMPLETED",
+            "classification": "local accounting reconciliation",
+            "local_ledger_rows": 0
+          },
+          "citations": [
+            "bp/src/bp/client.py:119",
+            "bp/src/bp/cliutil.py:202",
+            "bp/src/bp/ledger.py:427",
+            "bp/tests/test_ledger.py:485"
+          ],
+          "assumptions": [
+            "Ledger remained available for the command.",
+            "Target-effect claims come only from the owned loopback counter, never mock call count alone."
+          ],
+          "failure_injection": {
+            "point": "during final exit-code backfill",
+            "injected_fault": "SQLite set_exit_code failure emits warning",
+            "expected": {
+              "exit": 3,
+              "stdout": {
+                "mode": "json",
+                "shape": "fuzz_rows",
+                "selected_values": [
+                  "partial/success rows for transport-partial"
+                ]
+              },
+              "stderr": {
+                "mode": "text",
+                "shape": "warning",
+                "selected_values": [
+                  "warning: ledger write failed"
+                ]
+              }
+            },
+            "state_after": "State matches the completed/preflight classification.",
+            "effects": {
+              "rest_route_count": 0,
+              "live_target_effect_count": 0,
+              "status": "COMPLETED",
+              "classification": "ledger warning does not alter command outcome",
+              "local_ledger_rows": 0
+            },
+            "reconciliation": {
+              "action": "query local ledger without retrying target operations",
+              "expected": "REST rows remain; failed backfill may leave null/prior exit values.",
+              "status_after": "COMPLETED",
+              "outcomes": [
+                {
+                  "state": "command outcome remains exit 3",
+                  "live_target_effect_count": 0
+                }
+              ]
+            },
+            "retry_allowed": false
+          },
+          "seal": {
+            "algorithm": "sha256",
+            "sealed": true,
+            "expected_at": "2026-10-23T12:00:00Z",
+            "hash": "46e10464616066fdb131d6ab979c76cbc5f9d277b7e15e6ff8d68d18ed858940"
+          },
+          "branch_marker": "S6:ledger_transport_partial"
+        }
+      ]
+    }
+  ],
+  "sequence_step_count": 50
+}
