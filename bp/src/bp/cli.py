@@ -17,7 +17,7 @@ import typer
 
 from bp import __version__
 from bp.client import BurpClient
-from bp.cliutil import EXIT_USAGE, State, exit_code_for_error_code, run
+from bp.cliutil import EXIT_USAGE, State, emit_error, exit_code_for_error_code, run
 from bp.models import ProxyEntry
 from bp.output import FORMATS
 from bp.runner import FuzzResult, run_fuzz
@@ -186,7 +186,12 @@ def fuzz(
             with open(path, "rb") as fh:
                 payload_map[name] = [ln.rstrip(b"\r\n") for ln in fh if ln.strip()]
         except OSError as exc:
-            typer.echo(f"error: cannot read payload file {path}: {exc}", err=True)
+            emit_error(
+                ctx.obj.fmt,
+                "USAGE_ERROR",
+                f"cannot read payload file {path}: {exc}",
+                redact_secrets=not ctx.obj.no_redact,
+            )
             raise typer.Exit(EXIT_USAGE) from None
 
     def _do(client: BurpClient) -> Any:
