@@ -300,8 +300,18 @@ def cli_main() -> None:
     args = _hoist_global_opts(sys.argv[1:])
     boundary = args.index("--") if "--" in args else len(args)
     parser_args = args[:boundary]
-    formats = [v for k, v in zip(parser_args, parser_args[1:]) if k == "--format"]
-    formats += [arg.partition("=")[2] for arg in parser_args if arg.startswith("--format=")]
+    formats: list[str] = []
+    i = 0
+    while i < len(parser_args):
+        arg = parser_args[i]
+        if arg == "--format" and i + 1 < len(parser_args):
+            formats.append(parser_args[i + 1])
+            i += 2
+        elif arg.startswith("--format="):
+            formats.append(arg.partition("=")[2])
+            i += 1
+        else:
+            i += 1
     error_format = (
         formats[-1]
         if formats and formats[-1] in FORMATS
