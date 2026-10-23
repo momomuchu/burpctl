@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
 from typing import Never
@@ -11,7 +12,7 @@ from typing import Never
 import pytest
 
 
-_ENTRYPOINT = "import sys; sys.argv=sys.argv[1:]; from bp.cli import cli_main; cli_main()"
+_CLI_DIR = Path(sys.executable).parent
 
 
 def _invoke(
@@ -26,7 +27,7 @@ def _invoke(
     else:
         env.pop("BP_AGENT", None)
     return subprocess.run(
-        [sys.executable, "-c", _ENTRYPOINT, invoked_as, *args],
+        [str(_CLI_DIR / invoked_as), *args],
         capture_output=True,
         text=True,
         env=env,
@@ -75,6 +76,29 @@ def test_explicit_json_selects_machine_parser_errors_without_agent_environment()
     assert result.stdout == ""
     diagnostic = json.loads(result.stderr)
     assert diagnostic["error"]["code"] == "USAGE_ERROR"
+
+
+@pytest.mark.parametrize(
+    ("args", "expects_json"),
+    [
+        (("--format=json", "--format", "table", "no-such-command"), False),
+        (("--format", "table", "--format=json", "no-such-command"), True),
+    ],
+)
+def test_last_explicit_format_wins_for_mixed_parser_options(
+    args: tuple[str, ...], expects_json: bool
+) -> None:
+    result = _invoke("bp", *args)
+
+    assert result.returncode == 2
+    assert result.stdout == ""
+    if expects_json:
+        diagnostic = json.loads(result.stderr)
+        assert diagnostic["error"]["code"] == "USAGE_ERROR"
+    else:
+        assert "Usage: bp" in result.stderr
+        with pytest.raises(json.JSONDecodeError):
+            json.loads(result.stderr)
 
 
 @pytest.mark.parametrize("flag", ["--help", "--version"])
