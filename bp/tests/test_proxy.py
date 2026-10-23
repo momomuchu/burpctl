@@ -68,6 +68,11 @@ def test_proxy_rows_accepts_complete_empty_response_wrapper() -> None:
     assert _proxy_rows_from_response({"total": 0, "entries": []}) == []
 
 
+def test_proxy_rows_rejects_coerced_wrapper_types() -> None:
+    with pytest.raises(ValidationError):
+        _proxy_rows_from_response({"total": "0", "entries": []})
+
+
 # --- RED contract-drift tests (Kotlin ProxyModels.kt: id=Int, request=HttpRequestData both non-null) ---
 
 

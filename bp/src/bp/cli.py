@@ -127,7 +127,7 @@ def _proxy_rows(entries: object) -> list[dict[str, Any]]:
 
 
 def _proxy_rows_from_response(data: dict[str, Any]) -> list[dict[str, Any]]:
-    history = ProxyHistory.model_validate(data)
+    history = ProxyHistory.model_validate(data, strict=True)
     return _proxy_rows([entry.model_dump() for entry in history.entries])
 
 
