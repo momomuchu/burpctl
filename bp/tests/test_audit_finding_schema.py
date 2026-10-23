@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from copy import deepcopy
 from pathlib import Path
 from collections.abc import Mapping
 from typing import Final
@@ -36,7 +37,7 @@ def _required(mapping: Mapping[str, object], path: str) -> object:
         if not isinstance(value, dict) or part not in value:
             raise FindingSchemaError(f"missing {path}")
         value = value[part]
-    if value in (None, "", [], {}):
+    if value in (None, "", []):
         raise FindingSchemaError(f"empty {path}")
     return value
 
@@ -55,6 +56,11 @@ def classify_finding(finding: Mapping[str, object], index: dict[str, object]) ->
     assert isinstance(required_paths, list)
     assert all(isinstance(path, str) for path in required_paths)
     for path in required_paths:
+        _required(finding, path)
+    evidence_paths = schema["requiredEvidence"]
+    assert isinstance(evidence_paths, list)
+    assert all(isinstance(path, str) for path in evidence_paths)
+    for path in evidence_paths:
         _required(finding, path)
     candidate_hash = _required(finding, "candidateHash")
     if not isinstance(candidate_hash, str) or not HEX_SHA.fullmatch(candidate_hash):
@@ -77,9 +83,32 @@ def classify_finding(finding: Mapping[str, object], index: dict[str, object]) ->
     )
     if duplicate and comparison["novelEffect"] is False:
         return "existing-verified-or-regression"
+    issue_paths = schema["issueReadiness"]
+    assert isinstance(issue_paths, list)
+    assert all(isinstance(path, str) for path in issue_paths)
+    for path in issue_paths:
+        _required(finding, path)
     if _required(finding, "issue.ready") is not True:
         raise FindingSchemaError("confirmed novel finding must be issue-ready")
     return "issue-ready"
+
+
+def _novel_finding() -> dict[str, object]:
+    """Build a complete candidate-bound finding for schema mutation tests."""
+    return {
+        "id": "N01",
+        "status": "confirmed",
+        "invariant": "new invariant",
+        "rootCause": "new-root",
+        "candidateHash": "b" * 40,
+        "reproduction": {"command": "bp --version"},
+        "oracle": {"sealed": True, "expected": {"exitCode": 0}},
+        "actual": {"transcript": "stdout: 2.0.0", "exitCode": 1},
+        "effects": {"evidence": "route log: zero effects"},
+        "comparison": {"novelEffect": True, "matches": []},
+        "regression": {"tests": ["bp/tests/test_audit_finding_schema.py"]},
+        "issue": {"title": "Version command fails", "body": "reproduction", "ready": True},
+    }
 
 
 def test_index_contains_each_verified_ledger_defect_once() -> None:
@@ -116,21 +145,32 @@ def test_confirmed_finding_requires_oracle_transcript_and_effect_evidence() -> N
 
 def test_confirmed_novel_finding_is_issue_ready() -> None:
     """A complete finding carries reproducible, candidate-bound evidence."""
-    finding: dict[str, object] = {
-        "id": "N01",
-        "status": "confirmed",
-        "invariant": "new invariant",
-        "rootCause": "new-root",
-        "candidateHash": "b" * 40,
-        "reproduction": {"command": "bp --version"},
-        "oracle": {"sealed": True, "expected": {"exitCode": 0}},
-        "actual": {"transcript": "stdout: 2.0.0", "exitCode": 1},
-        "effects": {"evidence": "route log: zero effects"},
-        "comparison": {"novelEffect": True, "matches": []},
-        "regression": {"tests": ["bp/tests/test_audit_finding_schema.py"]},
-        "issue": {"title": "Version command fails", "body": "reproduction", "ready": True},
-    }
+    finding = _novel_finding()
     assert classify_finding(finding, _index()) == "issue-ready"
+
+
+@pytest.mark.parametrize(
+    "missing_path",
+    [
+        "reproduction.command",
+        "oracle.expected",
+        "actual.transcript",
+        "actual.exitCode",
+        "effects.evidence",
+        "issue.title",
+        "issue.body",
+        "issue.ready",
+    ],
+)
+def test_confirmed_finding_rejects_missing_nested_evidence(missing_path: str) -> None:
+    """Every evidence and issue-readiness path is independently mandatory."""
+    finding = deepcopy(_novel_finding())
+    parent, leaf = missing_path.split(".")
+    nested = finding[parent]
+    assert isinstance(nested, dict)
+    del nested[leaf]
+    with pytest.raises(FindingSchemaError, match=f"missing {missing_path}"):
+        classify_finding(finding, _index())
 
 
 def test_d15_duplicate_scope_suspicion_is_not_issue_ready() -> None:
