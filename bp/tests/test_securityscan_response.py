@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 import httpx
 import pytest
@@ -12,8 +13,159 @@ from typer.testing import CliRunner
 
 from bp.cli import app
 from bp.client import BurpClient, BurpError
-from bp.commands.securityscan import _has_findings, _project_for_display, _validate_scan_verdict
+from bp.commands.securityscan import _has_findings, _project_for_display, _validate_scan_response
 from bp.ledger import Ledger
+from bp.models import (
+    AuthBypassResponse,
+    CorsResponse,
+    EndpointsScanResponse,
+    HeadersBypassResponse,
+    IdorResponse,
+)
+
+_AUTH_PROBE: dict[str, Any] = {
+    "status": 200,
+    "length": 12,
+    "durationMs": 3,
+}
+_IDOR_PROBE: dict[str, Any] = {
+    "value": "1",
+    "status": 200,
+    "length": 12,
+    "bodyPreview": None,
+    "sameAsBaseline": True,
+    "vulnerable": False,
+}
+_ENDPOINT_FINDING: dict[str, Any] = {
+    "endpoint": "https://fixture.invalid/admin",
+    "method": "GET",
+    "test": "auth-bypass",
+    "detail": "accessible without auth",
+    "severity": "high",
+}
+_VALID_RESPONSES: dict[str, dict[str, Any]] = {
+    "/scan/auth-bypass": {
+        "results": [],
+        "totalScanned": 0,
+        "vulnerableCount": 0,
+    },
+    "/scan/idor": {
+        "baseline": _IDOR_PROBE,
+        "results": [],
+        "vulnerableCount": 0,
+    },
+    "/scan/headers": {
+        "baseline": _AUTH_PROBE,
+        "results": [],
+        "anomalousCount": 0,
+        "vulnerableCount": 0,
+    },
+    "/scan/cors": {
+        "results": [],
+        "vulnerableCount": 0,
+    },
+    "/scan/endpoints": {
+        "scanned": 0,
+        "findings": [],
+        "durationMs": 1,
+    },
+}
+_ResponseModel = type[
+    AuthBypassResponse | IdorResponse | HeadersBypassResponse | CorsResponse | EndpointsScanResponse
+]
+
+
+@pytest.mark.parametrize(
+    ("args", "rest_path", "data"),
+    [
+        (
+            ["auth", "https://fixture.invalid"],
+            "/scan/auth-bypass",
+            {"vulnerableCount": 0},
+        ),
+        (
+            [
+                "idor",
+                "https://fixture.invalid/orders/{id}",
+                "--param",
+                "id",
+                "--own",
+                "1",
+                "--target",
+                "2",
+            ],
+            "/scan/idor",
+            {"vulnerableCount": 0},
+        ),
+        (
+            ["headers", "https://fixture.invalid"],
+            "/scan/headers",
+            {"vulnerableCount": 0},
+        ),
+        (
+            ["cors", "https://fixture.invalid"],
+            "/scan/cors",
+            {"vulnerableCount": 0},
+        ),
+        (
+            ["endpoints", "fixture.invalid"],
+            "/scan/endpoints",
+            {"findings": []},
+        ),
+    ],
+)
+def test_every_check_command_rejects_an_incomplete_success_dto_before_output(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    args: list[str],
+    rest_path: str,
+    data: dict[str, Any],
+) -> None:
+    """A verdict field alone cannot turn an incomplete success DTO into a clean result."""
+    db_path = tmp_path / "ledger.db"
+    rest_requests: list[tuple[str, str]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        rest_requests.append((request.method, request.url.path))
+        return httpx.Response(200, json={"success": True, "data": data, "error": None})
+
+    def client_factory(
+        _url: str,
+        *,
+        ledger: Ledger | None = None,
+        redact: bool = True,
+        command: str = "",
+    ) -> BurpClient:
+        return BurpClient(
+            client=httpx.Client(
+                transport=httpx.MockTransport(handler), base_url="http://fixture.invalid"
+            ),
+            ledger=ledger,
+            redact=redact,
+            command=command,
+        )
+
+    monkeypatch.setattr("bp.cliutil.Ledger", lambda: Ledger(db_path=db_path))
+    monkeypatch.setattr("bp.cliutil.BurpClient", client_factory)
+
+    result = CliRunner().invoke(app, ["--format", "json", "check", *args])
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    assert json.loads(result.stderr) == {
+        "error": {
+            "code": "INVALID_RESPONSE",
+            "message": "server returned an unexpected response shape",
+        }
+    }
+    assert "Traceback" not in result.stderr
+    assert "fixture.invalid" not in result.stderr
+    assert "securityscan.py" not in result.stderr
+    assert rest_requests == [("POST", rest_path)]
+    with Ledger(db_path=db_path) as ledger:
+        rows = ledger.query()
+    assert len(rows) == 1
+    assert rows[0].exit_code == 1
 
 
 def test_check_endpoints_rejects_null_findings_before_output(
@@ -77,9 +229,9 @@ def test_check_endpoints_rejects_null_findings_before_output(
 
 
 @pytest.mark.parametrize(
-    ("args", "rest_path", "data"),
+    ("args", "rest_path", "finding_field"),
     [
-        (["auth", "https://fixture.invalid"], "/scan/auth-bypass", {"vulnerableCount": None}),
+        (["auth", "https://fixture.invalid"], "/scan/auth-bypass", "vulnerableCount"),
         (
             [
                 "idor",
@@ -92,20 +244,22 @@ def test_check_endpoints_rejects_null_findings_before_output(
                 "2",
             ],
             "/scan/idor",
-            {"vulnerableCount": None},
+            "vulnerableCount",
         ),
-        (["headers", "https://fixture.invalid"], "/scan/headers", {"vulnerableCount": None}),
-        (["cors", "https://fixture.invalid"], "/scan/cors", {"vulnerableCount": None}),
-        (["endpoints", "fixture.invalid"], "/scan/endpoints", {"findings": None}),
+        (["headers", "https://fixture.invalid"], "/scan/headers", "vulnerableCount"),
+        (["cors", "https://fixture.invalid"], "/scan/cors", "vulnerableCount"),
+        (["endpoints", "fixture.invalid"], "/scan/endpoints", "findings"),
     ],
 )
 def test_every_check_command_validates_its_finding_indicator(
     monkeypatch: pytest.MonkeyPatch,
     args: list[str],
     rest_path: str,
-    data: dict[str, Any],
+    finding_field: str,
 ) -> None:
     rest_paths: list[str] = []
+    data = deepcopy(_VALID_RESPONSES[rest_path])
+    data[finding_field] = None
 
     def handler(request: httpx.Request) -> httpx.Response:
         rest_paths.append(request.url.path)
@@ -139,7 +293,7 @@ def test_every_check_command_validates_its_finding_indicator(
 
 
 @pytest.mark.parametrize(
-    ("args", "rest_path", "data", "expected_exit", "expected_stdout"),
+    ("args", "rest_path", "data", "expected_exit"),
     [
         (
             [
@@ -153,23 +307,20 @@ def test_every_check_command_validates_its_finding_indicator(
                 "2",
             ],
             "/scan/idor",
-            {"vulnerableCount": 0, "note": 123},
+            {**_VALID_RESPONSES["/scan/idor"], "note": 123},
             1,
-            "",
         ),
         (
             ["endpoints", "fixture.invalid"],
             "/scan/endpoints",
-            {"findings": [], "vulnerableCount": 1},
+            {**_VALID_RESPONSES["/scan/endpoints"], "vulnerableCount": 1},
             0,
-            '{"findings":[],"vulnerableCount":1}\n',
         ),
         (
             ["auth", "https://fixture.invalid"],
             "/scan/auth-bypass",
-            {"vulnerableCount": 0, "findings": [{"kind": "unrelated"}]},
+            {**_VALID_RESPONSES["/scan/auth-bypass"], "findings": [_ENDPOINT_FINDING]},
             0,
-            '{"vulnerableCount":0,"findings":[{"kind":"unrelated"}]}\n',
         ),
     ],
 )
@@ -179,7 +330,6 @@ def test_check_commands_use_only_their_authoritative_verdict_field(
     rest_path: str,
     data: dict[str, Any],
     expected_exit: int,
-    expected_stdout: str,
 ) -> None:
     rest_paths: list[str] = []
 
@@ -208,63 +358,116 @@ def test_check_commands_use_only_their_authoritative_verdict_field(
     result = CliRunner().invoke(app, ["--format", "json", "--no-ledger", "check", *args])
 
     assert result.exit_code == expected_exit
-    assert result.stdout == expected_stdout
     assert rest_paths == [rest_path]
     if expected_exit == 1:
+        assert result.stdout == ""
         assert '"code":"INVALID_RESPONSE"' in result.stderr
         assert "Traceback" not in result.stderr
         assert "fixture.invalid" not in result.stderr
         assert "securityscan.py" not in result.stderr
     else:
+        assert json.loads(result.stdout) == data
         assert result.stderr == ""
 
 
 @pytest.mark.parametrize(
-    ("data", "finding_field"),
+    ("response_model", "data"),
     [
-        ({}, "vulnerableCount"),
-        ({"vulnerableCount": None}, "vulnerableCount"),
-        ({"vulnerableCount": "1"}, "vulnerableCount"),
-        ({"vulnerableCount": True}, "vulnerableCount"),
-        ({"vulnerableCount": -1}, "vulnerableCount"),
-        ({}, "findings"),
-        ({"findings": None}, "findings"),
-        ({"findings": {}}, "findings"),
-        ({"vulnerableCount": 0, "inconclusiveCount": None}, "vulnerableCount"),
-        ({"vulnerableCount": 0, "errors": None}, "vulnerableCount"),
-        ({"vulnerableCount": 0, "anomalousCount": 1.5}, "vulnerableCount"),
-        ({"vulnerableCount": 0, "note": 123}, "vulnerableCount"),
+        (
+            AuthBypassResponse,
+            {**_VALID_RESPONSES["/scan/auth-bypass"], "vulnerableCount": "0"},
+        ),
+        (
+            AuthBypassResponse,
+            {**_VALID_RESPONSES["/scan/auth-bypass"], "vulnerableCount": -1},
+        ),
+        (
+            IdorResponse,
+            {
+                **_VALID_RESPONSES["/scan/idor"],
+                "baseline": {key: value for key, value in _IDOR_PROBE.items() if key != "value"},
+            },
+        ),
+        (
+            HeadersBypassResponse,
+            {
+                **_VALID_RESPONSES["/scan/headers"],
+                "baseline": {**_AUTH_PROBE, "durationMs": "3"},
+            },
+        ),
+        (
+            CorsResponse,
+            {
+                "results": [
+                    {
+                        "origin": "https://evil.com",
+                        "acao": None,
+                        "acac": None,
+                        "vulnerable": 0,
+                    }
+                ],
+                "vulnerableCount": 0,
+            },
+        ),
+        (
+            EndpointsScanResponse,
+            {**_VALID_RESPONSES["/scan/endpoints"], "findings": [{"endpoint": "/admin"}]},
+        ),
+        (
+            AuthBypassResponse,
+            {**_VALID_RESPONSES["/scan/auth-bypass"], "findings": [{"endpoint": "/admin"}]},
+        ),
+        (
+            EndpointsScanResponse,
+            {**_VALID_RESPONSES["/scan/endpoints"], "vulnerableCount": True},
+        ),
     ],
 )
-def test_scan_verdict_rejects_missing_null_and_wrong_typed_fields(
+def test_scan_response_rejects_malformed_required_nested_and_extra_fields(
+    response_model: _ResponseModel,
     data: dict[str, Any],
-    finding_field: Literal["vulnerableCount", "findings"],
 ) -> None:
     with pytest.raises(BurpError, match="INVALID_RESPONSE"):
-        _validate_scan_verdict(data, finding_field)
+        _validate_scan_response(data, response_model)
 
 
 @pytest.mark.parametrize(
-    ("data", "finding_field"),
+    ("response_model", "data"),
     [
-        ({"vulnerableCount": 0, "inconclusiveCount": 0}, "vulnerableCount"),
-        ({"vulnerableCount": 0, "inconclusiveCount": 1}, "vulnerableCount"),
-        ({"vulnerableCount": 0, "note": None}, "vulnerableCount"),
-        ({"vulnerableCount": 0, "note": "manual review advised"}, "vulnerableCount"),
-        ({"vulnerableCount": 2, "errors": []}, "vulnerableCount"),
-        ({"findings": [], "inconclusiveCount": 0, "errors": []}, "findings"),
-        ({"findings": [{"endpoint": "/admin"}]}, "findings"),
+        (AuthBypassResponse, _VALID_RESPONSES["/scan/auth-bypass"]),
+        (
+            IdorResponse,
+            {
+                **_VALID_RESPONSES["/scan/idor"],
+                "note": "manual review advised",
+                "ignoredOwnValues": ["2"],
+            },
+        ),
+        (HeadersBypassResponse, _VALID_RESPONSES["/scan/headers"]),
+        (CorsResponse, _VALID_RESPONSES["/scan/cors"]),
+        (
+            EndpointsScanResponse,
+            {**_VALID_RESPONSES["/scan/endpoints"], "vulnerableCount": 1},
+        ),
+        (
+            AuthBypassResponse,
+            {**_VALID_RESPONSES["/scan/auth-bypass"], "findings": [_ENDPOINT_FINDING]},
+        ),
+        (
+            AuthBypassResponse,
+            {**_VALID_RESPONSES["/scan/auth-bypass"], "futureServerField": {"value": 1}},
+        ),
     ],
 )
-def test_scan_verdict_preserves_valid_clean_inconclusive_and_vulnerable_shapes(
+def test_scan_response_preserves_valid_dto_and_well_typed_extra_fields(
+    response_model: _ResponseModel,
     data: dict[str, Any],
-    finding_field: Literal["vulnerableCount", "findings"],
 ) -> None:
-    assert _validate_scan_verdict(data, finding_field) is data
+    assert _validate_scan_response(data, response_model) is data
 
 
 def test_has_findings_uses_the_selected_authoritative_field() -> None:
-    contradictory = {"vulnerableCount": 0, "findings": [{"kind": "unrelated"}]}
+    contradictory = {"vulnerableCount": 0, "findings": [_ENDPOINT_FINDING]}
     assert _has_findings(contradictory, "vulnerableCount") is False
     assert _has_findings(contradictory, "findings") is True
 
@@ -274,7 +477,7 @@ def test_has_findings_uses_the_selected_authoritative_field() -> None:
 
 
 def test_projected_idor_verdict_ignores_unrelated_findings() -> None:
-    response = {"vulnerableCount": 0, "findings": [{"kind": "unrelated"}]}
+    response = {"vulnerableCount": 0, "findings": [_ENDPOINT_FINDING]}
     projected = _project_for_display(response, finding_field="vulnerableCount")
     assert projected["verdict"] == "clean"
-    assert projected["findings"] == [{"kind": "unrelated"}]
+    assert projected["findings"] == [_ENDPOINT_FINDING]
