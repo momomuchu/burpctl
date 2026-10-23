@@ -12,8 +12,9 @@ from typing import Any
 
 import typer
 
+from bp.client import BurpError
 from bp.cliutil import EXIT_USAGE, run
-from bp.models import HistoryEntryResponse, ReplayResponse
+from bp.models import HistoryEntryResponse, HistoryPageResponse, ReplayResponse
 
 
 # ---------------------------------------------------------------------------
@@ -21,13 +22,16 @@ from bp.models import HistoryEntryResponse, ReplayResponse
 # ---------------------------------------------------------------------------
 
 
-def _history_rows(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _history_rows(entries: object) -> list[dict[str, Any]]:
     """Flatten HistoryEntryResponse dicts into compact display rows for list view.
 
     The server returns a flat HistoryEntryResponse shape (not nested like ProxyEntry).
     We project the four essential columns so the table shows id/method/url/statusCode
     without any reqHeaders/resHeaders blob cells.  Analogous to _proxy_rows() in cli.py.
     """
+    if not isinstance(entries, list):
+        raise BurpError("INVALID_RESPONSE", "server returned an unexpected response shape")
+
     rows: list[dict[str, Any]] = []
     for e in entries:
         he = HistoryEntryResponse.model_validate(e)
@@ -40,6 +44,11 @@ def _history_rows(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+def _history_rows_from_response(data: dict[str, Any]) -> list[dict[str, Any]]:
+    page = HistoryPageResponse.model_validate(data, strict=True)
+    return _history_rows([entry.model_dump() for entry in page.entries])
 
 
 def _history_entry_display(entry: dict[str, Any]) -> dict[str, Any]:
@@ -141,7 +150,7 @@ def history_list(
         if page is not None:
             params["page"] = page
         page_data = c.get("/history", **params)
-        return _history_rows(page_data.get("entries", []))
+        return _history_rows_from_response(page_data)
 
     run(ctx, _do)
 
