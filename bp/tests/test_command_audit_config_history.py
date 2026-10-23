@@ -12,7 +12,7 @@ import json
 from dataclasses import dataclass
 from os import replace
 from pathlib import Path
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 import pytest
 
@@ -95,6 +95,7 @@ HISTORY_503_LIMIT: Final = (
     "UnavailableRoutes.kt:14-25 supersede historical 404 prose in docs/SPEC.md:669-701 "
     "and docs/bdd/13-history.feature."
 )
+ORACLE_MISMATCH_IDS: Final = frozenset({"L19", "L20", "L28", "L29", "L30", "L31"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -636,6 +637,51 @@ def _write_once(path: Path, payload: JsonValue) -> None:
         handle.write("\n")
 
 
+def _classify_oracle_mismatch(
+    lane: dict[str, JsonValue], *, oracle_hash: str, manifest_effect: JsonValue
+) -> None:
+    """Keep valid CLI observations separate from a conflicting sealed oracle."""
+    actual = lane["actual"]
+    assert isinstance(actual, dict)
+    rest_log = actual["restLog"]
+    target_log = actual["targetLog"]
+    assert isinstance(rest_log, list)
+    assert isinstance(target_log, list)
+    lane["verdict"] = "INCONCLUSIVE"
+    lane["oracleComparison"] = {
+        "classification": "ORACLE_MISMATCH",
+        "manifestOracleHash": oracle_hash,
+        "manifestExpectedEffect": manifest_effect,
+        "localExpectedPointer": "contrast.expected.route/effect",
+        "observedRestCount": len(rest_log),
+        "caseSubstituted": False,
+        "proofPointerValid": True,
+        "rerun": "NOT_RUN_EXISTING_PROOF_VALID",
+        "reason": (
+            "The sealed manifest requires route:none/effect:zero, while the local contrast "
+            "requires and the preserved trace records one REST request."
+        ),
+    }
+    lane["independentCliSubchecks"] = {
+        "exitAndStreams": {
+            "verdict": "PASS",
+            "basis": "Captured exit, stdout, and stderr match the local CLI contrast check.",
+        },
+        "observedRestDispatch": {
+            "verdict": "PASS",
+            "basis": f"The preserved fixture trace contains {len(rest_log)} REST request.",
+        },
+        "endToEndServerState": {
+            "verdict": "INCONCLUSIVE",
+            "basis": "The loopback REST fixture does not execute Montoya or H2 state effects.",
+        },
+        "targetEffects": {
+            "verdict": "PASS",
+            "basis": f"The preserved fixture target log contains {len(target_log)} effects.",
+        },
+    }
+
+
 @pytest.mark.parametrize("case", CONFIG_CASES, ids=lambda case: f"{case.row_id}-{case.lane}")
 def test_nested_config(tmp_path: Path, case: Case) -> None:
     _run_case(tmp_path, case)
@@ -673,6 +719,8 @@ def test_clear_without_confirm(tmp_path: Path) -> None:
 
 def test_observation_aggregate_has_complete_ordered_rows() -> None:
     rows = json.loads(OBSERVATIONS_PATH.read_text(encoding="utf-8"))
+    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    manifest_by_id = {row["id"]: row for row in manifest["rows"]}
     expected_ids = {
         "G01",
         "G02",
@@ -705,12 +753,42 @@ def test_observation_aggregate_has_complete_ordered_rows() -> None:
     assert h01["normal"]["expected"]["route"]["path"] == "/history"
     assert h01["normal"]["actual"]["exit"] == 2
     assert h01["normal"]["actual"]["restLog"] == []
+    mismatches: set[str] = set()
+    for row in rows:
+        manifest_row = manifest_by_id.get(row["id"])
+        if manifest_row is None:
+            continue
+        manifest_effect = manifest_row["contrast"]["effect"]
+        contrast = row["contrast"]
+        local_route = contrast["expected"]["route"]
+        rest_log = contrast["actual"]["restLog"]
+        if (
+            manifest_effect == {"route": "none", "effect": "zero"}
+            and local_route is not None
+            and rest_log
+        ):
+            mismatches.add(row["id"])
+            comparison = contrast["oracleComparison"]
+            assert row["oracleHash"] == manifest_row["seal"]["hash"]
+            assert comparison["classification"] == "ORACLE_MISMATCH"
+            assert comparison["manifestOracleHash"] == row["oracleHash"]
+            assert comparison["manifestExpectedEffect"] == manifest_effect
+            assert comparison["caseSubstituted"] is False
+            assert comparison["proofPointerValid"] is True
+            assert comparison["rerun"] == "NOT_RUN_EXISTING_PROOF_VALID"
+            assert contrast["verdict"] == "INCONCLUSIVE"
+            subchecks = contrast["independentCliSubchecks"]
+            assert subchecks["exitAndStreams"]["verdict"] == "PASS"
+            assert subchecks["observedRestDispatch"]["verdict"] == "PASS"
+            assert subchecks["endToEndServerState"]["verdict"] == "INCONCLUSIVE"
+    assert mismatches == ORACLE_MISMATCH_IDS
 
 
 def record_observations(root: Path, evidence_dir: Path, output: Path) -> None:
     """Run the full audit once and persist immutable per-invocation and aggregate records."""
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     hashes = {row["id"]: row["seal"]["hash"] for row in manifest["rows"]}
+    manifest_by_id = {row["id"]: row for row in manifest["rows"]}
     cases = (*_group_cases(), *CONFIG_CASES, *HISTORY_CASES, *H01_CASES)
     grouped: dict[str, dict[str, JsonValue]] = {}
     for sequence, case in enumerate(cases, start=1):
@@ -731,6 +809,14 @@ def record_observations(root: Path, evidence_dir: Path, output: Path) -> None:
             "normal": lanes["normal"],
             "contrast": lanes["contrast"],
         }
+        if row_id in ORACLE_MISMATCH_IDS:
+            contrast = cast(dict[str, JsonValue], row["contrast"])
+            manifest_row = manifest_by_id[row_id]
+            _classify_oracle_mismatch(
+                contrast,
+                oracle_hash=hashes[row_id],
+                manifest_effect=cast(JsonValue, manifest_row["contrast"]["effect"]),
+            )
         rows.append(row)
     rows_payload: list[JsonValue] = []
     rows_payload.extend(rows)

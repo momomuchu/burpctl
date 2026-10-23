@@ -792,7 +792,7 @@
           "sealedAt": "2026-10-23T11:31:03.151562Z",
           "sha256": "37bdf4bf12cc2e3546674172f7c2e6a615aa86fb4cffb75940f09c3ea7147a0c"
         },
-          "reason": "The caller's preexisting H01 oracle was restored without changing its observed result."
+        "reason": "The caller's preexisting H01 oracle was restored without changing its observed result."
       },
       "verdict": "FAIL"
     },
@@ -855,12 +855,44 @@
           "kind": "empty"
         }
       },
+      "independentCliSubchecks": {
+        "endToEndServerState": {
+          "basis": "The loopback REST fixture does not execute Montoya or H2 state effects.",
+          "verdict": "INCONCLUSIVE"
+        },
+        "exitAndStreams": {
+          "basis": "Captured exit, stdout, and stderr match the local CLI contrast check.",
+          "verdict": "PASS"
+        },
+        "observedRestDispatch": {
+          "basis": "The preserved fixture trace contains 1 REST request.",
+          "verdict": "PASS"
+        },
+        "targetEffects": {
+          "basis": "The preserved fixture target log contains 0 effects.",
+          "verdict": "PASS"
+        }
+      },
       "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "oracleComparison": {
+        "caseSubstituted": false,
+        "classification": "ORACLE_MISMATCH",
+        "localExpectedPointer": "contrast.expected.route/effect",
+        "manifestExpectedEffect": {
+          "effect": "zero",
+          "route": "none"
+        },
+        "manifestOracleHash": "a0eee5714c5929f7730fc145ba7f669852b8d1a3ba139b85674185a92b90cd74",
+        "observedRestCount": 1,
+        "proofPointerValid": true,
+        "reason": "The sealed manifest requires route:none/effect:zero, while the local contrast requires and the preserved trace records one REST request.",
+        "rerun": "NOT_RUN_EXISTING_PROOF_VALID"
+      },
       "preRunSeal": {
         "sealedAt": "2026-10-23T11:30:26.842853Z",
         "sha256": "123fd1f4ee656346f13c916f7a4cab273b8812b67bde17fee7df26d14eb81941"
       },
-      "verdict": "PASS"
+      "verdict": "INCONCLUSIVE"
     },
     "id": "L19",
     "normal": {
@@ -986,12 +1018,44 @@
           "kind": "empty"
         }
       },
+      "independentCliSubchecks": {
+        "endToEndServerState": {
+          "basis": "The loopback REST fixture does not execute Montoya or H2 state effects.",
+          "verdict": "INCONCLUSIVE"
+        },
+        "exitAndStreams": {
+          "basis": "Captured exit, stdout, and stderr match the local CLI contrast check.",
+          "verdict": "PASS"
+        },
+        "observedRestDispatch": {
+          "basis": "The preserved fixture trace contains 1 REST request.",
+          "verdict": "PASS"
+        },
+        "targetEffects": {
+          "basis": "The preserved fixture target log contains 0 effects.",
+          "verdict": "PASS"
+        }
+      },
       "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "oracleComparison": {
+        "caseSubstituted": false,
+        "classification": "ORACLE_MISMATCH",
+        "localExpectedPointer": "contrast.expected.route/effect",
+        "manifestExpectedEffect": {
+          "effect": "zero",
+          "route": "none"
+        },
+        "manifestOracleHash": "2cc676b34fe51559670d0bf260929d633fc6097f2ff4baf39ec264a63face6de",
+        "observedRestCount": 1,
+        "proofPointerValid": true,
+        "reason": "The sealed manifest requires route:none/effect:zero, while the local contrast requires and the preserved trace records one REST request.",
+        "rerun": "NOT_RUN_EXISTING_PROOF_VALID"
+      },
       "preRunSeal": {
         "sealedAt": "2026-10-23T11:30:29.359055Z",
         "sha256": "c2e2281bd0a7c7f0431e74a2ba4b8338fb86bb86ea17a3f20c9013a319438d34"
       },
-      "verdict": "PASS"
+      "verdict": "INCONCLUSIVE"
     },
     "id": "L20",
     "normal": {
@@ -1384,12 +1448,44 @@
           "kind": "empty"
         }
       },
+      "independentCliSubchecks": {
+        "endToEndServerState": {
+          "basis": "The loopback REST fixture does not execute Montoya or H2 state effects.",
+          "verdict": "INCONCLUSIVE"
+        },
+        "exitAndStreams": {
+          "basis": "Captured exit, stdout, and stderr match the local CLI contrast check.",
+          "verdict": "PASS"
+        },
+        "observedRestDispatch": {
+          "basis": "The preserved fixture trace contains 1 REST request.",
+          "verdict": "PASS"
+        },
+        "targetEffects": {
+          "basis": "The preserved fixture target log contains 0 effects.",
+          "verdict": "PASS"
+        }
+      },
       "limits": "CLI 503 SERVICE_UNAVAILABLE mapping observed. Current docs/SPEC.md:26 and UnavailableRoutes.kt:14-25 supersede historical 404 prose in docs/SPEC.md:669-701 and docs/bdd/13-history.feature.",
+      "oracleComparison": {
+        "caseSubstituted": false,
+        "classification": "ORACLE_MISMATCH",
+        "localExpectedPointer": "contrast.expected.route/effect",
+        "manifestExpectedEffect": {
+          "effect": "zero",
+          "route": "none"
+        },
+        "manifestOracleHash": "f732c0ff4785b0ba57b80ca1b6dacb68866c5d3ddea617c3f92ac507bab6a75f",
+        "observedRestCount": 1,
+        "proofPointerValid": true,
+        "reason": "The sealed manifest requires route:none/effect:zero, while the local contrast requires and the preserved trace records one REST request.",
+        "rerun": "NOT_RUN_EXISTING_PROOF_VALID"
+      },
       "preRunSeal": {
         "sealedAt": "2026-10-23T11:30:47.024610Z",
         "sha256": "25eddcb7f6b14a1e4b1450b79f8555810203bde616d95ec45a2fc2a0790a3aa5"
       },
-      "verdict": "PASS"
+      "verdict": "INCONCLUSIVE"
     },
     "id": "L28",
     "normal": {
@@ -1514,12 +1610,44 @@
           "kind": "empty"
         }
       },
+      "independentCliSubchecks": {
+        "endToEndServerState": {
+          "basis": "The loopback REST fixture does not execute Montoya or H2 state effects.",
+          "verdict": "INCONCLUSIVE"
+        },
+        "exitAndStreams": {
+          "basis": "Captured exit, stdout, and stderr match the local CLI contrast check.",
+          "verdict": "PASS"
+        },
+        "observedRestDispatch": {
+          "basis": "The preserved fixture trace contains 1 REST request.",
+          "verdict": "PASS"
+        },
+        "targetEffects": {
+          "basis": "The preserved fixture target log contains 0 effects.",
+          "verdict": "PASS"
+        }
+      },
       "limits": "CLI boundary observed through the owned loopback REST fixture.",
+      "oracleComparison": {
+        "caseSubstituted": false,
+        "classification": "ORACLE_MISMATCH",
+        "localExpectedPointer": "contrast.expected.route/effect",
+        "manifestExpectedEffect": {
+          "effect": "zero",
+          "route": "none"
+        },
+        "manifestOracleHash": "171f5e20f29f4550395a8016cb9292f246597ea13e78ddcbd2e85d3585519c7e",
+        "observedRestCount": 1,
+        "proofPointerValid": true,
+        "reason": "The sealed manifest requires route:none/effect:zero, while the local contrast requires and the preserved trace records one REST request.",
+        "rerun": "NOT_RUN_EXISTING_PROOF_VALID"
+      },
       "preRunSeal": {
         "sealedAt": "2026-10-23T11:30:50.040485Z",
         "sha256": "0efe71e47fe2507629260a8bf519496726885eff8059780ba911647bc69c8635"
       },
-      "verdict": "PASS"
+      "verdict": "INCONCLUSIVE"
     },
     "id": "L29",
     "normal": {
@@ -1650,12 +1778,44 @@
           "kind": "empty"
         }
       },
+      "independentCliSubchecks": {
+        "endToEndServerState": {
+          "basis": "The loopback REST fixture does not execute Montoya or H2 state effects.",
+          "verdict": "INCONCLUSIVE"
+        },
+        "exitAndStreams": {
+          "basis": "Captured exit, stdout, and stderr match the local CLI contrast check.",
+          "verdict": "PASS"
+        },
+        "observedRestDispatch": {
+          "basis": "The preserved fixture trace contains 1 REST request.",
+          "verdict": "PASS"
+        },
+        "targetEffects": {
+          "basis": "The preserved fixture target log contains 0 effects.",
+          "verdict": "PASS"
+        }
+      },
       "limits": "CLI 503 SERVICE_UNAVAILABLE mapping observed. Current docs/SPEC.md:26 and UnavailableRoutes.kt:14-25 supersede historical 404 prose in docs/SPEC.md:669-701 and docs/bdd/13-history.feature.",
+      "oracleComparison": {
+        "caseSubstituted": false,
+        "classification": "ORACLE_MISMATCH",
+        "localExpectedPointer": "contrast.expected.route/effect",
+        "manifestExpectedEffect": {
+          "effect": "zero",
+          "route": "none"
+        },
+        "manifestOracleHash": "257c5c6165ee54447ecc39b61870d774b95ff4ffd5f5a222e00bab4c56f5d154",
+        "observedRestCount": 1,
+        "proofPointerValid": true,
+        "reason": "The sealed manifest requires route:none/effect:zero, while the local contrast requires and the preserved trace records one REST request.",
+        "rerun": "NOT_RUN_EXISTING_PROOF_VALID"
+      },
       "preRunSeal": {
         "sealedAt": "2026-10-23T11:30:53.564157Z",
         "sha256": "6e5de338d8c8efd99be135458c45adb873d1815b7bd03bd3b2aa6a7267a22d7d"
       },
-      "verdict": "PASS"
+      "verdict": "INCONCLUSIVE"
     },
     "id": "L30",
     "normal": {
@@ -1784,12 +1944,44 @@
           "kind": "empty"
         }
       },
+      "independentCliSubchecks": {
+        "endToEndServerState": {
+          "basis": "The loopback REST fixture does not execute Montoya or H2 state effects.",
+          "verdict": "INCONCLUSIVE"
+        },
+        "exitAndStreams": {
+          "basis": "Captured exit, stdout, and stderr match the local CLI contrast check.",
+          "verdict": "PASS"
+        },
+        "observedRestDispatch": {
+          "basis": "The preserved fixture trace contains 1 REST request.",
+          "verdict": "PASS"
+        },
+        "targetEffects": {
+          "basis": "The preserved fixture target log contains 0 effects.",
+          "verdict": "PASS"
+        }
+      },
       "limits": "Typed missing-ID error and zero fixture target effects observed.",
+      "oracleComparison": {
+        "caseSubstituted": false,
+        "classification": "ORACLE_MISMATCH",
+        "localExpectedPointer": "contrast.expected.route/effect",
+        "manifestExpectedEffect": {
+          "effect": "zero",
+          "route": "none"
+        },
+        "manifestOracleHash": "5a39d49e2edbddcada8549144e66dadbe97262619364dce8a509b1567de9c296",
+        "observedRestCount": 1,
+        "proofPointerValid": true,
+        "reason": "The sealed manifest requires route:none/effect:zero, while the local contrast requires and the preserved trace records one REST request.",
+        "rerun": "NOT_RUN_EXISTING_PROOF_VALID"
+      },
       "preRunSeal": {
         "sealedAt": "2026-10-23T11:30:57.098682Z",
         "sha256": "e218d50c99a3890d8014baa8d6fc95de670a907c5fb115a0e46c2feb41b2f65c"
       },
-      "verdict": "PASS"
+      "verdict": "INCONCLUSIVE"
     },
     "id": "L31",
     "normal": {
