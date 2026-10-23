@@ -110,6 +110,7 @@ fun Route.historyRoutes(historyDao: HistoryDao, sitemapDao: SitemapDao, repeater
             call.respond(ApiResponse.ok(ReplayResponse(
                 original = entry.toResponse(),
                 replayed = replayedEntry,
+                persistence = resp.persistence,
             )))
         }
 
