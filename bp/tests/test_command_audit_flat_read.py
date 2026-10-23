@@ -15,7 +15,7 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Final, Literal, TypeAlias, cast
 from collections.abc import Mapping, Sequence
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 import pytest
 
@@ -26,6 +26,7 @@ from bp.ledger import Ledger, OpRecord
 
 ROOT: Final = Path(__file__).resolve().parents[2]
 ORACLES: Final = ROOT / "quality" / "command-audit" / "oracles.json"
+CORRECTIONS: Final = ROOT / "quality" / "command-audit" / "oracle-corrections-flat-read.json"
 ASSIGNED: Final = ("F01", "F02", "F06", "F10", "F11", "F12", "F13", "F14", "F17", "F18")
 EMPTY_SHA256: Final = hashlib.sha256(b"").hexdigest()
 JsonScalar: TypeAlias = str | int | float | bool | None
@@ -242,6 +243,25 @@ def _oracle(audit_id: str) -> JsonObject:
     return next(row for value in rows if (row := _json_object(value))["id"] == audit_id)
 
 
+def _correction(correction_id: str) -> JsonObject:
+    document = cast(JsonObject, json.loads(CORRECTIONS.read_text()))
+    rows = _json_list(document["corrections"])
+    return next(row for value in rows if (row := _json_object(value))["id"] == correction_id)
+
+
+def _materialize(value: JsonValue, bindings: Mapping[str, str]) -> JsonValue:
+    if isinstance(value, str):
+        materialized = value
+        for name, replacement in bindings.items():
+            materialized = materialized.replace(f"{{{{{name}}}}}", replacement)
+        return materialized
+    if isinstance(value, Mapping):
+        return {str(key): _materialize(item, bindings) for key, item in value.items()}
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return [_materialize(item, bindings) for item in value]
+    return value
+
+
 def _parse_stdout(stdout: str) -> JsonValue:
     lines = stdout.splitlines()
     if not lines:
@@ -300,8 +320,9 @@ def _invoke(
     expected: Mapping[str, JsonValue],
     *,
     executable: str = "bp",
+    evidence_oracle: JsonObject | None = None,
 ) -> JsonObject:
-    oracle = _oracle(audit_id)
+    oracle = evidence_oracle if evidence_oracle is not None else _oracle(audit_id)
     before = fixture.snapshot()
     ledger_before = _ledger(fixture.manifest.ledger_path)
     sequence = time.time_ns()
@@ -482,6 +503,65 @@ def test_normal_cases(case: Case, tmp_path: Path) -> None:
         )
         observation = _invoke(fixture, tmp_path, case.audit_id, "normal", argv, expected)
         _assert_observed(observation, case.expected_verdict)
+
+
+@pytest.mark.parametrize("variant", ["normal", "contrast"])
+def test_f10_c001_binds_owned_port_with_separate_provenance(variant: str, tmp_path: Path) -> None:
+    correction = _correction("F10-C001")
+    seal = _json_object(correction["seal"])
+    canonical_row = {key: value for key, value in correction.items() if key != "seal"}
+    canonical = json.dumps(canonical_row, separators=(",", ":"), sort_keys=True).encode()
+
+    assert correction["originalEvidenceClassification"] == "PROVENANCE_MISMATCH"
+    assert correction["originalOracleHash"] == (
+        "60bb1e4ab3bcbcdc1149f278a7b932b97a4c74647de154e95efa15da57bff0bc"
+    )
+    assert seal["hash"] == hashlib.sha256(canonical).hexdigest()
+    original_argv = _json_list(correction["originalArgv"])
+    assert urlsplit(str(original_argv[2])).port is None
+
+    with FixtureRoot(tmp_path) as fixture:
+        target_port = urlsplit(fixture.manifest.target_url).port
+        assert target_port is not None
+        bindings = {"PORT": str(target_port)}
+        materialized_argv = _json_list(_materialize(correction["argvTemplate"], bindings))
+        assert all(isinstance(value, str) for value in materialized_argv)
+        argv = tuple(str(value) for value in materialized_argv)
+        assert argv[0] == "bp"
+        assert urlsplit(argv[2]).port == target_port
+        assert "{{PORT}}" not in json.dumps(materialized_argv)
+
+        case = _json_object(correction[variant])
+        route = str(_materialize(case["route"], bindings))
+        assert route.startswith("GET /target/sitemap?")
+        path = route.removeprefix("GET ")
+        stdout = _json_object(_materialize(case["stdout"], bindings))
+        fixture.add_rest_route("GET", path, body=_envelope(stdout))
+        expected = _network_expected(method="GET", path=path, stdout=stdout)
+        evidence_directory = _evidence_dir(tmp_path)
+        prefix = f"task-6-f10-c001-corrected-{variant}-bp-"
+        before = {item.name for item in evidence_directory.glob(f"{prefix}*.json")}
+
+        observation = _invoke(
+            fixture,
+            tmp_path,
+            "F10-C001",
+            f"corrected-{variant}",
+            tuple(argv[1:]),
+            expected,
+            evidence_oracle=correction,
+        )
+
+        created = {
+            item.name
+            for item in evidence_directory.glob(f"{prefix}*.json")
+            if item.name not in before
+        }
+        _assert_observed(observation, "PASS")
+        assert len(created) == 2
+        assert any(name.endswith("-expected.json") for name in created)
+        assert any(name.endswith("-actual.json") for name in created)
+        assert _json_object(observation["actual"])["targetLog"] == []
 
 
 def test_f17_normal_uses_two_newest_seeded_rows(tmp_path: Path) -> None:

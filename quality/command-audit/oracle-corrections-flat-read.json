@@ -1,0 +1,71 @@
+{
+  "schema": "burpctl.command-audit/oracle-corrections/v1",
+  "candidate": "3af139dc0b4020923f831099338c92af3265d7e2",
+  "corrections": [
+    {
+      "id": "F10-C001",
+      "originalId": "F10",
+      "originalOracleHash": "60bb1e4ab3bcbcdc1149f278a7b932b97a4c74647de154e95efa15da57bff0bc",
+      "originalArgv": [
+        "bp",
+        "sitemap",
+        "http://127.0.0.1/"
+      ],
+      "originalEvidenceClassification": "PROVENANCE_MISMATCH",
+      "reason": "The original argv resolves to implicit loopback port 80, which the disposable fixture does not own. Replacing it with an ephemeral fixture port under the original oracle hash changes the sealed argv provenance. The corrected variant binds an explicit owned {{PORT}} token before execution.",
+      "argvTemplate": [
+        "bp",
+        "sitemap",
+        "http://127.0.0.1:{{PORT}}/"
+      ],
+      "materialization": {
+        "requiredBindings": [
+          "PORT"
+        ],
+        "rule": "Replace {{PORT}} with the target fixture's owned ephemeral port, reject unresolved tokens, then seal the exact argv before invocation."
+      },
+      "normal": {
+        "exit": 0,
+        "stdout": {
+          "entries": [
+            {
+              "url": "http://127.0.0.1:{{PORT}}/a",
+              "method": "GET",
+              "statusCode": 200,
+              "mimeType": "text/plain"
+            }
+          ],
+          "total": 1
+        },
+        "stderr": "empty",
+        "route": "GET /target/sitemap?url=http%3A%2F%2F127.0.0.1%3A{{PORT}}%2F",
+        "targetEffects": 0
+      },
+      "contrast": {
+        "case": "empty sitemap result",
+        "exit": 0,
+        "stdout": {
+          "entries": [],
+          "total": 0
+        },
+        "stderr": "empty",
+        "route": "GET /target/sitemap?url=http%3A%2F%2F127.0.0.1%3A{{PORT}}%2F",
+        "targetEffects": 0
+      },
+      "authority": {
+        "priority": "current-contract-plus-fixture-ownership",
+        "sources": [
+          "docs/CLI.md:71",
+          "bp/src/bp/commands/target.py:126",
+          "bp/tests/audit_fixture.py:240"
+        ]
+      },
+      "sealedAt": "2026-10-23T12:17:01Z",
+      "seal": {
+        "algorithm": "sha256",
+        "scope": "canonical correction object with seal removed",
+        "hash": "a097ee12378c10985917814679ce990978260aa7b6a8eb797e5d609991adfa42"
+      }
+    }
+  ]
+}
