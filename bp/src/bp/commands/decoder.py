@@ -26,19 +26,18 @@ from typing import Any
 
 import typer
 
-from bp.cliutil import EXIT_USAGE, run
+from bp.cliutil import fail_usage, run
 
 _VALID_ENCODINGS = frozenset({"base64", "url", "hex", "html"})
 
 
-def _check_enc(enc: str) -> None:
+def _check_enc(enc: str, fmt: str = "table") -> None:
     """Validate --enc client-side; emit a clean error and exit 2 if invalid."""
     if enc not in _VALID_ENCODINGS:
-        typer.echo(
-            f"error: --enc must be one of base64, url, hex, html; got {enc!r}",
-            err=True,
+        fail_usage(
+            fmt,
+            f"--enc must be one of base64, url, hex, html; got {enc!r}",
         )
-        raise typer.Exit(EXIT_USAGE)
 
 
 # ---------------------------------------------------------------------------
@@ -69,7 +68,7 @@ def encode_cmd(
     Supported encodings: base64, url, hex, html.
     html encodes only 5 entities: & < > \" '
     """
-    _check_enc(enc)
+    _check_enc(enc, ctx.obj.fmt)
     body: dict[str, Any] = {"data": data, "encoding": enc}
     run(ctx, lambda c: c.post("/decoder/encode", body))
 
@@ -112,7 +111,7 @@ def decode_cmd(
         run(ctx, lambda c: c.post("/decoder/smart-decode", body))
     else:
         if enc is not None:
-            _check_enc(enc)
+            _check_enc(enc, ctx.obj.fmt)
         body = {"data": data}
         if enc is not None:
             body["encoding"] = enc

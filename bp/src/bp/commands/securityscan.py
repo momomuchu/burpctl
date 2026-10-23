@@ -52,25 +52,7 @@ def _project_for_display(
     data: dict[str, Any],
     return_note: bool = False,
 ) -> "dict[str, Any] | tuple[dict[str, Any], str]":
-    """Project a security-scan response dict for display on stdout.
-
-    Applies three transformations required before the dict is rendered:
-
-    1. Recursively remove every ``bodyPreview`` key (AX-CAP-BODY — opt-in only).
-    2. Pop ``note`` from the dict; the caller echoes it to stderr so stdout stays
-       clean for NDJSON/machine consumers ([13]).
-    3. Drop ``ignoredOwnValues`` when it is an empty list — it clutters output
-       without adding information ([13]).  Non-empty values are preserved.
-
-    The critical fields for ``_has_findings`` — ``vulnerableCount`` and
-    ``findings`` — are always preserved. ``anomalousCount`` remains an
-    observation-only signal and never selects the vulnerability exit code.
-
-    When ``return_note=True`` (used in unit tests), returns ``(projected, note)``
-    as a 2-tuple so callers can assert on the extracted note text.
-    When ``return_note=False`` (default, used in command ``_do`` wrappers), returns
-    only the projected dict.
-    """
+    """Remove unsafe/clutter fields and optionally return the extracted note."""
     projected: dict[str, Any] = cast(dict[str, Any], _strip_body_preview(data))
 
     note: str = projected.pop("note", "") or ""
@@ -96,15 +78,7 @@ def _project_for_display(
 
 
 def _has_findings(data: dict[str, Any]) -> bool:
-    """Return True when a security-scan response reports at least one finding.
-
-    Covers:
-    - vulnerableCount > 0        (auth-bypass, IDOR, CORS, confirmed header bypass)
-    - len(findings) > 0          (EndpointsScanResponse shape for check endpoints)
-
-    ``anomalousCount`` is intentionally excluded: a changed response is a
-    triage observation, not proof that access improved or a vulnerability exists.
-    """
+    """Return whether confirmed findings exist; anomalies alone do not qualify."""
     if data.get("vulnerableCount", 0) > 0:
         return True
     if len(data.get("findings", [])) > 0:
@@ -113,12 +87,7 @@ def _has_findings(data: dict[str, Any]) -> bool:
 
 
 def _is_inconclusive(data: dict[str, Any]) -> bool:
-    """Return True when at least one probe did not complete well enough to judge.
-
-    The extension marks a probe inconclusive when its treatment or control failed —
-    transport failure, throttling, a server error, or a missing authenticated baseline.
-    Such a scan proves nothing, so it must not be presented as a clean result.
-    """
+    """Return whether at least one probe lacks enough evidence for a verdict."""
     if data.get("inconclusiveCount", 0) > 0:
         return True
     if len(data.get("errors", [])) > 0:
@@ -220,7 +189,9 @@ def check_idor(
     extraHeaders? } to POST /scan/idor.
     """
     # Shared helper → consistent 'Name: Value' parsing and exit 2 (was a hardcoded literal here).
-    extra_headers: dict[str, str] | None = parse_headers(header, "--header") or None
+    extra_headers: dict[str, str] | None = (
+        parse_headers(header, "--header", fmt=ctx.obj.fmt) or None
+    )
 
     req_body: dict[str, Any] = {
         "endpoint": url,
@@ -234,15 +205,22 @@ def check_idor(
     if extra_headers is not None:
         req_body["extraHeaders"] = extra_headers
 
+    success_notes: list[tuple[str, str]] = []
+
     def _do(client: Any) -> Any:
         raw = client.post("/scan/idor", req_body)
         # [02] Strip bodyPreview (AX-CAP-BODY) and [13] route note to stderr.
         projected, note = _project_for_display(raw, return_note=True)
         if note:
-            typer.echo(f"note: {note}", err=True)
+            success_notes.append(("SECURITY_SCAN_NOTE", note))
         return projected
 
-    run(ctx, _do, exit_on=lambda d: EXIT_VULN if _has_findings(d) else None)
+    run(
+        ctx,
+        _do,
+        exit_on=lambda d: EXIT_VULN if _has_findings(d) else None,
+        success_notes=success_notes,
+    )
 
 
 # ---------------------------------------------------------------------------

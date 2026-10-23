@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal, Never
 
 import typer
 from pydantic import ValidationError
@@ -31,20 +32,32 @@ _EXIT_BY_CODE: dict[str, int] = {
     "SERVICE_UNAVAILABLE": EXIT_GENERIC,
 }
 
+Diagnostic = tuple[str, str]
+DiagnosticKind = Literal["note", "warning"]
+HumanDiagnosticLabel = Literal["error", "warning"]
+
 
 def exit_code_for_error_code(code: str) -> int:
     """Map a Burp error code to the stable CLI exit contract."""
     return _EXIT_BY_CODE.get(code, EXIT_GENERIC)
 
 
-@dataclass
 class State:
-    # None means --url was omitted; config.load then applies env/file/default.
-    url: str | None
-    fmt: str
-    fields: list[str] | None
-    no_ledger: bool = False
-    no_redact: bool = False
+    """Mutable per-invocation options shared through Typer's context."""
+
+    __slots__ = ("fields", "fmt", "no_ledger", "no_redact", "url")
+
+    def __init__(
+        self,
+        url: str | None,
+        fmt: str,
+        fields: list[str] | None,
+        no_ledger: bool = False,
+        no_redact: bool = False,
+    ) -> None:
+        # None means --url was omitted; config.load then applies env/file/default.
+        self.url, self.fmt, self.fields = url, fmt, fields
+        self.no_ledger, self.no_redact = no_ledger, no_redact
 
 
 def _safe_message(message: str, *, redact_secrets: bool) -> str:
@@ -74,24 +87,45 @@ def emit_error(
         typer.echo(f"error: {safe_message}", err=True)
 
 
-def emit_warning(
+def _emit_diagnostic(
     fmt: str,
+    kind: DiagnosticKind,
     code: str,
     message: str,
     *,
     redact_secrets: bool,
 ) -> None:
+    """Emit a typed note or warning for machine and human consumers."""
     safe_message = _safe_message(message, redact_secrets=redact_secrets)
-    if fmt == "json":
-        typer.echo(
-            json.dumps(
-                {"warning": {"code": code, "message": safe_message}},
-                separators=(",", ":"),
-            ),
-            err=True,
+    rendered = (
+        json.dumps(
+            {kind: {"code": code, "message": safe_message}},
+            separators=(",", ":"),
         )
+        if fmt == "json"
+        else f"{kind}: {safe_message}"
+    )
+    typer.echo(rendered, err=True)
+
+
+def emit_warning(fmt: str, code: str, message: str, *, redact_secrets: bool) -> None:
+    _emit_diagnostic(fmt, "warning", code, message, redact_secrets=redact_secrets)
+
+
+def fail_usage(
+    fmt: str,
+    message: str,
+    *,
+    human_label: HumanDiagnosticLabel = "error",
+    redact_secrets: bool = True,
+) -> Never:
+    """Emit one agent-safe usage error while retaining the human label."""
+    if fmt == "json":
+        emit_error(fmt, "USAGE_ERROR", message, redact_secrets=redact_secrets)
     else:
-        typer.echo(f"warning: {safe_message}", err=True)
+        safe_message = _safe_message(message, redact_secrets=redact_secrets)
+        typer.echo(f"{human_label}: {safe_message}", err=True)
+    raise typer.Exit(EXIT_USAGE)
 
 
 def run(
@@ -99,6 +133,7 @@ def run(
     fn: Callable[[BurpClient], Any],
     *,
     exit_on: Callable[[Any], "int | None"] | None = None,
+    success_notes: Sequence[Diagnostic] = (),
 ) -> None:
     """Execute one command, structurally redact its result, render, and audit it."""
     state: State = ctx.obj
@@ -196,6 +231,14 @@ def run(
                 warning_message,
                 redact_secrets=conf.redact,
             )
+        for note_code, note_message in success_notes:
+            _emit_diagnostic(
+                state.fmt,
+                "note",
+                note_code,
+                note_message,
+                redact_secrets=conf.redact,
+            )
         if out:
             typer.echo(out)
         exit_code = desired_exit
@@ -210,22 +253,38 @@ def run(
         raise typer.Exit(exit_code)
 
 
+@dataclass(frozen=True, slots=True)
+class HeaderParseError(ValueError):
+    """A repeatable header flag is missing its name/value separator."""
+
+    flag: str
+    raw: str
+
+    def __str__(self) -> str:
+        return f"{self.flag} must be 'Name: Value', got {self.raw!r}"
+
+
 def parse_header(raw: str, flag: str = "--set-header") -> tuple[str, str]:
     """Parse a ``Name: Value`` header string."""
     if ":" not in raw:
-        raise ValueError(f"{flag} must be 'Name: Value', got {raw!r}")
+        raise HeaderParseError(flag=flag, raw=raw)
     name, _, value = raw.partition(":")
     return name.strip(), value.strip()
 
 
-def parse_headers(raws: list[str], flag: str = "--set-header") -> dict[str, str]:
+def parse_headers(
+    raws: list[str],
+    flag: str = "--set-header",
+    *,
+    fmt: str | None = None,
+) -> dict[str, str]:
     """Parse repeatable header flags with a stable usage exit."""
     headers: dict[str, str] = {}
     for raw in raws:
         try:
             name, value = parse_header(raw, flag)
-        except ValueError as exc:
-            typer.echo(f"error: {redact(str(exc))}", err=True)
-            raise typer.Exit(EXIT_USAGE) from None
+        except HeaderParseError as exc:
+            selected_format = fmt or ("json" if os.environ.get("BP_AGENT") == "1" else "table")
+            fail_usage(selected_format, str(exc))
         headers[name] = value
     return headers
