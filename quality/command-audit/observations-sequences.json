@@ -1,0 +1,6008 @@
+{
+  "C002": "FAIL",
+  "candidate_product_tree_sha256": "72bf42b22b9d89af5614c3b3535ae117b3b4b9ec525fd92a8211577435ac6256",
+  "candidate_source_sha256": "da23c936564fee143889f8e370ccc3210862b6b1162c0353088230f84718a5c3",
+  "executed_step_count": 49,
+  "external_target_effect_count": 0,
+  "nonexecuted_steps": [
+    "S3.1"
+  ],
+  "oracle_sha256": "407b2609a746cecd64b38f05413c571300eec6119374944bb276486c5219cbc3",
+  "process_count": 5,
+  "processes": {
+    "baseline_invalid": {
+      "actual": {
+        "duration_ms": 208.9455,
+        "exit": 1,
+        "stderr": "{\"error\":{\"code\":\"FUZZ_PARTIAL_FAILURE\",\"message\":\"1 fuzz send(s) failed; attempted-shot rows remain on stdout\"}}\n",
+        "stdout": "{\"index\":-1,\"payloads\":[],\"status\":0,\"length\":0,\"duration_ms\":0,\"anomalous\":false,\"baseline\":true,\"error\":\"INVALID_RESPONSE: repeater/send reply missing 'statusCode' field\",\"error_code\":\"INVALID_RESPONSE\"}\n"
+      },
+      "argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "completed_at_ns": 1792762917278824000,
+      "ledger": [
+        {
+          "burp_op": "GET /proxy/history/1",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 1,
+          "id": "20261023134157kebm61",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 1,
+          "id": "20261023134157br365e",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "phase_ids": [
+        "S6.4"
+      ],
+      "phase_seal_times_ns": {
+        "S6.4": 1792762917069451000
+      },
+      "process_ref": "baseline_invalid",
+      "rest": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/proxy/history/1",
+          "status": 200
+        },
+        {
+          "body_length": 138,
+          "body_sha256": "e547b6ff1e0f440d8f38180b12bfe0cbcdcff31dbaa8a2fadbb99fe3a101ebc4",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_event_start_index": 44,
+      "started_at_ns": 1792762917069874000
+    },
+    "baseline_transport": {
+      "actual": {
+        "duration_ms": 215.672125,
+        "exit": 3,
+        "stderr": "{\"error\":{\"code\":\"FUZZ_PARTIAL_FAILURE\",\"message\":\"1 fuzz send(s) failed; attempted-shot rows remain on stdout\"}}\n",
+        "stdout": "{\"index\":-1,\"payloads\":[],\"status\":0,\"length\":0,\"duration_ms\":0,\"anomalous\":false,\"baseline\":true,\"error\":\"TRANSPORT_ERROR: Burp REST unreachable: Server disconnected without sending a response.\",\"error_code\":\"TRANSPORT_ERROR\"}\n"
+      },
+      "argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "completed_at_ns": 1792762917068522000,
+      "ledger": [
+        {
+          "burp_op": "GET /proxy/history/1",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 3,
+          "id": "20261023134157jbly69",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": "TRANSPORT_ERROR",
+          "exit_code": 3,
+          "id": "20261023134157zevr8r",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "phase_ids": [
+        "S6.3"
+      ],
+      "phase_seal_times_ns": {
+        "S6.3": 1792762916852440000
+      },
+      "process_ref": "baseline_transport",
+      "rest": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/proxy/history/1",
+          "status": 200
+        },
+        {
+          "body_length": 138,
+          "body_sha256": "e547b6ff1e0f440d8f38180b12bfe0cbcdcff31dbaa8a2fadbb99fe3a101ebc4",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_event_start_index": 42,
+      "started_at_ns": 1792762916852845000
+    },
+    "normal": {
+      "actual": {
+        "duration_ms": 326.144708,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"index\":-1,\"payloads\":[],\"status\":200,\"length\":7,\"duration_ms\":1,\"anomalous\":false,\"baseline\":true,\"error\":null,\"error_code\":null}\n{\"index\":0,\"payloads\":[\"p1\"],\"status\":200,\"length\":7,\"duration_ms\":1,\"anomalous\":false,\"baseline\":false,\"error\":null,\"error_code\":null}\n{\"index\":1,\"payloads\":[\"p2\"],\"status\":200,\"length\":7,\"duration_ms\":1,\"anomalous\":false,\"baseline\":false,\"error\":null,\"error_code\":null}\n{\"index\":2,\"payloads\":[\"p3\"],\"status\":200,\"length\":7,\"duration_ms\":1,\"anomalous\":false,\"baseline\":false,\"error\":null,\"error_code\":null}\n"
+      },
+      "argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "completed_at_ns": 1792762916851384000,
+      "ledger": [
+        {
+          "burp_op": "GET /proxy/history/1",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134156yskdij",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134156o5a9ll",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134156i0pt9u",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "202610231341569bbhb7",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134156dwyinm",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "phase_ids": [
+        "S6.1",
+        "S6.2",
+        "S6.5"
+      ],
+      "phase_seal_times_ns": {
+        "S6.1": 1792762916524498000,
+        "S6.2": 1792762916524744000,
+        "S6.5": 1792762916524838000
+      },
+      "process_ref": "normal",
+      "rest": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/proxy/history/1",
+          "status": 200
+        },
+        {
+          "body_length": 138,
+          "body_sha256": "e547b6ff1e0f440d8f38180b12bfe0cbcdcff31dbaa8a2fadbb99fe3a101ebc4",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "cc926b208b89c3f1deace70cd88e86125ae300c56b11dcccd4c1d3e5ddba5f8b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "93a47f6b38ae13e974938982c7643aae0a0b49c9b99466b8c7d64e8169ccf13b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "4c9e058bdda6e9e530cfbd88b7e8e45d4a9cfc90711a17520ec3bba86a085672",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_event_start_index": 37,
+      "started_at_ns": 1792762916525233000
+    },
+    "ordinary_p2": {
+      "actual": {
+        "duration_ms": 220.149417,
+        "exit": 1,
+        "stderr": "{\"error\":{\"code\":\"FUZZ_PARTIAL_FAILURE\",\"message\":\"1 fuzz send(s) failed; attempted-shot rows remain on stdout\"}}\n",
+        "stdout": "{\"index\":-1,\"payloads\":[],\"status\":200,\"length\":7,\"duration_ms\":1,\"anomalous\":false,\"baseline\":true,\"error\":null,\"error_code\":null}\n{\"index\":0,\"payloads\":[\"p1\"],\"status\":200,\"length\":7,\"duration_ms\":1,\"anomalous\":false,\"baseline\":false,\"error\":null,\"error_code\":null}\n{\"index\":1,\"payloads\":[\"p2\"],\"status\":0,\"length\":0,\"duration_ms\":0,\"anomalous\":false,\"baseline\":false,\"error\":\"SEND_FAILED: fixture\",\"error_code\":\"SEND_FAILED\"}\n{\"index\":2,\"payloads\":[\"p3\"],\"status\":200,\"length\":7,\"duration_ms\":1,\"anomalous\":false,\"baseline\":false,\"error\":null,\"error_code\":null}\n"
+      },
+      "argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "completed_at_ns": 1792762917500364000,
+      "ledger": [
+        {
+          "burp_op": "GET /proxy/history/1",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 1,
+          "id": "202610231341578wnzyy",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 1,
+          "id": "20261023134157jpjpzv",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 1,
+          "id": "20261023134157a1xpwj",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": "SEND_FAILED",
+          "exit_code": 1,
+          "id": "20261023134157xl2nf3",
+          "status": "error",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 1,
+          "id": "20261023134157e01ay4",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "phase_ids": [
+        "S6.6"
+      ],
+      "phase_seal_times_ns": {
+        "S6.6": 1792762917279901000
+      },
+      "process_ref": "ordinary_p2",
+      "rest": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/proxy/history/1",
+          "status": 200
+        },
+        {
+          "body_length": 138,
+          "body_sha256": "e547b6ff1e0f440d8f38180b12bfe0cbcdcff31dbaa8a2fadbb99fe3a101ebc4",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "cc926b208b89c3f1deace70cd88e86125ae300c56b11dcccd4c1d3e5ddba5f8b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "93a47f6b38ae13e974938982c7643aae0a0b49c9b99466b8c7d64e8169ccf13b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 400
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "4c9e058bdda6e9e530cfbd88b7e8e45d4a9cfc90711a17520ec3bba86a085672",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_event_start_index": 46,
+      "started_at_ns": 1792762917280211000
+    },
+    "transport_p2": {
+      "actual": {
+        "duration_ms": 228.595042,
+        "exit": 3,
+        "stderr": "{\"error\":{\"code\":\"FUZZ_PARTIAL_FAILURE\",\"message\":\"1 fuzz send(s) failed; attempted-shot rows remain on stdout\"}}\n",
+        "stdout": "{\"index\":-1,\"payloads\":[],\"status\":200,\"length\":7,\"duration_ms\":1,\"anomalous\":false,\"baseline\":true,\"error\":null,\"error_code\":null}\n{\"index\":0,\"payloads\":[\"p1\"],\"status\":200,\"length\":7,\"duration_ms\":1,\"anomalous\":false,\"baseline\":false,\"error\":null,\"error_code\":null}\n{\"index\":1,\"payloads\":[\"p2\"],\"status\":0,\"length\":0,\"duration_ms\":0,\"anomalous\":false,\"baseline\":false,\"error\":\"TRANSPORT_ERROR: Burp REST unreachable: Server disconnected without sending a response.\",\"error_code\":\"TRANSPORT_ERROR\"}\n"
+      },
+      "argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "completed_at_ns": 1792762917730215000,
+      "ledger": [
+        {
+          "burp_op": "GET /proxy/history/1",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 3,
+          "id": "202610231341577e5kvu",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 3,
+          "id": "20261023134157v85rfy",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 3,
+          "id": "20261023134157hewzp3",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": "TRANSPORT_ERROR",
+          "exit_code": 3,
+          "id": "20261023134157jc0rns",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "phase_ids": [
+        "S6.7"
+      ],
+      "phase_seal_times_ns": {
+        "S6.7": 1792762917501185000
+      },
+      "process_ref": "transport_p2",
+      "rest": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/proxy/history/1",
+          "status": 200
+        },
+        {
+          "body_length": 138,
+          "body_sha256": "e547b6ff1e0f440d8f38180b12bfe0cbcdcff31dbaa8a2fadbb99fe3a101ebc4",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "cc926b208b89c3f1deace70cd88e86125ae300c56b11dcccd4c1d3e5ddba5f8b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "93a47f6b38ae13e974938982c7643aae0a0b49c9b99466b8c7d64e8169ccf13b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_event_start_index": 51,
+      "started_at_ns": 1792762917501615000
+    }
+  },
+  "schema": "burpctl.command-audit/sequence-observations",
+  "schema_version": 2,
+  "sequence_count": 6,
+  "sequences": [
+    {
+      "actual": {
+        "duration_ms": 326.695792,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"url\":\"http://127.0.0.1:50048\",\"inScope\":false}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scope",
+        "check",
+        "http://127.0.0.1:50048",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "url={{LOOPBACK_URL}}",
+            "inScope=false"
+          ],
+          "shape": "scope_check"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /target/scope/check",
+          "command": "burpctl scope check",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134145pa7mkx",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/target/scope/check?url=http%3A%2F%2F127.0.0.1%3A50048"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/target/scope/check?url=http%3A%2F%2F127.0.0.1%3A50048",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scope",
+          "check",
+          "http://127.0.0.1:50048",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "url={{LOOPBACK_URL}}",
+              "inScope=false"
+            ],
+            "shape": "scope_check"
+          }
+        },
+        "expected_sha256": "a97cee05a97e1f057efcbc0701243cc5a0a256737cb978fd6cffe9135b6dd845",
+        "oracle_hash": "a7fe5cc6bbf4ce8d03cde098524fd90d447aee5f1dd6dda1c88aa41684be7bc5",
+        "sealed_at_ns": 1792762905694766000,
+        "step": "S1.1"
+      },
+      "sequence": "S1",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/target/scope/check?url=http%3A%2F%2F127.0.0.1%3A50048",
+          "rest_effect_index": 0,
+          "status": 200
+        }
+      ],
+      "state_owner": "Burp Montoya api.scope()",
+      "status": "REST_ONLY",
+      "step": "S1.1",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 241.130833,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"url\":\"http://127.0.0.1:50048\",\"inScope\":true}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scope",
+        "add",
+        "http://127.0.0.1:50048",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "inScope=true"
+          ],
+          "shape": "scope_check"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /target/scope/add",
+          "command": "burpctl scope add",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134146b8rh1v",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/target/scope/add"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 32,
+          "body_sha256": "a531c28cdf40693ffa032dde350252ad34ab16532ac0657d2c6d9033f220d6e2",
+          "method": "POST",
+          "path": "/target/scope/add",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scope",
+          "add",
+          "http://127.0.0.1:50048",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "inScope=true"
+            ],
+            "shape": "scope_check"
+          }
+        },
+        "expected_sha256": "b2f7144fee7f3ce764d11490029e896ceda8d2e2f91f533b6482a5d3b2a85805",
+        "oracle_hash": "ca96874182f6ac314d5d136f62ae3200e8a015a590aadf836423c2cdca084f3a",
+        "sealed_at_ns": 1792762906022362000,
+        "step": "S1.2"
+      },
+      "sequence": "S1",
+      "state_events": [
+        {
+          "after": {
+            "scope": true,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "body_sha256": "a531c28cdf40693ffa032dde350252ad34ab16532ac0657d2c6d9033f220d6e2",
+          "method": "POST",
+          "path": "/target/scope/add",
+          "rest_effect_index": 1,
+          "status": 200
+        }
+      ],
+      "state_owner": "Burp Montoya api.scope()",
+      "status": "REST_ONLY",
+      "step": "S1.2",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 231.961666,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"url\":\"http://127.0.0.1:50048\",\"inScope\":true}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scope",
+        "check",
+        "http://127.0.0.1:50048",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "inScope=true"
+          ],
+          "shape": "scope_check"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /target/scope/check",
+          "command": "burpctl scope check",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134146w6a6xu",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/target/scope/check?url=http%3A%2F%2F127.0.0.1%3A50048"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/target/scope/check?url=http%3A%2F%2F127.0.0.1%3A50048",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scope",
+          "check",
+          "http://127.0.0.1:50048",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "inScope=true"
+            ],
+            "shape": "scope_check"
+          }
+        },
+        "expected_sha256": "b2f7144fee7f3ce764d11490029e896ceda8d2e2f91f533b6482a5d3b2a85805",
+        "oracle_hash": "ee195c5958c0175072432c26217af096131d639254233a20daab21e9ab2105a5",
+        "sealed_at_ns": 1792762906264308000,
+        "step": "S1.3"
+      },
+      "sequence": "S1",
+      "state_events": [
+        {
+          "after": {
+            "scope": true,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "before": {
+            "scope": true,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/target/scope/check?url=http%3A%2F%2F127.0.0.1%3A50048",
+          "rest_effect_index": 2,
+          "status": 200
+        }
+      ],
+      "state_owner": "Burp Montoya api.scope()",
+      "status": "REST_ONLY",
+      "step": "S1.3",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 241.74175,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"url\":\"http://127.0.0.1:50048\",\"inScope\":false}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scope",
+        "remove",
+        "http://127.0.0.1:50048",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "inScope=false"
+          ],
+          "shape": "scope_check"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /target/scope/remove",
+          "command": "burpctl scope remove",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "202610231341462ahl5x",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/target/scope/remove"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 32,
+          "body_sha256": "a531c28cdf40693ffa032dde350252ad34ab16532ac0657d2c6d9033f220d6e2",
+          "method": "POST",
+          "path": "/target/scope/remove",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scope",
+          "remove",
+          "http://127.0.0.1:50048",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "inScope=false"
+            ],
+            "shape": "scope_check"
+          }
+        },
+        "expected_sha256": "d71fad361f722deffc2073e306ff75a49dc6a26b15c95c0150564a722fb644ae",
+        "oracle_hash": "31aa7b88c9eaf31dc2edc0d147f3c965436560f06fd505bff4f097d54f6a8320",
+        "sealed_at_ns": 1792762906497051000,
+        "step": "S1.4"
+      },
+      "sequence": "S1",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "before": {
+            "scope": true,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "body_sha256": "a531c28cdf40693ffa032dde350252ad34ab16532ac0657d2c6d9033f220d6e2",
+          "method": "POST",
+          "path": "/target/scope/remove",
+          "rest_effect_index": 3,
+          "status": 200
+        }
+      ],
+      "state_owner": "Burp Montoya api.scope()",
+      "status": "REST_ONLY",
+      "step": "S1.4",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 249.984,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"url\":\"http://127.0.0.1:50048\",\"inScope\":false}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scope",
+        "check",
+        "http://127.0.0.1:50048",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "inScope=false"
+          ],
+          "shape": "scope_check"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /target/scope/check",
+          "command": "burpctl scope check",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134146ja3dck",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/target/scope/check?url=http%3A%2F%2F127.0.0.1%3A50048"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/target/scope/check?url=http%3A%2F%2F127.0.0.1%3A50048",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scope",
+          "check",
+          "http://127.0.0.1:50048",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "inScope=false"
+            ],
+            "shape": "scope_check"
+          }
+        },
+        "expected_sha256": "d71fad361f722deffc2073e306ff75a49dc6a26b15c95c0150564a722fb644ae",
+        "oracle_hash": "d6f326cb2102239ababf9bc8faf76ea44112eb3b28523e5cfd2dc246937aeb13",
+        "sealed_at_ns": 1792762906740086000,
+        "step": "S1.5"
+      },
+      "sequence": "S1",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/target/scope/check?url=http%3A%2F%2F127.0.0.1%3A50048",
+          "rest_effect_index": 4,
+          "status": 200
+        }
+      ],
+      "state_owner": "Burp Montoya api.scope()",
+      "status": "REST_ONLY",
+      "step": "S1.5",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 239.157417,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"name\":\"default\",\"cookies\":{},\"headers\":{},\"origin\":null,\"cookieCount\":0,\"headerCount\":0}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "session",
+        "get",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "name=default",
+            "cookies={}",
+            "headers={}",
+            "origin=null"
+          ],
+          "shape": "session_info"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /session/get",
+          "command": "burpctl session get",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134147iftclj",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/session/get"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/session/get",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "session",
+          "get",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "name=default",
+              "cookies={}",
+              "headers={}",
+              "origin=null"
+            ],
+            "shape": "session_info"
+          }
+        },
+        "expected_sha256": "de63568f8e5ea17529fc2bd74f38cb675d8cde8d7e9882a51eb5c01b957b5ed8",
+        "oracle_hash": "73b92cbf14c39d5ab948c84bc7e1a65a5310c5812698528a04baa63fd424e1dd",
+        "sealed_at_ns": 1792762906991051000,
+        "step": "S2.1"
+      },
+      "sequence": "S2",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/session/get",
+          "rest_effect_index": 5,
+          "status": 200
+        }
+      ],
+      "state_owner": "SessionService configured-session AtomicReference + H2 SessionDao",
+      "status": "INCONCLUSIVE",
+      "step": "S2.1",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 248.44925,
+        "exit": 0,
+        "stderr": "note: /session/set is a full replace \u2014 existing session cookies and headers are overwritten.\n",
+        "stdout": "{\"name\":\"audit\",\"cookies\":{\"sid\":\"***\"},\"headers\":{\"X-Test\":\"yes\"},\"origin\":null,\"cookieCount\":1,\"headerCount\":1}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "session",
+        "set",
+        "--json",
+        "{\"cookies\":{\"sid\":\"secret\"},\"headers\":{\"X-Test\":\"yes\"},\"name\":\"audit\"}",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "text",
+          "selected_values": [
+            "full replace"
+          ],
+          "shape": "note"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "name=audit",
+            "cookies.sid=secret",
+            "headers.X-Test=yes",
+            "origin=null"
+          ],
+          "shape": "session_info"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /session/set",
+          "command": "burpctl session set",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134147v62y8n",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/session/set"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 70,
+          "body_sha256": "fa2bbc9ad74c948b8927e38dd8c632023d771d17b8bda67202e2fb3105c9a9fe",
+          "method": "POST",
+          "path": "/session/set",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "session",
+          "set",
+          "--json",
+          "{\"cookies\":{\"sid\":\"secret\"},\"headers\":{\"X-Test\":\"yes\"},\"name\":\"audit\"}",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "text",
+            "selected_values": [
+              "full replace"
+            ],
+            "shape": "note"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "name=audit",
+              "cookies.sid=secret",
+              "headers.X-Test=yes",
+              "origin=null"
+            ],
+            "shape": "session_info"
+          }
+        },
+        "expected_sha256": "dc29438de28fb543a63aff163006d2e6d2bcbf5d44d7706948cc9323c7b7be86",
+        "oracle_hash": "424f4da0bf18ee72f541e0bbcffb8374542454c92cf090fe8887c6ab1f39a972",
+        "sealed_at_ns": 1792762907231301000,
+        "step": "S2.2"
+      },
+      "sequence": "S2",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 1,
+              "headerCount": 1,
+              "name": "audit",
+              "origin": null
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "body_sha256": "fa2bbc9ad74c948b8927e38dd8c632023d771d17b8bda67202e2fb3105c9a9fe",
+          "method": "POST",
+          "path": "/session/set",
+          "rest_effect_index": 6,
+          "status": 200
+        }
+      ],
+      "state_owner": "SessionService AtomicReference + H2 SessionDao",
+      "status": "INCONCLUSIVE",
+      "step": "S2.2",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 232.404667,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"name\":\"audit\",\"cookies\":{\"sid\":\"***\"},\"headers\":{\"X-Test\":\"yes\"},\"origin\":null,\"cookieCount\":1,\"headerCount\":1}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "session",
+        "get",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "name=audit",
+            "origin=null"
+          ],
+          "shape": "session_info"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /session/get",
+          "command": "burpctl session get",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134147q6kqk6",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/session/get"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/session/get",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "session",
+          "get",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "name=audit",
+              "origin=null"
+            ],
+            "shape": "session_info"
+          }
+        },
+        "expected_sha256": "1d4c06d5f0f4894e60b8135200faf2d53070257a1f2d5332137ff3f3342c453c",
+        "oracle_hash": "05d9529af363c3c0b29e1ca69c416aa059b0fcbbb7c65ae5417193343d731045",
+        "sealed_at_ns": 1792762907480552000,
+        "step": "S2.3"
+      },
+      "sequence": "S2",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 1,
+              "headerCount": 1,
+              "name": "audit",
+              "origin": null
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 1,
+              "headerCount": 1,
+              "name": "audit",
+              "origin": null
+            }
+          },
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/session/get",
+          "rest_effect_index": 7,
+          "status": 200
+        }
+      ],
+      "state_owner": "SessionService configured-session AtomicReference",
+      "status": "INCONCLUSIVE",
+      "step": "S2.3",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 262.894166,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"statusCode\":200,\"headers\":[],\"body\":\"fixture\",\"hasResponse\":true}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "session",
+        "send",
+        "http://127.0.0.1:50048/cookie",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "statusCode=200",
+            "persistence.status=PERSISTED"
+          ],
+          "shape": "authenticated_response"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /session/send",
+          "command": "burpctl session send",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134147ljoca5",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/session/send"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 54,
+          "body_sha256": "ad20e75e6d71c71f756ab9cd29a5a6ef8d3fc051e32a164424f84daa7e179a6c",
+          "method": "POST",
+          "path": "/session/send",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "session",
+          "send",
+          "http://127.0.0.1:50048/cookie",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "statusCode=200",
+              "persistence.status=PERSISTED"
+            ],
+            "shape": "authenticated_response"
+          }
+        },
+        "expected_sha256": "26898425b82ce3acd903a7ab49625ba47e66a9d9649fa000cf8a84777780d43b",
+        "oracle_hash": "cb357e8b6c850bbd72a84adebced893c71e04c6bb4bc606f52f8724e6e2a3d06",
+        "sealed_at_ns": 1792762907714283000,
+        "step": "S2.4"
+      },
+      "sequence": "S2",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 1,
+              "headerCount": 1,
+              "name": "audit",
+              "origin": "http://127.0.0.1:50048"
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 1,
+              "headerCount": 1,
+              "name": "audit",
+              "origin": null
+            }
+          },
+          "body_sha256": "ad20e75e6d71c71f756ab9cd29a5a6ef8d3fc051e32a164424f84daa7e179a6c",
+          "method": "POST",
+          "path": "/session/send",
+          "rest_effect_index": 8,
+          "status": 200
+        }
+      ],
+      "state_owner": "SessionService configured session + observed cookie jar + H2 history",
+      "status": "INCONCLUSIVE",
+      "step": "S2.4",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 256.401375,
+        "exit": 1,
+        "stderr": "{\"error\":{\"code\":\"CROSS_ORIGIN_SESSION\",\"message\":\"fixture\",\"status\":403,\"http_status\":403,\"op\":\"POST /session/send\"}}\n",
+        "stdout": ""
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "session",
+        "send",
+        "http://127.0.0.1:50047/blocked",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 1,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "INVALID_REQUEST",
+            "http_status=400"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [],
+          "shape": "empty"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /session/send",
+          "command": "burpctl session send",
+          "error_code": "CROSS_ORIGIN_SESSION",
+          "exit_code": 1,
+          "id": "20261023134148xdw2a1",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/session/send"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 55,
+          "body_sha256": "2bc64a1dd14291848045ed8dc28ca202f86c41f7e305be01d959b1fedf82b97e",
+          "method": "POST",
+          "path": "/session/send",
+          "status": 403
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "session",
+          "send",
+          "http://127.0.0.1:50047/blocked",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 1,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "INVALID_REQUEST",
+              "http_status=400"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [],
+            "shape": "empty"
+          }
+        },
+        "expected_sha256": "8f75c4be3d89491239270a00c55d1f5fb2ffe49164a2fbbb0beda686a9876563",
+        "oracle_hash": "fc26869649717d4e4455b83ba0083ec0866ddcd356466405382e4a7d10a437ba",
+        "sealed_at_ns": 1792762907977994000,
+        "step": "S2.5"
+      },
+      "sequence": "S2",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 1,
+              "headerCount": 1,
+              "name": "audit",
+              "origin": "http://127.0.0.1:50048"
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 1,
+              "headerCount": 1,
+              "name": "audit",
+              "origin": "http://127.0.0.1:50048"
+            }
+          },
+          "body_sha256": "2bc64a1dd14291848045ed8dc28ca202f86c41f7e305be01d959b1fedf82b97e",
+          "method": "POST",
+          "path": "/session/send",
+          "rest_effect_index": 9,
+          "status": 403
+        }
+      ],
+      "state_owner": "SessionService origin-bound configured session",
+      "status": "INCONCLUSIVE",
+      "step": "S2.5",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 264.38225,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"cookies\":[],\"total\":0}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "session",
+        "cookies",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "total=1",
+            "cookies[0].name=seen",
+            "cookies[0].value=1"
+          ],
+          "shape": "cookie_jar"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /session/cookie-jar",
+          "command": "burpctl session cookies",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "202610231341482ga87h",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/session/cookie-jar"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/session/cookie-jar",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "session",
+          "cookies",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "total=1",
+              "cookies[0].name=seen",
+              "cookies[0].value=1"
+            ],
+            "shape": "cookie_jar"
+          }
+        },
+        "expected_sha256": "ffc97b103e267aacb888b1832c227014a932af0b63eb336539412c77a4ac6b5b",
+        "oracle_hash": "fc4876500bae78969ef56a129e3d2d30a55b305d7ddfcf0b5a3189655fa8eec0",
+        "sealed_at_ns": 1792762908235251000,
+        "step": "S2.6"
+      },
+      "sequence": "S2",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 1,
+              "headerCount": 1,
+              "name": "audit",
+              "origin": "http://127.0.0.1:50048"
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 1,
+              "headerCount": 1,
+              "name": "audit",
+              "origin": "http://127.0.0.1:50048"
+            }
+          },
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/session/cookie-jar",
+          "rest_effect_index": 10,
+          "status": 200
+        }
+      ],
+      "state_owner": "SessionService process-local observed cookie jar",
+      "status": "INCONCLUSIVE",
+      "step": "S2.6",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 236.638291,
+        "exit": 0,
+        "stderr": "note: /session/clear resets session cookies/headers but leaves the cookie-jar intact.\n",
+        "stdout": "{\"name\":\"default\",\"cookies\":{},\"headers\":{},\"origin\":null,\"cookieCount\":0,\"headerCount\":0}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "session",
+        "clear",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "text",
+          "selected_values": [
+            "cookie-jar intact"
+          ],
+          "shape": "note"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "cookies={}",
+            "headers={}",
+            "origin=null"
+          ],
+          "shape": "session_info"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "DELETE /session/clear",
+          "command": "burpctl session clear",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "202610231341482dr9xy",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "DELETE",
+          "/session/clear"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "DELETE",
+          "path": "/session/clear",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "session",
+          "clear",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "text",
+            "selected_values": [
+              "cookie-jar intact"
+            ],
+            "shape": "note"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "cookies={}",
+              "headers={}",
+              "origin=null"
+            ],
+            "shape": "session_info"
+          }
+        },
+        "expected_sha256": "e6fa3a6a002e83cb9420450b9c60460afe53dc7c983e8b8abef725c1619c247e",
+        "oracle_hash": "6195175466bcdd4bff79e58de43219c5db104c43fdff13c0be4167ac1b63207a",
+        "sealed_at_ns": 1792762908500481000,
+        "step": "S2.7"
+      },
+      "sequence": "S2",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 1,
+              "headerCount": 1,
+              "name": "audit",
+              "origin": "http://127.0.0.1:50048"
+            }
+          },
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "DELETE",
+          "path": "/session/clear",
+          "rest_effect_index": 11,
+          "status": 200
+        }
+      ],
+      "state_owner": "SessionService configured session + H2 SessionDao; observed jar separate",
+      "status": "INCONCLUSIVE",
+      "step": "S2.7",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 238.574333,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"name\":\"default\",\"cookies\":{},\"headers\":{},\"origin\":null,\"cookieCount\":0,\"headerCount\":0}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "session",
+        "get",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "name=default",
+            "cookies={}",
+            "headers={}",
+            "origin=null"
+          ],
+          "shape": "session_info"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /session/get",
+          "command": "burpctl session get",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134148uv4vtx",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/session/get"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/session/get",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "session",
+          "get",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "name=default",
+              "cookies={}",
+              "headers={}",
+              "origin=null"
+            ],
+            "shape": "session_info"
+          }
+        },
+        "expected_sha256": "de63568f8e5ea17529fc2bd74f38cb675d8cde8d7e9882a51eb5c01b957b5ed8",
+        "oracle_hash": "56176cf65443ca8c2165b3a23f2d3e16620908b78ffe3dc352931f82cedcd38a",
+        "sealed_at_ns": 1792762908737944000,
+        "step": "S2.8"
+      },
+      "sequence": "S2",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/session/get",
+          "rest_effect_index": 12,
+          "status": 200
+        }
+      ],
+      "state_owner": "SessionService configured-session AtomicReference",
+      "status": "INCONCLUSIVE",
+      "step": "S2.8",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 251.404458,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"cookies\":[],\"total\":0}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "session",
+        "cookies",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "total=1",
+            "cookies[0].name=seen"
+          ],
+          "shape": "cookie_jar"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /session/cookie-jar",
+          "command": "burpctl session cookies",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134149grsd3o",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/session/cookie-jar"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/session/cookie-jar",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "session",
+          "cookies",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "total=1",
+              "cookies[0].name=seen"
+            ],
+            "shape": "cookie_jar"
+          }
+        },
+        "expected_sha256": "bf0df57d8d83f65431400b51a2a96196121f3307dbaf3566f8425ec05c73d7f9",
+        "oracle_hash": "315ea915709ac10e0e762d37715d102cf5040fcf2ed36c4e874b707783043e37",
+        "sealed_at_ns": 1792762908978672000,
+        "step": "S2.9"
+      },
+      "sequence": "S2",
+      "state_events": [
+        {
+          "after": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "before": {
+            "scope": false,
+            "session": {
+              "cookieCount": 0,
+              "headerCount": 0,
+              "name": "default",
+              "origin": null
+            }
+          },
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/session/cookie-jar",
+          "rest_effect_index": 13,
+          "status": 200
+        }
+      ],
+      "state_owner": "SessionService process-local observed cookie jar",
+      "status": "INCONCLUSIVE",
+      "step": "S2.9",
+      "target_effects": []
+    },
+    {
+      "actual": null,
+      "executed_action": null,
+      "executed_argv": null,
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "proxy_index={{PROXY_ID}}",
+            "target_requests=1"
+          ],
+          "shape": "fixture_receipt"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [],
+      "live_target_effect_count": 0,
+      "ordered_routes": [],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [],
+      "rest_route_count": 0,
+      "seal": {
+        "argv": null,
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "proxy_index={{PROXY_ID}}",
+              "target_requests=1"
+            ],
+            "shape": "fixture_receipt"
+          }
+        },
+        "expected_sha256": "83e812925454cb4844988d9bbcca18f59bf334152178877d65df048c68d111ff",
+        "oracle_hash": "55838451fefd93c6e496b8201f6c3811e896c0340472a271111437076e34f5c7",
+        "sealed_at_ns": 1792762909230882000,
+        "step": "S3.1"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "Burp proxy listener + Montoya live proxy history",
+      "status": "NOT_EXECUTED",
+      "step": "S3.1",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 225.297167,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"id\":1,\"request\":{\"method\":\"GET\",\"url\":\"http://127.0.0.1:50048/fuzz?id=base\",\"headers\":[],\"body\":null},\"response\":{\"statusCode\":200,\"headers\":[],\"body\":\"fixture\"}}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "req",
+        "1",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "id={{PROXY_ID}}",
+            "request.url={{LOOPBACK_URL}}/captured"
+          ],
+          "shape": "proxy_entry"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /proxy/history/1",
+          "command": "burpctl req",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134149mep5b5",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/proxy/history/1"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/proxy/history/1",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "req",
+          "1",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "id={{PROXY_ID}}",
+              "request.url={{LOOPBACK_URL}}/captured"
+            ],
+            "shape": "proxy_entry"
+          }
+        },
+        "expected_sha256": "2e45accf1ca40b42282c53f24bf8bd5dba47b0a4cf8dd274d7eda896e2f22219",
+        "oracle_hash": "8443c93e586dcf6660d86d11c8ce846e22fde1c93de2f26a4ec843a8bfe7acb8",
+        "sealed_at_ns": 1792762909232528000,
+        "step": "S3.2"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "Montoya live proxy history index",
+      "status": "INCONCLUSIVE",
+      "step": "S3.2",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 233.108375,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"original\":{\"id\":1,\"source\":\"proxy\",\"method\":\"GET\",\"url\":\"http://127.0.0.1:50048/captured\",\"host\":\"127.0.0.1\",\"reqHeaders\":[],\"reqBody\":null,\"statusCode\":200,\"resHeaders\":[],\"resBody\":\"fixture\",\"durationMs\":1,\"timestamp\":\"2026-10-23T12:00:00Z\"},\"replayed\":{\"id\":0,\"source\":\"replay\",\"method\":\"GET\",\"url\":\"http://127.0.0.1:50048/captured\",\"host\":\"127.0.0.1\",\"reqHeaders\":[],\"reqBody\":null,\"statusCode\":200,\"resHeaders\":[],\"resBody\":\"fixture\",\"durationMs\":1,\"timestamp\":\"2026-10-23T12:00:00Z\"}}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "send",
+        "1",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "response.statusCode=200",
+            "persistence.status=PERSISTED"
+          ],
+          "shape": "send_response"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl send",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134149ut3yl4",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/repeater/send"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 15,
+          "body_sha256": "eece3676c7994983b7ab8afe6559967cfc24c21d077e9afa3d79627e416bbc22",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "send",
+          "1",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "response.statusCode=200",
+              "persistence.status=PERSISTED"
+            ],
+            "shape": "send_response"
+          }
+        },
+        "expected_sha256": "aef5194f1fb8307fd6f3c764cc25ace5f9f49389b8d26adef46c585ba2cc5b20",
+        "oracle_hash": "b5750826b735a7f7e354730d1ab0aac906dc9d6997f2b967bec34a4a7d9d266d",
+        "sealed_at_ns": 1792762909461404000,
+        "step": "S3.3"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "RepeaterService live target + H2 HistoryDao/SitemapDao",
+      "status": "INCONCLUSIVE",
+      "step": "S3.3",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 240.88825,
+        "exit": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "history",
+        "list",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "contains source=repeater",
+            "contains url={{LOOPBACK_URL}}/captured"
+          ],
+          "shape": "history_rows"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /history",
+          "command": "burpctl history list",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134149yulci7",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/history"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/history",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "history",
+          "list",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "contains source=repeater",
+              "contains url={{LOOPBACK_URL}}/captured"
+            ],
+            "shape": "history_rows"
+          }
+        },
+        "expected_sha256": "30968780b3d6f1031b0236f95fcc582ddacfd2755497e1a0ead3a36be525a648",
+        "oracle_hash": "4cc02b3cddb8c171b9cd905da40c971336b2a2dae59e81e7701386bd929d96ff",
+        "sealed_at_ns": 1792762909696317000,
+        "step": "S3.4"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "H2 HistoryDao",
+      "status": "INCONCLUSIVE",
+      "step": "S3.4",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 237.234208,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"original\":{\"id\":1,\"source\":\"proxy\",\"method\":\"GET\",\"url\":\"http://127.0.0.1:50048/captured\",\"host\":\"127.0.0.1\",\"reqHeaders\":[],\"reqBody\":null,\"statusCode\":200,\"resHeaders\":[],\"resBody\":\"fixture\",\"durationMs\":1,\"timestamp\":\"2026-10-23T12:00:00Z\"},\"replayed\":{\"id\":0,\"source\":\"replay\",\"method\":\"GET\",\"url\":\"http://127.0.0.1:50048/captured\",\"host\":\"127.0.0.1\",\"reqHeaders\":[],\"reqBody\":null,\"statusCode\":200,\"resHeaders\":[],\"resBody\":\"fixture\",\"durationMs\":1,\"timestamp\":\"2026-10-23T12:00:00Z\"}}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "history",
+        "replay",
+        "1",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "original.id={{HISTORY_ID}}",
+            "replayed.source=replay",
+            "replayed.id=0",
+            "persistence field absent"
+          ],
+          "shape": "replay_response"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /history/1/replay",
+          "command": "burpctl history replay",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134150lexez7",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/history/1/replay"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "POST",
+          "path": "/history/1/replay",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "history",
+          "replay",
+          "1",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "original.id={{HISTORY_ID}}",
+              "replayed.source=replay",
+              "replayed.id=0",
+              "persistence field absent"
+            ],
+            "shape": "replay_response"
+          }
+        },
+        "expected_sha256": "08f4e762621f5f5895e93dc123b962cb64b2c42066602fd4a785de6a9b5e200d",
+        "oracle_hash": "15a732a9728c799184755f0c2bd0d146c364115f5230600176c8e946df879e20",
+        "sealed_at_ns": 1792762909939002000,
+        "step": "S3.5"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "HistoryRoutes + RepeaterService + optional H2 persistence",
+      "status": "INCONCLUSIVE",
+      "step": "S3.5",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 243.829166,
+        "exit": 3,
+        "stderr": "{\"error\":{\"code\":\"TRANSPORT_ERROR\",\"message\":\"Burp REST unreachable: Server disconnected without sending a response.\",\"op\":\"POST /history/1/replay\"}}\n",
+        "stdout": ""
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "history",
+        "replay",
+        "1",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 3,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "TRANSPORT_ERROR"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [],
+          "shape": "empty"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /history/1/replay",
+          "command": "burpctl history replay",
+          "error_code": "TRANSPORT_ERROR",
+          "exit_code": 3,
+          "id": "20261023134150tgoc2f",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/history/1/replay"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": {
+        "actual": {
+          "duration_ms": 247.500292,
+          "exit": 0,
+          "stderr": "",
+          "stdout": ""
+        },
+        "argv": [
+          "bp",
+          "history",
+          "list",
+          "--format",
+          "json"
+        ],
+        "conclusion": "INCONCLUSIVE: REST stub has no H2 or target-send authority",
+        "rest_effects": [
+          {
+            "body_length": 0,
+            "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "method": "GET",
+            "path": "/history",
+            "status": 200
+          }
+        ],
+        "target_effect_count": 0
+      },
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "POST",
+          "path": "/history/1/replay",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "history",
+          "replay",
+          "1",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 3,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "TRANSPORT_ERROR"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [],
+            "shape": "empty"
+          }
+        },
+        "expected_sha256": "461a7b383fde72a6204d436424e7fff04753f21a505b08edc23cb5f07f7e828b",
+        "oracle_hash": "1c6016f4a2b74c152fe87df0b68caa1308c53825775981a16d6975aaec033845",
+        "sealed_at_ns": 1792762910178614000,
+        "step": "S3.6"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "HistoryRoutes + RepeaterService + optional H2 persistence",
+      "status": "INCONCLUSIVE",
+      "step": "S3.6",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 253.370833,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"original\":{\"id\":1,\"source\":\"proxy\",\"method\":\"GET\",\"url\":\"http://127.0.0.1:50048/captured\",\"host\":\"127.0.0.1\",\"reqHeaders\":[],\"reqBody\":null,\"statusCode\":200,\"resHeaders\":[],\"resBody\":\"fixture\",\"durationMs\":1,\"timestamp\":\"2026-10-23T12:00:00Z\"},\"replayed\":{\"id\":0,\"source\":\"replay\",\"method\":\"GET\",\"url\":\"http://127.0.0.1:50048/captured\",\"host\":\"127.0.0.1\",\"reqHeaders\":[],\"reqBody\":null,\"statusCode\":200,\"resHeaders\":[],\"resBody\":\"fixture\",\"durationMs\":1,\"timestamp\":\"2026-10-23T12:00:00Z\"}}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "history",
+        "replay",
+        "1",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "original.id={{HISTORY_ID}}",
+            "replayed.source=replay",
+            "replayed.id=0",
+            "persistence.status=FAILED",
+            "warning contains do not retry the target send"
+          ],
+          "shape": "replay_response_with_persistence_contract"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /history/1/replay",
+          "command": "burpctl history replay",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134150lm5stn",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/history/1/replay"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "POST",
+          "path": "/history/1/replay",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "history",
+          "replay",
+          "1",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "original.id={{HISTORY_ID}}",
+              "replayed.source=replay",
+              "replayed.id=0",
+              "persistence.status=FAILED",
+              "warning contains do not retry the target send"
+            ],
+            "shape": "replay_response_with_persistence_contract"
+          }
+        },
+        "expected_sha256": "0633876f009f9a6b3dd7291716c2f475c7c22362d241a822cb1c29f0334ce2f4",
+        "oracle_hash": "ad1fe9a92f116ca3433ca6c94f49e86070342e10c5a3e33c2f21c1b0470ae7ac",
+        "sealed_at_ns": 1792762910672051000,
+        "step": "S3.7"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "HistoryRoutes + RepeaterService + optional H2 persistence",
+      "status": "ORACLE_MISMATCH",
+      "step": "S3.7",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 282.4895,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"cleared\":true}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "history",
+        "clear",
+        "--confirm",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "cleared=true"
+          ],
+          "shape": "clear_receipt"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "DELETE /history",
+          "command": "burpctl history clear",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134151hpy66s",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "DELETE",
+          "/history"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "DELETE",
+          "path": "/history",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "history",
+          "clear",
+          "--confirm",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "cleared=true"
+            ],
+            "shape": "clear_receipt"
+          }
+        },
+        "expected_sha256": "313b7e8f6cfa1b518956a69983ea0a8fb003484848f4649ad0f0506a17ffbd92",
+        "oracle_hash": "279a235e7a6c03b5003538e85486c3362880d604c042924dc52cce4b4b0ed47f",
+        "sealed_at_ns": 1792762910927172000,
+        "step": "S3.8"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "H2 HistoryDao + SitemapDao transaction",
+      "status": "INCONCLUSIVE",
+      "step": "S3.8",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 311.142208,
+        "exit": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "history",
+        "list",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "rows=[]"
+          ],
+          "shape": "history_rows"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /history",
+          "command": "burpctl history list",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134151561rx8",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/history"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/history",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "history",
+          "list",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "rows=[]"
+            ],
+            "shape": "history_rows"
+          }
+        },
+        "expected_sha256": "85e9ae6e5abc75f10e94e4db5d85c403653ac4859bac9b7183391ba278814558",
+        "oracle_hash": "12386397cb6f6a354c7bf360bd519966e92a200933a8dbb27029031ace758f37",
+        "sealed_at_ns": 1792762911210696000,
+        "step": "S3.9"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "H2 HistoryDao",
+      "status": "INCONCLUSIVE",
+      "step": "S3.9",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 284.029042,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"id\":\"20261023134151561rx8\",\"ts\":\"2026-10-23T13:41:51.485615+00:00\",\"command\":\"burpctl history list\",\"burp_op\":\"GET /history\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"99c3f155b10cc19a8d1fcc5be16a7837b1282a8806cfefdc90e8d86364b74aeb\",\"resp_status\":200,\"resp_len\":84,\"duration_ms\":6,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134151hpy66s\",\"ts\":\"2026-10-23T13:41:51.171492+00:00\",\"command\":\"burpctl history clear\",\"burp_op\":\"DELETE /history\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"973832a2bd18fa04257f52ea681bb02a8cc5f3d07e3c807da385277b36d52204\",\"resp_status\":200,\"resp_len\":53,\"duration_ms\":5,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134150lm5stn\",\"ts\":\"2026-10-23T13:41:50.885274+00:00\",\"command\":\"burpctl history replay\",\"burp_op\":\"POST /history/1/replay\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"68d8ca2f2f5ed38410faa0a4a0ce3cb16e8b5ed611fc367507870909e46c35ab\",\"resp_status\":200,\"resp_len\":529,\"duration_ms\":2,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134150fmjzsg\",\"ts\":\"2026-10-23T13:41:50.638407+00:00\",\"command\":\"burpctl history list\",\"burp_op\":\"GET /history\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"99c3f155b10cc19a8d1fcc5be16a7837b1282a8806cfefdc90e8d86364b74aeb\",\"resp_status\":200,\"resp_len\":84,\"duration_ms\":3,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134150tgoc2f\",\"ts\":\"2026-10-23T13:41:50.390524+00:00\",\"command\":\"burpctl history replay\",\"burp_op\":\"POST /history/1/replay\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"error\",\"exit_code\":3,\"req_sha256\":null,\"resp_sha256\":null,\"resp_status\":null,\"resp_len\":null,\"duration_ms\":1,\"error_code\":\"TRANSPORT_ERROR\",\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134150lexez7\",\"ts\":\"2026-10-23T13:41:50.133469+00:00\",\"command\":\"burpctl history replay\",\"burp_op\":\"POST /history/1/replay\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"68d8ca2f2f5ed38410faa0a4a0ce3cb16e8b5ed611fc367507870909e46c35ab\",\"resp_status\":200,\"resp_len\":529,\"duration_ms\":2,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134149yulci7\",\"ts\":\"2026-10-23T13:41:49.909333+00:00\",\"command\":\"burpctl history list\",\"burp_op\":\"GET /history\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"99c3f155b10cc19a8d1fcc5be16a7837b1282a8806cfefdc90e8d86364b74aeb\",\"resp_status\":200,\"resp_len\":84,\"duration_ms\":3,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134149ut3yl4\",\"ts\":\"2026-10-23T13:41:49.661088+00:00\",\"command\":\"burpctl send\",\"burp_op\":\"POST /repeater/send\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":\"50276807bb80fb6d0383b85170ffe19dc450197a79589669e341a190301a658b\",\"resp_sha256\":\"68d8ca2f2f5ed38410faa0a4a0ce3cb16e8b5ed611fc367507870909e46c35ab\",\"resp_status\":200,\"resp_len\":529,\"duration_ms\":2,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134149mep5b5\",\"ts\":\"2026-10-23T13:41:49.431168+00:00\",\"command\":\"burpctl req\",\"burp_op\":\"GET /proxy/history/1\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"a5942c19a8e00ad1d75c3137a88693a4e229535c2ca962f8a2949a947504a982\",\"resp_status\":200,\"resp_len\":201,\"duration_ms\":2,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134149grsd3o\",\"ts\":\"2026-10-23T13:41:49.200269+00:00\",\"command\":\"burpctl session cookies\",\"burp_op\":\"GET /session/cookie-jar\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"c05edcec8a33932b933b4a6ad5635203e42f9ac808628b0d9a800f78205d5d6f\",\"resp_status\":200,\"resp_len\":61,\"duration_ms\":2,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134148uv4vtx\",\"ts\":\"2026-10-23T13:41:48.944476+00:00\",\"command\":\"burpctl session get\",\"burp_op\":\"GET /session/get\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"28aec898c31779f1a25f34f5eb4455870c6c2bf6b4177967701402bd8b19876f\",\"resp_status\":200,\"resp_len\":127,\"duration_ms\":3,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"202610231341482dr9xy\",\"ts\":\"2026-10-23T13:41:48.704490+00:00\",\"command\":\"burpctl session clear\",\"burp_op\":\"DELETE /session/clear\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"28aec898c31779f1a25f34f5eb4455870c6c2bf6b4177967701402bd8b19876f\",\"resp_status\":200,\"resp_len\":127,\"duration_ms\":3,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"202610231341482ga87h\",\"ts\":\"2026-10-23T13:41:48.461650+00:00\",\"command\":\"burpctl session cookies\",\"burp_op\":\"GET /session/cookie-jar\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"c05edcec8a33932b933b4a6ad5635203e42f9ac808628b0d9a800f78205d5d6f\",\"resp_status\":200,\"resp_len\":61,\"duration_ms\":2,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134148xdw2a1\",\"ts\":\"2026-10-23T13:41:48.204370+00:00\",\"command\":\"burpctl session send\",\"burp_op\":\"POST /session/send\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"error\",\"exit_code\":1,\"req_sha256\":\"08e2d12f46a1fa6c5d37c28a8c00bc379f0d87104daf10364a2dd44c20759196\",\"resp_sha256\":\"41920ed711200c741c7543e504f7379e2b6848e55c3bc74acb96383e11dc9a6d\",\"resp_status\":403,\"resp_len\":89,\"duration_ms\":3,\"error_code\":\"CROSS_ORIGIN_SESSION\",\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134147ljoca5\",\"ts\":\"2026-10-23T13:41:47.944044+00:00\",\"command\":\"burpctl session send\",\"burp_op\":\"POST /session/send\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":\"71bd1f9938ccc72ee7f0e55fac04deead94f4aaed80a8040c0cc20c1022657cd\",\"resp_sha256\":\"6b63f6f2a4661a724447b6e7188cc330046b6d464bd8f0e1a4eaaa65970ae179\",\"resp_status\":200,\"resp_len\":104,\"duration_ms\":7,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134147q6kqk6\",\"ts\":\"2026-10-23T13:41:47.682375+00:00\",\"command\":\"burpctl session get\",\"burp_op\":\"GET /session/get\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"b265c159a16e91462e2203b15b1915cacd7301b782b74392256b30fa54038636\",\"resp_status\":200,\"resp_len\":153,\"duration_ms\":3,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134147v62y8n\",\"ts\":\"2026-10-23T13:41:47.449847+00:00\",\"command\":\"burpctl session set\",\"burp_op\":\"POST /session/set\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":\"2cd70b46044b91c0304559a51fa5d700d202775407af16c56789d655b7a30809\",\"resp_sha256\":\"b265c159a16e91462e2203b15b1915cacd7301b782b74392256b30fa54038636\",\"resp_status\":200,\"resp_len\":153,\"duration_ms\":3,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134147iftclj\",\"ts\":\"2026-10-23T13:41:47.200816+00:00\",\"command\":\"burpctl session get\",\"burp_op\":\"GET /session/get\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":null,\"resp_sha256\":\"28aec898c31779f1a25f34f5eb4455870c6c2bf6b4177967701402bd8b19876f\",\"resp_status\":200,\"resp_len\":127,\"duration_ms\":2,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134146ja3dck\",\"ts\":\"2026-10-23T13:41:46.959229+00:00\",\"command\":\"burpctl scope check\",\"burp_op\":\"GET /target/scope/check\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":\"05458fdca9aeec277f0d8e4749bcce3196a1804128d79c3d22eb510f3874473d\",\"resp_sha256\":\"fbd1737b6db5d06b720c6cd9dc05199548f5a29155632b147235cbda66d3be57\",\"resp_status\":200,\"resp_len\":85,\"duration_ms\":2,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"202610231341462ahl5x\",\"ts\":\"2026-10-23T13:41:46.707707+00:00\",\"command\":\"burpctl scope remove\",\"burp_op\":\"POST /target/scope/remove\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":\"0807e62620ede1f0b4b7fbe3b3ad195435c1d329b3e0279988bcf4a3e00e2b12\",\"resp_sha256\":\"fbd1737b6db5d06b720c6cd9dc05199548f5a29155632b147235cbda66d3be57\",\"resp_status\":200,\"resp_len\":85,\"duration_ms\":2,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134146w6a6xu\",\"ts\":\"2026-10-23T13:41:46.469286+00:00\",\"command\":\"burpctl scope check\",\"burp_op\":\"GET /target/scope/check\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":\"05458fdca9aeec277f0d8e4749bcce3196a1804128d79c3d22eb510f3874473d\",\"resp_sha256\":\"cab6feba19c9d7ed006a78fd76f000c9967bdd24eb117356ea753c67e130d698\",\"resp_status\":200,\"resp_len\":84,\"duration_ms\":3,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134146b8rh1v\",\"ts\":\"2026-10-23T13:41:46.228479+00:00\",\"command\":\"burpctl scope add\",\"burp_op\":\"POST /target/scope/add\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":\"0807e62620ede1f0b4b7fbe3b3ad195435c1d329b3e0279988bcf4a3e00e2b12\",\"resp_sha256\":\"cab6feba19c9d7ed006a78fd76f000c9967bdd24eb117356ea753c67e130d698\",\"resp_status\":200,\"resp_len\":84,\"duration_ms\":2,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n{\"id\":\"20261023134145pa7mkx\",\"ts\":\"2026-10-23T13:41:45.992251+00:00\",\"command\":\"burpctl scope check\",\"burp_op\":\"GET /target/scope/check\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":null,\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":\"05458fdca9aeec277f0d8e4749bcce3196a1804128d79c3d22eb510f3874473d\",\"resp_sha256\":\"fbd1737b6db5d06b720c6cd9dc05199548f5a29155632b147235cbda66d3be57\",\"resp_status\":200,\"resp_len\":85,\"duration_ms\":5,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "log",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "contains REST metadata",
+            "contains final exit_code"
+          ],
+          "shape": "ledger_rows"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [],
+      "live_target_effect_count": 0,
+      "ordered_routes": [],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [],
+      "rest_route_count": 0,
+      "seal": {
+        "argv": [
+          "bp",
+          "log",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "contains REST metadata",
+              "contains final exit_code"
+            ],
+            "shape": "ledger_rows"
+          }
+        },
+        "expected_sha256": "929f31e3f0d82d12469097edf0702eea99918593ef93140bd743154483dd90e9",
+        "oracle_hash": "d22cb13e968a5481e45a288bd5d2a9bf5e35c9ded3a86e715ddfad31475cf0f5",
+        "sealed_at_ns": 1792762911523333000,
+        "step": "S3.10"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "Python local SQLite Run Ledger",
+      "status": "INCONCLUSIVE",
+      "step": "S3.10",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 250.292458,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"id\":\"20261023134145pa7mkx\",\"tag\":\"sequence-s3\",\"status\":\"tagged\"}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "tag",
+        "20261023134145pa7mkx",
+        "sequence-s3",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "id={{OP_ID}}",
+            "tag=sequence-s3",
+            "status=tagged"
+          ],
+          "shape": "tag_receipt"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [],
+      "live_target_effect_count": 0,
+      "ordered_routes": [],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [],
+      "rest_route_count": 0,
+      "seal": {
+        "argv": [
+          "bp",
+          "tag",
+          "20261023134145pa7mkx",
+          "sequence-s3",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "id={{OP_ID}}",
+              "tag=sequence-s3",
+              "status=tagged"
+            ],
+            "shape": "tag_receipt"
+          }
+        },
+        "expected_sha256": "7b9a05ef636fba536145fed25617335d94e06b25c03e69cd2af7898898dcc232",
+        "oracle_hash": "eaee3c3ef25214e62fdbd83c80d1dc00a771b46aff8bca5917501037d6704c90",
+        "sealed_at_ns": 1792762911808502000,
+        "step": "S3.11"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "Python local SQLite Run Ledger",
+      "status": "INCONCLUSIVE",
+      "step": "S3.11",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 247.7615,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"id\":\"20261023134145pa7mkx\",\"ts\":\"2026-10-23T13:41:45.992251+00:00\",\"command\":\"burpctl scope check\",\"burp_op\":\"GET /target/scope/check\",\"target\":\"127.0.0.1:50047\",\"program\":null,\"tag\":\"sequence-s3\",\"status\":\"ok\",\"exit_code\":0,\"req_sha256\":\"05458fdca9aeec277f0d8e4749bcce3196a1804128d79c3d22eb510f3874473d\",\"resp_sha256\":\"fbd1737b6db5d06b720c6cd9dc05199548f5a29155632b147235cbda66d3be57\",\"resp_status\":200,\"resp_len\":85,\"duration_ms\":5,\"error_code\":null,\"req_ref\":null,\"resp_ref\":null}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "log",
+        "--tag",
+        "sequence-s3",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "contains id={{OP_ID}}",
+            "tag=sequence-s3"
+          ],
+          "shape": "ledger_rows"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [],
+      "live_target_effect_count": 0,
+      "ordered_routes": [],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [],
+      "rest_route_count": 0,
+      "seal": {
+        "argv": [
+          "bp",
+          "log",
+          "--tag",
+          "sequence-s3",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "contains id={{OP_ID}}",
+              "tag=sequence-s3"
+            ],
+            "shape": "ledger_rows"
+          }
+        },
+        "expected_sha256": "ed1e40088085fc5769cc170a9745a59bd3d763dd665e5a9f830298ecb3fda983",
+        "oracle_hash": "d0adeacabef86ced7078e0c119025c839ad22e5b032b2c784c84e86dcf98281c",
+        "sealed_at_ns": 1792762912059772000,
+        "step": "S3.12"
+      },
+      "sequence": "S3",
+      "state_events": [],
+      "state_owner": "Python local SQLite Run Ledger",
+      "status": "INCONCLUSIVE",
+      "step": "S3.12",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 290.348583,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scan",
+        "crawl",
+        "http://127.0.0.1:50048",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "scanId={{CRAWL_ID}}",
+            "status=running"
+          ],
+          "shape": "scan_start"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /scanner/crawl",
+          "command": "burpctl scan crawl",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134152jb92s0",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/scanner/crawl"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 44,
+          "body_sha256": "9617a280209ae76636acb5244e2f7b9a5d030b48a1028f9a9943365f87da2296",
+          "method": "POST",
+          "path": "/scanner/crawl",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scan",
+          "crawl",
+          "http://127.0.0.1:50048",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "scanId={{CRAWL_ID}}",
+              "status=running"
+            ],
+            "shape": "scan_start"
+          }
+        },
+        "expected_sha256": "15d94ea31be4750c51aec21527d0f5a54b7f288b1aa5adbc439f5c948cd6e27d",
+        "oracle_hash": "972fac3a6a5bc0e7e6eb4c84268513b9af12e9ea02ac45b53b287512b9c70f93",
+        "sealed_at_ns": 1792762912309068000,
+        "step": "S4.1"
+      },
+      "sequence": "S4",
+      "state_events": [],
+      "state_owner": "ScannerService process-local scan registry + Montoya Crawl task",
+      "status": "INCONCLUSIVE",
+      "step": "S4.1",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 259.786667,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"scanId\":\"sid-001\",\"status\":\"Running\",\"issueCount\":0}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scan",
+        "status",
+        "sid-001",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "scanId={{CRAWL_ID}}",
+            "requestCount={{N}}",
+            "errorCount={{E}}",
+            "issueCount=0"
+          ],
+          "shape": "scan_status"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /scanner/sid-001/status",
+          "command": "burpctl scan status",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134152drbvkj",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/scanner/sid-001/status"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/scanner/sid-001/status",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scan",
+          "status",
+          "sid-001",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "scanId={{CRAWL_ID}}",
+              "requestCount={{N}}",
+              "errorCount={{E}}",
+              "issueCount=0"
+            ],
+            "shape": "scan_status"
+          }
+        },
+        "expected_sha256": "191efd50e25cd2e0b6f38323fcc8ff1e193f4acf349bc351b1e13e3967120a5d",
+        "oracle_hash": "d6854104665dc9ced6d5506aba13a5ed73c103b5ac5e2973a1e556efe1d8cd0f",
+        "sealed_at_ns": 1792762912600381000,
+        "step": "S4.2"
+      },
+      "sequence": "S4",
+      "state_events": [],
+      "state_owner": "ScannerService process-local scan registry + Montoya Crawl task",
+      "status": "INCONCLUSIVE",
+      "step": "S4.2",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 267.587375,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"scanId\":\"sid-001\",\"issues\":[],\"total\":0}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scan",
+        "issues",
+        "sid-001",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "scanId={{CRAWL_ID}}",
+            "total=0"
+          ],
+          "shape": "scan_issues"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /scanner/sid-001/issues",
+          "command": "burpctl scan issues",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "202610231341536d9lhx",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/scanner/sid-001/issues"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/scanner/sid-001/issues",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scan",
+          "issues",
+          "sid-001",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "scanId={{CRAWL_ID}}",
+              "total=0"
+            ],
+            "shape": "scan_issues"
+          }
+        },
+        "expected_sha256": "f61880076e42144859a92f1cec1dd9a50c7294aba11a6c4800a8009a65f557b6",
+        "oracle_hash": "4809d3dc0dd1cec9f6ca36607578fdadd13def60cb1a5d4eb94b7d7b108efe5e",
+        "sealed_at_ns": 1792762912861051000,
+        "step": "S4.3"
+      },
+      "sequence": "S4",
+      "state_events": [],
+      "state_owner": "ScannerService process-local scan registry + Montoya Crawl task",
+      "status": "INCONCLUSIVE",
+      "step": "S4.3",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 288.682625,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"scanId\":\"sid-001\",\"status\":\"running\"}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scan",
+        "audit",
+        "http://127.0.0.1:50048",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "scanId={{AUDIT_ID}}",
+            "status=running"
+          ],
+          "shape": "scan_start"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /scanner/audit",
+          "command": "burpctl scan audit",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134153l68rla",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/scanner/audit"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 44,
+          "body_sha256": "9617a280209ae76636acb5244e2f7b9a5d030b48a1028f9a9943365f87da2296",
+          "method": "POST",
+          "path": "/scanner/audit",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scan",
+          "audit",
+          "http://127.0.0.1:50048",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "scanId={{AUDIT_ID}}",
+              "status=running"
+            ],
+            "shape": "scan_start"
+          }
+        },
+        "expected_sha256": "27989f8ae335f35d2f2a5bb57445109eb4d5d9ba0d8d1bdcfb3d54f5552702b3",
+        "oracle_hash": "2cb30ccdb6f7a6e8ae5273101d5dde96dd513224b57abab6d8afb688cfefdfbd",
+        "sealed_at_ns": 1792762913129953000,
+        "step": "S4.4"
+      },
+      "sequence": "S4",
+      "state_events": [],
+      "state_owner": "ScannerService process-local scan registry + Montoya Audit task",
+      "status": "INCONCLUSIVE",
+      "step": "S4.4",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 258.540958,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"scanId\":\"sid-001\",\"status\":\"Running\",\"issueCount\":0}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scan",
+        "status",
+        "sid-002",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "scanId={{AUDIT_ID}}",
+            "issueCount={{I}}"
+          ],
+          "shape": "scan_status"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /scanner/sid-002/status",
+          "command": "burpctl scan status",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134153crnf9m",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/scanner/sid-002/status"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/scanner/sid-002/status",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scan",
+          "status",
+          "sid-002",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "scanId={{AUDIT_ID}}",
+              "issueCount={{I}}"
+            ],
+            "shape": "scan_status"
+          }
+        },
+        "expected_sha256": "fd0c3b492f8599856cc76fc995c66c6143e7273cf6156feaa072dcce15a75c02",
+        "oracle_hash": "67cdd5eea82c4cc3aa7b94293b84d2a34aa85237434d535929aaa24af61ef29c",
+        "sealed_at_ns": 1792762913419674000,
+        "step": "S4.5"
+      },
+      "sequence": "S4",
+      "state_events": [],
+      "state_owner": "ScannerService process-local scan registry + Montoya Audit task",
+      "status": "INCONCLUSIVE",
+      "step": "S4.5",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 338.336917,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"scanId\":\"sid-001\",\"issues\":[],\"total\":0}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scan",
+        "issues",
+        "sid-002",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "scanId={{AUDIT_ID}}",
+            "total={{I}}"
+          ],
+          "shape": "scan_issues"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /scanner/sid-002/issues",
+          "command": "burpctl scan issues",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134153upl7xe",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/scanner/sid-002/issues"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/scanner/sid-002/issues",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scan",
+          "issues",
+          "sid-002",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "scanId={{AUDIT_ID}}",
+              "total={{I}}"
+            ],
+            "shape": "scan_issues"
+          }
+        },
+        "expected_sha256": "1ed38dbff81ae7a16900d8a2601e519a73cc3276dc158844d9517f053ece5730",
+        "oracle_hash": "a1bea09d2e587b92f2e60ae73eb2f618a4f1a3dbc7b6a944941e34007c352877",
+        "sealed_at_ns": 1792762913679165000,
+        "step": "S4.6"
+      },
+      "sequence": "S4",
+      "state_events": [],
+      "state_owner": "ScannerService process-local scan registry + Montoya Audit task",
+      "status": "INCONCLUSIVE",
+      "step": "S4.6",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 284.82,
+        "exit": 4,
+        "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"fixture\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/crawl\"}}\n",
+        "stdout": ""
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scan",
+        "crawl",
+        "http://127.0.0.1:50048",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 4,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "PRO_REQUIRED",
+            "http_status=503"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [],
+          "shape": "empty"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /scanner/crawl",
+          "command": "burpctl scan crawl",
+          "error_code": "PRO_REQUIRED",
+          "exit_code": 4,
+          "id": "20261023134154t3insd",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/scanner/crawl"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 44,
+          "body_sha256": "9617a280209ae76636acb5244e2f7b9a5d030b48a1028f9a9943365f87da2296",
+          "method": "POST",
+          "path": "/scanner/crawl",
+          "status": 503
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scan",
+          "crawl",
+          "http://127.0.0.1:50048",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 4,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "PRO_REQUIRED",
+              "http_status=503"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [],
+            "shape": "empty"
+          }
+        },
+        "expected_sha256": "6997a1cd5243440fbf4a4e916e04efbed098e203bc7e6385b69081a72f9bd064",
+        "oracle_hash": "25cbca1a382b254824d3b2b9b9ce0548b5281dab53fe9995f702fc274b0baba1",
+        "sealed_at_ns": 1792762914019581000,
+        "step": "S4.7"
+      },
+      "sequence": "S4",
+      "state_events": [],
+      "state_owner": "ScannerService edition gate + process-local registry",
+      "status": "INCONCLUSIVE",
+      "step": "S4.7",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 279.18275,
+        "exit": 4,
+        "stderr": "{\"error\":{\"code\":\"PRO_REQUIRED\",\"message\":\"fixture\",\"status\":503,\"http_status\":503,\"op\":\"POST /scanner/audit\"}}\n",
+        "stdout": ""
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scan",
+        "audit",
+        "http://127.0.0.1:50048",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 4,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "PRO_REQUIRED",
+            "http_status=503"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [],
+          "shape": "empty"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /scanner/audit",
+          "command": "burpctl scan audit",
+          "error_code": "PRO_REQUIRED",
+          "exit_code": 4,
+          "id": "20261023134154owjxzo",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/scanner/audit"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 44,
+          "body_sha256": "9617a280209ae76636acb5244e2f7b9a5d030b48a1028f9a9943365f87da2296",
+          "method": "POST",
+          "path": "/scanner/audit",
+          "status": 503
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scan",
+          "audit",
+          "http://127.0.0.1:50048",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 4,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "PRO_REQUIRED",
+              "http_status=503"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [],
+            "shape": "empty"
+          }
+        },
+        "expected_sha256": "6997a1cd5243440fbf4a4e916e04efbed098e203bc7e6385b69081a72f9bd064",
+        "oracle_hash": "9a535754f550941d4d1b51234d12af9f5f1f7f124e30a67be23f01bb756a8f1a",
+        "sealed_at_ns": 1792762914305955000,
+        "step": "S4.8"
+      },
+      "sequence": "S4",
+      "state_events": [],
+      "state_owner": "ScannerService edition gate + process-local registry",
+      "status": "INCONCLUSIVE",
+      "step": "S4.8",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 285.787583,
+        "exit": 1,
+        "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"fixture\",\"status\":501,\"http_status\":501,\"op\":\"POST /scanner/crawl-and-audit\"}}\n",
+        "stdout": ""
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "scan",
+        "all",
+        "http://127.0.0.1:50048",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 1,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "UNSUPPORTED",
+            "http_status=501"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [],
+          "shape": "empty"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /scanner/crawl-and-audit",
+          "command": "burpctl scan all",
+          "error_code": "UNSUPPORTED",
+          "exit_code": 1,
+          "id": "20261023134154w8su6p",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/scanner/crawl-and-audit"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 44,
+          "body_sha256": "9617a280209ae76636acb5244e2f7b9a5d030b48a1028f9a9943365f87da2296",
+          "method": "POST",
+          "path": "/scanner/crawl-and-audit",
+          "status": 501
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "scan",
+          "all",
+          "http://127.0.0.1:50048",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 1,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "UNSUPPORTED",
+              "http_status=501"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [],
+            "shape": "empty"
+          }
+        },
+        "expected_sha256": "f5b08255ce9377583b25ee2614cecb93b5bae4d5e453d9f0c747afa2a0ad0188",
+        "oracle_hash": "04374b65b7172be6b34f4080d0092265230ef40c4bc1394f21d99ca31f50fd2b",
+        "sealed_at_ns": 1792762914586071000,
+        "step": "S4.9"
+      },
+      "sequence": "S4",
+      "state_events": [],
+      "state_owner": "ScannerService process-local scan registry",
+      "status": "INCONCLUSIVE",
+      "step": "S4.9",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 325.366166,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"payloads\":[{\"id\":\"cid-001\",\"payload\":\"cid-001.oastify.test\",\"interactionId\":\"cid-001\"}]}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "collab",
+        "new",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "payloads[0].id={{COLLAB_ID}}",
+            "payloads[0].interactionId={{COLLAB_ID}}"
+          ],
+          "shape": "collaborator_payload"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /collaborator/generate",
+          "command": "burpctl collab new",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134155ovyzkt",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/collaborator/generate"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "POST",
+          "path": "/collaborator/generate",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "collab",
+          "new",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "payloads[0].id={{COLLAB_ID}}",
+              "payloads[0].interactionId={{COLLAB_ID}}"
+            ],
+            "shape": "collaborator_payload"
+          }
+        },
+        "expected_sha256": "e15eee999e97d0107f2178b21bb6ed461f1330ed6a335b32f9b5104f9e937431",
+        "oracle_hash": "6df0c1eadeec3c88987fef1273af8b987894a4a486ff8cb5f2c5ca7bf2f0a4b3",
+        "sealed_at_ns": 1792762914873263000,
+        "step": "S5.1"
+      },
+      "sequence": "S5",
+      "state_events": [],
+      "state_owner": "CollaboratorService process-local payload map + Montoya Collaborator client",
+      "status": "INCONCLUSIVE",
+      "step": "S5.1",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 275.2175,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"found\":false,\"interactions\":[],\"queriedPayloadId\":\"cid-001\"}\n"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "collab",
+        "poll",
+        "cid-001",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "queriedPayloadId={{COLLAB_ID}}",
+            "found=false",
+            "interactions=[]"
+          ],
+          "shape": "poll_response"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /collaborator/poll/cid-001",
+          "command": "burpctl collab poll",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134155wkyu4d",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/collaborator/poll/cid-001"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/collaborator/poll/cid-001",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "collab",
+          "poll",
+          "cid-001",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "queriedPayloadId={{COLLAB_ID}}",
+              "found=false",
+              "interactions=[]"
+            ],
+            "shape": "poll_response"
+          }
+        },
+        "expected_sha256": "2b364021ceca784bdb4118a3b62b8737c062a8c5a8afd2b1d7cea6e609d2c958",
+        "oracle_hash": "2134a528da85aa7cc9a677044d04138caa2acd7d52502a72cc027a062f65f2ff",
+        "sealed_at_ns": 1792762915199545000,
+        "step": "S5.2"
+      },
+      "sequence": "S5",
+      "state_events": [],
+      "state_owner": "CollaboratorService payload map + Montoya Collaborator client",
+      "status": "INCONCLUSIVE",
+      "step": "S5.2",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 297.274542,
+        "exit": 1,
+        "stderr": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"fixture\",\"status\":404,\"http_status\":404,\"op\":\"GET /collaborator/poll/unknown-id\"}}\n",
+        "stdout": ""
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "collab",
+        "poll",
+        "unknown-id",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 1,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "NOT_FOUND",
+            "http_status=404"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [],
+          "shape": "empty"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /collaborator/poll/unknown-id",
+          "command": "burpctl collab poll",
+          "error_code": "NOT_FOUND",
+          "exit_code": 1,
+          "id": "20261023134155jyqfjy",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/collaborator/poll/unknown-id"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/collaborator/poll/unknown-id",
+          "status": 404
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "collab",
+          "poll",
+          "unknown-id",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 1,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "NOT_FOUND",
+              "http_status=404"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [],
+            "shape": "empty"
+          }
+        },
+        "expected_sha256": "0b4b9a315e63106f132e8806240925d99db7957c26a6b76e14c0abc14bd1b501",
+        "oracle_hash": "def2e3a263df055dd0ab7138722d3d79c72eb281c8f7c9f8538c0e3c7bcc2a4f",
+        "sealed_at_ns": 1792762915475728000,
+        "step": "S5.3"
+      },
+      "sequence": "S5",
+      "state_events": [],
+      "state_owner": "CollaboratorService process-local payload map",
+      "status": "INCONCLUSIVE",
+      "step": "S5.3",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 342.720625,
+        "exit": 1,
+        "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"fixture\",\"status\":501,\"http_status\":501,\"op\":\"POST /collaborator/generate\"}}\n",
+        "stdout": ""
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "collab",
+        "new",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 4,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "PRO_REQUIRED",
+            "http_status=503"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [],
+          "shape": "empty"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "POST /collaborator/generate",
+          "command": "burpctl collab new",
+          "error_code": "UNSUPPORTED",
+          "exit_code": 1,
+          "id": "20261023134156ux6z1z",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/collaborator/generate"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "POST",
+          "path": "/collaborator/generate",
+          "status": 501
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "collab",
+          "new",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 4,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "PRO_REQUIRED",
+              "http_status=503"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [],
+            "shape": "empty"
+          }
+        },
+        "expected_sha256": "6997a1cd5243440fbf4a4e916e04efbed098e203bc7e6385b69081a72f9bd064",
+        "oracle_hash": "1ec8e580d4265c099e42ba9693df0716ded9820757e1c10a0fcaa805e1aec7a0",
+        "sealed_at_ns": 1792762915773897000,
+        "step": "S5.4"
+      },
+      "sequence": "S5",
+      "state_events": [],
+      "state_owner": "CollaboratorService process-local payload map + Montoya Collaborator client",
+      "status": "ORACLE_MISMATCH",
+      "step": "S5.4",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 405.129666,
+        "exit": 1,
+        "stderr": "{\"error\":{\"code\":\"UNSUPPORTED\",\"message\":\"fixture\",\"status\":501,\"http_status\":501,\"op\":\"GET /collaborator/poll\"}}\n",
+        "stdout": ""
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "collab",
+        "poll",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 4,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "PRO_REQUIRED",
+            "http_status=503"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [],
+          "shape": "empty"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [
+        {
+          "burp_op": "GET /collaborator/poll",
+          "command": "burpctl collab poll",
+          "error_code": "UNSUPPORTED",
+          "exit_code": 1,
+          "id": "20261023134156l9f2ar",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/collaborator/poll"
+        ]
+      ],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/collaborator/poll",
+          "status": 501
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "collab",
+          "poll",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 4,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "PRO_REQUIRED",
+              "http_status=503"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [],
+            "shape": "empty"
+          }
+        },
+        "expected_sha256": "6997a1cd5243440fbf4a4e916e04efbed098e203bc7e6385b69081a72f9bd064",
+        "oracle_hash": "15c9ed716dc0d015f0f886b054d51cebe54b3d4916271181f44888ac40a6986a",
+        "sealed_at_ns": 1792762916118113000,
+        "step": "S5.5"
+      },
+      "sequence": "S5",
+      "state_events": [],
+      "state_owner": "CollaboratorService payload map + Montoya Collaborator client",
+      "status": "ORACLE_MISMATCH",
+      "step": "S5.5",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "phase_event_range": [
+          0,
+          1
+        ],
+        "process_ref": "normal"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "prepared_shots=3"
+          ],
+          "shape": "no_output_until_run_completes"
+        }
+      },
+      "global_rest_event_range": [
+        37,
+        38
+      ],
+      "ledger_rows": [
+        {
+          "burp_op": "GET /proxy/history/1",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134156yskdij",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "GET",
+          "/proxy/history/1"
+        ]
+      ],
+      "phase_event_range": [
+        0,
+        1
+      ],
+      "process_ref": "normal",
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 0,
+          "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "method": "GET",
+          "path": "/proxy/history/1",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "fuzz",
+          "1",
+          "--pos",
+          "query:id",
+          "--payloads",
+          "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+          "--type",
+          "sniper",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "prepared_shots=3"
+            ],
+            "shape": "no_output_until_run_completes"
+          }
+        },
+        "expected_sha256": "ae3050cf6a6eb284b65c1fae5a6e2c63a00a3fcf6a7b68c7fa5ac2d05ac2cc25",
+        "oracle_hash": "4ecab2294a9f47221fd72894e576cb28453549f46ee732d6900ee50cfab8a20d",
+        "sealed_at_ns": 1792762916524498000,
+        "step": "S6.1"
+      },
+      "sequence": "S6",
+      "state_events": [],
+      "state_owner": "Python run_fuzz plan + Montoya live proxy history + local Run Ledger",
+      "status": "INCONCLUSIVE",
+      "step": "S6.1",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "phase_event_range": [
+          1,
+          2
+        ],
+        "process_ref": "normal"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "index=-1",
+            "baseline=true",
+            "error=null"
+          ],
+          "shape": "deferred_result_row"
+        }
+      },
+      "global_rest_event_range": [
+        38,
+        39
+      ],
+      "ledger_rows": [
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134156o5a9ll",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/repeater/send"
+        ]
+      ],
+      "phase_event_range": [
+        1,
+        2
+      ],
+      "process_ref": "normal",
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 138,
+          "body_sha256": "e547b6ff1e0f440d8f38180b12bfe0cbcdcff31dbaa8a2fadbb99fe3a101ebc4",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "fuzz",
+          "1",
+          "--pos",
+          "query:id",
+          "--payloads",
+          "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+          "--type",
+          "sniper",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "index=-1",
+              "baseline=true",
+              "error=null"
+            ],
+            "shape": "deferred_result_row"
+          }
+        },
+        "expected_sha256": "7125468aef4124638c50c96f93d5b2e2b6461a869203d728f487573abf7302d8",
+        "oracle_hash": "d0bb2ea76c27ff8f903ee203d80be815023fe6b82a79be6909d184050a4bb105",
+        "sealed_at_ns": 1792762916524744000,
+        "step": "S6.2"
+      },
+      "sequence": "S6",
+      "state_events": [],
+      "state_owner": "RepeaterService live target + Python local Run Ledger",
+      "status": "INCONCLUSIVE",
+      "step": "S6.2",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "phase_event_range": [
+          1,
+          2
+        ],
+        "process_ref": "baseline_transport"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 3,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "FUZZ_PARTIAL_FAILURE"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "baseline=true",
+            "error_code=TRANSPORT_ERROR",
+            "zero shot rows"
+          ],
+          "shape": "fuzz_rows"
+        }
+      },
+      "global_rest_event_range": [
+        43,
+        44
+      ],
+      "ledger_rows": [
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": "TRANSPORT_ERROR",
+          "exit_code": 3,
+          "id": "20261023134157zevr8r",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/repeater/send"
+        ]
+      ],
+      "phase_event_range": [
+        1,
+        2
+      ],
+      "process_ref": "baseline_transport",
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 138,
+          "body_sha256": "e547b6ff1e0f440d8f38180b12bfe0cbcdcff31dbaa8a2fadbb99fe3a101ebc4",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "fuzz",
+          "1",
+          "--pos",
+          "query:id",
+          "--payloads",
+          "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+          "--type",
+          "sniper",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 3,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "FUZZ_PARTIAL_FAILURE"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "baseline=true",
+              "error_code=TRANSPORT_ERROR",
+              "zero shot rows"
+            ],
+            "shape": "fuzz_rows"
+          }
+        },
+        "expected_sha256": "de288a549031bda8512c48d530822bf38c50a87e48816d4de205f9fa5591377d",
+        "oracle_hash": "2b1c1c3bed690c14158ff8a8eb6372e7a7ab067e33a218957d191eec1fa407d7",
+        "sealed_at_ns": 1792762916852440000,
+        "step": "S6.3"
+      },
+      "sequence": "S6",
+      "state_events": [],
+      "state_owner": "RepeaterService live target + Python local Run Ledger",
+      "status": "INCONCLUSIVE",
+      "step": "S6.3",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "phase_event_range": [
+          1,
+          2
+        ],
+        "process_ref": "baseline_invalid"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 1,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "FUZZ_PARTIAL_FAILURE"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "baseline=true",
+            "error_code=INVALID_RESPONSE",
+            "zero shot rows"
+          ],
+          "shape": "fuzz_rows"
+        }
+      },
+      "global_rest_event_range": [
+        45,
+        46
+      ],
+      "ledger_rows": [
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 1,
+          "id": "20261023134157br365e",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/repeater/send"
+        ]
+      ],
+      "phase_event_range": [
+        1,
+        2
+      ],
+      "process_ref": "baseline_invalid",
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 138,
+          "body_sha256": "e547b6ff1e0f440d8f38180b12bfe0cbcdcff31dbaa8a2fadbb99fe3a101ebc4",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 1,
+      "seal": {
+        "argv": [
+          "bp",
+          "fuzz",
+          "1",
+          "--pos",
+          "query:id",
+          "--payloads",
+          "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+          "--type",
+          "sniper",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 1,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "FUZZ_PARTIAL_FAILURE"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "baseline=true",
+              "error_code=INVALID_RESPONSE",
+              "zero shot rows"
+            ],
+            "shape": "fuzz_rows"
+          }
+        },
+        "expected_sha256": "c79f0aa58cc397e473d2d5cfb3806da8bbad276033dae5e2d4d1fd4e079b9e03",
+        "oracle_hash": "5b953f1a75a8f5a0eced62b8a7f7a159a291d5603f5d8c66da890fa95b567cc9",
+        "sealed_at_ns": 1792762917069451000,
+        "step": "S6.4"
+      },
+      "sequence": "S6",
+      "state_events": [],
+      "state_owner": "RepeaterService live target + Python local Run Ledger",
+      "status": "INCONCLUSIVE",
+      "step": "S6.4",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "phase_event_range": [
+          2,
+          5
+        ],
+        "process_ref": "normal"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "three non-baseline rows",
+            "each attempted shot represented"
+          ],
+          "shape": "fuzz_rows"
+        }
+      },
+      "global_rest_event_range": [
+        39,
+        42
+      ],
+      "ledger_rows": [
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134156i0pt9u",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "202610231341569bbhb7",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 0,
+          "id": "20261023134156dwyinm",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/repeater/send"
+        ],
+        [
+          "POST",
+          "/repeater/send"
+        ],
+        [
+          "POST",
+          "/repeater/send"
+        ]
+      ],
+      "phase_event_range": [
+        2,
+        5
+      ],
+      "process_ref": "normal",
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 136,
+          "body_sha256": "cc926b208b89c3f1deace70cd88e86125ae300c56b11dcccd4c1d3e5ddba5f8b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "93a47f6b38ae13e974938982c7643aae0a0b49c9b99466b8c7d64e8169ccf13b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "4c9e058bdda6e9e530cfbd88b7e8e45d4a9cfc90711a17520ec3bba86a085672",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 3,
+      "seal": {
+        "argv": [
+          "bp",
+          "fuzz",
+          "1",
+          "--pos",
+          "query:id",
+          "--payloads",
+          "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+          "--type",
+          "sniper",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "three non-baseline rows",
+              "each attempted shot represented"
+            ],
+            "shape": "fuzz_rows"
+          }
+        },
+        "expected_sha256": "28d525a64f67e70a6d036ef765c012cc06dead1c8ea3252dd9d9f42285680101",
+        "oracle_hash": "66e2cc72d9617d3da21a1daee10f9de0125ace3a68800ffcc54d3ac9ae9458d4",
+        "sealed_at_ns": 1792762916524838000,
+        "step": "S6.5"
+      },
+      "sequence": "S6",
+      "state_events": [],
+      "state_owner": "RepeaterService live target + Python fuzz result list + local Run Ledger",
+      "status": "INCONCLUSIVE",
+      "step": "S6.5",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "phase_event_range": [
+          2,
+          5
+        ],
+        "process_ref": "ordinary_p2"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 1,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "FUZZ_PARTIAL_FAILURE"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "baseline row retained",
+            "p1 success row retained",
+            "p2 error row error_code=SEND_FAILED",
+            "p3 success row retained"
+          ],
+          "shape": "fuzz_rows"
+        }
+      },
+      "global_rest_event_range": [
+        48,
+        51
+      ],
+      "ledger_rows": [
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 1,
+          "id": "20261023134157a1xpwj",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": "SEND_FAILED",
+          "exit_code": 1,
+          "id": "20261023134157xl2nf3",
+          "status": "error",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 1,
+          "id": "20261023134157e01ay4",
+          "status": "ok",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/repeater/send"
+        ],
+        [
+          "POST",
+          "/repeater/send"
+        ],
+        [
+          "POST",
+          "/repeater/send"
+        ]
+      ],
+      "phase_event_range": [
+        2,
+        5
+      ],
+      "process_ref": "ordinary_p2",
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 136,
+          "body_sha256": "cc926b208b89c3f1deace70cd88e86125ae300c56b11dcccd4c1d3e5ddba5f8b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "93a47f6b38ae13e974938982c7643aae0a0b49c9b99466b8c7d64e8169ccf13b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 400
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "4c9e058bdda6e9e530cfbd88b7e8e45d4a9cfc90711a17520ec3bba86a085672",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 3,
+      "seal": {
+        "argv": [
+          "bp",
+          "fuzz",
+          "1",
+          "--pos",
+          "query:id",
+          "--payloads",
+          "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+          "--type",
+          "sniper",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 1,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "FUZZ_PARTIAL_FAILURE"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "baseline row retained",
+              "p1 success row retained",
+              "p2 error row error_code=SEND_FAILED",
+              "p3 success row retained"
+            ],
+            "shape": "fuzz_rows"
+          }
+        },
+        "expected_sha256": "f30d476f03e4b53b47f6013ec4697f2c154de55a030661a36479ad9c20045bf5",
+        "oracle_hash": "3fd4d894f5afc17b85c175977062c4717ef8b2028f41bea0a21589a76aae7dbf",
+        "sealed_at_ns": 1792762917279901000,
+        "step": "S6.6"
+      },
+      "sequence": "S6",
+      "state_events": [],
+      "state_owner": "RepeaterService live target + Python fuzz result list + local Run Ledger",
+      "status": "INCONCLUSIVE",
+      "step": "S6.6",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "phase_event_range": [
+          2,
+          4
+        ],
+        "process_ref": "transport_p2"
+      },
+      "executed_action": null,
+      "executed_argv": [
+        "bp",
+        "fuzz",
+        "1",
+        "--pos",
+        "query:id",
+        "--payloads",
+        "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+        "--type",
+        "sniper",
+        "--format",
+        "json"
+      ],
+      "expected": {
+        "exit": 3,
+        "stderr": {
+          "mode": "json",
+          "selected_values": [
+            "FUZZ_PARTIAL_FAILURE"
+          ],
+          "shape": "typed_error"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "baseline row retained",
+            "p1 success row retained",
+            "p2 error row error_code=TRANSPORT_ERROR",
+            "p3 row absent"
+          ],
+          "shape": "fuzz_rows"
+        }
+      },
+      "global_rest_event_range": [
+        53,
+        55
+      ],
+      "ledger_rows": [
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": null,
+          "exit_code": 3,
+          "id": "20261023134157hewzp3",
+          "status": "ok",
+          "tag": null
+        },
+        {
+          "burp_op": "POST /repeater/send",
+          "command": "burpctl fuzz",
+          "error_code": "TRANSPORT_ERROR",
+          "exit_code": 3,
+          "id": "20261023134157jc0rns",
+          "status": "error",
+          "tag": null
+        }
+      ],
+      "live_target_effect_count": 0,
+      "ordered_routes": [
+        [
+          "POST",
+          "/repeater/send"
+        ],
+        [
+          "POST",
+          "/repeater/send"
+        ]
+      ],
+      "phase_event_range": [
+        2,
+        4
+      ],
+      "process_ref": "transport_p2",
+      "provenance": "CLI/REST fixture; Montoya and H2 unobserved",
+      "reconciliation": null,
+      "rest_effects": [
+        {
+          "body_length": 136,
+          "body_sha256": "cc926b208b89c3f1deace70cd88e86125ae300c56b11dcccd4c1d3e5ddba5f8b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        },
+        {
+          "body_length": 136,
+          "body_sha256": "93a47f6b38ae13e974938982c7643aae0a0b49c9b99466b8c7d64e8169ccf13b",
+          "method": "POST",
+          "path": "/repeater/send",
+          "status": 200
+        }
+      ],
+      "rest_route_count": 2,
+      "seal": {
+        "argv": [
+          "bp",
+          "fuzz",
+          "1",
+          "--pos",
+          "query:id",
+          "--payloads",
+          "id=/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/bp-sequences-5t8rcf2g/bp-audit-lt7e_ki_/payloads/task-12.txt",
+          "--type",
+          "sniper",
+          "--format",
+          "json"
+        ],
+        "expected": {
+          "exit": 3,
+          "stderr": {
+            "mode": "json",
+            "selected_values": [
+              "FUZZ_PARTIAL_FAILURE"
+            ],
+            "shape": "typed_error"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "baseline row retained",
+              "p1 success row retained",
+              "p2 error row error_code=TRANSPORT_ERROR",
+              "p3 row absent"
+            ],
+            "shape": "fuzz_rows"
+          }
+        },
+        "expected_sha256": "220306c4302578bdee920b673fcfb2e7e07035e510ea1a192156b21bedeeb3dc",
+        "oracle_hash": "f36d45bc1770cb1094aa6ba936a0bdc76b53175fe634f445f4cd8dc29f903f62",
+        "sealed_at_ns": 1792762917501185000,
+        "step": "S6.7"
+      },
+      "sequence": "S6",
+      "state_events": [],
+      "state_owner": "Python run_fuzz result list + live target + local Run Ledger",
+      "status": "INCONCLUSIVE",
+      "step": "S6.7",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 0.241542,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"ledger_rows\":[{\"id\":\"20261023134156yskdij\",\"command\":\"burpctl fuzz\",\"burp_op\":\"GET /proxy/history/1\",\"status\":\"ok\",\"exit_code\":0,\"error_code\":null,\"tag\":null},{\"id\":\"20261023134156o5a9ll\",\"command\":\"burpctl fuzz\",\"burp_op\":\"POST /repeater/send\",\"status\":\"ok\",\"exit_code\":0,\"error_code\":null,\"tag\":null},{\"id\":\"20261023134156i0pt9u\",\"command\":\"burpctl fuzz\",\"burp_op\":\"POST /repeater/send\",\"status\":\"ok\",\"exit_code\":0,\"error_code\":null,\"tag\":null},{\"id\":\"202610231341569bbhb7\",\"command\":\"burpctl fuzz\",\"burp_op\":\"POST /repeater/send\",\"status\":\"ok\",\"exit_code\":0,\"error_code\":null,\"tag\":null},{\"id\":\"20261023134156dwyinm\",\"command\":\"burpctl fuzz\",\"burp_op\":\"POST /repeater/send\",\"status\":\"ok\",\"exit_code\":0,\"error_code\":null,\"tag\":null}]}"
+      },
+      "executed_action": "SELECT id, command, burp_op, status, exit_code, error_code, tag FROM ops ORDER BY rowid",
+      "executed_argv": null,
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "operation_rows=5",
+            "all operation exit_code=0",
+            "one row per actual REST operation"
+          ],
+          "shape": "ledger_reconciliation"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [],
+      "live_target_effect_count": 0,
+      "ordered_routes": [],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "local SQLite",
+      "reconciliation": null,
+      "rest_effects": [],
+      "rest_route_count": 0,
+      "seal": {
+        "argv": null,
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "operation_rows=5",
+              "all operation exit_code=0",
+              "one row per actual REST operation"
+            ],
+            "shape": "ledger_reconciliation"
+          }
+        },
+        "expected_sha256": "03a4125ea33c2df1a2f07de5090d67ce1fb4d8f50d94a2362272be36651fd8ce",
+        "oracle_hash": "d4370fc3c9b7b8eb9f038b29b1da2c897d5c5465efe6f5a61e912de63aea4f14",
+        "sealed_at_ns": 1792762917731199000,
+        "step": "S6.8"
+      },
+      "sequence": "S6",
+      "state_events": [],
+      "state_owner": "Python local SQLite Run Ledger + target fixture request counter",
+      "status": "LOCAL_LEDGER_ONLY",
+      "step": "S6.8",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 0.173375,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"ledger_rows\":[{\"id\":\"202610231341578wnzyy\",\"command\":\"burpctl fuzz\",\"burp_op\":\"GET /proxy/history/1\",\"status\":\"ok\",\"exit_code\":1,\"error_code\":null,\"tag\":null},{\"id\":\"20261023134157jpjpzv\",\"command\":\"burpctl fuzz\",\"burp_op\":\"POST /repeater/send\",\"status\":\"ok\",\"exit_code\":1,\"error_code\":null,\"tag\":null},{\"id\":\"20261023134157a1xpwj\",\"command\":\"burpctl fuzz\",\"burp_op\":\"POST /repeater/send\",\"status\":\"ok\",\"exit_code\":1,\"error_code\":null,\"tag\":null},{\"id\":\"20261023134157xl2nf3\",\"command\":\"burpctl fuzz\",\"burp_op\":\"POST /repeater/send\",\"status\":\"error\",\"exit_code\":1,\"error_code\":\"SEND_FAILED\",\"tag\":null},{\"id\":\"20261023134157e01ay4\",\"command\":\"burpctl fuzz\",\"burp_op\":\"POST /repeater/send\",\"status\":\"ok\",\"exit_code\":1,\"error_code\":null,\"tag\":null}]}"
+      },
+      "executed_action": "SELECT id, command, burp_op, status, exit_code, error_code, tag FROM ops ORDER BY rowid",
+      "executed_argv": null,
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "operation_rows=5",
+            "all operation exit_code=1",
+            "one row per actual REST operation"
+          ],
+          "shape": "ledger_reconciliation"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [],
+      "live_target_effect_count": 0,
+      "ordered_routes": [],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "local SQLite",
+      "reconciliation": null,
+      "rest_effects": [],
+      "rest_route_count": 0,
+      "seal": {
+        "argv": null,
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "operation_rows=5",
+              "all operation exit_code=1",
+              "one row per actual REST operation"
+            ],
+            "shape": "ledger_reconciliation"
+          }
+        },
+        "expected_sha256": "e0b364fc43dd1779012a28c016dfe5a399dce8a7710a67ab4630f938fc4c570d",
+        "oracle_hash": "abb725b933ac19fd422b9b8350638223876c8b4ecddb17f3c16f01a4ac5c22b6",
+        "sealed_at_ns": 1792762917732013000,
+        "step": "S6.9"
+      },
+      "sequence": "S6",
+      "state_events": [],
+      "state_owner": "Python local SQLite Run Ledger + target fixture request counter",
+      "status": "LOCAL_LEDGER_ONLY",
+      "step": "S6.9",
+      "target_effects": []
+    },
+    {
+      "actual": {
+        "duration_ms": 0.192292,
+        "exit": 0,
+        "stderr": "",
+        "stdout": "{\"ledger_rows\":[{\"id\":\"202610231341577e5kvu\",\"command\":\"burpctl fuzz\",\"burp_op\":\"GET /proxy/history/1\",\"status\":\"ok\",\"exit_code\":3,\"error_code\":null,\"tag\":null},{\"id\":\"20261023134157v85rfy\",\"command\":\"burpctl fuzz\",\"burp_op\":\"POST /repeater/send\",\"status\":\"ok\",\"exit_code\":3,\"error_code\":null,\"tag\":null},{\"id\":\"20261023134157hewzp3\",\"command\":\"burpctl fuzz\",\"burp_op\":\"POST /repeater/send\",\"status\":\"ok\",\"exit_code\":3,\"error_code\":null,\"tag\":null},{\"id\":\"20261023134157jc0rns\",\"command\":\"burpctl fuzz\",\"burp_op\":\"POST /repeater/send\",\"status\":\"error\",\"exit_code\":3,\"error_code\":\"TRANSPORT_ERROR\",\"tag\":null}]}"
+      },
+      "executed_action": "SELECT id, command, burp_op, status, exit_code, error_code, tag FROM ops ORDER BY rowid",
+      "executed_argv": null,
+      "expected": {
+        "exit": 0,
+        "stderr": {
+          "mode": "empty",
+          "selected_values": [],
+          "shape": "empty"
+        },
+        "stdout": {
+          "mode": "json",
+          "selected_values": [
+            "operation_rows=4",
+            "all operation exit_code=3",
+            "one row per actual REST operation"
+          ],
+          "shape": "ledger_reconciliation"
+        }
+      },
+      "global_rest_event_range": null,
+      "ledger_rows": [],
+      "live_target_effect_count": 0,
+      "ordered_routes": [],
+      "phase_event_range": null,
+      "process_ref": null,
+      "provenance": "local SQLite",
+      "reconciliation": null,
+      "rest_effects": [],
+      "rest_route_count": 0,
+      "seal": {
+        "argv": null,
+        "expected": {
+          "exit": 0,
+          "stderr": {
+            "mode": "empty",
+            "selected_values": [],
+            "shape": "empty"
+          },
+          "stdout": {
+            "mode": "json",
+            "selected_values": [
+              "operation_rows=4",
+              "all operation exit_code=3",
+              "one row per actual REST operation"
+            ],
+            "shape": "ledger_reconciliation"
+          }
+        },
+        "expected_sha256": "c38013b50767070114aba5a87a386d0146fef903fc0b65183e90b9ac6a5ea249",
+        "oracle_hash": "46e10464616066fdb131d6ab979c76cbc5f9d277b7e15e6ff8d68d18ed858940",
+        "sealed_at_ns": 1792762917732606000,
+        "step": "S6.10"
+      },
+      "sequence": "S6",
+      "state_events": [],
+      "state_owner": "Python local SQLite Run Ledger + target fixture request counter",
+      "status": "LOCAL_LEDGER_ONLY",
+      "step": "S6.10",
+      "target_effects": []
+    }
+  ],
+  "step_count": 50,
+  "verdict": "FAIL"
+}
