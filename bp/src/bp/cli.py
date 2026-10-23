@@ -1,4 +1,9 @@
-"""bp — Burp Suite REST CLI entry point. See docs/CLI.md."""
+"""bp — Burp Suite REST CLI entry point. See docs/CLI.md.
+
+Global options resolve to a State object on the typer context; each command runs against a
+BurpClient and renders via the output layer. Command groups live in ``bp.commands.*`` and are
+registered onto ``app`` below. Exit codes follow CLI.md (3=conn, 4=pro).
+"""
 
 from __future__ import annotations
 
@@ -6,10 +11,21 @@ import json
 import os
 import sys
 from dataclasses import asdict
-from typing import Any
+from importlib import import_module
+from importlib.metadata import version as distribution_version
+from typing import TYPE_CHECKING, Any
 
 import typer
-from typer._click.exceptions import ClickException
+
+if TYPE_CHECKING:
+    from typer._click.exceptions import ClickException
+else:
+    _click_exceptions_module = (
+        "typer._click.exceptions"
+        if tuple(int(part) for part in distribution_version("typer").split(".")[:2]) >= (0, 26)
+        else "click.exceptions"
+    )
+    ClickException = getattr(import_module(_click_exceptions_module), "ClickException")
 
 from bp import __version__
 from bp.client import BurpClient
@@ -231,7 +247,13 @@ def _find_subcommand(argv: list[str]) -> int | None:
 
 
 def _hoist_global_opts(argv: list[str]) -> list[str]:
-    """Move known global options ahead of the subcommand until ``--`` (ADR-0009)."""
+    """Move global value-taking options (and their values) ahead of the subcommand.
+
+    Makes ``bp <cmd> --format json`` behave like ``bp --format json <cmd>`` (ADR-0009).
+    Only the three known options in ``_GLOBAL_VALUE_OPTS`` are moved, and only when they
+    appear after the subcommand; everything else is left untouched for Typer to parse or
+    reject exactly as before.
+    """
     sub_idx = _find_subcommand(argv)
     if sub_idx is None:
         return argv
@@ -268,7 +290,12 @@ def _hoist_global_opts(argv: list[str]) -> list[str]:
 
 
 def cli_main() -> None:
-    """Apply global-option hoisting and dispatch the bp / burpctl entrypoint."""
+    """Console entrypoint (bp / burpctl). Applies ADR-0009 option hoisting, then dispatches.
+
+    ``prog_name`` reflects the command the user actually invoked, so ``bp --help`` and
+    ``burpctl --help`` each show their own name in usage/error output (both are installed;
+    ADR-0012: ``bp`` is primary, ``burpctl`` is the alias).
+    """
     prog = os.path.basename(sys.argv[0]) or "bp"
     args = _hoist_global_opts(sys.argv[1:])
     boundary = args.index("--") if "--" in args else len(args)
