@@ -30,7 +30,7 @@ else:
 from bp import __version__
 from bp.client import BurpClient, BurpError
 from bp.cliutil import EXIT_USAGE, State, emit_error, exit_code_for_error_code, run
-from bp.models import ProxyEntry
+from bp.models import ProxyEntry, ProxyHistory
 from bp.output import FORMATS
 from bp.runner import FuzzResult, run_fuzz
 
@@ -127,9 +127,8 @@ def _proxy_rows(entries: object) -> list[dict[str, Any]]:
 
 
 def _proxy_rows_from_response(data: dict[str, Any]) -> list[dict[str, Any]]:
-    if "entries" not in data:
-        raise BurpError("INVALID_RESPONSE", "server returned an unexpected response shape")
-    return _proxy_rows(data["entries"])
+    history = ProxyHistory.model_validate(data)
+    return _proxy_rows([entry.model_dump() for entry in history.entries])
 
 
 @app.command()

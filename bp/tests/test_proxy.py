@@ -55,10 +55,17 @@ def test_proxy_rows_rejects_non_list_entries() -> None:
 
 
 def test_proxy_rows_rejects_missing_entries() -> None:
-    with pytest.raises(BurpError) as exc_info:
+    with pytest.raises(ValidationError):
         _proxy_rows_from_response({"total": 3})
 
-    assert exc_info.value.code == "INVALID_RESPONSE"
+
+def test_proxy_rows_rejects_incomplete_response_wrapper() -> None:
+    with pytest.raises(ValidationError):
+        _proxy_rows_from_response({"entries": []})
+
+
+def test_proxy_rows_accepts_complete_empty_response_wrapper() -> None:
+    assert _proxy_rows_from_response({"total": 0, "entries": []}) == []
 
 
 # --- RED contract-drift tests (Kotlin ProxyModels.kt: id=Int, request=HttpRequestData both non-null) ---
