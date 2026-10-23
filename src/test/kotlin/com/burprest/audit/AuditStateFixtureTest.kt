@@ -157,12 +157,15 @@ class AuditStateFixtureTest {
             val failingHistory = mockk<HistoryDao>()
             val failingSitemap = mockk<SitemapDao>()
             every {
-                failingHistory.insertWithSitemap(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+                failingHistory.insertWithSitemap(
+                    any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                )
             } throws IllegalStateException("database detail")
             val logging = mockk<burp.api.montoya.logging.Logging>()
             every { api.logging() } returns logging
             every { logging.logToError(any<String>()) } just runs
-            val afterEffectFailure = RepeaterService(api, failingHistory, failingSitemap).send(SendRequest(requestId = 0))
+            val afterEffectFailure = RepeaterService(api, failingHistory, failingSitemap)
+                .send(SendRequest(requestId = 0))
             assertEquals(200, afterEffectFailure.response.statusCode)
             assertEquals(PersistenceStatus.FAILED, afterEffectFailure.persistence.status)
             assertTrue(afterEffectFailure.persistence.warning.orEmpty().contains("do not retry"))
