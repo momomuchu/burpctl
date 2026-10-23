@@ -741,5 +741,449 @@
         "actualFile": "task-9-1792755991929513000-l13-contrast-actual.json"
       }
     }
+  },
+
+  {
+    "id": "L09",
+    "scenario": "original-manifest-contrast",
+    "oracleHash": "d86e2bcdf1acf999f9158a87d0b04028cd227b672bd756673db1d2fb2540153b",
+    "candidate": "ef4a9db9d1ce909e945d4c94f1cc5a3da0cc496d+c001-working-tree",
+    "preRunSeal": {
+      "algorithm": "sha256",
+      "hash": "217aba9276f4aa57bcfb500e37000af9183cdb3bec137b33787f92efc69d1409",
+      "sealedAt": "2026-10-23T12:10:25.055437+00:00"
+    },
+    "argv": [
+      "uv",
+      "run",
+      "--frozen",
+      "--project",
+      "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+      "bp",
+      "check",
+      "auth",
+      "http://127.0.0.1:61528",
+      "--endpoint",
+      "/private"
+    ],
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con0/bp-audit-6p96xgky/home/.bp/config",
+      "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con0/bp-audit-6p96xgky/state/ledger.db",
+      "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con0/bp-audit-6p96xgky/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:61527",
+      "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con0/bp-audit-6p96xgky/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "expected": {
+      "case": "no finding",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "actual": {
+      "exit": 0,
+      "restLog": [
+        {
+          "body_length": 76,
+          "body_sha256": "7e0f84b947fb12a6e4917a6133ac25ac953f677ca997e6ed51d8ab3bdacac41c",
+          "method": "POST",
+          "path": "/scan/auth-bypass",
+          "status": 200
+        }
+      ],
+      "stderr": "",
+      "stdout": "{\"results\":[],\"totalScanned\":1,\"vulnerableCount\":0,\"inconclusiveCount\":0}\n",
+      "targetLog": [],
+      "observedAt": "2026-10-23T12:10:25.272078+00:00"
+    },
+    "comparison": {
+      "effectMatch": true,
+      "exitMatch": true,
+      "manifestMatch": false,
+      "routeMatch": false,
+      "stderrMatch": false,
+      "stdoutMatch": false
+    },
+    "verdict": "ORACLE_MISMATCH",
+    "authorityClassification": "ORACLE_MISMATCH",
+    "authoritySources": [
+      "docs/CLI.md:113",
+      "docs/OUTPUT.md:513-518",
+      "bp/src/bp/cliutil.py:145-160,189-210",
+      "bp/src/bp/commands/securityscan.py:171-180"
+    ],
+    "limits": [
+      "The loopback REST fixture proves CLI routing and payload only; it does not execute Kotlin probes.",
+      "End-to-end target effects remain INCONCLUSIVE; no external vulnerability claim is made."
+    ],
+    "evidence": {
+      "actualFile": "task-9-manifest-contrast-1792757425055413000-l09-manifest-contrast-actual.json",
+      "expectedFile": "task-9-manifest-contrast-1792757425055413000-l09-manifest-contrast-expected.json"
+    }
+  },
+  {
+    "id": "L10",
+    "scenario": "original-manifest-contrast",
+    "oracleHash": "9509c42e2c2ea0fdb6edc6fbbe923277e498e3a11aed5cfccc495dbe269ff602",
+    "candidate": "ef4a9db9d1ce909e945d4c94f1cc5a3da0cc496d+c001-working-tree",
+    "preRunSeal": {
+      "algorithm": "sha256",
+      "hash": "2103770295b150a339efdd70f91f936053c329c762f94b6a3e63d398cfb01696",
+      "sealedAt": "2026-10-23T12:10:26.077765+00:00"
+    },
+    "argv": [
+      "uv",
+      "run",
+      "--frozen",
+      "--project",
+      "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+      "bp",
+      "check",
+      "idor",
+      "http://127.0.0.1:61534/item/{id}",
+      "--param",
+      "id",
+      "--own",
+      "1",
+      "--target",
+      "2",
+      "--header",
+      "broken"
+    ],
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con1/bp-audit-k_fqmivs/home/.bp/config",
+      "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con1/bp-audit-k_fqmivs/state/ledger.db",
+      "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con1/bp-audit-k_fqmivs/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:61533",
+      "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con1/bp-audit-k_fqmivs/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "expected": {
+      "case": "malformed option usage",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 2,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "actual": {
+      "exit": 2,
+      "restLog": [],
+      "stderr": "error: --header must be 'Name: Value', got 'broken'\n",
+      "stdout": "",
+      "targetLog": [],
+      "observedAt": "2026-10-23T12:10:26.246923+00:00"
+    },
+    "comparison": {
+      "effectMatch": true,
+      "exitMatch": true,
+      "manifestMatch": false,
+      "routeMatch": true,
+      "stderrMatch": false,
+      "stdoutMatch": true
+    },
+    "verdict": "PRODUCT_CONTRACT_DEFECT",
+    "authorityClassification": "PRODUCT_CONTRACT_DEFECT",
+    "authoritySources": [
+      "docs/OUTPUT.md:3-9",
+      "bp/src/bp/cliutil.py:213-229",
+      "bp/src/bp/commands/securityscan.py:209-223"
+    ],
+    "limits": [
+      "The loopback REST fixture proves CLI routing and payload only; it does not execute Kotlin probes.",
+      "End-to-end target effects remain INCONCLUSIVE; no external vulnerability claim is made.",
+      "The sealed L10 contrast has no argv_template; --header broken is the presealed concrete malformed option used here."
+    ],
+    "evidence": {
+      "actualFile": "task-9-manifest-contrast-1792757426077749000-l10-manifest-contrast-actual.json",
+      "expectedFile": "task-9-manifest-contrast-1792757426077749000-l10-manifest-contrast-expected.json"
+    }
+  },
+  {
+    "id": "L11",
+    "scenario": "original-manifest-contrast",
+    "oracleHash": "5fea82a56c270af520d93f16da7c23ea0282a23782f53190790806afde46cd23",
+    "candidate": "ef4a9db9d1ce909e945d4c94f1cc5a3da0cc496d+c001-working-tree",
+    "preRunSeal": {
+      "algorithm": "sha256",
+      "hash": "e41fb7f70f48209319a02715164db29b6067005a4c89f52ac1687905b8698c36",
+      "sealedAt": "2026-10-23T12:10:27.100712+00:00"
+    },
+    "argv": [
+      "uv",
+      "run",
+      "--frozen",
+      "--project",
+      "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+      "bp",
+      "check",
+      "headers",
+      "http://127.0.0.1:61540/private",
+      "--marker",
+      "SECRET"
+    ],
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con2/bp-audit-bdmuq2x4/home/.bp/config",
+      "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con2/bp-audit-bdmuq2x4/state/ledger.db",
+      "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con2/bp-audit-bdmuq2x4/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:61539",
+      "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con2/bp-audit-bdmuq2x4/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "expected": {
+      "case": "anomaly without finding",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 0,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "actual": {
+      "exit": 0,
+      "restLog": [
+        {
+          "body_length": 89,
+          "body_sha256": "d8fa84b2fc4d5d0112044091e4df493c587ea5293046bc57e7a3ecaa8d8a596e",
+          "method": "POST",
+          "path": "/scan/headers",
+          "status": 200
+        }
+      ],
+      "stderr": "",
+      "stdout": "{\"baseline\":{\"status\":403},\"results\":[{\"anomalous\":true,\"vulnerable\":false}],\"anomalousCount\":1,\"vulnerableCount\":0,\"inconclusiveCount\":0}\n",
+      "targetLog": [],
+      "observedAt": "2026-10-23T12:10:27.309179+00:00"
+    },
+    "comparison": {
+      "effectMatch": true,
+      "exitMatch": true,
+      "manifestMatch": false,
+      "routeMatch": false,
+      "stderrMatch": false,
+      "stdoutMatch": false
+    },
+    "verdict": "ORACLE_MISMATCH",
+    "authorityClassification": "ORACLE_MISMATCH",
+    "authoritySources": [
+      "docs/SPEC.md:23",
+      "bp/src/bp/commands/securityscan.py:98-112,276-288",
+      "bp/src/bp/cliutil.py:189-210"
+    ],
+    "limits": [
+      "The loopback REST fixture proves CLI routing and payload only; it does not execute Kotlin probes.",
+      "End-to-end target effects remain INCONCLUSIVE; no external vulnerability claim is made."
+    ],
+    "evidence": {
+      "actualFile": "task-9-manifest-contrast-1792757427100696000-l11-manifest-contrast-actual.json",
+      "expectedFile": "task-9-manifest-contrast-1792757427100696000-l11-manifest-contrast-expected.json"
+    }
+  },
+  {
+    "id": "L12",
+    "scenario": "original-manifest-contrast",
+    "oracleHash": "06a6ec1ee371dfc2f41a20c77a5d889a2e4df8f0c758b9e2d654f2aa1ad88940",
+    "candidate": "ef4a9db9d1ce909e945d4c94f1cc5a3da0cc496d+c001-working-tree",
+    "preRunSeal": {
+      "algorithm": "sha256",
+      "hash": "1b408864d3b6b90fc8cb42d4ad936e541477391152f1dde90603151baac7b9bf",
+      "sealedAt": "2026-10-23T12:10:28.124694+00:00"
+    },
+    "argv": [
+      "uv",
+      "run",
+      "--frozen",
+      "--project",
+      "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+      "bp",
+      "check",
+      "cors",
+      "http://127.0.0.1:61546/cors"
+    ],
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con3/bp-audit-2tr2nmel/home/.bp/config",
+      "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con3/bp-audit-2tr2nmel/state/ledger.db",
+      "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con3/bp-audit-2tr2nmel/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:61545",
+      "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con3/bp-audit-2tr2nmel/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "expected": {
+      "case": "confirmed finding",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 5,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "actual": {
+      "exit": 5,
+      "restLog": [
+        {
+          "body_length": 52,
+          "body_sha256": "a0bc550e2ceaba819996c7407eb51de4694f8c6fcfd377c4a5e9d400350d7d96",
+          "method": "POST",
+          "path": "/scan/cors",
+          "status": 200
+        }
+      ],
+      "stderr": "",
+      "stdout": "{\"results\":[{\"origin\":\"https://evil.invalid\",\"acao\":\"https://evil.invalid\",\"acac\":\"true\",\"vulnerable\":true}],\"vulnerableCount\":1,\"inconclusiveCount\":0}\n",
+      "targetLog": [],
+      "observedAt": "2026-10-23T12:10:28.336678+00:00"
+    },
+    "comparison": {
+      "effectMatch": true,
+      "exitMatch": true,
+      "manifestMatch": false,
+      "routeMatch": false,
+      "stderrMatch": false,
+      "stdoutMatch": false
+    },
+    "verdict": "ORACLE_MISMATCH",
+    "authorityClassification": "ORACLE_MISMATCH",
+    "authoritySources": [
+      "docs/CLI.md:113",
+      "bp/src/bp/commands/securityscan.py:308-316",
+      "bp/src/bp/cliutil.py:189-210"
+    ],
+    "limits": [
+      "The loopback REST fixture proves CLI routing and payload only; it does not execute Kotlin probes.",
+      "End-to-end target effects remain INCONCLUSIVE; no external vulnerability claim is made."
+    ],
+    "evidence": {
+      "actualFile": "task-9-manifest-contrast-1792757428124678000-l12-manifest-contrast-actual.json",
+      "expectedFile": "task-9-manifest-contrast-1792757428124678000-l12-manifest-contrast-expected.json"
+    }
+  },
+  {
+    "id": "L13",
+    "scenario": "original-manifest-contrast",
+    "oracleHash": "d4000e03f5422fac3317204c17a11017a94c757068af71e4e000aae90eb5b4f0",
+    "candidate": "ef4a9db9d1ce909e945d4c94f1cc5a3da0cc496d+c001-working-tree",
+    "preRunSeal": {
+      "algorithm": "sha256",
+      "hash": "9e9e9b2ae1b2da54a5150921d67ca4536f3fa089b9013957b5902cc6815314fb",
+      "sealedAt": "2026-10-23T12:10:29.149380+00:00"
+    },
+    "argv": [
+      "uv",
+      "run",
+      "--frozen",
+      "--project",
+      "/Users/maache/burpctl-ulw-worktrees-20261023/checks/bp",
+      "bp",
+      "check",
+      "endpoints",
+      "127.0.0.1",
+      "--limit",
+      "2"
+    ],
+    "environment": {
+      "BP_AGENT": "1",
+      "BP_CONFIG_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con4/bp-audit-zst2f4a_/home/.bp/config",
+      "BP_LEDGER_PATH": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con4/bp-audit-zst2f4a_/state/ledger.db",
+      "BP_PAYLOAD_DIR": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con4/bp-audit-zst2f4a_/payloads",
+      "BURP_REST_URL": "http://127.0.0.1:61550",
+      "HOME": "/private/var/folders/kh/vmp4ywc57dnd8ptwbxlvmr040000gn/T/pytest-of-maache/pytest-239/test_exact_sealed_manifest_con4/bp-audit-zst2f4a_/home",
+      "NO_COLOR": "1",
+      "TERM": "dumb"
+    },
+    "expected": {
+      "case": "H2 unavailable",
+      "effect": {
+        "effect": "zero",
+        "route": "none"
+      },
+      "exit": 1,
+      "stderr": {
+        "mode": "json",
+        "shape": "typed_error"
+      },
+      "stdout": {
+        "mode": "empty",
+        "shape": "empty"
+      }
+    },
+    "actual": {
+      "exit": 1,
+      "restLog": [
+        {
+          "body_length": 70,
+          "body_sha256": "830d833c81664b5c3afdff0ccae52917e273b4327117d1c6d30687d8ab5841cf",
+          "method": "POST",
+          "path": "/scan/endpoints",
+          "status": 503
+        }
+      ],
+      "stderr": "{\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"H2 unavailable\",\"status\":503,\"http_status\":503,\"op\":\"POST /scan/endpoints\"}}\n",
+      "stdout": "",
+      "targetLog": [],
+      "observedAt": "2026-10-23T12:10:29.350647+00:00"
+    },
+    "comparison": {
+      "effectMatch": true,
+      "exitMatch": true,
+      "manifestMatch": false,
+      "routeMatch": false,
+      "stderrMatch": true,
+      "stdoutMatch": true
+    },
+    "verdict": "ORACLE_MISMATCH",
+    "authorityClassification": "ORACLE_MISMATCH",
+    "authoritySources": [
+      "docs/SPEC.md:512,514-517",
+      "bp/src/bp/commands/securityscan.py:343-357",
+      "bp/src/bp/cliutil.py:27-37,145-160"
+    ],
+    "limits": [
+      "The loopback REST fixture proves CLI routing and payload only; it does not execute Kotlin probes.",
+      "End-to-end target effects remain INCONCLUSIVE; no external vulnerability claim is made."
+    ],
+    "evidence": {
+      "actualFile": "task-9-manifest-contrast-1792757429149365000-l13-manifest-contrast-actual.json",
+      "expectedFile": "task-9-manifest-contrast-1792757429149365000-l13-manifest-contrast-expected.json"
+    }
   }
 ]
