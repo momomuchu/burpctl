@@ -28,6 +28,17 @@ def test_loopback_health(tmp_path: Path) -> None:
         assert fixture.manifest.ledger_path.is_file()
 
 
+def test_audit_default_is_json_agent_mode(tmp_path: Path) -> None:
+    """Matrix invocations without an explicit format use the declared JSON oracle."""
+    with FixtureRoot(tmp_path) as fixture:
+        result = fixture.run(["health"], executable="bp")
+        assert result.returncode == 0, result.stderr
+        assert json.loads(result.stdout)["status"] == "ok"
+        assert [(effect.method, effect.path) for effect in fixture.snapshot().rest_effects] == [
+            ("GET", "/health")
+        ]
+
+
 def test_rejects_non_loopback(tmp_path: Path) -> None:
     """Unsafe target URLs fail before urllib can create any target effect."""
     with FixtureRoot(tmp_path) as fixture:

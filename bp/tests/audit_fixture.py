@@ -255,6 +255,7 @@ class AuditFixture:
                 "BP_LEDGER_PATH": str(self.ledger_path),
                 "BP_CONFIG_PATH": str(self.config_path),
                 "BP_PAYLOAD_DIR": str(self.payload_dir),
+                "BP_AGENT": "1",
                 "NO_COLOR": "1",
                 "TERM": "dumb",
             }
