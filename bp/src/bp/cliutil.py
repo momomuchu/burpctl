@@ -16,7 +16,7 @@ from bp import config as _config
 from bp.client import BurpClient, BurpError
 from bp.config import ConfigError, redact, redact_data
 from bp.ledger import Ledger
-from bp.output import render
+from bp.output import render, validate_format_options
 from bp.pos import PosError
 
 EXIT_GENERIC = 1
@@ -130,6 +130,17 @@ def run(
     """Execute one command, structurally redact its result, render, and audit it."""
     state: State = ctx.obj
     redact_secrets = not state.no_redact
+    try:
+        validate_format_options(state.fmt, state.fields)
+    except ValueError as exc:
+        emit_error(
+            state.fmt,
+            "USAGE_ERROR",
+            str(exc),
+            redact_secrets=redact_secrets,
+        )
+        raise typer.Exit(EXIT_USAGE) from None
+
     config_warnings: list[str] = []
     try:
         conf = _config.load(
