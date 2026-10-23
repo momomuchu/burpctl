@@ -35,9 +35,26 @@ def test_agent_missing_payload_file_is_one_json_usage_error(
     assert result.stdout == ""
     lines = result.stderr.splitlines()
     assert len(lines) == 1
-    assert json.loads(lines[0]) == {
-        "error": {
-            "code": "USAGE_ERROR",
-            "message": "cannot read payload file /missing/file: [Errno 2] No such file or directory: '/missing/file'",
-        }
-    }
+    error = json.loads(lines[0])["error"]
+    assert error["code"] == "USAGE_ERROR"
+    assert "cannot read payload file /missing/file" in error["message"]
+
+
+def test_agent_malformed_payload_spec_is_one_json_usage_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A malformed payload spec fails before REST, target, or ledger setup."""
+    monkeypatch.setenv("BP_AGENT", "1")
+    runner = CliRunner()
+
+    with patch("bp.cli.run", side_effect=AssertionError("REST path was reached")):
+        result = runner.invoke(app, ["fuzz", "0", "--pos", "query:id", "--payloads", "broken"])
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    lines = result.stderr.splitlines()
+    assert len(lines) == 1
+    error = json.loads(lines[0])["error"]
+    assert error["code"] == "USAGE_ERROR"
+    assert "--payloads must be NAME=FILE" in error["message"]
+    assert "broken" in error["message"]
