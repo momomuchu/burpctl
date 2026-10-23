@@ -1,0 +1,11 @@
+[missing-body-json]
+{"error":{"code":"USAGE_ERROR","message":"cannot read body file /definitely/missing/file: [Errno 2] No such file or directory: '/definitely/missing/file'"}}
+exit=2
+
+[agent-table-header]
+error: --set-header must be 'Name: Value', got 'broken'
+exit=2
+
+[human-json-header]
+{"error":{"code":"USAGE_ERROR","message":"--set-header must be 'Name: Value', got 'broken'"}}
+exit=2

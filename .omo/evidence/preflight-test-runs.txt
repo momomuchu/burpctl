@@ -1,0 +1,11 @@
+........................................................................ [ 56%]
+.......................................................                  [100%]
+=============================== warnings summary ===============================
+bp/.venv/lib/python3.14/site-packages/typer/params.py:948
+  /Users/maache/burpctl-ulw-worktrees-20261023/fix_preflight/bp/.venv/lib/python3.14/site-packages/typer/params.py:948: DeprecationWarning: The 'is_flag' and 'flag_value' parameters are not supported by Typer and will be removed entirely in a future release.
+    return OptionInfo(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+127 passed, 1 warning in 0.56s
+pytest_exit=0
+ruff_exit=0
